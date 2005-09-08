@@ -11,7 +11,7 @@
 #include "netcdf.h"
 #include "Python.h"
 #include "nio.h"
-#include "arrayobject.h"
+#include <Numeric/arrayobject.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -34,6 +34,7 @@ staticforward PyNIOVariableObject *nio_variable_new(
 
 static PyObject *NIOError;
 
+#if 0
 static char *nio_errors[] = {
   "No Error",
   "Not a nio id",
@@ -61,6 +62,7 @@ static char *nio_errors[] = {
   "", "", "", "", "", "", "", "", "",
   "XDR error" /* 32 */
 };
+#endif
 
 /* Set error string */
 static void
@@ -212,9 +214,9 @@ static void
 collect_attributes(int fileid, int varid, PyObject *attributes, int nattrs)
 {
   NclFile file = (NclFile) fileid;
-  NclFileAttInfoList *att_list;
+  NclFileAttInfoList *att_list = NULL;
   NclFAttRec *att;
-  NclFVarRec *fvar;
+  NclFVarRec *fvar = NULL;
   char *name;
   int length;
   int py_type;
@@ -229,6 +231,10 @@ collect_attributes(int fileid, int varid, PyObject *attributes, int nattrs)
 		  att = file->file.file_atts[i];
 		  name = NrmQuarkToString(att->att_name_quark);
 		  md = _NclFileReadAtt(file,att->att_name_quark,NULL);
+	  }
+	  else if (! (att_list && fvar)) {
+		  PyErr_SetString(NIOError, "internal attribute or file variable error");
+		  return;
 	  }
 	  else {
 		  att = att_list->the_att;
@@ -263,7 +269,6 @@ collect_attributes(int fileid, int varid, PyObject *attributes, int nattrs)
 			  }
 		  }
 	  }
-	  /* _NclDestroyObj(NclObj)md); */
   }
 }
 #if 0
@@ -305,7 +310,7 @@ set_attribute(PyNIOFileObject *file, int varid, PyObject *attributes,
   NclFile nfile = (NclFile) file->id;
   NhlErrorTypes ret;
   NclMultiDValData md;
-  PyArrayObject *array;
+  PyArrayObject *array = NULL;
   
   if (!value) {
 	  /* delete attribute */
@@ -362,7 +367,7 @@ set_attribute(PyNIOFileObject *file, int varid, PyObject *attributes,
 	  if (PyString_Check(value)) {
 		  PyDict_SetItemString(attributes, name, value);
 	  }
-	  else {
+	  else if (array) {
 		  PyDict_SetItemString(attributes, name, (PyObject *)array);
 	  }
   }
@@ -606,12 +611,12 @@ PyNIOVariableObject *
 PyNIOFile_CreateVariable( PyNIOFileObject *file, char *name, 
 			  int typecode, char **dimension_names, int ndim)
 {
-  int *dimids;
-  PyNIOVariableObject *variable;
-  int i,id;
 
   if (check_if_open(file, 1)) {
+	  PyNIOVariableObject *variable;
+	  int i,id;
 	  NclFile nfile = (NclFile) file->id;
+	  int *dimids = NULL;
 	  NrmQuark *qdims = NULL; 
 	  NhlErrorTypes ret;
 	  NrmQuark qvar;
