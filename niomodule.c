@@ -731,6 +731,7 @@ PyNIOFile_GetVariable(PyNIOFileObject *file, char *name)
 
 /* Synchronize output */
 
+#if 0
 int
 PyNIOFile_Sync(PyNIOFileObject *file)
 {
@@ -749,6 +750,7 @@ PyNIOFile_Sync(PyNIOFileObject *file)
     return -1;
 }
 
+
 static PyObject *
 PyNIOFileObject_sync(PyNIOFileObject *self, PyObject *args)
 {
@@ -761,6 +763,7 @@ PyNIOFileObject_sync(PyNIOFileObject *self, PyObject *args)
   else
     return NULL;
 }
+#endif
 
 /* Close file */
 
@@ -798,9 +801,9 @@ PyNIOFileObject_close(PyNIOFileObject *self, PyObject *args)
 
 static PyMethodDef PyNIOFileObject_methods[] = {
   {"close", (PyCFunction)PyNIOFileObject_close, 1},
-  {"sync", (PyCFunction)PyNIOFileObject_sync, 1},
-  {"createDimension", (PyCFunction)PyNIOFileObject_new_dimension, 1},
-  {"createVariable", (PyCFunction)PyNIOFileObject_new_variable, 1},
+/* {"sync", (PyCFunction)PyNIOFileObject_sync, 1}, */
+  {"create_dimension", (PyCFunction)PyNIOFileObject_new_dimension, 1},
+  {"create_variable", (PyCFunction)PyNIOFileObject_new_variable, 1},
   {NULL, NULL}		/* sentinel */
 };
 
@@ -1048,8 +1051,8 @@ PyNIOVariableObject_typecode(PyNIOVariableObject *self, PyObject *args)
 /* Method table */
 
 static PyMethodDef PyNIOVariableObject_methods[] = {
-  {"assignValue", (PyCFunction)PyNIOVariableObject_assign, 1},
-  {"getValue", (PyCFunction)PyNIOVariableObject_value, 1},
+  {"assign_value", (PyCFunction)PyNIOVariableObject_assign, 1},
+  {"get_value", (PyCFunction)PyNIOVariableObject_value, 1},
   {"typecode", (PyCFunction)PyNIOVariableObject_typecode, 1},
   {NULL, NULL}		/* sentinel */
 };
@@ -1852,7 +1855,9 @@ initNio(void)
   PyNIO_API[PyNIOVariable_Type_NUM] = (void *)&PyNIOVariable_Type;
   PyNIO_API[PyNIOFile_Open_NUM] = (void *)&PyNIOFile_Open;
   PyNIO_API[PyNIOFile_Close_NUM] = (void *)&PyNIOFile_Close;
+/*
   PyNIO_API[PyNIOFile_Sync_NUM] = (void *)&PyNIOFile_Sync;
+*/
   PyNIO_API[PyNIOFile_CreateDimension_NUM] =
     (void *)&PyNIOFile_CreateDimension;
   PyNIO_API[PyNIOFile_CreateVariable_NUM] =

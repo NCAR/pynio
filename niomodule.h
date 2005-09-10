@@ -76,10 +76,11 @@ typedef struct {
 
 /* Ensure that all data is written to the disk file.
    Returns 0 if there was an error. */
+/*
 #define PyNIOFile_Sync_RET int
 #define PyNIOFile_Sync_PROTO Py_PROTO((PyNIOFileObject *file))
 #define PyNIOFile_Sync_NUM 4
-
+*/
 /* Create a new dimension. Returns -1 if there was an error. */
 #define PyNIOFile_CreateDimension_RET int
 #define PyNIOFile_CreateDimension_PROTO \
@@ -199,7 +200,9 @@ staticforward PyTypeObject PyNIOVariable_Type;
 /* C API function declarations */
 static PyNIOFile_Open_RET PyNIOFile_Open PyNIOFile_Open_PROTO;
 static PyNIOFile_Close_RET PyNIOFile_Close PyNIOFile_Close_PROTO;
+/*
 static PyNIOFile_Sync_RET PyNIOFile_Sync PyNIOFile_Sync_PROTO;
+*/
 static PyNIOFile_CreateDimension_RET PyNIOFile_CreateDimension \
   PyNIOFile_CreateDimension_PROTO;
 static PyNIOFile_CreateVariable_RET PyNIOFile_CreateVariable \
@@ -314,7 +317,7 @@ static void **PyNIO_API;
 
 #define import_NIO() \
 { \
-  PyObject *module = PyImport_ImportModule("NIO"); \
+  PyObject *module = PyImport_ImportModule("Nio"); \
   if (module != NULL) { \
     PyObject *module_dict = PyModule_GetDict(module); \
     PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \
