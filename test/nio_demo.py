@@ -27,11 +27,11 @@ file.series = [ 1, 2, 3, 4, 5,6 ]
 file.version = 45
 #del file.version
 
-file.createDimension('xyz', 3)
-file.createDimension('n', 20)
-file.createDimension('t', None) # unlimited dimension
+file.create_dimension('xyz', 3)
+file.create_dimension('n', 20)
+file.create_dimension('t', None) # unlimited dimension
 
-foo = file.createVariable('foo', Int, ('n', 'xyz'))
+foo = file.create_variable('foo', Int, ('n', 'xyz'))
 foo[:,:] = 0.
 foo[0,:] = [42., 42.1, 42.2]
 foo[:,1] = 1.
@@ -39,7 +39,7 @@ foo.units = "arbitrary"
 print foo[0]
 print foo.dimensions
 
-bar = file.createVariable('bar', Int, ('t', 'n'))
+bar = file.create_variable('bar', Int, ('t', 'n'))
 for i in range(10):
     bar[i] = i
 print bar.shape
