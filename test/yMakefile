@@ -1,4 +1,4 @@
 PYSRCS = nio_demo.py
 
-InstallTarget($(PYSRCS),$(INSTALL_LIB),../src/pynglex)
+InstallTarget($(PYSRCS),$(INSTALL_LIB),../../pyngl/src/pynglex)
 InstallTarget($(PYSRCS),$(INSTALL_LIB),$(PYNGLNCARGPATH)/$(PYNGLEXDIR))
