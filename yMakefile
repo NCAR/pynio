@@ -1,0 +1,7 @@
+SUBDIRS = test
+#define	IHaveSubdirs
+
+MYNAME	= Nio.so
+
+$(MYNAME): niomodule.c niomodule.h setup.py
+	python setup.py install
