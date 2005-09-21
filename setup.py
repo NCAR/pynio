@@ -15,7 +15,7 @@ module1 = Extension('PyNIO/Nio',
 #		    extra_compile_args = [ '-O0' ],
                     include_dirs = [ncl_src_dir,
                                     ncarg_root + 'include'],
-                    libraries = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','g2c'],
+                    libraries = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','g2c'],
                     library_dirs = [ncarg_root + 'lib',
                                     extra_lib_paths],
                     sources = ['niomodule.c']
