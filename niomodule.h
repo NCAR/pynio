@@ -23,7 +23,7 @@ typedef struct {
   PyObject *attributes;   /* dictionary */
   PyObject *name;         /* string */
   PyObject *mode;         /* string */
-  int id;
+  void *id;
   char open;
   char define;
   char write;

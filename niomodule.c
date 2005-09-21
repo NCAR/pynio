@@ -212,7 +212,7 @@ nio_type_from_code(char code)
 
 
 static void
-collect_attributes(int fileid, int varid, PyObject *attributes, int nattrs)
+collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 {
   NclFile file = (NclFile) fileid;
   NclFileAttInfoList *att_list = NULL;
@@ -257,9 +257,10 @@ collect_attributes(int fileid, int varid, PyObject *attributes, int nattrs)
 		  }
 	  }
 	  else {
+		  PyObject *array;
 		  length = md->multidval.totalelements;
 		  py_type = data_type(att->data_type);
-		  PyObject *array = PyArray_FromDims(1, &length, py_type);
+		  array = PyArray_FromDims(1, &length, py_type);
 		  if (array != NULL) {
 			  memcpy(((PyArrayObject *)array)->data,
 				 md->multidval.val,length * md->multidval.type->type_class.size);
@@ -473,7 +474,7 @@ NioFile_Open(char *filename, char *mode)
   file = _NclCreateFile(NULL,NULL,Ncl_File,0,TEMPORARY,
 			NrmStringToQuark(filename),crw);
   if (file) {
-	  self->id = (int) file;
+	  self->id = (void *) file;
 	  self->define = 1;
 	  self->open = 1;
 	  self->write = (crw != 1);
@@ -1003,7 +1004,6 @@ nio_variable_new(NioFileObject *file, char *name, int id,
 {
   NioVariableObject *self;
   NclFile nfile = (NclFile) file->id;
-  NclFVarRec *fvar;
   int i;
   if (check_if_open(file, -1)) {
     self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
@@ -1016,9 +1016,8 @@ nio_variable_new(NioFileObject *file, char *name, int id,
     self->nd = ndims;
     self->dimids = dimids;
     self->unlimited = 0;
-    fvar = nfile->file.var_info[id];
     if (ndims > 0) {
-	    self->dimensions = (long *)malloc(ndims*sizeof(long));
+	    self->dimensions = (size_t *)malloc(ndims*sizeof(size_t));
 	    if (self->dimensions != NULL) {
 		    for (i = 0; i < ndims; i++) {
 			    self->dimensions[i] = nfile->file.file_dim_info[dimids[i]]->dim_size;
@@ -1146,8 +1145,8 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
     char *name;
     int i;
     if (check_if_open(self->file, -1)) {
-      tuple = PyTuple_New(self->nd);
       NclFile nfile = (NclFile) self->file->id;
+      tuple = PyTuple_New(self->nd);
       for (i = 0; i < self->nd; i++) {
 	      name = NrmQuarkToString(nfile->file.file_dim_info[self->dimids[i]]->dim_name_quark);
 	      PyTuple_SetItem(tuple, i, PyString_FromString(name));
@@ -1463,6 +1462,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
   if (array != NULL) {
+	  NrmQuark qtype;
 	  int n_dims;
 	  int scalar_size = 1;
 	  NclFile nfile = (NclFile) self->file->id;
@@ -1488,7 +1488,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  */
 	  if (nitems < var_el_count || self->unlimited)
 		  select_all = 0;
-	  NrmQuark qtype = nio_type_from_code(array->descr->type);
+	  qtype = nio_type_from_code(array->descr->type);
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : array->dimensions,
