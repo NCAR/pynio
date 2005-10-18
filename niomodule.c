@@ -273,37 +273,6 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 	  }
   }
 }
-#if 0
-static NclMultiDValData 
-PyValueToMultiDVal(PyObject *val)
-{
-  NclMultiDValData md;
-
-  if (PyString_Check(val)) {
-	  int len_dims = 1;
-	  NrmQuark *qval = malloc(sizeof(NrmQuark));
-	  qval[0] = NrmStringToQuark(PyString_AsString(val));
-	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-				   (void*)qval,NULL,1,&len_dims,
-				   TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
-  }
-  else {
-	  int n_dims;
-	  int dim_sizes = 1;
-	  NrmQuark qtype;
-	  PyArrayObject *array =
-		  (PyArrayObject *)PyArray_ContiguousFromObject(val, PyArray_NOTYPE, 0, 1);
-	  n_dims = (array->nd == 0) ? 1 : array->nd;
-	  qtype = nio_type_from_code(array->descr->type);
-	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-				   (void*)array->data,NULL,n_dims,
-				   array->nd == 0 ? &dim_sizes : array->dimensions,
-				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-  }
-  return md;
-	  
-}
-#endif
 
 static int
 set_attribute(NioFileObject *file, int varid, PyObject *attributes,
@@ -311,7 +280,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 {
   NclFile nfile = (NclFile) file->id;
   NhlErrorTypes ret;
-  NclMultiDValData md;
+  NclMultiDValData md = NULL;
   PyArrayObject *array = NULL;
   
   if (!value) {
@@ -346,12 +315,23 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 		  pyarray_type = tmparray->descr->type_num;
 	  }
 	  array = (PyArrayObject *)PyArray_ContiguousFromObject(value, pyarray_type, 0, 1);
-	  n_dims = (array->nd == 0) ? 1 : array->nd;
-	  qtype = nio_type_from_code(array->descr->type);
-	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-				   (void*)array->data,NULL,n_dims,
-				   array->nd == 0 ? &dim_sizes : array->dimensions,
-				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+          if (array) {
+	          n_dims = (array->nd == 0) ? 1 : array->nd;
+	          qtype = nio_type_from_code(array->descr->type);
+	          if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
+                           PyArrayObject *array2 = (PyArrayObject *)
+                                     PyArray_Cast(array, PyArray_INT);
+                           Py_DECREF(array);
+                           array = array2;
+			   qtype = NrmStringToQuark("integer");
+                  }
+                  if (array) {
+	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+		                                    (void*)array->data,NULL,n_dims,
+				                    array->nd == 0 ? &dim_sizes : array->dimensions,
+				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+                  }
+           }
   }
   if (! md) {
 	  ncerr = 23;
@@ -694,6 +674,9 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		  }
 	  }
 	  qtype = nio_type_from_code(typecode);
+          if (sizeof(long) > 4 && qtype == NrmStringToQuark("long")) {
+	          qtype = NrmStringToQuark("integer");
+          }
 	  qvar = NrmStringToQuark(name);
 	  ret = _NclFileAddVar(nfile,qvar,qtype,ncl_ndims,qdims);
 	  if (ret > NhlWARNING) {
