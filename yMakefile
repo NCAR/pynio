@@ -5,7 +5,7 @@ MYNAME	= Nio.so
 
 SRCS = niomodule.c
 OBJS = niomodule.o
-LIBS = $(NIOLIB) $(HDFLIB) $(NCDFLIBS) $(HDFEOSLIB)
+LIBS = $(LIBSEARCH) $(NIOLIB) $(HDFLIB) $(NCDFLIBS) $(HDFEOSLIB)
 
 #if (defined(Linux) || defined(LINUX)) && !defined(linux)
 #define linux
