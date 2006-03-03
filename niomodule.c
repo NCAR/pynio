@@ -66,16 +66,16 @@ static char *nio_errors[] = {
 	"XDR error" /* 32 */
 };
 
-static int ncerr = 0;
 
+static int nio_ncerr = 0;  
 /* Set error string */
 static void
 nio_seterror(void)
 {
-  if (ncerr != 0) {
+  if (nio_ncerr != 0) {
     char *error = "Unknown error";
-    if (ncerr > 0 && ncerr <= 32)
-      error = nio_errors[ncerr];
+    if (nio_ncerr > 0 && nio_ncerr <= 32)
+      error = nio_errors[nio_ncerr];
     PyErr_SetString(NIOError, error);
   }
 }
@@ -210,6 +210,44 @@ nio_type_from_code(char code)
   return type;
 }
 
+static char *
+nio_format_from_code(char code,char elsize)
+{
+  static char buffer[8];
+  switch(code) {
+  case 'c':
+	  strcpy(buffer,"%c");
+	  break;
+  case 'b':
+  case '1':
+	  strcpy(buffer,"%x");
+	  break;
+  case 's':
+	  strcpy(buffer,"%d");
+	  break;
+  case 'i':
+	  strcpy(buffer,"%d");
+	  break;
+  case 'l':
+	  if (elsize == 8) {
+		  strcpy(buffer,"%lld");
+	  }
+	  else {
+		  strcpy(buffer,"%ld");
+	  }
+	  break;
+  case 'f':
+	  strcpy(buffer,"%2.7g");
+	  break;
+  case 'd':
+	  strcpy(buffer,"%4.16g");
+	  break;
+  default:
+	  strcpy(buffer,"%f");
+  }
+  return buffer;
+}
+
 
 static void
 collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
@@ -334,7 +372,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
            }
   }
   if (! md) {
-	  ncerr = 23;
+	  nio_ncerr = 23;
 	  nio_seterror();
 	  return -1;
   }
@@ -409,7 +447,7 @@ NioFile_Open(char *filename, char *mode)
   NclFile file = NULL;
   int crw;
   struct stat buf;
-  ncerr = 0;
+  nio_ncerr = 0;
 
   if (self == NULL)
     return NULL;
@@ -445,7 +483,7 @@ NioFile_Open(char *filename, char *mode)
 		  crw = 0;
 	  break;
   default:
-	  ncerr = 25;
+	  nio_ncerr = 25;
 	  nio_seterror();
 	  NioFileObject_dealloc(self);
 	  return NULL;
@@ -862,7 +900,7 @@ NioFile_GetAttribute(NioFileObject *self, char *name)
 int
 NioFile_SetAttribute(NioFileObject *self, char *name, PyObject *value)
 {
-  ncerr = 0;
+  nio_ncerr = 0;
   if (check_if_open(self, 1)) {
     if (strcmp(name, "dimensions") == 0 ||
 	strcmp(name, "variables") == 0 ||
@@ -940,6 +978,146 @@ NioFileObject_repr(NioFileObject *file)
   return PyString_FromString(buf);
 }
 
+#define BUF_INSERT(tbuf) \
+	len = strlen(tbuf); \
+	while (bufpos + len > buflen - 2) { \
+		buf = realloc(buf,buflen + bufinc); \
+		buflen += bufinc; \
+	} \
+	strcpy(&(buf[bufpos]),tbuf); \
+	bufpos += len;
+
+
+/* Printed representation */
+static PyObject *
+NioFileObject_str(NioFileObject *file)
+{
+	char tbuf[1024];
+	char *buf;
+	int len;
+	int bufinc = 4096;
+	int buflen = 0;
+	int bufpos = 0;
+	PyObject *pystr;
+	NclFile nfile = (NclFile) file->id;
+	int i;
+	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+
+	buf = malloc(bufinc);
+	buflen = bufinc;
+	sprintf(tbuf,"Nio file:\t%.510s\n",PyString_AsString(file->name));
+	BUF_INSERT(tbuf);
+	sprintf(tbuf,"   global attributes:\n");
+	BUF_INSERT(tbuf);
+	/* The problem with just printing the Python dictionary is that it 
+	 * has no consistent ordering. Since we want an order, we will need
+	 * to use the nio library's records at least to get the names of atts, dims, and vars.
+	 * On the other hand, use Nio python tools to get the attribute values, because this will
+	 * format array values in a Pythonic way.
+	 */
+
+	for (i = 0; i < nfile->file.n_file_atts; i++) {
+		char *att;
+		if (! nfile->file.file_atts[i])
+			continue;
+		att = NrmQuarkToString(nfile->file.file_atts[i]->att_name_quark);
+		sprintf(tbuf,"      %s : ",att);
+		BUF_INSERT(tbuf);
+		sprintf(tbuf,"%s\n",PyString_AsString(PyDict_GetItemString(file->attributes,att)));
+		BUF_INSERT(tbuf);
+	}
+	sprintf(tbuf,"   dimensions:\n");
+	BUF_INSERT(tbuf);
+	for (i = 0; i < nfile->file.n_file_dims; i++) {
+		char *dim;
+		if (! nfile->file.file_dim_info[i])
+			continue;
+		if (nfile->file.file_dim_info[i]->dim_name_quark == scalar_dim)
+		    continue;
+		dim = NrmQuarkToString(nfile->file.file_dim_info[i]->dim_name_quark);
+		if (nfile->file.file_dim_info[i]->is_unlimited) {
+			sprintf(tbuf,"      %s = %ld // unlimited\n",dim, nfile->file.file_dim_info[i]->dim_size);
+		}
+		else {
+			sprintf(tbuf,"      %s = %ld\n",dim, nfile->file.file_dim_info[i]->dim_size);
+		}		
+		BUF_INSERT(tbuf);
+	}
+
+	sprintf(tbuf,"   variables:\n");
+	BUF_INSERT(tbuf);
+
+	for(i = 0; i < nfile->file.n_vars; i++) {
+		NclFileAttInfoList* step;
+		char *vname;
+		NioVariableObject *vobj;
+		int j, dim_ix;
+ 
+		if(nfile->file.var_info[i] == NULL) {
+			continue;
+		}
+		vname = NrmQuarkToString(nfile->file.var_info[i]->var_name_quark);
+		sprintf(tbuf,"      %s %s ( ",
+			_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type),vname);
+		BUF_INSERT(tbuf);
+		for(j=0; j < nfile->file.var_info[i]->num_dimensions; j++) {
+			dim_ix = nfile->file.var_info[i]->file_dim_num[j];
+			if (j != nfile->file.var_info[i]->num_dimensions - 1) {
+				sprintf(tbuf,"%s, ",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+			}
+			else {
+				sprintf(tbuf,"%s )\n",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+			}
+			BUF_INSERT(tbuf);
+		}
+		vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
+		step = nfile->file.var_att_info[i];
+		while(step != NULL) {
+			PyObject *att_val;
+			char *aname = NrmQuarkToString(step->the_att->att_name_quark);
+			sprintf(tbuf,"         %s :\t", aname);
+			BUF_INSERT(tbuf);
+			att_val = PyDict_GetItemString(vobj->attributes,aname);
+			if (PyString_Check(att_val)) {
+				sprintf(tbuf,"%s\n",PyString_AsString(att_val));
+				BUF_INSERT(tbuf);
+			}
+			else {
+				int k;
+				PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
+				char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
+				if (att_arr_val->dimensions[0] == 1) {
+					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+					sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));
+					BUF_INSERT(tbuf);
+				}
+				else {
+					sprintf(tbuf,"[");
+					BUF_INSERT(tbuf);
+					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+						PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
+											    k * att_arr_val->descr->elsize);
+						sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));
+						BUF_INSERT(tbuf);
+						if (k < att_arr_val->dimensions[0] - 1) {
+							sprintf(tbuf,", ");
+						}
+						else {
+							sprintf(tbuf,"]\n");
+						}
+						BUF_INSERT(tbuf);
+					}
+				}
+			}
+			step = step->next;
+		}
+	}
+
+	pystr = PyString_FromString(buf);
+	free(buf);
+	return pystr;
+}
+
 /* Type definition */
 
 statichere PyTypeObject NioFile_Type = {
@@ -959,6 +1137,8 @@ statichere PyTypeObject NioFile_Type = {
   0,			/*tp_as_sequence*/
   0,			/*tp_as_mapping*/
   0,			/*tp_hash*/
+  0,                    /*tp_call*/
+  (reprfunc)NioFileObject_str   /*tp_str*/
 };
 
 /*
@@ -1157,7 +1337,7 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
 static int
 NioVariable_SetAttribute(NioVariableObject *self, char *name, PyObject *value)
 {
-  ncerr = 0;
+  nio_ncerr = 0;
   if (check_if_open(self->file, 1)) {
     if (strcmp(name, "shape") == 0 ||
 	strcmp(name, "dimensions") == 0 ||
@@ -1224,7 +1404,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   int error = 0;
   d = 0;
   nitems = 1;
-  ncerr = 0;
+  nio_ncerr = 0;
   if (!check_if_open(self->file, -1)) {
     free(indices);
     return NULL;
@@ -1290,7 +1470,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 	    NclMultiDValData md = _NclFileReadVarValue
 		    (nfile,NrmStringToQuark(self->name),NULL);
 	    if (! md) {
-		    ncerr = 23;
+		    nio_ncerr = 23;
 		    nio_seterror();
 		    Py_DECREF(array);
 		    array = NULL;
@@ -1319,7 +1499,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 		    md = _NclFileReadVarValue
 			    (nfile,NrmStringToQuark(self->name),sel_ptr);
 		    if (! md) {
-			    ncerr = 23;
+			    nio_ncerr = 23;
 			    nio_seterror();
 			    Py_DECREF(array);
 			    array = NULL;
@@ -1801,6 +1981,208 @@ static PyMappingMethods NioVariableObject_as_mapping = {
   (objobjargproc)NioVariableObject_ass_subscript,   /*mp_ass_subscript*/
 };
 
+void printval(char *buf,NclBasicDataTypes type,void *val)
+{
+	double *d;
+	float *f;
+	long *l;
+	
+
+	switch(type) {
+	case NCL_double:
+		sprintf(buf,"%4.16g",*(double *)val);
+		return;
+	case NCL_float:
+		sprintf(buf,"%2.7g", *(float *)val);
+		return;
+	case NCL_long:
+		sprintf(buf,"%ld",*(long *)val);
+		return;
+	case NCL_int:
+		sprintf(buf,"%d",*(int *)val);
+		return;
+	case NCL_short:
+		sprintf(buf,"%d",*(short *)val);
+		return;
+	case NCL_string:
+		sprintf(buf,"%s",NrmQuarkToString(*(NrmQuark *)val));
+		return;
+	case NCL_char:
+		sprintf(buf,"%c",*(char *)val);
+		return;
+	case NCL_byte:
+		sprintf(buf,"0x%x",*(unsigned char *)val);
+		return;
+	case NCL_logical:
+		if (*(logical *)val == 0) {
+			sprintf(buf,"False");
+		}
+		else {
+			sprintf(buf,"True");
+		}
+		return;
+	}
+}
+
+/* Printed representation */
+static PyObject *
+NioVariableObject_str(NioVariableObject *var)
+{
+	char tbuf[1024];
+	char *buf;
+	int len;
+	int bufinc = 4096;
+	int buflen = 0;
+	int bufpos = 0;
+	PyObject *pystr;
+	NioFileObject *file = var->file;
+	NclFile nfile = (NclFile) file->id;
+	int i;
+	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+	NrmQuark varq = NrmStringToQuark(var->name);
+	NclFileAttInfoList* step;
+	char *vname;
+	NioVariableObject *vobj;
+	long long total;
+	int j, dim_ix;
+	int n_atts;
+
+	buf = malloc(bufinc);
+	buflen = bufinc;
+	for(i = 0; i < nfile->file.n_vars; i++) {
+		if(nfile->file.var_info[i]->var_name_quark != varq) {
+			continue;
+		}
+		vname = NrmQuarkToString(nfile->file.var_info[i]->var_name_quark);
+		break;
+	}
+
+
+	vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
+	sprintf(tbuf,"Variable: %s\n",vname);
+	BUF_INSERT(tbuf);
+	total = 1;
+	for (j = 0; j <  nfile->file.var_info[i]->num_dimensions;j++) {
+		total *= nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_size;
+	}
+	sprintf(tbuf,"Type: %s\n",_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type));
+	BUF_INSERT(tbuf);
+	sprintf(tbuf,"Total Size: %lld bytes\n",total * _NclSizeOf(nfile->file.var_info[i]->data_type));
+	BUF_INSERT(tbuf);
+	sprintf(tbuf,"            %lld values\n",total);
+	BUF_INSERT(tbuf);
+	sprintf(tbuf,"Number of Dimensions: %d\n",nfile->file.var_info[i]->num_dimensions);
+	BUF_INSERT(tbuf);
+	sprintf(tbuf,"Dimensions and sizes:\t");
+	BUF_INSERT(tbuf);
+	for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
+		sprintf(tbuf,"[");
+		BUF_INSERT(tbuf);
+		sprintf(tbuf,"%s | ",
+			NrmQuarkToString(nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_name_quark));
+		BUF_INSERT(tbuf);
+		sprintf(tbuf,"%lld]",
+			(long long) nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_size);
+		BUF_INSERT(tbuf);
+		if(j != nfile->file.var_info[i]->num_dimensions-1) {
+			sprintf(tbuf," x ");
+			BUF_INSERT(tbuf);
+		}
+	}	
+	sprintf(tbuf,"\nCoordinates: \n");
+	BUF_INSERT(tbuf);
+	for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
+		NclVar tmp_var;
+		dim_ix = nfile->file.var_info[i]->file_dim_num[j];
+		if(_NclFileVarIsCoord(nfile,
+				      nfile->file.file_dim_info[dim_ix]->dim_name_quark)!= -1) {
+			sprintf(tbuf,"            ");
+			BUF_INSERT(tbuf);
+			sprintf(tbuf,"%s: [", 
+				NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+			BUF_INSERT(tbuf);
+			tmp_var = _NclFileReadCoord(nfile,nfile->file.file_dim_info[dim_ix]->dim_name_quark,NULL);
+			if(tmp_var != NULL) {
+				NclMultiDValData tmp_md;
+				char *format;
+				unsigned char val[8];
+
+				tmp_md = (NclMultiDValData)_NclGetObj(tmp_var->var.thevalue_id);
+				printval(tbuf,tmp_md->multidval.type->type_class.data_type,tmp_md->multidval.val);
+				BUF_INSERT(tbuf);
+				sprintf(tbuf,"..");
+				BUF_INSERT(tbuf);
+				printval(tbuf,tmp_md->multidval.type->type_class.data_type,(char *) tmp_md->multidval.val +
+					 (tmp_md->multidval.totalelements -1)*tmp_md->multidval.type->type_class.size);
+				BUF_INSERT(tbuf);
+				sprintf(tbuf,"]\n");
+				BUF_INSERT(tbuf);
+				if(tmp_var->obj.status != PERMANENT) {
+					_NclDestroyObj((NclObj)tmp_var);
+				}
+
+			}
+		}
+		else {
+			sprintf(tbuf,"            ");
+			BUF_INSERT(tbuf);
+			sprintf(tbuf,"%s: not a coordinate variable\n",
+				NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+			BUF_INSERT(tbuf);
+		}
+	}	
+	step = nfile->file.var_att_info[i];
+	n_atts = 0;
+	while(step != NULL) {
+		n_atts++;
+		step = step->next;
+	}
+	sprintf(tbuf,"Number of Attributes: %d\n",n_atts);	
+	BUF_INSERT(tbuf);
+	step = nfile->file.var_att_info[i];
+	while(step != NULL) {
+		PyObject *att_val;
+		char *aname = NrmQuarkToString(step->the_att->att_name_quark);
+		sprintf(tbuf,"         %s :\t", aname);
+		BUF_INSERT(tbuf);
+		att_val = PyDict_GetItemString(vobj->attributes,aname);
+		if (PyString_Check(att_val)) {
+			sprintf(tbuf,"%s\n",PyString_AsString(att_val));
+			BUF_INSERT(tbuf);
+		}
+		else {
+			int k;
+			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
+			char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
+			if (att_arr_val->dimensions[0] == 1) {
+				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+				sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));
+				BUF_INSERT(tbuf);
+			}
+			else {
+				sprintf(tbuf,"[");
+				BUF_INSERT(tbuf);
+				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
+										    k * att_arr_val->descr->elsize);
+					sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));
+					BUF_INSERT(tbuf);
+					if (k < att_arr_val->dimensions[0] - 1) {
+						sprintf(tbuf,", ");
+					}
+					else {
+						sprintf(tbuf,"]\n");
+					}
+					BUF_INSERT(tbuf);
+				}
+			}
+		}
+		step = step->next;
+	}
+	pystr = PyString_FromString(buf);
+	free(buf);
+	return pystr;
+}
 
 statichere PyTypeObject NioVariable_Type = {
   PyObject_HEAD_INIT(NULL)
@@ -1818,8 +2200,9 @@ statichere PyTypeObject NioVariable_Type = {
   0,			/*tp_as_number*/
   &NioVariableObject_as_sequence,	/*tp_as_sequence*/
   &NioVariableObject_as_mapping,	/*tp_as_mapping*/
-  0,0,
   0,			/*tp_hash*/
+  0,                    /*tp_call*/
+  (reprfunc)NioVariableObject_str   /*tp_str*/ 
 };
 
 
