@@ -987,6 +987,27 @@ NioFileObject_repr(NioFileObject *file)
 	strcpy(&(buf[bufpos]),tbuf); \
 	bufpos += len;
 
+void
+format_object(char *buf,PyObject *obj,int code)
+{
+
+	switch(code) {
+	case 'i':
+		sprintf(buf,"%d",(int)PyInt_AsLong(obj));
+		break;
+	case 'l':
+		sprintf(buf,"%lld",PyLong_AsLongLong(obj));
+		break;
+	case 'f':
+		sprintf(buf,"%.7g",PyFloat_AsDouble(obj));
+		break;
+	case 'd':
+		sprintf(buf,"%.16g",PyFloat_AsDouble(obj));
+		break;
+	default:
+		sprintf(buf,"%s",PyString_AsString(PyObject_Str(obj)));
+	}
+}
 
 /* Printed representation */
 static PyObject *
@@ -1002,6 +1023,7 @@ NioFileObject_str(NioFileObject *file)
 	NclFile nfile = (NclFile) file->id;
 	int i;
 	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+	PyObject *att_val;
 
 	buf = malloc(bufinc);
 	buflen = bufinc;
@@ -1017,14 +1039,44 @@ NioFileObject_str(NioFileObject *file)
 	 */
 
 	for (i = 0; i < nfile->file.n_file_atts; i++) {
-		char *att;
+		char *attname;
 		if (! nfile->file.file_atts[i])
 			continue;
-		att = NrmQuarkToString(nfile->file.file_atts[i]->att_name_quark);
-		sprintf(tbuf,"      %s : ",att);
+		attname = NrmQuarkToString(nfile->file.file_atts[i]->att_name_quark);
+		sprintf(tbuf,"      %s : ",attname);
 		BUF_INSERT(tbuf);
-		sprintf(tbuf,"%s\n",PyString_AsString(PyDict_GetItemString(file->attributes,att)));
-		BUF_INSERT(tbuf);
+		att_val = PyDict_GetItemString(file->attributes,attname);
+		if (PyString_Check(att_val)) {
+			BUF_INSERT(PyString_AsString(att_val));
+			BUF_INSERT("\n");
+		}
+		else {
+			int k;
+			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
+			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
+				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+				format_object(tbuf,att,att_arr_val->descr->type);
+				BUF_INSERT(tbuf);
+				BUF_INSERT("\n");
+			}
+			else {
+				sprintf(tbuf,"[");
+				BUF_INSERT(tbuf);
+				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
+										    k * att_arr_val->descr->elsize);
+					format_object(tbuf,att,att_arr_val->descr->type);
+					BUF_INSERT(tbuf);
+					if (k < att_arr_val->dimensions[0] - 1) {
+						sprintf(tbuf,", ");
+					}
+					else {
+						sprintf(tbuf,"]\n");
+					}
+					BUF_INSERT(tbuf);
+				}
+			}
+		}
 	}
 	sprintf(tbuf,"   dimensions:\n");
 	BUF_INSERT(tbuf);
@@ -1057,7 +1109,7 @@ NioFileObject_str(NioFileObject *file)
 			continue;
 		}
 		vname = NrmQuarkToString(nfile->file.var_info[i]->var_name_quark);
-		sprintf(tbuf,"      %s %s ( ",
+		sprintf(tbuf,"      %s %s [ ",
 			_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type),vname);
 		BUF_INSERT(tbuf);
 		for(j=0; j < nfile->file.var_info[i]->num_dimensions; j++) {
@@ -1066,30 +1118,31 @@ NioFileObject_str(NioFileObject *file)
 				sprintf(tbuf,"%s, ",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
 			}
 			else {
-				sprintf(tbuf,"%s )\n",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+				sprintf(tbuf,"%s ]\n",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
 			}
 			BUF_INSERT(tbuf);
 		}
 		vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
 		step = nfile->file.var_att_info[i];
 		while(step != NULL) {
-			PyObject *att_val;
 			char *aname = NrmQuarkToString(step->the_att->att_name_quark);
 			sprintf(tbuf,"         %s :\t", aname);
 			BUF_INSERT(tbuf);
 			att_val = PyDict_GetItemString(vobj->attributes,aname);
 			if (PyString_Check(att_val)) {
-				sprintf(tbuf,"%s\n",PyString_AsString(att_val));
-				BUF_INSERT(tbuf);
+				BUF_INSERT(PyString_AsString(att_val));
+				BUF_INSERT("\n");
 			}
 			else {
 				int k;
 				PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 				char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
-				if (att_arr_val->dimensions[0] == 1) {
+				if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
-					sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));
+					format_object(tbuf,att,att_arr_val->descr->type);
+					/*sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
+					BUF_INSERT("\n");
 				}
 				else {
 					sprintf(tbuf,"[");
@@ -1097,7 +1150,8 @@ NioFileObject_str(NioFileObject *file)
 					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
 						PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
 											    k * att_arr_val->descr->elsize);
-						sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));
+						format_object(tbuf,att,att_arr_val->descr->type);
+						/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
 						BUF_INSERT(tbuf);
 						if (k < att_arr_val->dimensions[0] - 1) {
 							sprintf(tbuf,", ");
@@ -2147,17 +2201,19 @@ NioVariableObject_str(NioVariableObject *var)
 		BUF_INSERT(tbuf);
 		att_val = PyDict_GetItemString(vobj->attributes,aname);
 		if (PyString_Check(att_val)) {
-			sprintf(tbuf,"%s\n",PyString_AsString(att_val));
-			BUF_INSERT(tbuf);
+			BUF_INSERT(PyString_AsString(att_val));
+			BUF_INSERT("\n");
 		}
 		else {
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
-			if (att_arr_val->dimensions[0] == 1) {
+			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
 				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
-				sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));
+				format_object(tbuf,att,att_arr_val->descr->type);
 				BUF_INSERT(tbuf);
+				BUF_INSERT("\n");
+				/*sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));*/
 			}
 			else {
 				sprintf(tbuf,"[");
@@ -2165,7 +2221,8 @@ NioVariableObject_str(NioVariableObject *var)
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
 										    k * att_arr_val->descr->elsize);
-					sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));
+					format_object(tbuf,att,att_arr_val->descr->type);
+					/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
 					if (k < att_arr_val->dimensions[0] - 1) {
 						sprintf(tbuf,", ");
