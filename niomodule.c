@@ -2502,9 +2502,9 @@ static PyObject *
 NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 {
   char *filepath;
-  char *mode = NULL;
-  char *history = NULL;
-  PyObject *options = NULL;
+  char *mode = "r";
+  char *history = "";
+  PyObject *options = Py_None;
   NioFileObject *file;
   NrmQuark extq;
   int crw;
@@ -2520,8 +2520,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 	  return NULL;
   }
 
-  if (! mode)
-	  mode = "r";
   crw = GetNioMode(filepath, mode);
   if (crw < -1) {
 	  nio_ncerr = 25;
@@ -2530,13 +2528,11 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   }
   SetNioOptionDefaults(extq,crw);
   
-  if (options && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
-	  if (options != Py_None) {
-		  PyErr_SetString(NIOError, "options argument must be an Nio.options class instance");
-		  PyErr_Print();
-	  }
+  if (options != Py_None && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
+	  PyErr_SetString(NIOError, "options argument must be an Nio.options class instance");
+	  PyErr_Print();
   }
-  else if (options) {
+  else if (options != Py_None) {
 	  NclMultiDValData md = NULL;
 	  PyObject *dict = PyObject_GetAttrString(options,"__dict__");
 	  PyObject *keys = PyMapping_Keys(dict);
@@ -2616,7 +2612,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
     nio_seterror();
     return NULL;
   }
-  if (history != NULL) {
+  if (strlen(history) > 0) {
 	  if (check_if_open(file,1)) {
 		  NioFile_AddHistoryLine(file, history);
 	  }
