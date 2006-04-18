@@ -7,12 +7,22 @@
  * last revision: 1998-3-14
  */
 
+#ifndef PYNIO
+#define PYNIO
+#endif
 
 #include "netcdf.h"
 #include "Python.h"
 #include "structmember.h"
 #include "nio.h"
+#ifdef NUMPY
+#define PY_ARRAY_TYPES_PREFIX NUMPY_
+#include <numpy/arrayobject.h>
+typedef NUMPY_intp intp;
+#else
 #include <Numeric/arrayobject.h>
+#endif
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -117,7 +127,11 @@ int data_type(NclBasicDataTypes ntype)
         case NCL_byte:
 		return PyArray_UBYTE;
         case NCL_string:
-		return PyArray_CHAR;
+#ifdef NUMPY
+		return PyArray_STRING;
+#else
+		return PyArray_OBJECT; /* this works for read-only */
+#endif
 	default:
 		return PyArray_NOTYPE;
 	}
@@ -148,35 +162,99 @@ typecode(int type)
 {
   char t;
   switch(type) {
-  case PyArray_CHAR:
-    t = 'c';
-    break;
+#ifdef NUMPY
+  case PyArray_BYTE:
+	  t = PyArray_BYTELTR;
+	  break;
   case PyArray_UBYTE:
-    t = 'b';
-    break;
-  case PyArray_SBYTE:
-    t = '1';
-    break;
+	  t = PyArray_UBYTELTR;
+	  break;
   case PyArray_SHORT:
-    t = 's';
-    break;
+	  t = PyArray_SHORTLTR;
+	  break;
   case PyArray_INT:
-    t = 'i';
-    break;
+	  t = PyArray_INTLTR;
+	  break;
   case PyArray_LONG:
-    t = 'l';
-    break;
+	  t = PyArray_LONGLTR;
+	  break;
   case PyArray_FLOAT:
-    t = 'f';
-    break;
+	  t = PyArray_FLOATLTR;
+	  break;
   case PyArray_DOUBLE:
-    t = 'd';
-    break;
-  default: t = ' ';
+	  t = PyArray_DOUBLELTR;
+	  break;
+  case PyArray_STRING:
+	  t = PyArray_STRINGLTR;
+	  break;
+  default: 
+	  t = ' ';
+#else
+  case PyArray_CHAR:
+	  t = 'c';
+	  break;
+  case PyArray_SBYTE:
+	  t = '1';
+	  break;
+  case PyArray_UBYTE:
+	  t = 'b';
+	  break;
+  case PyArray_SHORT:
+	  t = 's';
+	  break;
+  case PyArray_INT:
+	  t = 'i';
+	  break;
+  case PyArray_LONG:
+	  t = 'l';
+	  break;
+  case PyArray_FLOAT:
+	  t = 'f';
+	  break;
+  case PyArray_DOUBLE:
+	  t = 'd';
+	  break;
+  default: 
+	  t = ' ';
+#endif
   }
   return t;
 }
 
+#ifdef NUMPY
+static NrmQuark
+nio_type_from_code(char code)
+{
+  int type;
+  switch(code) {
+  case 'c':
+  case '1':
+	  type = NrmStringToQuark("character");
+	  break;
+  case 'B':
+	  type = NrmStringToQuark("byte");
+	  break;
+  case 'h':
+	  type = NrmStringToQuark("short");
+	  break;
+  case 'i':
+	  type = NrmStringToQuark("integer");
+	  break;
+  case 'l':
+	  type = NrmStringToQuark("long");
+	  break;
+  case 'f':
+	  type = NrmStringToQuark("float");
+	  break;
+  case 'd':
+	  type = NrmStringToQuark("double");
+	  break;
+  default:
+	  type = NrmNULLQUARK;
+  }
+  return type;
+}
+#else
 static NrmQuark
 nio_type_from_code(char code)
 {
@@ -209,45 +287,7 @@ nio_type_from_code(char code)
   }
   return type;
 }
-
-static char *
-nio_format_from_code(char code,char elsize)
-{
-  static char buffer[8];
-  switch(code) {
-  case 'c':
-	  strcpy(buffer,"%c");
-	  break;
-  case 'b':
-  case '1':
-	  strcpy(buffer,"%x");
-	  break;
-  case 's':
-	  strcpy(buffer,"%d");
-	  break;
-  case 'i':
-	  strcpy(buffer,"%d");
-	  break;
-  case 'l':
-	  if (elsize == 8) {
-		  strcpy(buffer,"%lld");
-	  }
-	  else {
-		  strcpy(buffer,"%ld");
-	  }
-	  break;
-  case 'f':
-	  strcpy(buffer,"%2.7g");
-	  break;
-  case 'd':
-	  strcpy(buffer,"%4.16g");
-	  break;
-  default:
-	  strcpy(buffer,"%f");
-  }
-  return buffer;
-}
-
+#endif
 
 static void
 collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
@@ -282,16 +322,12 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 		  att_list = att_list->next;
 	  }
 	  if (att->data_type == NCL_string) {
+		  PyObject *string;
 		  char *satt = NrmQuarkToString(*((NrmQuark *)md->multidval.val));
-		  char *s = (char *)malloc((strlen(satt)+1)*sizeof(char));
-		  if (s != NULL) {
-			  PyObject *string;
-			  strcpy(s,satt);
-			  string = PyString_FromString(s);
-			  if (string != NULL) {
-				  PyDict_SetItemString(attributes, name, string);
-				  Py_DECREF(string);
-			  }
+		  string = PyString_FromString(satt);
+		  if (string != NULL) {
+			  PyDict_SetItemString(attributes, name, string);
+			  Py_DECREF(string);
 		  }
 	  }
 	  else {
@@ -437,17 +473,55 @@ NioFileObject_dealloc(NioFileObject *self)
   PyMem_DEL(self);
 }
 
+static int GetNioMode(char* filename,char *mode) 
+{
+	struct stat buf;
+	int crw;
+
+	if (mode == NULL)
+		mode = "r";
+
+	switch (mode[0]) {
+	case 'a':
+		if (stat(filename,&buf) < 0)
+			crw = -1;
+		else 
+			crw = 0;
+		break;
+	case 'c':
+		crw = -1;
+		break;
+	case 'r':
+		if (strlen(mode) > 1 && (mode[1] == '+' || mode[1] == 'w')) {
+			if (stat(filename,&buf) < 0)
+				crw = -1;
+			else 
+				crw = 0;
+		}
+		else
+			crw = 1;
+		break;
+	case 'w':
+		if (stat(filename,&buf) < 0)
+			crw = -1;
+		else
+			crw = 0;
+		break;
+	default:
+		crw = -2;
+	}
+	return crw;
+}
+
 /* Create file object */
 
 NioFileObject *
 NioFile_Open(char *filename, char *mode)
 {
-  NioFileObject *self = PyObject_NEW(NioFileObject,
-					  &NioFile_Type);
+  NioFileObject *self = PyObject_NEW(NioFileObject,&NioFile_Type);
   NclFile file = NULL;
-  int crw;
-  struct stat buf;
   nio_ncerr = 0;
+  int crw;
 
   if (self == NULL)
     return NULL;
@@ -456,39 +530,9 @@ NioFile_Open(char *filename, char *mode)
   self->attributes = NULL;
   self->name = NULL;
   self->mode = NULL;
-  switch (mode[0]) {
-  case 'a':
-	  if (stat(filename,&buf) < 0)
-		  crw = -1;
-	  else 
-		  crw = 0;
-	  break;
-  case 'c':
-	  crw = -1;
-	  break;
-  case 'r':
-	  if (strlen(mode) > 1 && (mode[1] == '+' || mode[1] == 'w')) {
-		  if (stat(filename,&buf) < 0)
-			  crw = -1;
-		  else 
-			  crw = 0;
-	  }
-	  else
-		  crw = 1;
-	  break;
-  case 'w':
-	  if (stat(filename,&buf) < 0)
-		  crw = -1;
-	  else
-		  crw = 0;
-	  break;
-  default:
-	  nio_ncerr = 25;
-	  nio_seterror();
-	  NioFileObject_dealloc(self);
-	  return NULL;
-  }
   self->open = 0;
+
+  crw = GetNioMode(filename,mode);
   file = _NclCreateFile(NULL,NULL,Ncl_File,0,TEMPORARY,
 			NrmStringToQuark(filename),crw);
   if (file) {
@@ -841,8 +885,15 @@ NioFileObject_close(NioFileObject *self, PyObject *args)
   char *history = NULL;
   if (!PyArg_ParseTuple(args, "|s", &history))
     return NULL;
-  if (history != NULL)
-    NioFile_AddHistoryLine(self, history);
+  if (history != NULL) {
+	  if (check_if_open(self,1)) {
+		  NioFile_AddHistoryLine(self, history);
+	  }
+	  else {
+		  PyErr_Print();
+	  }
+  }
+
   if (NioFile_Close(self) == 0) {
     Py_INCREF(Py_None);
     return Py_None;
@@ -1025,6 +1076,11 @@ NioFileObject_str(NioFileObject *file)
 	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
 	PyObject *att_val;
 
+	if (! check_if_open(file, -1)) {
+		PyErr_Clear();
+		return NioFileObject_repr(file);
+	}
+
 	buf = malloc(bufinc);
 	buflen = bufinc;
 	sprintf(tbuf,"Nio file:\t%.510s\n",PyString_AsString(file->name));
@@ -1054,7 +1110,12 @@ NioFileObject_str(NioFileObject *file)
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
+#ifdef NUMPY
+				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
+#else
 				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+#endif
+
 				format_object(tbuf,att,att_arr_val->descr->type);
 				BUF_INSERT(tbuf);
 				BUF_INSERT("\n");
@@ -1063,8 +1124,13 @@ NioFileObject_str(NioFileObject *file)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+#ifdef NUMPY
+					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
+										       k * att_arr_val->descr->elsize,att_val);
+#else
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
 										    k * att_arr_val->descr->elsize);
+#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					BUF_INSERT(tbuf);
 					if (k < att_arr_val->dimensions[0] - 1) {
@@ -1136,9 +1202,12 @@ NioFileObject_str(NioFileObject *file)
 			else {
 				int k;
 				PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
-				char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
 				if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
+#ifdef NUMPY
+					PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
+#else
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					/*sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
@@ -1148,8 +1217,15 @@ NioFileObject_str(NioFileObject *file)
 					sprintf(tbuf,"[");
 					BUF_INSERT(tbuf);
 					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+#ifdef NUMPY
+						PyObject *att = 
+							att_arr_val->descr->f->getitem(att_arr_val->data + 
+										       k * att_arr_val->descr->elsize,att_val);
+#else
 						PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
 											    k * att_arr_val->descr->elsize);
+#endif
+
 						format_object(tbuf,att,att_arr_val->descr->type);
 						/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
 						BUF_INSERT(tbuf);
@@ -1493,8 +1569,10 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
       indices[i].start = 0;
     if (indices[i].start > self->dimensions[i] -1)
       indices[i].start = self->dimensions[i] -1;
-    if (indices[i].item != 0)
+    if (indices[i].item != 0) {
       indices[i].stop = indices[i].start;
+      dims[d] = 1;
+    }
     else {
       if (indices[i].stop < 0)
 	indices[i].stop += self->dimensions[i];
@@ -1517,55 +1595,151 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
       free(indices);
     return NULL;
   }
-  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
-  if (array != NULL && nitems > 0) {
-    if (self->nd == 0) {
-	    NclFile nfile = (NclFile) self->file->id;
-	    NclMultiDValData md = _NclFileReadVarValue
-		    (nfile,NrmStringToQuark(self->name),NULL);
-	    if (! md) {
-		    nio_ncerr = 23;
-		    nio_seterror();
-		    Py_DECREF(array);
-		    array = NULL;
-	    }
-	    /* all we care about is the actual value */
-	    array->data = md->multidval.val;
-	    md->multidval.val = NULL;
-	    _NclDestroyObj((NclObj)md);
-    }
-    else {
-	    NclSelectionRecord *sel_ptr;
-	    sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
-	    if (sel_ptr != NULL) {
-		    NclFile nfile = (NclFile) self->file->id;
-		    NclMultiDValData md;
-		    sel_ptr->n_entries = self->nd;
-		    for (i = 0; i < self->nd; i++) {
-			    sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
-			    sel_ptr->selection[i].dim_num = i;
-			    sel_ptr->selection[i].u.sub.start = indices[i].start;
-			    sel_ptr->selection[i].u.sub.finish = indices[i].stop;
-			    sel_ptr->selection[i].u.sub.stride = indices[i].stride;
-			    sel_ptr->selection[i].u.sub.is_single = 
-				    indices[i].item != 0;
-		    }
-		    md = _NclFileReadVarValue
-			    (nfile,NrmStringToQuark(self->name),sel_ptr);
-		    if (! md) {
-			    nio_ncerr = 23;
-			    nio_seterror();
-			    Py_DECREF(array);
-			    array = NULL;
-		    }
+
+#ifdef NUMPY
+  if (nitems > 0 && self->type == PyArray_STRING) {
+	  NclMultiDValData md;
+	  NclSelectionRecord *sel_ptr = NULL;
+	  NclFile nfile = (NclFile) self->file->id;
+	  if (self->nd > 0) {
+		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
+		  if (sel_ptr != NULL) {
+			  sel_ptr->n_entries = self->nd;
+			  for (i = 0; i < self->nd; i++) {
+				  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
+				  sel_ptr->selection[i].dim_num = i;
+				  sel_ptr->selection[i].u.sub.start = indices[i].start;
+				  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
+				  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
+				  sel_ptr->selection[i].u.sub.is_single = 
+					  indices[i].item != 0;
+			  }
+		  }
+	  }
+	  md = _NclFileReadVarValue(nfile,NrmStringToQuark(self->name),sel_ptr);
+	  if (! md) {
+		  nio_ncerr = 23;
+		  nio_seterror();
+	  }
+	  else {
+		  int maxlen = 0;
+		  int tlen;
+		  NrmQuark qstr;
+		  PyObject *pystr;
+		  /* find the maximum string length */
+		  for (i = 0; i < nitems; i++) {
+			  qstr = ((NrmQuark *)md->multidval.val)[i];
+			  tlen = strlen(NrmQuarkToString(qstr));
+			  if (maxlen < tlen)
+				  maxlen = tlen;
+		  }
+		  array = (PyArrayObject *)PyArray_New(&PyArray_Type, self->nd, dims, 
+						       self->type, NULL,NULL,maxlen,0,NULL);
+		  if (array) {
+			  for (i = 0; i < nitems; i++) {
+				  qstr = ((NrmQuark *)md->multidval.val)[i];
+				  pystr = PyString_FromString(NrmQuarkToString(qstr));
+				  array->descr->f->setitem(pystr,array->data + i * array->descr->elsize,array);
+			  }
+		  }
+		  _NclDestroyObj((NclObj)md);
+		  if (sel_ptr)
+			  free(sel_ptr);
+
+	  }		  
+  }
+#else
+  if (nitems > 0 && self->type == PyArray_OBJECT) {
+	  NclMultiDValData md;
+	  NclSelectionRecord *sel_ptr = NULL;
+	  NclFile nfile = (NclFile) self->file->id;
+	  if (self->nd > 0) {
+		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
+		  if (sel_ptr != NULL) {
+			  sel_ptr->n_entries = self->nd;
+			  for (i = 0; i < self->nd; i++) {
+				  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
+				  sel_ptr->selection[i].dim_num = i;
+				  sel_ptr->selection[i].u.sub.start = indices[i].start;
+				  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
+				  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
+				  sel_ptr->selection[i].u.sub.is_single = 
+					  indices[i].item != 0;
+			  }
+		  }
+	  }
+	  md = _NclFileReadVarValue(nfile,NrmStringToQuark(self->name),sel_ptr);
+	  if (! md) {
+		  nio_ncerr = 23;
+		  nio_seterror();
+	  }
+	  else {
+		  NrmQuark qstr;
+		  PyObject *pystr;
+		  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
+		  for (i = 0; i < nitems; i++) {
+			  qstr = ((NrmQuark *)md->multidval.val)[i];
+			  pystr = PyString_FromString(NrmQuarkToString(qstr));
+			  if (pystr != NULL) {
+				  array->descr->setitem(pystr,array->data + i * array->descr->elsize);
+			  }
+		  }
+		  _NclDestroyObj((NclObj)md);
+		  if (sel_ptr)
+			  free(sel_ptr);
+
+	  }		  
+  }
+#endif
+  else if (nitems > 0) {
+	  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
+	  if (array && self->nd == 0) {
+		  NclFile nfile = (NclFile) self->file->id;
+		  NclMultiDValData md = _NclFileReadVarValue
+			  (nfile,NrmStringToQuark(self->name),NULL);
+		  if (! md) {
+			  nio_ncerr = 23;
+			  nio_seterror();
+			  Py_DECREF(array);
+			  array = NULL;
+		  }
+		  /* all we care about is the actual value */
+		  array->data = md->multidval.val;
+		  md->multidval.val = NULL;
+		  _NclDestroyObj((NclObj)md);
+	  }
+	  else if (array) {
+		  NclSelectionRecord *sel_ptr;
+		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
+		  if (sel_ptr != NULL) {
+			  NclFile nfile = (NclFile) self->file->id;
+			  NclMultiDValData md;
+			  sel_ptr->n_entries = self->nd;
+			  for (i = 0; i < self->nd; i++) {
+				  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
+				  sel_ptr->selection[i].dim_num = i;
+				  sel_ptr->selection[i].u.sub.start = indices[i].start;
+				  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
+				  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
+				  sel_ptr->selection[i].u.sub.is_single = 
+					  indices[i].item != 0;
+			  }
+			  md = _NclFileReadVarValue
+				  (nfile,NrmStringToQuark(self->name),sel_ptr);
+			  if (! md) {
+				  nio_ncerr = 23;
+				  nio_seterror();
+				  Py_DECREF(array);
+				  array = NULL;
+			  }
 		    
-		    /* all we care about is the actual value */
-		    array->data = md->multidval.val;
-		    md->multidval.val = NULL;
-		    _NclDestroyObj((NclObj)md);
-		    free(sel_ptr);
-	    }
-    }
+			  /* all we care about is the actual value */
+			  array->data = md->multidval.val;
+			  md->multidval.val = NULL;
+			  _NclDestroyObj((NclObj)md);
+			  free(sel_ptr);
+		  }
+	  }
   }
   free(dims);
   free(indices);
@@ -2037,11 +2211,6 @@ static PyMappingMethods NioVariableObject_as_mapping = {
 
 void printval(char *buf,NclBasicDataTypes type,void *val)
 {
-	double *d;
-	float *f;
-	long *l;
-	
-
 	switch(type) {
 	case NCL_double:
 		sprintf(buf,"%4.16g",*(double *)val);
@@ -2059,7 +2228,7 @@ void printval(char *buf,NclBasicDataTypes type,void *val)
 		sprintf(buf,"%d",*(short *)val);
 		return;
 	case NCL_string:
-		sprintf(buf,"%s",NrmQuarkToString(*(NrmQuark *)val));
+		strncat(buf,NrmQuarkToString(*(NrmQuark *)val),1024);
 		return;
 	case NCL_char:
 		sprintf(buf,"%c",*(char *)val);
@@ -2075,7 +2244,11 @@ void printval(char *buf,NclBasicDataTypes type,void *val)
 			sprintf(buf,"True");
 		}
 		return;
+	default:
+		sprintf(buf,"-");
+		return;
 	}
+
 }
 
 /* Printed representation */
@@ -2092,7 +2265,6 @@ NioVariableObject_str(NioVariableObject *var)
 	NioFileObject *file = var->file;
 	NclFile nfile = (NclFile) file->id;
 	int i;
-	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
 	NrmQuark varq = NrmStringToQuark(var->name);
 	NclFileAttInfoList* step;
 	char *vname;
@@ -2158,8 +2330,6 @@ NioVariableObject_str(NioVariableObject *var)
 			tmp_var = _NclFileReadCoord(nfile,nfile->file.file_dim_info[dim_ix]->dim_name_quark,NULL);
 			if(tmp_var != NULL) {
 				NclMultiDValData tmp_md;
-				char *format;
-				unsigned char val[8];
 
 				tmp_md = (NclMultiDValData)_NclGetObj(tmp_var->var.thevalue_id);
 				printval(tbuf,tmp_md->multidval.type->type_class.data_type,tmp_md->multidval.val);
@@ -2207,9 +2377,12 @@ NioVariableObject_str(NioVariableObject *var)
 		else {
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
-			char *format = nio_format_from_code(att_arr_val->descr->type,att_arr_val->descr->elsize);
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
+#ifdef NUMPY
+				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
+#else
 				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
+#endif
 				format_object(tbuf,att,att_arr_val->descr->type);
 				BUF_INSERT(tbuf);
 				BUF_INSERT("\n");
@@ -2219,8 +2392,13 @@ NioVariableObject_str(NioVariableObject *var)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
+#ifdef NUMPY
+					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
+										       k * att_arr_val->descr->elsize,att_val);
+#else
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
 										    k * att_arr_val->descr->elsize);
+#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
@@ -2263,6 +2441,57 @@ statichere PyTypeObject NioVariable_Type = {
 };
 
 
+static NrmQuark 
+GetExtension ( char * filename)
+{
+	char *cp = strrchr(filename,'.');
+	if (cp == NULL || *(cp+1) == '\0')
+		return NrmNULLQUARK;
+
+	return NrmStringToQuark(cp+1);
+}
+	
+
+void SetNioOptionDefaults(NrmQuark extq, int mode)
+{
+	NclMultiDValData md;
+	int len_dims = 1;
+	logical *lval;
+	NrmQuark *qval;
+	
+	if (_NclFormatEqual(extq,NrmStringToQuark("nc"))) {
+		_NclFileSetOptionDefaults(NrmStringToQuark("nc"),NrmNULLQUARK);
+		if (mode < 1) {
+			/* if opened for writing default "definemode" to True */
+			lval = (logical *)malloc( sizeof(logical));
+			*lval = True;
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)lval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+			_NclFileSetOption(NULL,extq,NrmStringToQuark("definemode"),md);
+			_NclDestroyObj((NclObj)md);
+		}
+		/* default "suppressclose" to True for files opened in all modes */
+		lval = malloc( sizeof(logical));
+		*lval = True;
+		md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+					 (void*)lval,NULL,1,&len_dims,
+					 TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+		_NclFileSetOption(NULL,extq,NrmStringToQuark("suppressclose"),md);
+		_NclDestroyObj((NclObj)md);
+	}
+	else if (_NclFormatEqual(extq,NrmStringToQuark("grb"))) {
+		_NclFileSetOptionDefaults(NrmStringToQuark("grb"),NrmNULLQUARK);
+		qval = (NrmQuark *) malloc(sizeof(NrmQuark));
+		*qval = NrmStringToQuark("numeric");
+		md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+					 (void*)qval,NULL,1,&len_dims,
+					 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
+		_NclFileSetOption(NULL,extq,NrmStringToQuark("initialtimecoordinatetype"),md);
+		_NclDestroyObj((NclObj)md);
+	}
+}
+	
 /* Creator for NioFile objects */
 
 static PyObject *
@@ -2271,26 +2500,133 @@ NioFile(PyObject *self, PyObject *args)
   char *filename;
   char *mode = NULL;
   char *history = NULL;
+  PyObject *options = NULL;
   NioFileObject *file;
+  NrmQuark extq;
+  int crw;
 
-  if (!PyArg_ParseTuple(args, "s|ss:open_file", &filename, &mode, &history))
+  if (!PyArg_ParseTuple(args, "s|sOs:open_file", &filename, &mode, &options, &history))
     return NULL;
-  if (mode == NULL)
-    mode = "r";
+
+  extq = GetExtension(filename);
+
+  if (extq == NrmNULLQUARK) {
+	  nio_seterror();
+	  return NULL;
+  }
+
+  if (! mode)
+	  mode = "r";
+  crw = GetNioMode(filename, mode);
+  if (crw < -1) {
+	  nio_ncerr = 25;
+	  nio_seterror();
+	  return NULL;
+  }
+  SetNioOptionDefaults(extq,crw);
+  
+  if (options && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
+	  if (options != Py_None) {
+		  PyErr_SetString(NIOError, "options argument must be an Nio.options class instance");
+		  PyErr_Print();
+	  }
+  }
+  else if (options) {
+	  NclMultiDValData md;
+	  PyObject *dict = PyObject_GetAttrString(options,"__dict__");
+	  PyObject *keys = PyMapping_Keys(dict);
+	  int len_dims = 1;
+	  int i;
+
+	  for (i = 0; i < PySequence_Length(keys); i++) {
+		  PyObject *key = PySequence_GetItem(keys,i);
+		  char *keystr = PyString_AsString(key);
+		  if (! _NclFileIsOption(extq,NrmStringToQuark(keystr))) {
+			  printf("%s is not an option for this format\n",keystr);
+			  Py_DECREF(key);
+			  continue;
+		  }
+		  PyObject *value = PyMapping_GetItemString(dict,keystr);
+		  if (PyString_Check(value)) {
+			  char *valstr = PyString_AsString(value);
+			  NrmQuark *qval = (NrmQuark *) malloc(sizeof(NrmQuark));
+			  *qval = NrmStringToQuark(valstr);
+			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						   (void*)qval,NULL,1,&len_dims,
+						   TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
+			  /* printf("%s %s\n", keystr,valstr); */
+		  }
+		  else if (PyBool_Check(value)) {
+			  logical * lval = (logical *) malloc(sizeof(logical));
+			  if (PyObject_RichCompare(value,Py_False,Py_EQ)) {
+				  *lval = False;
+				  /* printf("%s False\n",keystr);*/
+			  }
+			  else {
+				  *lval = True;
+				  /*printf("%s True\n",keystr); */
+			  }
+			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						   (void*)lval,NULL,1,&len_dims,
+						   TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+		  }
+		  else if (PyInt_Check(value)) {
+			  int* ival = (int *) malloc(sizeof(int));
+			  *ival = (int) PyInt_AsLong(value);
+			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						   (void*)ival,NULL,1,&len_dims,
+						   TEMPORARY,NULL,(NclTypeClass)nclTypeintClass);
+			  /* printf("%s %ld\n",keystr,PyInt_AsLong(value));*/
+		  }
+		  else if (PyFloat_Check(value)) {
+			  float *fval = (float *) malloc(sizeof(float));
+			  *fval = (float) PyFloat_AsDouble(value);
+			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						   (void*)fval,NULL,1,&len_dims,
+						   TEMPORARY,NULL,(NclTypeClass)nclTypefloatClass);
+			  /*printf("%s %lg\n",keystr,PyFloat_AsDouble(value));*/
+		  }
+		  _NclFileSetOption(NULL,extq,NrmStringToQuark(keystr),md);
+		  _NclDestroyObj((NclObj)md);
+		  Py_DECREF(key);
+		  Py_DECREF(value);
+	  }
+  }
   file = NioFile_Open(filename, mode);
   if (file == NULL) {
     nio_seterror();
     return NULL;
   }
-  if (history != NULL)
-    NioFile_AddHistoryLine(file, history);
+  if (history != NULL) {
+	  if (check_if_open(file,1)) {
+		  NioFile_AddHistoryLine(file, history);
+	  }
+	  else {
+		  PyErr_Print();
+	  }
+  }
   return (PyObject *)file;
+}
+
+static PyObject *
+NioFile_Option(PyObject *self, PyObject *args)
+{
+	PyObject *class;
+	PyObject *dict = PyDict_New();
+	PyObject *pystr = PyString_FromFormat("option");
+	PyObject *modstr = PyString_FromFormat("__module__");
+	PyObject *modval = PyString_FromFormat("Nio");
+
+	PyDict_SetItem(dict,modstr,modval);
+	class = PyClass_New(NULL,dict,pystr);
+	return PyInstance_New(class,NULL,NULL);
 }
 
 /* Table of functions defined in the module */
 
 static PyMethodDef nio_methods[] = {
   {"open_file",	NioFile, 1},
+  {"options",   NioFile_Option,1},
   {NULL,		NULL}		/* sentinel */
 };
 
@@ -2313,9 +2649,10 @@ initNio(void)
   NioInitialize();
   
   /* Import the array module */
-#ifdef import_array
+/*#ifdef import_array*/
+/*#ifdef NUMPY*/
   import_array();
-#endif
+/*#endif*/
 
   /* Add error object the module */
   d = PyModule_GetDict(m);

@@ -7,8 +7,8 @@ extern "C" {
 /*
  * Include file for NIO files and variables.
  *
- * Written by Konrad Hinsen
- * last revision: 2001-5-4
+ * adapted from code written by Konrad Hinsen
+ * last revision: 2006-03-07
  */
 
 
