@@ -17,7 +17,7 @@ def getUserName():
 #
 # Creating a file
 #
-file = Nio.open_file('test.nc', 'w', 'Created ' + time.ctime(time.time())
+file = Nio.open_file('test.nc', 'w', None, 'Created ' + time.ctime(time.time())
 		  + ' by ' + getUserName())
 
 file.title = "Just some useless junk"
@@ -44,8 +44,10 @@ for i in range(10):
     bar[i] = i
 print bar.shape
 
+print file
 print file.dimensions
 print file.variables
+print foo, bar
 
 file.close()
 
@@ -56,8 +58,10 @@ file = Nio.open_file('test.nc', 'r')
 
 print file.dimensions
 print file.variables
+print file
 
 foo = file.variables['foo']
+print foo
 foo_array = foo[:]
 foo_units = foo.units
 print foo[0]
