@@ -544,6 +544,8 @@ NioFile_Open(char *filename, char *mode)
   }
   else {
 	  NioFileObject_dealloc(self);
+	  PyErr_SetString(NIOError,"Unable to open file");
+	  PyErr_Print();
 	  return NULL;
   }
   self->name = PyString_FromString(filename);
@@ -1528,7 +1530,7 @@ PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
   int *dims;
-  PyArrayObject *array;
+  PyArrayObject *array = NULL;
   int i, d;
   int nitems;
   int error = 0;
@@ -2267,7 +2269,7 @@ NioVariableObject_str(NioVariableObject *var)
 	int i;
 	NrmQuark varq = NrmStringToQuark(var->name);
 	NclFileAttInfoList* step;
-	char *vname;
+	char *vname = NULL;
 	NioVariableObject *vobj;
 	long long total;
 	int j, dim_ix;
@@ -2282,8 +2284,10 @@ NioVariableObject_str(NioVariableObject *var)
 		vname = NrmQuarkToString(nfile->file.var_info[i]->var_name_quark);
 		break;
 	}
-
-
+	if (! vname) {
+		PyErr_SetString(NIOError, "variable not found");
+		return NULL;
+	}
 	vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
 	sprintf(tbuf,"Variable: %s\n",vname);
 	BUF_INSERT(tbuf);
@@ -2495,20 +2499,21 @@ void SetNioOptionDefaults(NrmQuark extq, int mode)
 /* Creator for NioFile objects */
 
 static PyObject *
-NioFile(PyObject *self, PyObject *args)
+NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 {
-  char *filename;
+  char *filepath;
   char *mode = NULL;
   char *history = NULL;
   PyObject *options = NULL;
   NioFileObject *file;
   NrmQuark extq;
   int crw;
+  static char *argnames[] = { "filepath", "mode", "options", "history", NULL };
 
-  if (!PyArg_ParseTuple(args, "s|sOs:open_file", &filename, &mode, &options, &history))
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sOs:open_file", argnames, &filepath, &mode, &options, &history))
     return NULL;
 
-  extq = GetExtension(filename);
+  extq = GetExtension(filepath);
 
   if (extq == NrmNULLQUARK) {
 	  nio_seterror();
@@ -2517,7 +2522,7 @@ NioFile(PyObject *self, PyObject *args)
 
   if (! mode)
 	  mode = "r";
-  crw = GetNioMode(filename, mode);
+  crw = GetNioMode(filepath, mode);
   if (crw < -1) {
 	  nio_ncerr = 25;
 	  nio_seterror();
@@ -2532,7 +2537,7 @@ NioFile(PyObject *self, PyObject *args)
 	  }
   }
   else if (options) {
-	  NclMultiDValData md;
+	  NclMultiDValData md = NULL;
 	  PyObject *dict = PyObject_GetAttrString(options,"__dict__");
 	  PyObject *keys = PyMapping_Keys(dict);
 	  int len_dims = 1;
@@ -2542,7 +2547,11 @@ NioFile(PyObject *self, PyObject *args)
 		  PyObject *key = PySequence_GetItem(keys,i);
 		  char *keystr = PyString_AsString(key);
 		  if (! _NclFileIsOption(extq,NrmStringToQuark(keystr))) {
-			  printf("%s is not an option for this format\n",keystr);
+			  char s[256] = "";
+			  strncat(s,keystr,255);
+			  strncat(s," is not an option for this format",255);
+			  PyErr_SetString(NIOError,s);
+			  PyErr_Print();
 			  Py_DECREF(key);
 			  continue;
 		  }
@@ -2586,13 +2595,23 @@ NioFile(PyObject *self, PyObject *args)
 						   TEMPORARY,NULL,(NclTypeClass)nclTypefloatClass);
 			  /*printf("%s %lg\n",keystr,PyFloat_AsDouble(value));*/
 		  }
+		  else {
+			  char s[256] = "";
+			  strncat(s,keystr,255);
+			  strncat(s," value is an invalid type for option",255);
+			  PyErr_SetString(NIOError,s);
+			  PyErr_Print();
+			  Py_DECREF(key);
+			  Py_DECREF(value);
+			  continue;
+		  }
 		  _NclFileSetOption(NULL,extq,NrmStringToQuark(keystr),md);
 		  _NclDestroyObj((NclObj)md);
 		  Py_DECREF(key);
 		  Py_DECREF(value);
 	  }
   }
-  file = NioFile_Open(filename, mode);
+  file = NioFile_Open(filepath, mode);
   if (file == NULL) {
     nio_seterror();
     return NULL;
@@ -2625,7 +2644,7 @@ NioFile_Option(PyObject *self, PyObject *args)
 /* Table of functions defined in the module */
 
 static PyMethodDef nio_methods[] = {
-  {"open_file",	NioFile, 1},
+  {"open_file",	(PyCFunction) NioFile, METH_KEYWORDS},
   {"options",   NioFile_Option,1},
   {NULL,		NULL}		/* sentinel */
 };
