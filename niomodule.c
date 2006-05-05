@@ -1023,7 +1023,7 @@ static PyObject *
 NioFileObject_repr(NioFileObject *file)
 {
   char buf[300];
-  sprintf(buf, "<%s Nio file '%.256s', mode '%.10s' at %lx>",
+  sprintf(buf, "<%s NioFile object '%.256s', mode '%.10s' at %lx>",
 	  file->open ? "open" : "closed",
 	  PyString_AsString(file->name),
 	  PyString_AsString(file->mode),
@@ -2529,7 +2529,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   SetNioOptionDefaults(extq,crw);
   
   if (options != Py_None && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
-	  PyErr_SetString(NIOError, "options argument must be an Nio.options class instance");
+	  PyErr_SetString(NIOError, "options argument must be an NioOptions class instance");
 	  PyErr_Print();
   }
   else if (options != Py_None) {
@@ -2538,11 +2538,59 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 	  PyObject *keys = PyMapping_Keys(dict);
 	  int len_dims = 1;
 	  int i;
+	  NrmQuark qsafe_mode = NrmStringToQuark("safemode");
 
 	  for (i = 0; i < PySequence_Length(keys); i++) {
 		  PyObject *key = PySequence_GetItem(keys,i);
 		  char *keystr = PyString_AsString(key);
-		  if (! _NclFileIsOption(extq,NrmStringToQuark(keystr))) {
+		  NrmQuark qkeystr = NrmStringToQuark(keystr);
+		  PyObject *value = PyMapping_GetItemString(dict,keystr);
+
+		  /* handle the PyNIO-defined "SafeMode" option */
+		  if (_NclFormatEqual(extq,NrmStringToQuark("nc")) &&
+		      (_NclGetLower(qkeystr) == qsafe_mode)) {
+			  /* 
+			   * SafeMode == True:
+			   *    DefineMode = False (if writable file)
+			   *    SuppressClose = False
+			   * SafeMode == False:
+			   *    DefineMode = True (if writable file)
+			   *    SuppressClose = True
+			   */
+			        
+			  logical *lval;
+			  if (! PyBool_Check(value)) {
+				  char s[256] = "";
+				  strncat(s,keystr,255);
+				  strncat(s," value is an invalid type for option",255);
+				  PyErr_SetString(NIOError,s);
+				  PyErr_Print();
+				  Py_DECREF(key);
+				  Py_DECREF(value);
+				  continue;
+			  }
+			  lval = (logical *) malloc(sizeof(logical));
+			  /* Note opposite */
+			  if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
+				  *lval = True;
+				  /* printf("%s False\n",keystr);*/
+			  }
+			  else {
+				  *lval = False;
+				  /*printf("%s True\n",keystr); */
+			  }
+			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						   (void*)lval,NULL,1,&len_dims,
+						   TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+			  if (crw < 1)
+				  _NclFileSetOption(NULL,extq,NrmStringToQuark("DefineMode"),md);
+			  _NclFileSetOption(NULL,extq,NrmStringToQuark("SuppressClose"),md);
+			  _NclDestroyObj((NclObj)md);
+			  Py_DECREF(key);
+			  Py_DECREF(value);
+			  continue;
+		  }
+		  else if (! _NclFileIsOption(extq,qkeystr)) {
 			  char s[256] = "";
 			  strncat(s,keystr,255);
 			  strncat(s," is not an option for this format",255);
@@ -2551,7 +2599,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 			  Py_DECREF(key);
 			  continue;
 		  }
-		  PyObject *value = PyMapping_GetItemString(dict,keystr);
 		  if (PyString_Check(value)) {
 			  char *valstr = PyString_AsString(value);
 			  NrmQuark *qval = (NrmQuark *) malloc(sizeof(NrmQuark));
@@ -2563,7 +2610,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 		  }
 		  else if (PyBool_Check(value)) {
 			  logical * lval = (logical *) malloc(sizeof(logical));
-			  if (PyObject_RichCompare(value,Py_False,Py_EQ)) {
+			  if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
 				  *lval = False;
 				  /* printf("%s False\n",keystr);*/
 			  }
@@ -2601,7 +2648,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 			  Py_DECREF(value);
 			  continue;
 		  }
-		  _NclFileSetOption(NULL,extq,NrmStringToQuark(keystr),md);
+		  _NclFileSetOption(NULL,extq,qkeystr,md);
 		  _NclDestroyObj((NclObj)md);
 		  Py_DECREF(key);
 		  Py_DECREF(value);
@@ -2628,7 +2675,7 @@ NioFile_Option(PyObject *self, PyObject *args)
 {
 	PyObject *class;
 	PyObject *dict = PyDict_New();
-	PyObject *pystr = PyString_FromFormat("option");
+	PyObject *pystr = PyString_FromFormat("NioOptions");
 	PyObject *modstr = PyString_FromFormat("__module__");
 	PyObject *modval = PyString_FromFormat("Nio");
 
