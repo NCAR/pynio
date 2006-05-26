@@ -1,4 +1,5 @@
 from Numeric import *
+#from numpy import *
 import Nio
 import time
 

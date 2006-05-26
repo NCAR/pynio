@@ -15,7 +15,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "nio.h"
-#ifdef NUMPY
+#ifdef USE_NUMPY
 #define PY_ARRAY_TYPES_PREFIX NUMPY_
 #include <numpy/arrayobject.h>
 typedef NUMPY_intp intp;
@@ -127,7 +127,7 @@ int data_type(NclBasicDataTypes ntype)
         case NCL_byte:
 		return PyArray_UBYTE;
         case NCL_string:
-#ifdef NUMPY
+#ifdef USE_NUMPY
 		return PyArray_STRING;
 #else
 		return PyArray_OBJECT; /* this works for read-only */
@@ -162,7 +162,7 @@ typecode(int type)
 {
   char t;
   switch(type) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
   case PyArray_BYTE:
 	  t = PyArray_BYTELTR;
 	  break;
@@ -221,7 +221,7 @@ typecode(int type)
   return t;
 }
 
-#ifdef NUMPY
+#ifdef USE_NUMPY
 static NrmQuark
 nio_type_from_code(char code)
 {
@@ -1112,7 +1112,7 @@ NioFileObject_str(NioFileObject *file)
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
 #else
 				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
@@ -1126,7 +1126,7 @@ NioFileObject_str(NioFileObject *file)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
 #else
@@ -1205,7 +1205,7 @@ NioFileObject_str(NioFileObject *file)
 				int k;
 				PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 				if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
 #else
 					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
@@ -1219,7 +1219,7 @@ NioFileObject_str(NioFileObject *file)
 					sprintf(tbuf,"[");
 					BUF_INSERT(tbuf);
 					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 						PyObject *att = 
 							att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
@@ -1598,7 +1598,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     return NULL;
   }
 
-#ifdef NUMPY
+#ifdef USE_NUMPY
   if (nitems > 0 && self->type == PyArray_STRING) {
 	  NclMultiDValData md;
 	  NclSelectionRecord *sel_ptr = NULL;
@@ -2382,7 +2382,7 @@ NioVariableObject_str(NioVariableObject *var)
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
 #else
 				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
@@ -2396,7 +2396,7 @@ NioVariableObject_str(NioVariableObject *var)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef NUMPY
+#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
 #else
@@ -2695,24 +2695,23 @@ static PyMethodDef nio_methods[] = {
 /* Module initialization */
 
 void
-initNio(void)
+initnio(void)
 {
   PyObject *m, *d;
   static void *PyNIO_API[PyNIO_API_pointers];
-
 
   /* Initialize type object headers */
   NioFile_Type.ob_type = &PyType_Type;
   NioVariable_Type.ob_type = &PyType_Type;
 
   /* Create the module and add the functions */
-  m = Py_InitModule("Nio", nio_methods);
+  m = Py_InitModule("nio", nio_methods);
 
   NioInitialize();
   
   /* Import the array module */
 /*#ifdef import_array*/
-/*#ifdef NUMPY*/
+/*#ifdef USE_NUMPY*/
   import_array();
 /*#endif*/
 
@@ -2720,6 +2719,7 @@ initNio(void)
   d = PyModule_GetDict(m);
   NIOError = PyString_FromString("NIOError");
   PyDict_SetItemString(d, "NIOError", NIOError);
+  
 
   /* Initialize C API pointer array and store in module */
   PyNIO_API[NioFile_Type_NUM] = (void *)&NioFile_Type;

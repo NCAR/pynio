@@ -1,90 +1,113 @@
 import os,sys
 from distutils.core import setup, Extension
 
-DEBUG = 0
 HAS_HDFEOS = 1
 
-try:
-    import numpy
-    HAS_NUM = 2
-except ImportError:
+use_numpy = os.environ.get('USE_NUMPY')
+pynio2pyngl = os.environ.get('PYNIO2PYNGL')
+
+# Get version info.
+
+execfile('pynio_version.py')
+pynio_version = version
+
+if use_numpy:
     try:
-        import Numeric
-        HAS_NUM = 1
+        import numpy
+        HAS_NUM = 2
     except ImportError:
-        HAS_NUM = 0
-        pass
+        try:
+            print 'cannot find NumPy; defaulting to Numeric'
+            import Numeric
+            HAS_NUM = 1
+        except ImportError:
+            HAS_NUM = 0
+else:
+        try:
+            import Numeric
+            HAS_NUM = 1
+        except ImportError:
+            HAS_NUM = 0
 
-# force Numeric for now
+if HAS_NUM == 2:
+    print '====> building with numpy/arrayobject.h'
+elif HAS_NUM == 1:
+    print '====> building with Numeric/arrayobject.h'
+else:
+    print '====> cannot find NumPy or Numeric: cannot proceed'
+    exit
 
-if HAS_NUM > 0:
-    HAS_NUM = 1
-
-#end of code to force Numeric
-
-extra_lib_paths = '/sw/lib'
 ncarg_root = os.getenv("NCARG_ROOT") + '/'
-#python_include = os.path.join(sys.prefix,'include','python'+sys.version[:3]) + '/'
+lib_paths = [ ncarg_root + 'lib' ]
+
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
-
 
 if HAS_HDFEOS > 0:
     LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','g2c']
 else:
     LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','g2c']
     
-if DEBUG:
-    if HAS_NUM == 2:
-        DMACROS =  [ ('CCOPTIONS','-g'), ('NDEBUG','0'), ('NUMPY','1'), ('NeedFuncProto','1') ]
-    elif HAS_NUM == 1:
-        DMACROS =  [ ('CCOPTIONS','-g'), ('NDEBUG','0'), ('NeedFuncProto','1') ]
-    else:
-        print "error can't proceed"
-        exit
-    module1 = Extension('PyNIO/Nio',
-                        extra_link_args = [ '-g' ],
-                        extra_compile_args = [ '-O0' ],
-                        define_macros = DMACROS,
-                        include_dirs = [ncl_src_dir,
-                                        ncarg_root + 'include'],
-                        libraries = LIBRARIES,
-                        library_dirs = [ncarg_root + 'lib',
-                                        extra_lib_paths],
-                        sources = ['niomodule.c']
-                        )
-else:
-    if HAS_NUM == 2:
-        DMACROS =  [ ('NUMPY','1'), ('NeedFuncProto','1') ]
-    elif HAS_NUM == 1:
-        DMACROS =  [ ('NeedFuncProto','1') ]
-    else:
-        print "error can't proceed"
-        exit
-    module1 = Extension('PyNIO/Nio',
-                        define_macros = DMACROS,
-                        include_dirs = [ncl_src_dir,
-                                        ncarg_root + 'include'],
-                        libraries = LIBRARIES,
-                        library_dirs = [ncarg_root + 'lib',
-                                        extra_lib_paths],
-                        sources = ['niomodule.c']
-                        )
 
-setup (name = 'Nio',
-       version = '0.1.1b1',
-       description = 'Multi-format data I/O package',
-       author = 'David I. Brown',
-       author_email = 'dbrown@ucar.edu',
-       url = 'http://www.pyngl.ucar.edu',
-       long_description = '''
-Enables NetCDF-like access for NetCDF (rw), HDF (rw), GRIB (r), and CCM (r) data files
-''',
-       package_dir = {'PyNIO' : ''},
-       ext_modules = [module1],
-       data_files = [ (pkgs_pth, ["PyNIO.pth"]),
-                      (pkgs_pth + '/PyNIO/test', ["test/nio_demo.py"])
-                      ]
-       )
+if HAS_NUM == 2:
+    DMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
+elif HAS_NUM == 1:
+    DMACROS =  [ ('NeedFuncProto','1') ]
+else:
+    print "error can't proceed"
+    exit
+    
+if pynio2pyngl:
+    print '====> installing to PyNGL directory'
+    module1 = Extension('PyNGL/nio',
+                        define_macros = DMACROS,
+                        include_dirs = [ncl_src_dir,
+                                        ncarg_root + 'include'],
+                        libraries = LIBRARIES,
+                        library_dirs = lib_paths,
+                        sources = ['niomodule.c']
+                        )
+    setup (name = 'Nio',
+           version = pynio_version,
+           description = 'Multi-format data I/O package',
+           author = 'David I. Brown',
+           author_email = 'dbrown@ucar.edu',
+           url = 'http://www.pyngl.ucar.edu/Nio.shtml',
+           long_description = '''
+           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
+           ''',
+           package_dir = {'PyNGL' : ''},
+           ext_modules = [module1],
+           data_files = [ (pkgs_pth + '/PyNGL', ["Nio.py"]),
+                          (pkgs_pth + '/PyNGL', ["pynio_version.py"])
+                          ]
+           )
+else:
+    print '====> installing to PyNIO directory'
+    module1 = Extension('PyNIO/nio',
+                        define_macros = DMACROS,
+                        include_dirs = [ncl_src_dir,
+                                        ncarg_root + 'include'],
+                        libraries = LIBRARIES,
+                        library_dirs = lib_paths,
+                        sources = ['niomodule.c']
+                        )
+    setup (name = 'Nio',
+           version = pynio_version,
+           description = 'Multi-format data I/O package',
+           author = 'David I. Brown',
+           author_email = 'dbrown@ucar.edu',
+           url = 'http://www.pyngl.ucar.edu/Nio.html',
+           long_description = '''
+           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
+           ''',
+           package_dir = {'PyNIO' : ''},
+           ext_modules = [module1],
+           data_files = [ (pkgs_pth, ["PyNIO.pth"]),
+                          (pkgs_pth + '/PyNIO', ["Nio.py"]),
+                          (pkgs_pth + '/PyNIO', ["pynio_version.py"]),
+                          (pkgs_pth + '/PyNIO/test', ["test/nio_demo.py"])
+                          ]
+           )
 

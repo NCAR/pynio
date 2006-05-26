@@ -317,7 +317,7 @@ static void **PyNIO_API;
 
 #define import_NIO() \
 { \
-  PyObject *module = PyImport_ImportModule("Nio"); \
+  PyObject *module = PyImport_ImportModule("nio"); \
   if (module != NULL) { \
     PyObject *module_dict = PyModule_GetDict(module); \
     PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \
