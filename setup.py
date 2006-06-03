@@ -40,6 +40,10 @@ else:
 ncarg_root = os.getenv("NCARG_ROOT") + '/'
 lib_paths = [ ncarg_root + 'lib' ]
 
+if sys.platform == "darwin":
+    lib_paths.append('/sw/lib')
+    
+
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')

@@ -30,6 +30,288 @@ typedef NUMPY_intp intp;
 #define _NIO_MODULE
 #include "niomodule.h"
 
+/* all doc strings defined within the C interface */
+
+/* Nio.open_file.__doc__ */
+
+static char *open_file_doc =
+"\n\
+Open a file containing data in a supported format for reading and/or writing.\
+\n\n\
+f = Nio.open_file(filepath, mode='r',options=None, history='')\n\n\
+filepath -- path of file with data in a supported format. The path  must end\n\
+with an extension indicating the expected format of the file, whether or not\n\
+it is part of the actual file name. Valid extensions include:\n\
+    .nc, .cdf, .netcdf -- NetCDF\n\
+    .grb, .grib -- GRIB\n\
+    .hd, .hdf -- HDF\n\
+    .he2, .he4, .hdfeos -- HDFEOS\n\
+    .ccm -- CCM history files\n\
+Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all\n\
+indicate a GRIB file.\n\
+mode -- access mode (optional):\n\
+     'r' -- open an existing file for reading\n\
+     'w','r+','rw','a' -- open an existing file for modification\n\
+     'c' -- create a new file open for writing\n\
+options -- instance of NioOptions class used to specify format-specific\n\
+    options\n\
+history -- a string specifying text to be appended to the file\'s global\n\
+    attribute. The attribute is created if it does not exist. Only valid\n\
+    if the file is open for writing\n\n\
+Returns an NioFile object.\n\
+";
+
+/* Nio.options.__doc__ */
+
+static char *options_doc =
+"\n\
+Return an NioOptions object for specifying format-specific options.\n\n\
+opt = Nio.options()\n\
+Assign 'opt' as the third (optional) argument to Nio.open_file.\n\
+print opt.__doc__ to see valid options.\n\
+";
+
+
+/*
+ * opt = Nio.options()
+ * opt.__doc__
+ */
+
+static char *option_class_doc = 
+"\n\
+NioOptions object\n\n\
+Set options by assigning attributes to this object and then passing the\n\
+object as the 3rd (optional) argument to Nio.open_file:\n\
+opt.OptionName = value\n\
+All option names and string option values are handled case-insensitively.\n\
+Valid options for NetCDF files:\n\
+    Format -- Specify the format of newly created files (string):\n\
+        'Classic' -- (default) standard file (generally file size < 2GB)\n\
+        'LargeFile' or '64BitOffset' -- (fixed-size variables or record\n\
+            elements of unlimited dimension variables each up to 4GB)\n\
+    HeaderReserveSpace -- Reserve <int-value> extra bytes in the header\n\
+        of a file open for writing. Used to subsequently add dimensions,\n\
+        attributes, and variables to existing files efficiently.\n\
+    MissingToFillValue -- If set True (the default), create a virtual\n\
+        '_FillValue' attribute only for variables that have a\n\
+        'missing_value' but no '_FillValue'\n\
+    PreFill -- If set True (the default), fill all elements of newly\n\
+        defined variables with a fill value. If set False, elements are\n\
+        undefined until data is written.\n\
+    SafeMode -- Close the file after each individual operation on the file.\n\
+Valid options for GRIB files:\n\
+    DefaultNCEPTable -- Specify the table to use in certain ambiguous cases:\n\
+        'Operational' -- (default) Use the NCEP operational parameter table\n\
+        'Reanalysis' -- Use the NCEP reanalysis parameter table\n\
+    InitialTimeCoordinateType -- Specify the type of the coordinate\n\
+        associated with initial_time (as opposed to forecast_time)\n\
+        dimensions:\n\
+        'Numeric' -- (default) use CF-compliant numeric coordinates\n\
+        'String' -- use date strings as the coordinates\n\
+    ThinnedGridInterpolation -- Specify the type of interpolation for\n\
+        thinned (GRIB 'quasi-regular) grids:\n\
+        'Linear' -- (default) use linear interpolation\n\
+        'Cubic' -- use cubic interpolation\n\n\
+";
+
+static char *niofile_type_doc =
+"\n\
+NioFile object\n\n\
+If 'f' is file object variable, get summary of contents including all\n\
+dimensions, variables, and attributes using:\n\
+    print f\n\
+Assign global file attributes to writable files using:\n\
+    f.global_att = global_att_value\n\
+Attributes (do not modify):\n\
+    dimensions -- a dictionary with dimension names as keys and dimension.\n\
+        lengths as values.\n\
+    variables -- a dictionary with variable names as keys and NioVariable.\n\
+        objects as values.\n\
+    __dict__ -- a dictionary containing global attribute names and values.\n\
+Methods:\n\
+    close([history]) -- close the file.\n\
+    create_dimension(name,length) -- create a dimension in the file.\n\
+    create_variable(name,length) -- create a variable in the file.\n\n\
+";
+
+/* NioFile object method doc strings */
+
+/*
+ * f = Nio.open_file(..)
+ * f.close.__doc__
+ * f.create_dimension.__doc__
+ * f.create_variable.__doc__
+ */
+
+static char *close_doc =
+
+"\n\
+Close a file, ensuring all modifications are up-to-date if open for writing.\
+\n\n\
+f.close([history])\n\
+history -- optional string appended to the global 'history' attribute\n\
+before closing a writable file. The attribute is created if it does not\n\
+already exist.\n\
+Read or write access attempts on the file object after closing\n\
+raise an exception.\n\
+";
+
+static char *create_dimension_doc =
+"\n\
+Create a new dimension with the given name and length in a writable file.\n\n\
+f.create_dimension(name,length)\n\
+name -- a string specifying the dimension name.\n\
+length -- a positive integer specifying the dimension length. If set to\n\
+None or 0, specifies the unlimited dimension.\n\
+";
+
+#ifdef USE_NUMPY
+static char *create_variable_doc =
+"\n\
+Create a new variable with given name, type, and dimensions in a writable file.\
+\n\n\
+f.create_variable(name,type,dimensions)\n\
+name -- a string specifying the variable name.\n\
+type -- a type identifier. The following are currently supported:\n\
+    Float, Float64,'d' -- 64 bit real (NetCDF NC_DOUBLE)\n\
+    Float0, Float32, 'f' -- 32 bit real (NetCDF NC_FLOAT)\n\
+    Int, Int32, 'l' -- 32 bit integer (NetCDF NC_LONG)\n\
+    Int16, 'h' -- 16 bit integer (NetCDF NC_SHORT)\n\
+    Int0, Int8, 'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
+    'S1' -- character (NetCDF NC_CHAR)\n\
+dimensions -- a tuple of dimension names (strings), previously defined\n\
+";
+#else
+static char *create_variable_doc =
+"\n\
+Create a new variable with given name, type, and dimensions in a writable file.\
+\n\n\
+f.create_variable(name,type,dimensions)\n\
+name -- a string specifying the variable name.\n\
+type -- a type identifier. The following are currently supported:\n\
+    Float, Float64, 'd'  -- 64 bit real (NetCDF NC_DOUBLE)\n\
+    Float0, Float32, 'f'-- 32 bit real (NetCDF NC_FLOAT)\n\
+    Int, Int32, 'l' -- 32 bit integer (NetCDF NC_LONG)\n\
+    Int16, 's' -- 16 bit integer (NetCDF NC_SHORT)\n\
+    Int0, Int8, 'b', '1' -- 8 bit signed or unsigned integer (NetCDF NC_BYTE)\n\
+    'c' -- character (NetCDF NC_CHAR)\n\
+dimensions -- a tuple of dimension names (strings), previously defined\n\
+";
+#endif
+
+
+static char *niovariable_type_doc =
+"\n\
+NioVariable object\n\n\
+Get summary of variable contents including all dimensions,\n\
+associated coordinate variables, and attributes using:\n\
+    print f.variables['varname']\n\
+Assign variable attributes for writable files using:\n\
+    f.variables['varname'].attname = attvalue\n\
+Get or assign variable values using Python slicing syntax:\n\
+    val = f.variables['varname'][:]\n\
+assigns the entire variable contents to variable 'val'.\n\
+Attributes:(do not modify)\n\
+    rank -- a scalar value indicating the number of dimensions\n\
+    shape -- a tuple containing the number of elements in each dimension\n\
+    dimensions -- a tuple containing the dimensions names in order\n\
+    __dict__ -- a dictionary containing the variable attributes\n\
+Methods:\n\
+    assign_value(value) -- assign a value to a variable in the file.\n\
+    get_value() -- retrieve the value of a variable in the file.\n\
+    typecode() -- return a character code representing the variable's type.\n\
+";
+
+/* NioVariable object method doc strings */
+
+/*
+ * v = f.variables['varname']
+ * v.assign_value.__doc__
+ * v.get_value.__doc__
+ * v.typecode.__doc__
+ */
+
+#ifdef USE_NUMPY
+static char *assign_value_doc =
+"\n\
+Assign a value to a variable in the file.\n\n\
+v = f.variables['varname']\n\
+v.assign_value(value)\n\
+value - a NumPy array or a Python sequence of values that are coercible\n\
+to the type of variable 'v'.\n\
+This method is the only way to assign a scalar value. There is no way to\n\
+indicate a slice. For array variables direct assignment using slicing\n\
+syntax is more flexible.\n\
+";
+#else
+static char *assign_value_doc =
+"\n\
+Assign a value to a variable in the file.\n\n\
+v = f.variables['varname']\n\
+v.assign_value(value)\n\
+value - a Numeric array or a Python sequence of values that are coercible\n\
+to the type of variable 'v'.\n\
+This method is the only way to assign a scalar value. There is no way to\n\
+indicate a slice. For array variables direct assignment using slicing\n\
+syntax is more flexible.\n\
+";
+#endif
+
+#ifdef USE_NUMPY
+static char *get_value_doc =
+"\n\
+Retrieve the value of a variable in the file.\n\n\
+v = f.variables['varname']\n\
+val = v.get_value()\n\
+'val' is returned as a NumPy array.\n\
+This method is the only way to retrieve the scalar value from a file.\n\
+There is no way to indicate a slice. For array variables direct assignment\n\
+using slicing syntax is more flexible.\n\
+";
+#else
+static char *get_value_doc =
+"\n\
+Retrieve the value of a variable in the file.\n\n\
+v = f.variables['varname']\n\
+val = v.get_value()\n\
+'val' is returned as a Numeric array.\n\
+This method is the only way to retrieve the scalar value from a file.\n\
+There is no way to indicate a slice. For array variables direct assignment\n\
+using slicing syntax is more flexible.\n\
+";
+#endif
+
+#ifdef USE_NUMPY
+static char *typecode_doc =
+"\n\
+Return a character code representing the variable's type.\n\n\
+v = f.variables['varname']\n\
+t = v.typecode()\n\
+Return variable 't' will be one of the following:\n\
+    'd' -- 64 bit real (NetCDF NC_DOUBLE)\n\
+    'f' -- 32 bit real (NetCDF NC_FLOAT)\n\
+    'l' -- 32 bit integer (NetCDF NC_LONG)\n\
+    'h' -- 16 bit integer (NetCDF NC_SHORT)\n\
+    'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
+    'S#' -- string: '#' is a number indicating the (maximum) number of\n\
+    characters in the string (array) (NetCDF NC_CHAR)\n\
+";
+#else
+static char *typecode_doc =
+"\n\
+Return a character code representing the variable's type.\n\n\
+v = f.variables['varname']\n\
+t = v.typecode()\n\
+Return variable 't' will be one of the following:\n\
+    'd'  -- 64 bit real (NetCDF NC_DOUBLE)\n\
+    'f'-- 32 bit real (NetCDF NC_FLOAT)\n\
+    'l' -- 32 bit integer (NetCDF NC_LONG)\n\
+    's' -- 16 bit integer (NetCDF NC_SHORT)\n\
+    'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
+    'c' -- character (NetCDF NC_CHAR)\n\
+";
+#endif
+
 /*
  * global used in NclMultiDValData
  */
@@ -520,8 +802,9 @@ NioFile_Open(char *filename, char *mode)
 {
   NioFileObject *self = PyObject_NEW(NioFileObject,&NioFile_Type);
   NclFile file = NULL;
-  nio_ncerr = 0;
   int crw;
+
+  nio_ncerr = 0;
 
   if (self == NULL)
     return NULL;
@@ -909,10 +1192,10 @@ NioFileObject_close(NioFileObject *self, PyObject *args)
 /* Method table */
 
 static PyMethodDef NioFileObject_methods[] = {
-  {"close", (PyCFunction)NioFileObject_close, 1},
+  {"close", (PyCFunction)NioFileObject_close, METH_VARARGS},
 /* {"sync", (PyCFunction)NioFileObject_sync, 1}, */
-  {"create_dimension", (PyCFunction)NioFileObject_new_dimension, 1},
-  {"create_variable", (PyCFunction)NioFileObject_new_variable, 1},
+  {"create_dimension", (PyCFunction)NioFileObject_new_dimension, METH_VARARGS},
+  {"create_variable", (PyCFunction)NioFileObject_new_variable, METH_VARARGS},
   {NULL, NULL}		/* sentinel */
 };
 
@@ -1250,6 +1533,10 @@ NioFileObject_str(NioFileObject *file)
 	return pystr;
 }
 
+
+    
+
+
 /* Type definition */
 
 statichere PyTypeObject NioFile_Type = {
@@ -1270,7 +1557,12 @@ statichere PyTypeObject NioFile_Type = {
   0,			/*tp_as_mapping*/
   0,			/*tp_hash*/
   0,                    /*tp_call*/
-  (reprfunc)NioFileObject_str   /*tp_str*/
+  (reprfunc)NioFileObject_str,   /*tp_str*/
+  0,			/*tp_getattro*/
+  0,                    /*tp_setattro*/
+  0,			/*tp_as_buffer*/
+  0,                    /*tp_flags*/
+  0                     /*tp_doc*/
 };
 
 /*
@@ -1371,8 +1663,7 @@ static PyObject *
 NioVariableObject_typecode(NioVariableObject *self, PyObject *args)
 {
   char t;
-  if (!PyArg_ParseTuple(args, ""))
-    return NULL;
+
   t = typecode(self->type);
   return PyString_FromStringAndSize(&t, 1);
 }
@@ -1380,9 +1671,9 @@ NioVariableObject_typecode(NioVariableObject *self, PyObject *args)
 /* Method table */
 
 static PyMethodDef NioVariableObject_methods[] = {
-  {"assign_value", (PyCFunction)NioVariableObject_assign, 1},
-  {"get_value", (PyCFunction)NioVariableObject_value, 1},
-  {"typecode", (PyCFunction)NioVariableObject_typecode, 1},
+  {"assign_value", (PyCFunction)NioVariableObject_assign, METH_VARARGS},
+  {"get_value", (PyCFunction)NioVariableObject_value, METH_NOARGS},
+  {"typecode", (PyCFunction)NioVariableObject_typecode, METH_NOARGS},
   {NULL, NULL}		/* sentinel */
 };
 
@@ -2448,9 +2739,26 @@ statichere PyTypeObject NioVariable_Type = {
 static NrmQuark 
 GetExtension ( char * filename)
 {
+	struct stat statbuf;
 	char *cp = strrchr(filename,'.');
 	if (cp == NULL || *(cp+1) == '\0')
 		return NrmNULLQUARK;
+
+	/* for now only regular files are accepted */
+	if (stat(filename,&statbuf) >= 0) {
+		if (! (statbuf.st_mode & S_IFREG))
+			return NrmNULLQUARK;
+	}
+	else {
+		int len = cp - filename;
+		char *buf = malloc(len + 1);
+		strncpy(buf,filename,len);
+		buf[len] = '\0';
+		if (stat(buf,&statbuf) >= 0) {
+			if (! (statbuf.st_mode & S_IFREG))
+				return NrmNULLQUARK;
+		}
+	}
 
 	return NrmStringToQuark(cp+1);
 }
@@ -2516,7 +2824,8 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   extq = GetExtension(filepath);
 
   if (extq == NrmNULLQUARK) {
-	  nio_seterror();
+	  PyErr_SetString(NIOError,"invalid extension or invalid file type");
+	  PyErr_Print();
 	  return NULL;
   }
 
@@ -2670,26 +2979,33 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   return (PyObject *)file;
 }
 
+
+
 static PyObject *
-NioFile_Option(PyObject *self, PyObject *args)
+NioFile_Options(PyObject *self, PyObject *args)
 {
 	PyObject *class;
 	PyObject *dict = PyDict_New();
 	PyObject *pystr = PyString_FromFormat("NioOptions");
 	PyObject *modstr = PyString_FromFormat("__module__");
 	PyObject *modval = PyString_FromFormat("Nio");
+	PyObject *docstr = PyString_FromFormat("__doc__");
+	PyObject *docval = PyString_FromFormat(option_class_doc);
 
 	PyDict_SetItem(dict,modstr,modval);
+	PyDict_SetItem(dict,docstr,docval);
 	class = PyClass_New(NULL,dict,pystr);
 	return PyInstance_New(class,NULL,NULL);
 }
 
+
+
 /* Table of functions defined in the module */
 
 static PyMethodDef nio_methods[] = {
-  {"open_file",	(PyCFunction) NioFile, METH_KEYWORDS},
-  {"options",   NioFile_Option,1},
-  {NULL,		NULL}		/* sentinel */
+	{"open_file",	(PyCFunction) NioFile, METH_KEYWORDS,NULL},
+	{"options",   NioFile_Options,METH_NOARGS},
+	{NULL,		NULL}		/* sentinel */
 };
 
 /* Module initialization */
@@ -2702,13 +3018,26 @@ initnio(void)
 
   /* Initialize type object headers */
   NioFile_Type.ob_type = &PyType_Type;
+  NioFile_Type.tp_doc = niofile_type_doc;
   NioVariable_Type.ob_type = &PyType_Type;
+  NioVariable_Type.tp_doc = niovariable_type_doc;
 
+  /* these cannot be initialized statically */
+  nio_methods[0].ml_doc = open_file_doc;
+  nio_methods[1].ml_doc = options_doc;
+  NioFileObject_methods[0].ml_doc = close_doc; 
+  NioFileObject_methods[1].ml_doc = create_dimension_doc;
+  NioFileObject_methods[2].ml_doc = create_variable_doc;
+  NioVariableObject_methods[0].ml_doc = assign_value_doc; 
+  NioVariableObject_methods[1].ml_doc = get_value_doc; 
+  NioVariableObject_methods[2].ml_doc = typecode_doc; 
+  
+  
   /* Create the module and add the functions */
   m = Py_InitModule("nio", nio_methods);
 
   NioInitialize();
-  
+ 
   /* Import the array module */
 /*#ifdef import_array*/
 /*#ifdef USE_NUMPY*/
@@ -2719,7 +3048,7 @@ initnio(void)
   d = PyModule_GetDict(m);
   NIOError = PyString_FromString("NIOError");
   PyDict_SetItemString(d, "NIOError", NIOError);
-  
+ 
 
   /* Initialize C API pointer array and store in module */
   PyNIO_API[NioFile_Type_NUM] = (void *)&NioFile_Type;
