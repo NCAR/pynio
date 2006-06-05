@@ -42,7 +42,6 @@ lib_paths = [ ncarg_root + 'lib' ]
 
 if sys.platform == "darwin":
     lib_paths.append('/sw/lib')
-    
 
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
@@ -52,6 +51,17 @@ if HAS_HDFEOS > 0:
     LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','g2c']
 else:
     LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','g2c']
+    
+if sys.platform == "irix6-64":
+    LIBRARIES.remove('g2c')
+    LIBRARIES.append('ftn')
+    LIBRARIES.append('fortran')
+    LIBRARIES.append('sz')
+
+if sys.platform == "aix5":
+    os.putenv('OBJECT_MODE',"64")
+    LIBRARIES.remove('g2c')
+    LIBRARIES.append('xlf90')
     
 
 if HAS_NUM == 2:
