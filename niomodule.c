@@ -173,12 +173,12 @@ Create a new variable with given name, type, and dimensions in a writable file.\
 f.create_variable(name,type,dimensions)\n\
 name -- a string specifying the variable name.\n\
 type -- a type identifier. The following are currently supported:\n\
-    Float, Float64,'d' -- 64 bit real (NetCDF NC_DOUBLE)\n\
-    Float0, Float32, 'f' -- 32 bit real (NetCDF NC_FLOAT)\n\
-    Int, Int32, 'l' -- 32 bit integer (NetCDF NC_LONG)\n\
-    Int16, 'h' -- 16 bit integer (NetCDF NC_SHORT)\n\
-    Int0, Int8, 'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
-    'S1' -- character (NetCDF NC_CHAR)\n\
+    Float, Float64,'d' -- 64 bit real\n\
+    Float0, Float32, 'f' -- 32 bit real\n\
+    Int, Int32, 'l' -- 32 bit integer\n\
+    Int16, 'h' -- 16 bit integer\n\
+    Int0, Int8, 'b' -- 8 bit integer\n\
+    'S1','c' -- character\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
 #else
@@ -284,17 +284,17 @@ using slicing syntax is more flexible.\n\
 #ifdef USE_NUMPY
 static char *typecode_doc =
 "\n\
-Return a character code representing the variable's type.\n\n\
+cReturn a character code representing the variable's type.\n\n\
 v = f.variables['varname']\n\
 t = v.typecode()\n\
 Return variable 't' will be one of the following:\n\
-    'd' -- 64 bit real (NetCDF NC_DOUBLE)\n\
-    'f' -- 32 bit real (NetCDF NC_FLOAT)\n\
-    'l' -- 32 bit integer (NetCDF NC_LONG)\n\
-    'h' -- 16 bit integer (NetCDF NC_SHORT)\n\
-    'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
-    'S#' -- string: '#' is a number indicating the (maximum) number of\n\
-    characters in the string (array) (NetCDF NC_CHAR)\n\
+    'd' -- 64 bit real\n\
+    'f' -- 32 bit real\n\
+    'l' -- 32 bit integer\n\
+    'h' -- 16 bit integer\n\
+    'b' -- 8 bit integer\n\
+    'S1' -- character\n\
+    'S' -- string\n\
 ";
 #else
 static char *typecode_doc =
@@ -303,12 +303,13 @@ Return a character code representing the variable's type.\n\n\
 v = f.variables['varname']\n\
 t = v.typecode()\n\
 Return variable 't' will be one of the following:\n\
-    'd'  -- 64 bit real (NetCDF NC_DOUBLE)\n\
-    'f'-- 32 bit real (NetCDF NC_FLOAT)\n\
-    'l' -- 32 bit integer (NetCDF NC_LONG)\n\
-    's' -- 16 bit integer (NetCDF NC_SHORT)\n\
-    'b' -- 8 bit integer (NetCDF NC_BYTE)\n\
-    'c' -- character (NetCDF NC_CHAR)\n\
+    'd'  -- 64 bit real\n\
+    'f'-- 32 bit real\n\
+    'l' -- 32 bit integer\n\
+    's' -- 16 bit integer\n\
+    'b' -- 8 bit integer\n\
+    'c' -- character\n\
+    'O' -- string\n\
 ";
 #endif
 
@@ -404,10 +405,10 @@ int data_type(NclBasicDataTypes ntype)
 		return PyArray_FLOAT;
 	case NCL_double:
 		return PyArray_DOUBLE;
-        case NCL_char:
-		return PyArray_CHAR;
         case NCL_byte:
 		return PyArray_UBYTE;
+        case NCL_char:
+		return PyArray_CHAR;
         case NCL_string:
 #ifdef USE_NUMPY
 		return PyArray_STRING;
@@ -439,65 +440,83 @@ define_mode(NioFileObject *file, int define_flag)
 }
 
 
-static char
+static char *
 typecode(int type)
 {
-  char t;
-  switch(type) {
+  char *t;
 #ifdef USE_NUMPY
+  char buf[3] = "\0\0\0";
+
+  switch(type) {
   case PyArray_BYTE:
-	  t = PyArray_BYTELTR;
+	  buf[0] = PyArray_BYTELTR;
+          t = buf;
 	  break;
   case PyArray_UBYTE:
-	  t = PyArray_UBYTELTR;
+	  buf[0]= PyArray_UBYTELTR;
+          t = buf;
 	  break;
   case PyArray_SHORT:
-	  t = PyArray_SHORTLTR;
+	  buf[0] = PyArray_SHORTLTR;
+          t = buf;
 	  break;
   case PyArray_INT:
-	  t = PyArray_INTLTR;
+	  buf[0] = PyArray_INTLTR;
+          t = buf;
 	  break;
   case PyArray_LONG:
-	  t = PyArray_LONGLTR;
+	  buf[0] = PyArray_LONGLTR;
+          t = buf;
 	  break;
   case PyArray_FLOAT:
-	  t = PyArray_FLOATLTR;
+	  buf[0] = PyArray_FLOATLTR;
+          t = buf;
 	  break;
   case PyArray_DOUBLE:
-	  t = PyArray_DOUBLELTR;
+	  buf[0] = PyArray_DOUBLELTR;
+          t = buf;
 	  break;
   case PyArray_STRING:
-	  t = PyArray_STRINGLTR;
+	  buf[0] = PyArray_STRINGLTR;
+          t = buf;
+	  break;
+  case PyArray_CHAR:
+	  t = "S1";
 	  break;
   default: 
-	  t = ' ';
+	  t = " ";
 #else
+
+  switch(type) {
   case PyArray_CHAR:
-	  t = 'c';
+	  t = "c";
 	  break;
   case PyArray_SBYTE:
-	  t = '1';
+	  t = "1";
 	  break;
   case PyArray_UBYTE:
-	  t = 'b';
+	  t = "b";
 	  break;
   case PyArray_SHORT:
-	  t = 's';
+	  t = "s";
 	  break;
   case PyArray_INT:
-	  t = 'i';
+	  t = "i";
 	  break;
   case PyArray_LONG:
-	  t = 'l';
+	  t = "l";
 	  break;
   case PyArray_FLOAT:
-	  t = 'f';
+	  t = "f";
 	  break;
   case PyArray_DOUBLE:
-	  t = 'd';
+	  t = "d";
+	  break;
+  case PyArray_OBJECT: /* used for string arrays only */
+	  t = "O";
 	  break;
   default: 
-	  t = ' ';
+	  t = " ";
 #endif
   }
   return t;
@@ -505,14 +524,14 @@ typecode(int type)
 
 #ifdef USE_NUMPY
 static NrmQuark
-nio_type_from_code(char code)
+nio_type_from_code(int code)
 {
-  int type;
-  switch(code) {
+  NrmQuark type;
+  switch((char)code) {
   case 'c':
-  case '1':
 	  type = NrmStringToQuark("character");
 	  break;
+  case '1':
   case 'B':
 	  type = NrmStringToQuark("byte");
 	  break;
@@ -531,6 +550,9 @@ nio_type_from_code(char code)
   case 'd':
 	  type = NrmStringToQuark("double");
 	  break;
+  case 'S':
+	  type = NrmStringToQuark("string");
+	  break;
   default:
 	  type = NrmNULLQUARK;
   }
@@ -538,10 +560,10 @@ nio_type_from_code(char code)
 }
 #else
 static NrmQuark
-nio_type_from_code(char code)
+nio_type_from_code(int code)
 {
-  int type;
-  switch(code) {
+  NrmQuark type;
+  switch((char) code) {
   case 'c':
 	  type = NrmStringToQuark("character");
 	  break;
@@ -563,6 +585,9 @@ nio_type_from_code(char code)
 	  break;
   case 'd':
 	  type = NrmStringToQuark("double");
+	  break;
+  case 'O':
+	  type = NrmStringToQuark("string");
 	  break;
   default:
 	  type = NrmNULLQUARK;
@@ -1077,10 +1102,30 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   PyObject *item, *dim;
   char *name;
   int ndim;
-  char type;
+  char* type;
   int i;
-  if (!PyArg_ParseTuple(args, "scO!", &name, &type, &PyTuple_Type, &dim))
+  char errbuf[256];
+  if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
     return NULL;
+
+#if USE_NUMPY
+  if (strlen(type) > 1) {
+	  if (type[0] == 'S' && type[1] == '1') {
+		  type[0] = 'c';
+	  }
+	  else {
+		  sprintf (errbuf,"Cannot create variable %s: string arrays not yet supported on write",name);
+		  PyErr_SetString(PyExc_TypeError, errbuf);
+		  return NULL;
+	  }
+  }
+#else
+  if (type[0] == 'O') {
+	  sprintf (errbuf,"Cannot create variable %s: string arrays not supported on write",name);
+	  PyErr_SetString(PyExc_TypeError, errbuf);
+	  return NULL;
+  }
+#endif
   ndim = PyTuple_Size(dim);
   if (ndim == 0)
     dimension_names = NULL;
@@ -1101,7 +1146,7 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
       return NULL;
     }
   }
-  var = NioFile_CreateVariable(self, name, type, dimension_names, ndim);
+  var = NioFile_CreateVariable(self, name, (int) type[0], dimension_names, ndim);
   free(dimension_names);
   return (PyObject *)var;
 }
@@ -1630,8 +1675,6 @@ static PyObject *
 NioVariableObject_value(NioVariableObject *self, PyObject *args)
 {
   NioIndex *indices;
-  if (!PyArg_ParseTuple(args, ""))
-    return NULL;
   if (self->nd == 0)
     indices = NULL;
   else
@@ -1662,10 +1705,10 @@ NioVariableObject_assign(NioVariableObject *self, PyObject *args)
 static PyObject *
 NioVariableObject_typecode(NioVariableObject *self, PyObject *args)
 {
-  char t;
+  char *t;
 
   t = typecode(self->type);
-  return PyString_FromStringAndSize(&t, 1);
+  return PyString_FromStringAndSize(t, strlen(t));
 }
 
 /* Method table */

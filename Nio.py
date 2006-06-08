@@ -61,8 +61,12 @@ import pynio_version
 __version__ = pynio_version.version
 del pynio_version
 
-#open_file.__doc__ = """
-#
-#f = open_file(filepath, mode='r', options=None, history='')
-#
-#"""
+import sys
+if (sys.modules.has_key("numpy")):
+    __array_module__ = "numpy"
+    from numpy import __version__ as __array_module_version__
+else:
+    __array_module__ = "Numeric"
+    from Numeric import  __version__ as __array_module_version__
+
+
