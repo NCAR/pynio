@@ -63,9 +63,11 @@ if sys.platform == "aix5":
     LIBRARIES.remove('g2c')
     LIBRARIES.append('xlf90')
     
+include_paths = [ncl_src_dir, ncarg_root + 'include']
 
 if HAS_NUM == 2:
     DMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
+    include_paths.insert(0,os.path.join(pkgs_pth,"numpy/core/include"))
 elif HAS_NUM == 1:
     DMACROS =  [ ('NeedFuncProto','1') ]
 else:
@@ -76,8 +78,7 @@ if pynio2pyngl:
     print '====> installing to PyNGL directory'
     module1 = Extension('PyNGL/nio',
                         define_macros = DMACROS,
-                        include_dirs = [ncl_src_dir,
-                                        ncarg_root + 'include'],
+                        include_dirs = include_paths,
                         libraries = LIBRARIES,
                         library_dirs = lib_paths,
                         sources = ['niomodule.c']
@@ -101,8 +102,7 @@ else:
     print '====> installing to PyNIO directory'
     module1 = Extension('PyNIO/nio',
                         define_macros = DMACROS,
-                        include_dirs = [ncl_src_dir,
-                                        ncarg_root + 'include'],
+                        include_dirs = include_paths,
                         libraries = LIBRARIES,
                         library_dirs = lib_paths,
                         sources = ['niomodule.c']
