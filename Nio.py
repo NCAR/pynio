@@ -57,16 +57,15 @@ For complete documentation see:
 from nio import *
 from nio import _C_API
 
+#
+#  Get version number and flag for NumPy compatibility.
+#
+#  Also, get the __array_module__  and __array_module_version__
+#  attributes.
+#
 import pynio_version
-__version__ = pynio_version.version
+__version__              = pynio_version.version
+__array_module__         = pynio_version.array_module
+__array_module_version__ = pynio_version.array_module_version
+HAS_NUM                  = pynio_version.HAS_NUM
 del pynio_version
-
-import sys
-if (sys.modules.has_key("numpy")):
-    __array_module__ = "numpy"
-    from numpy import __version__ as __array_module_version__
-else:
-    __array_module__ = "Numeric"
-    from Numeric import  __version__ as __array_module_version__
-
-

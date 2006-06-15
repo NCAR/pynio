@@ -1,15 +1,22 @@
 import os,sys
 from distutils.core import setup, Extension
 
-HAS_HDFEOS = 1
+try:
+  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
+except:
+  HAS_HDFEOS = 1
 
-use_numpy = os.environ.get('USE_NUMPY')
-pynio2pyngl = os.environ.get('PYNIO2PYNGL')
+try:
+  path = os.environ["PYNIO2PYNGL"]
+  pynio2pyngl = True
+except:
+  pynio2pyngl = False
 
-# Get version info.
-
-execfile('pynio_version.py')
-pynio_version = version
+try:
+  path = os.environ["USE_NUMPY"]
+  use_numpy = True
+except:
+  use_numpy = False
 
 if use_numpy:
     try:
@@ -29,13 +36,31 @@ else:
         except ImportError:
             HAS_NUM = 0
 
+#
+# Create pynio_version.py file that contains version and
+# array module info.
+#
+os.system("/bin/rm -rf pynio_version.py")
+
+pynio_version = open('version','r').readlines()[0].strip('\n')
+vfile = open('pynio_version.py','w')
+vfile.write("version = '%s'\n" % pynio_version)
+vfile.write("HAS_NUM = %d\n" % HAS_NUM)
+
 if HAS_NUM == 2:
     print '====> building with numpy/arrayobject.h'
+    from numpy import __version__ as array_module_version
+    vfile.write("array_module = 'numpy'\n")
 elif HAS_NUM == 1:
     print '====> building with Numeric/arrayobject.h'
+    from Numeric import  __version__ as array_module_version
+    vfile.write("array_module = 'Numeric'\n")
 else:
     print '====> cannot find NumPy or Numeric: cannot proceed'
     exit
+
+vfile.write("array_module_version = '%s'\n" % array_module_version)
+vfile.close()
 
 ncarg_root = os.getenv("NCARG_ROOT") + '/'
 lib_paths = [ ncarg_root + 'lib' ]
