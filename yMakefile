@@ -1,7 +1,11 @@
 SUBDIRS = test
 #define	IHaveSubdirs
 
-MYNAME	= Nio.so
+MYNAME	= nio.so
+
+#ifdef UseNumpy
+NUMPY_DEFS = -DUSE_NUMPY -I$(PYTHONPKGSDIR)/numpy/core/include
+#endif
 
 SRCS = niomodule.c
 OBJS = niomodule.o
@@ -38,7 +42,7 @@ $(MYNAME): $(OBJS)
 	$(LN_COMMANDS) -o $(MYNAME) $(OBJS) $(_LIBROOTSEARCH) $(LIBS) $(EXTRA_LIBS)
 
 niomodule.o: niomodule.c niomodule.h
-	$(CC) $(CCOPTIONS) $(PROJECTDEFINES) -O -I../ni/src/ncl $(PYTHONINCSEARCH) $(ALLINCLUDES) -c niomodule.c
+	$(CC) $(NUMPY_DEFS) $(CCOPTIONS) $(PROJECTDEFINES) -O -I../ni/src/ncl $(PYTHONINCSEARCH) $(ALLINCLUDES) -c niomodule.c
 
 
 InstallTarget($(MYNAME),$(INSTALL_DB),../pyngl/src/$(PYNGLDIR))
