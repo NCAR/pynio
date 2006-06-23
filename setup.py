@@ -138,6 +138,7 @@ if pynio2pyngl:
            package_dir = {ext_dir : ''},
            ext_modules = [module1],
            data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
                           (pkgs_pth + '/' + ext_dir, [pynio_vfile])
                           ]
            )
@@ -168,6 +169,7 @@ else:
            ext_modules = [module1],
            data_files = [ (pkgs_pth, ["PyNIO.pth"]),
                           (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
                           (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
                           (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
                           ]
@@ -221,6 +223,7 @@ if HAS_NUM == 3:
            package_dir = {ext_dir : ''},
            ext_modules = [module1],
            data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
                           (pkgs_pth + '/' + ext_dir, [pynio_vfile])
                           ]
            )
@@ -248,6 +251,7 @@ if HAS_NUM == 3:
            ext_modules = [module1],
            data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
                           (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
+                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
                           (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
                           ]
            )
