@@ -113,8 +113,13 @@ else:
                            ncl_src_dir, ncarg_root + 'include']
     
 if pynio2pyngl:
-    print '====> installing to PyNGL directory'
-    module1 = Extension('PyNGL/nio',
+    if HAS_NUM == 1 or HAS_NUM == 3:
+      ext_dir = 'PyNGL'
+    elif HAS_NUM == 2:
+      ext_dir = 'PyNGL_numpy'
+
+    print '====> installing to ' + ext_dir + ' directory'
+    module1 = Extension(ext_dir + '/nio',
                         define_macros = DMACROS,
                         include_dirs = include_paths,
                         libraries = LIBRARIES,
@@ -130,15 +135,20 @@ if pynio2pyngl:
            long_description = '''
            Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
            ''',
-           package_dir = {'PyNGL' : ''},
+           package_dir = {ext_dir : ''},
            ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/PyNGL', ["Nio.py"]),
-                          (pkgs_pth + '/PyNGL', [pynio_vfile])
+           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, [pynio_vfile])
                           ]
            )
 else:
-    print '====> installing to PyNIO directory'
-    module1 = Extension('PyNIO/nio',
+    if HAS_NUM == 1 or HAS_NUM == 3:
+      ext_dir = 'PyNIO'
+    elif HAS_NUM == 2:
+      ext_dir = 'PyNIO_numpy'
+
+    print '====> installing to ' + ext_dir + ' directory'
+    module1 = Extension(ext_dir + '/nio',
                         define_macros = DMACROS,
                         include_dirs = include_paths,
                         libraries = LIBRARIES,
@@ -154,12 +164,12 @@ else:
            long_description = '''
            Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
            ''',
-           package_dir = {'PyNIO' : ''},
+           package_dir = {ext_dir : ''},
            ext_modules = [module1],
            data_files = [ (pkgs_pth, ["PyNIO.pth"]),
-                          (pkgs_pth + '/PyNIO', ["Nio.py"]),
-                          (pkgs_pth + '/PyNIO', [pynio_vfile]),
-                          (pkgs_pth + '/PyNIO/test', ["test/nio_demo.py"])
+                          (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
+                          (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
                           ]
            )
 
@@ -186,11 +196,13 @@ if HAS_NUM == 3:
 #
 # Start with fresh build.
 #
-  os.system("touch niomodule.c")
+  os.system("find build -name '*.o' -exec /bin/rm {} \;")
 
   if pynio2pyngl:
-    print '====> installing to PyNGL_numpy directory'
-    module1 = Extension('PyNGL_numpy/nio',
+    ext_dir = 'PyNGL_numpy'
+
+    print '====> installing to ' + ext_dir + ' directory'
+    module1 = Extension(ext_dir + '/nio',
                         define_macros = DNUMPYMACROS,
                         include_dirs = include_numpy_paths,
                         libraries = LIBRARIES,
@@ -206,15 +218,17 @@ if HAS_NUM == 3:
            long_description = '''
            Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
            ''',
-           package_dir = {'PyNGL_numpy' : ''},
+           package_dir = {ext_dir : ''},
            ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/PyNGL_numpy', ["Nio.py"]),
-                          (pkgs_pth + '/PyNGL_numpy', [pynio_vfile])
+           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, [pynio_vfile])
                           ]
            )
   else:
-    print '====> installing to PyNIO_numpy directory'
-    module1 = Extension('PyNIO_numpy/nio',
+    ext_dir = 'PyNIO_numpy'
+
+    print '====> installing to ' + ext_dir + ' directory'
+    module1 = Extension(ext_dir + '/nio',
                         define_macros = DNUMPYMACROS,
                         include_dirs = include_numpy_paths,
                         libraries = LIBRARIES,
@@ -230,11 +244,11 @@ if HAS_NUM == 3:
            long_description = '''
            Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
            ''',
-           package_dir = {'PyNIO_numpy' : ''},
+           package_dir = {ext_dir : ''},
            ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/PyNIO_numpy', ["Nio.py"]),
-                          (pkgs_pth + '/PyNIO_numpy', [pynio_vfile]),
-                          (pkgs_pth + '/PyNIO_numpy/test', ["test/nio_demo.py"])
+           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
+                          (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
+                          (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
                           ]
            )
 
