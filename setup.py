@@ -12,6 +12,21 @@ try:
 except:
   pynio2pyngl = False
 
+#
+# Determine whether we want to build a Numeric and/or Numpy version
+# of PyNIO.  If the environment variable USE_NUMPY is set, it will
+# try to build a NumPy version. USE_NUMPY doesn't need to be set to
+# any value; it just has to be set.  If USE_NUMERPY is set, then
+# both versions of PyNIO will be built, and the Numeric version will
+# be put in package PyNIO, and the numpy version in package PyNIO_numpy.
+#
+# HAS_NUM will be set by this script depending on USE_NUMPY and USE_NUMERPY.
+#
+# HAS_NUM = 3 --> install both numpy and Numeric versions of module
+# HAS_NUM = 2 --> install numpy version of module
+# HAS_NUM = 1 --> install Numeric version of module
+# HAS_NUM = 0 --> You're hosed, you have neither module
+#
 try:
   path = os.environ["USE_NUMERPY"]
   HAS_NUM = 3
@@ -23,55 +38,40 @@ except:
     HAS_NUM = 1
 
 #
-# Test to make sure we actually have what we say we have.
+# Test to make sure we actually the Numeric and/or numpy modules
+# that we have requested.
 #
 if HAS_NUM > 1:
   try:
     import numpy
   except ImportError:
-    try:
-      print "Cannot find numpy; we'll try Numeric"
-      HAS_NUM = 1
-    except ImportError:
-      print "Cannot find Numeric or numpy; good-bye!"
-      exit
+    print "Cannot find numpy; we'll try Numeric."
+    HAS_NUM = 1
 
 if HAS_NUM == 1 or HAS_NUM == 3:
   try:
     import Numeric
   except ImportError:
+    print "Cannot find Numeric."
     HAS_NUM = HAS_NUM-1
-    if HAS_NUM == 0:
-      print "Cannot find Numeric or numpy; good-bye!"
-      exit
 
-#
-# Create pynio_version.py file that contains version and
-# array module info.
-#
-pynio_vfile = "pynio_version.py"
-os.system("/bin/rm -rf " + pynio_vfile)
-
-pynio_version = open('version','r').readlines()[0].strip('\n')
-
-vfile = open(pynio_vfile,'w')
-vfile.write("version = '%s'\n" % pynio_version)
-
-if HAS_NUM == 2:
-    vfile.write("HAS_NUM = 2\n")
-    print '====> building with numpy/arrayobject.h'
-    from numpy import __version__ as array_module_version
-    vfile.write("array_module = 'numpy'\n")
+if HAS_NUM == 3:
+  array_modules = ['Numeric','numpy']
+elif HAS_NUM == 2:
+  array_modules = ['numpy']
+elif HAS_NUM == 1:
+  array_modules = ['Numeric']
 else:
-  vfile.write("HAS_NUM = 1\n")
-  from Numeric import  __version__ as array_module_version
-  vfile.write("array_module = 'Numeric'\n")
+  print "Cannot find Numeric or numpy; good-bye!"
+  exit
 
-vfile.write("array_module_version = '%s'\n" % array_module_version)
-vfile.close()
+#
+# Initialize some variables.
+#
+pynio_vfile = "pynio_version.py"      # PyNIO version file.
 
-ncarg_root = os.getenv("NCARG_ROOT") + '/'
-lib_paths = [ ncarg_root + 'lib' ]
+ncarg_root = os.getenv("NCARG_ROOT")
+lib_paths = [ os.path.join(ncarg_root,'lib') ]
 
 if sys.platform == "darwin":
     lib_paths.append('/sw/lib')
@@ -96,163 +96,116 @@ if sys.platform == "aix5":
     LIBRARIES.remove('g2c')
     LIBRARIES.append('xlf90')
     
-include_paths = [ncl_src_dir, ncarg_root + 'include']
+INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
 
-if HAS_NUM == 2:
-    print '====> building with numpy/arrayobject.h'
+#----------------------------------------------------------------------
+#
+# Loop through the modules for which we want to create versions of PyNIO.
+#
+#----------------------------------------------------------------------
+
+for array_module in array_modules:
+#----------------------------------------------------------------------
+#
+# Clean *.o and *.so files if doing multiple builds here.
+#
+#----------------------------------------------------------------------
+  if len(array_modules) > 1:
+    print "====> Removing build's *.o and *.so files..."
+    os.system("find build -name '*.o' -exec /bin/rm {} \;")
+    os.system("find build -name '*.so' -exec /bin/rm {} \;")
+
+#----------------------------------------------------------------------
+#
+# Set some variables based on whether we're doing a numpy or Numeric
+# build.
+#
+#----------------------------------------------------------------------
+  if array_module == 'Numeric':
+    from Numeric import  __version__ as array_module_version
+
+    if pynio2pyngl:
+      pynio_pkg_name = 'PyNGL'
+      pynio_files    = ['Nio.py',pynio_vfile]
+      pynio_pth_file = []
+    else:
+      pynio_pkg_name = 'PyNIO'
+      pynio_pth_file = [pynio_pkg_name + '.pth']
+      pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile]
+
+    DMACROS =  [ ('NeedFuncProto','1') ]
+
+  else:
+    from numpy import __version__ as array_module_version
+
+    if pynio2pyngl:
+      pynio_pkg_name = 'PyNGL_numpy'
+      pynio_files    = ['Nio.py',pynio_vfile]
+      pynio_pth_file = []
+    else:
+      pynio_pkg_name = 'PyNIO_numpy'
+      pynio_files    = ['Nio.py', '__init__.py',pynio_vfile]
+      pynio_pth_file = []
+
     DMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
-    include_paths.insert(0,os.path.join(pkgs_pth,"numpy/core/include"))
-elif HAS_NUM == 1:
-    print '====> building with Numeric/arrayobject.h'
-    DMACROS =  [ ('NeedFuncProto','1') ]
-else:
-    print '====> building with Numeric and numpy arrayobject.h'
-    DMACROS =  [ ('NeedFuncProto','1') ]
-    DNUMPYMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
-    include_numpy_paths = [os.path.join(pkgs_pth,"numpy/core/include"),
-                           ncl_src_dir, ncarg_root + 'include']
-    
-if pynio2pyngl:
-    if HAS_NUM == 1 or HAS_NUM == 3:
-      ext_dir = 'PyNGL'
-    elif HAS_NUM == 2:
-      ext_dir = 'PyNGL_numpy'
 
-    print '====> installing to ' + ext_dir + ' directory'
-    module1 = Extension(ext_dir + '/nio',
-                        define_macros = DMACROS,
-                        include_dirs = include_paths,
-                        libraries = LIBRARIES,
-                        library_dirs = lib_paths,
-                        sources = ['niomodule.c']
-                        )
-    setup (name = 'Nio',
-           version = pynio_version,
-           description = 'Multi-format data I/O package',
-           author = 'David I. Brown',
-           author_email = 'dbrown@ucar.edu',
-           url = 'http://www.pyngl.ucar.edu/Nio.shtml',
-           long_description = '''
-           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
-           ''',
-           package_dir = {ext_dir : ''},
-           ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
-                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
-                          (pkgs_pth + '/' + ext_dir, [pynio_vfile])
-                          ]
-           )
-else:
-    if HAS_NUM == 1 or HAS_NUM == 3:
-      ext_dir = 'PyNIO'
-    elif HAS_NUM == 2:
-      ext_dir = 'PyNIO_numpy'
+    INCLUDE_DIRS.insert(0,os.path.join(pkgs_pth,"numpy/core/include"))
 
-    print '====> installing to ' + ext_dir + ' directory'
-    module1 = Extension(ext_dir + '/nio',
-                        define_macros = DMACROS,
-                        include_dirs = include_paths,
-                        libraries = LIBRARIES,
-                        library_dirs = lib_paths,
-                        sources = ['niomodule.c']
-                        )
-    setup (name = 'Nio',
-           version = pynio_version,
-           description = 'Multi-format data I/O package',
-           author = 'David I. Brown',
-           author_email = 'dbrown@ucar.edu',
-           url = 'http://www.pyngl.ucar.edu/Nio.html',
-           long_description = '''
-           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
-           ''',
-           package_dir = {ext_dir : ''},
-           ext_modules = [module1],
-           data_files = [ (pkgs_pth, ["PyNIO.pth"]),
-                          (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
-                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
-                          (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
-                          (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
-                          ]
-           )
-
+#----------------------------------------------------------------------
 #
-# if HAS_NUM is 3, then this means we just created a Numeric
-# version of PyNIO, and now we need to create a numpy version.
+# Create version file that contains version and array module info.
 #
-
-if HAS_NUM == 3:
-#
-# Create a new pynio_version.py file that contains version and
-# array module info for numpy.
-#
+#----------------------------------------------------------------------
   os.system("/bin/rm -rf " + pynio_vfile)
+
+  pynio_version = open('version','r').readlines()[0].strip('\n')
 
   vfile = open(pynio_vfile,'w')
   vfile.write("version = '%s'\n" % pynio_version)
-  vfile.write("HAS_NUM = 2\n")
-  from numpy import __version__ as array_module_version
-  vfile.write("array_module = 'numpy'\n")
+  vfile.write("array_module = '%s'\n" % array_module)
+
+#
+# The Ngl.py and Nio.py files use HAS_NUM to tell whether to use
+# Numeric or numpy specific operations.
+#
+  if array_module == 'Numeric':
+    vfile.write("HAS_NUM = 1\n")
+  else:
+    vfile.write("HAS_NUM = 2\n")
+
   vfile.write("array_module_version = '%s'\n" % array_module_version)
   vfile.close()
 
+#----------------------------------------------------------------------
 #
-# Start with fresh build.
+# Here are the instructions for compiling the "nio.so" file.
 #
-  os.system("find build -name '*.o' -exec /bin/rm {} \;")
+#----------------------------------------------------------------------
+  print '====> Installing files to',pynio_pkg_name,'package directory.'
 
-  if pynio2pyngl:
-    ext_dir = 'PyNGL_numpy'
+  module1 = [Extension('nio',
+                      define_macros = DMACROS,
+                      include_dirs  = INCLUDE_DIRS,
+                      libraries     = LIBRARIES,
+                      library_dirs  = lib_paths,
+                      sources       = ['niomodule.c']
+                      )]
 
-    print '====> installing to ' + ext_dir + ' directory'
-    module1 = Extension(ext_dir + '/nio',
-                        define_macros = DNUMPYMACROS,
-                        include_dirs = include_numpy_paths,
-                        libraries = LIBRARIES,
-                        library_dirs = lib_paths,
-                        sources = ['niomodule.c']
-                        )
-    setup (name = 'Nio',
-           version = pynio_version,
-           description = 'Multi-format data I/O package',
-           author = 'David I. Brown',
-           author_email = 'dbrown@ucar.edu',
-           url = 'http://www.pyngl.ucar.edu/Nio.shtml',
-           long_description = '''
-           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
-           ''',
-           package_dir = {ext_dir : ''},
-           ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
-                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
-                          (pkgs_pth + '/' + ext_dir, [pynio_vfile])
-                          ]
-           )
-  else:
-    ext_dir = 'PyNIO_numpy'
+  
+  DATA_FILES  = [(pkgs_pth, pynio_pth_file),
+                 (os.path.join(pkgs_pth,pynio_pkg_name), pynio_files)]
 
-    print '====> installing to ' + ext_dir + ' directory'
-    module1 = Extension(ext_dir + '/nio',
-                        define_macros = DNUMPYMACROS,
-                        include_dirs = include_numpy_paths,
-                        libraries = LIBRARIES,
-                        library_dirs = lib_paths,
-                        sources = ['niomodule.c']
-                        )
-    setup (name = 'Nio',
-           version = pynio_version,
-           description = 'Multi-format data I/O package',
-           author = 'David I. Brown',
-           author_email = 'dbrown@ucar.edu',
-           url = 'http://www.pyngl.ucar.edu/Nio.html',
-           long_description = '''
-           Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
-           ''',
-           package_dir = {ext_dir : ''},
-           ext_modules = [module1],
-           data_files = [ (pkgs_pth + '/' + ext_dir, ["Nio.py"]),
-                          (pkgs_pth + '/' + ext_dir, [pynio_vfile]),
-                          (pkgs_pth + '/' + ext_dir, ["__init__.py"]),
-                          (pkgs_pth + '/' + ext_dir + '/test', ["test/nio_demo.py"])
-                          ]
-           )
+  setup (name         = 'Nio',
+         version      = pynio_version,
+         description  = 'Multi-format data I/O package',
+         author       = 'David I. Brown',
+         author_email = 'dbrown@ucar.edu',
+         url          = 'http://www.pyngl.ucar.edu/Nio.shtml',
+         long_description = '''
+         Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
+         ''',
+         package_dir = {pynio_pkg_name : ''},
+         ext_modules = module1,
+         ext_package = pynio_pkg_name,
+         data_files  = DATA_FILES)
 
