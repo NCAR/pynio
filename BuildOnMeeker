@@ -1,0 +1,4 @@
+cc -o build/temp.solaris-2.9-sun4u-2.4/niomodule.o -DNeedFuncProto -O -I../ni/src/ncl -I/fs/scd/home1/ncargd/dev/sun4_SunOS_5_9_/include/python2.4  -I.././include -I/usr/openwin/include -c niomodule.c
+
+ld -G build/temp.solaris-2.9-sun4u-2.4/niomodule.o -L/fs/scd/home1/ncargd/test/Solaris_sun4_9/cgd/lib -lnio -lmfhdf -ldf -ljpeg -lz -lnetcdf -lhdfeos -lGctp -lg2c  -R /opt/SUNWspro/prod/lib -L/opt/SUNWspro/prod/lib -R /opt/SUNWspro/lib -L/opt/SUNWspro/lib -lsunmath -lfsu -lsunmath -lompstubs -lm -lX11 -lXext -o build/lib.solaris-2.9-sun4u-2.4/PyNIO/nio.so
+
