@@ -181,7 +181,7 @@ for array_module in array_modules:
 # Here are the instructions for compiling the "nio.so" file.
 #
 #----------------------------------------------------------------------
-  print '====> Installing files to',pynio_pkg_name,'package directory.'
+  print '====> Installing the',array_module,'version of Nio to',pynio_pkg_name
 
   module1 = [Extension('nio',
                       define_macros = DMACROS,
