@@ -107,16 +107,6 @@ INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
 for array_module in array_modules:
 #----------------------------------------------------------------------
 #
-# Clean *.o and *.so files if doing multiple builds here.
-#
-#----------------------------------------------------------------------
-  if len(array_modules) > 1:
-    print "====> Removing build's *.o and *.so files..."
-    os.system("find build -name '*.o' -exec /bin/rm {} \;")
-    os.system("find build -name '*.so' -exec /bin/rm {} \;")
-
-#----------------------------------------------------------------------
-#
 # Set some variables based on whether we're doing a numpy or Numeric
 # build.
 #
@@ -181,7 +171,7 @@ for array_module in array_modules:
 # Here are the instructions for compiling the "nio.so" file.
 #
 #----------------------------------------------------------------------
-  print '====> Installing the',array_module,'version of Nio to',pynio_pkg_name
+  print '====> Installing the',array_module,'version of Nio to the',pynio_pkg_name,'package directory.'
 
   module1 = [Extension('nio',
                       define_macros = DMACROS,
@@ -191,9 +181,18 @@ for array_module in array_modules:
                       sources       = ['niomodule.c']
                       )]
 
-  
   DATA_FILES  = [(pkgs_pth, pynio_pth_file),
                  (os.path.join(pkgs_pth,pynio_pkg_name), pynio_files)]
+
+#----------------------------------------------------------------------
+#
+# Clean *.o and *.so files if doing multiple builds here.
+#
+#----------------------------------------------------------------------
+  if len(array_modules) > 1:
+    print "====> Removing build's *.o and *.so files..."
+    os.system("find build -name '*.o' -exec /bin/rm {} \;")
+    os.system("find build -name '*.so' -exec /bin/rm {} \;")
 
   setup (name         = 'Nio',
          version      = pynio_version,
