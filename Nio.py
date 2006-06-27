@@ -8,11 +8,12 @@ Class NioFile:
 
 f = Nio.open_file(filepath, mode='r', options=None, history='')
 
-To see summary of file contents, including dimensions, attributes, and variables:
+To see summary of file contents, including all dimensions, attributes,
+and variables:
    print f
 attributes:
-   dimensions -- a dictionary with dimension names as keys and dimension lengths as values
-   variables -- a dictionary with variable names as keys and the variable objects as values
+   dimensions -- dimension names (keys), dimension lengths (values)
+   variables -- variable names (keys), variable objects (values)
    __dict__ --  contains the global attributes associated with the file
 methods:
    close(history='')
@@ -25,8 +26,9 @@ Class NioOptions
 
 opt = Nio.options()
 
-To set format-specific options assign option names and settings as attributes and
-values of 'opt'. Then pass 'opt' as the optional options argument to Nio.open_file.
+To set format-specific options assign option names and settings as attributes
+and values of 'opt'. Then pass 'opt' as the optional options argument to
+Nio.open_file.
 To see valid options:
     print opt.__doc__ 
 

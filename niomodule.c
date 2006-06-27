@@ -84,6 +84,7 @@ Set options by assigning attributes to this object and then passing the\n\
 object as the 3rd (optional) argument to Nio.open_file:\n\
 opt.OptionName = value\n\
 All option names and string option values are handled case-insensitively.\n\
+\n\
 Valid options for NetCDF files:\n\
     Format -- Specify the format of newly created files (string):\n\
         'Classic' -- (default) standard file (generally file size < 2GB)\n\
@@ -99,6 +100,7 @@ Valid options for NetCDF files:\n\
         defined variables with a fill value. If set False, elements are\n\
         undefined until data is written.\n\
     SafeMode -- Close the file after each individual operation on the file.\n\
+\n\
 Valid options for GRIB files:\n\
     DefaultNCEPTable -- Specify the table to use in certain ambiguous cases:\n\
         'Operational' -- (default) Use the NCEP operational parameter table\n\
@@ -189,11 +191,11 @@ Create a new variable with given name, type, and dimensions in a writable file.\
 f.create_variable(name,type,dimensions)\n\
 name -- a string specifying the variable name.\n\
 type -- a type identifier. The following are currently supported:\n\
-    Float, Float64, 'd'  -- 64 bit real (NetCDF NC_DOUBLE)\n\
-    Float0, Float32, 'f'-- 32 bit real (NetCDF NC_FLOAT)\n\
-    Int, Int32, 'l' -- 32 bit integer (NetCDF NC_LONG)\n\
-    Int16, 's' -- 16 bit integer (NetCDF NC_SHORT)\n\
-    Int0, Int8, 'b', '1' -- 8 bit signed or unsigned integer (NetCDF NC_BYTE)\n\
+    Float, Float64, 'd'  -- 64 bit real\n\
+    Float0, Float32, 'f'-- 32 bit real\n\
+    Int, Int32, 'l' -- 32 bit integer\n\
+    Int16, 's' -- 16 bit integer\n\
+    Int0, Int8, 'b', '1' -- 8 bit signed or unsigned integer\n\
     'c' -- character (NetCDF NC_CHAR)\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
@@ -284,7 +286,7 @@ using slicing syntax is more flexible.\n\
 #ifdef USE_NUMPY
 static char *typecode_doc =
 "\n\
-cReturn a character code representing the variable's type.\n\n\
+Return a character code representing the variable's type.\n\n\
 v = f.variables['varname']\n\
 t = v.typecode()\n\
 Return variable 't' will be one of the following:\n\
@@ -443,83 +445,80 @@ define_mode(NioFileObject *file, int define_flag)
 static char *
 typecode(int type)
 {
-  char *t;
+   static char buf[3];
+
+   memset(buf,0,3);
+
 #ifdef USE_NUMPY
-  char buf[3] = "\0\0\0";
 
   switch(type) {
   case PyArray_BYTE:
 	  buf[0] = PyArray_BYTELTR;
-          t = buf;
 	  break;
   case PyArray_UBYTE:
 	  buf[0]= PyArray_UBYTELTR;
-          t = buf;
 	  break;
   case PyArray_SHORT:
 	  buf[0] = PyArray_SHORTLTR;
-          t = buf;
 	  break;
   case PyArray_INT:
 	  buf[0] = PyArray_INTLTR;
-          t = buf;
 	  break;
   case PyArray_LONG:
 	  buf[0] = PyArray_LONGLTR;
-          t = buf;
 	  break;
   case PyArray_FLOAT:
 	  buf[0] = PyArray_FLOATLTR;
-          t = buf;
 	  break;
   case PyArray_DOUBLE:
 	  buf[0] = PyArray_DOUBLELTR;
-          t = buf;
 	  break;
   case PyArray_STRING:
 	  buf[0] = PyArray_STRINGLTR;
-          t = buf;
 	  break;
   case PyArray_CHAR:
-	  t = "S1";
+	  strcpy(buf,"S1");
 	  break;
   default: 
-	  t = " ";
-#else
+	  buf[0] = ' ';
+	  break;
+  }
+  return &buf[0];
 
+#else
   switch(type) {
   case PyArray_CHAR:
-	  t = "c";
+	  buf[0] = 'c';
 	  break;
   case PyArray_SBYTE:
-	  t = "1";
+	  buf[0] = '1';
 	  break;
   case PyArray_UBYTE:
-	  t = "b";
+	  buf[0] = 'b';
 	  break;
   case PyArray_SHORT:
-	  t = "s";
+	  buf[0] = 's';
 	  break;
   case PyArray_INT:
-	  t = "i";
+	  buf[0] = 'i';
 	  break;
   case PyArray_LONG:
-	  t = "l";
+	  buf[0] = 'l';
 	  break;
   case PyArray_FLOAT:
-	  t = "f";
+	  buf[0] = 'f';
 	  break;
   case PyArray_DOUBLE:
-	  t = "d";
+	  buf[0] = 'd';
 	  break;
   case PyArray_OBJECT: /* used for string arrays only */
-	  t = "O";
+	  buf[0] = 'O';
 	  break;
   default: 
-	  t = " ";
-#endif
+	  buf[0] = ' ';
   }
-  return t;
+  return &buf[0];
+#endif
 }
 
 #ifdef USE_NUMPY
