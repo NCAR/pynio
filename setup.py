@@ -146,7 +146,8 @@ for array_module in array_modules:
 # Create version file that contains version and array module info.
 #
 #----------------------------------------------------------------------
-  os.system("/bin/rm -rf " + pynio_vfile)
+  if os.path.exists(pynio_vfile):
+    os.system("/bin/rm -rf " + pynio_vfile)
 
   pynio_version = open('version','r').readlines()[0].strip('\n')
 
@@ -208,3 +209,8 @@ for array_module in array_modules:
          ext_package = pynio_pkg_name,
          data_files  = DATA_FILES)
 
+#
+# Cleanup: remove the pynio_version.py file.
+#
+if os.path.exists(pynio_vfile):
+  os.system("/bin/rm -rf " + pynio_vfile)
