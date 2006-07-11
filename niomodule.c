@@ -686,8 +686,8 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 				   TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
   }
   else {
-	  int n_dims;
 	  int dim_sizes = 1;
+	  int n_dims;
 	  NrmQuark qtype;
 	  int pyarray_type = PyArray_NOTYPE;
 	  PyArrayObject *tmparray = (PyArrayObject *)PyDict_GetItemString(attributes,name);
@@ -706,10 +706,34 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 			   qtype = NrmStringToQuark("integer");
                   }
                   if (array) {
+#ifdef USE_NUMPY
+			   int *dims;
+			   int malloced = 0;
+			   int i;
+			   if (array->nd == 0) {
+				   dims = &dim_sizes;
+			   }
+			   else if (sizeof(intp) == sizeof(int)) {
+				   dims = (int *) array->dimensions;
+			   }
+			   else {
+				   malloced = 1;
+				   dims = malloc(sizeof(int) * array->nd);
+				   for (i = 0; i < array->nd; i++) {
+					   dims[i] = (int) array->dimensions[i];
+				   }
+			   }
+	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+		                                    (void*)array->data,NULL,n_dims,dims,
+				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+			   if (malloced)
+				   free(dims);
+#else
 	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 		                                    (void*)array->data,NULL,n_dims,
 				                    array->nd == 0 ? &dim_sizes : array->dimensions,
 				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+#endif
                   }
            }
   }
@@ -1107,7 +1131,7 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
     return NULL;
 
-#if USE_NUMPY
+#ifdef USE_NUMPY
   if (strlen(type) > 1) {
 	  if (type[0] == 'S' && type[1] == '1') {
 		  type[0] = 'c';
@@ -1862,7 +1886,11 @@ NioVariable_Indices(NioVariableObject *var)
 PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
+#ifdef USE_NUMPY
+  intp *dims;
+#else
   int *dims;
+#endif
   PyArrayObject *array = NULL;
   int i, d;
   int nitems;
@@ -1878,7 +1906,11 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   if (self->nd == 0)
     dims = NULL;
   else {
+#ifdef USE_NUMPY
+    dims = (intp *)malloc(self->nd*sizeof(intp));
+#else
     dims = (int *)malloc(self->nd*sizeof(int));
+#endif
     if (dims == NULL) {
       free(indices);
       return (PyArrayObject *)PyErr_NoMemory();
@@ -2027,7 +2059,11 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   }
 #endif
   else if (nitems > 0) {
+#ifdef USE_NUMPY	  
+	  array = (PyArrayObject *)PyArray_SimpleNew(d, dims, self->type);
+#else
 	  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
+#endif
 	  if (array && self->nd == 0) {
 		  NclFile nfile = (NclFile) self->file->id;
 		  NclMultiDValData md = _NclFileReadVarValue
@@ -2215,10 +2251,23 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  if (nitems < var_el_count || self->unlimited)
 		  select_all = 0;
 	  qtype = nio_type_from_code(array->descr->type);
+#ifdef USE_NUMPY
+	  if (array->nd > self->nd) {
+		  dims = realloc(dims,sizeof(int) * array->nd);
+	  }
+	  for (i = 0; i < array->nd; i++) {
+		  dims[i] = (int) array->dimensions[i];
+	  }
+	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+				   (void*)array->data,NULL,n_dims,
+				   array->nd == 0 ? &scalar_size : dims,
+				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+#else
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : array->dimensions,
 				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+#endif
 	  if (! md) {
 		  nret = NhlFATAL;
 	  }
