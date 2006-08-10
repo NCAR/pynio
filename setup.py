@@ -73,9 +73,6 @@ pynio_vfile = "pynio_version.py"      # PyNIO version file.
 ncarg_root = os.getenv("NCARG_ROOT")
 lib_paths = [ os.path.join(ncarg_root,'lib') ]
 
-if sys.platform == "darwin":
-    lib_paths.append('/sw/lib')
-
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
@@ -206,13 +203,12 @@ for array_module in array_modules:
 
 #----------------------------------------------------------------------
 #
-# Clean *.o and *.so files if doing multiple builds here.
+# Clean *.o files if doing multiple builds here.
 #
 #----------------------------------------------------------------------
   if len(array_modules) > 1:
-    print "====> Removing build's *.o and *.so files..."
+    print "====> Removing build's *.o files..."
     os.system("find build -name '*.o' -exec /bin/rm {} \;")
-    os.system("find build -name '*.so' -exec /bin/rm {} \;")
 
   setup (name         = 'Nio',
          version      = pynio_version,
