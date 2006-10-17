@@ -16,9 +16,7 @@
 #include "structmember.h"
 #include "nio.h"
 #ifdef USE_NUMPY
-#define PY_ARRAY_TYPES_PREFIX NUMPY_
 #include <numpy/arrayobject.h>
-typedef NUMPY_intp intp;
 #else
 #include <Numeric/arrayobject.h>
 #endif
@@ -175,11 +173,11 @@ Create a new variable with given name, type, and dimensions in a writable file.\
 f.create_variable(name,type,dimensions)\n\
 name -- a string specifying the variable name.\n\
 type -- a type identifier. The following are currently supported:\n\
-    Float, Float64,'d' -- 64 bit real\n\
-    Float0, Float32, 'f' -- 32 bit real\n\
-    Int, Int32, 'l' -- 32 bit integer\n\
-    Int16, 'h' -- 16 bit integer\n\
-    Int0, Int8, 'b' -- 8 bit integer\n\
+    'd' -- 64 bit real\n\
+    'f' -- 32 bit real\n\
+    'l' -- 32 bit integer\n\
+    'h' -- 16 bit integer\n\
+    'b' -- 8 bit integer\n\
     'S1','c' -- character\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
@@ -196,7 +194,7 @@ type -- a type identifier. The following are currently supported:\n\
     Int, Int32, 'l' -- 32 bit integer\n\
     Int16, 's' -- 16 bit integer\n\
     Int0, Int8, 'b', '1' -- 8 bit signed or unsigned integer\n\
-    'c' -- character (NetCDF NC_CHAR)\n\
+    'c' -- character\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
 #endif
@@ -713,7 +711,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 			   if (array->nd == 0) {
 				   dims = &dim_sizes;
 			   }
-			   else if (sizeof(intp) == sizeof(int)) {
+			   else if (sizeof(npy_intp) == sizeof(int)) {
 				   dims = (int *) array->dimensions;
 			   }
 			   else {
@@ -1887,7 +1885,7 @@ PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
 #ifdef USE_NUMPY
-  intp *dims;
+  npy_intp *dims;
 #else
   int *dims;
 #endif
@@ -1907,7 +1905,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     dims = NULL;
   else {
 #ifdef USE_NUMPY
-    dims = (intp *)malloc(self->nd*sizeof(intp));
+    dims = (npy_intp *)malloc(self->nd*sizeof(npy_intp));
 #else
     dims = (int *)malloc(self->nd*sizeof(int));
 #endif
