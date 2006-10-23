@@ -97,6 +97,13 @@ if sys.platform == "irix6-64":
     LIBRARIES.append('fortran')
     LIBRARIES.append('sz')
 
+if sys.platform == "sunos5":
+    os.environ["CC"]="/opt/SUNWspro/bin/cc"
+    LIBRARIES.remove('g2c')
+    LIBRARIES.append('f77compat')
+    LIBRARIES.append('fsu')
+    LIBRARIES.append('sunmath')
+
 if sys.platform == "aix5":
     os.putenv('OBJECT_MODE',"64")
     LIBRARIES.remove('g2c')
