@@ -2838,17 +2838,6 @@ GetExtension ( char * filename)
 		if (! (statbuf.st_mode & S_IFREG))
 			return NrmNULLQUARK;
 	}
-	else {
-		int len = cp - filename;
-		char *buf = malloc(len + 1);
-		strncpy(buf,filename,len);
-		buf[len] = '\0';
-		if (stat(buf,&statbuf) >= 0) {
-			if (! (statbuf.st_mode & S_IFREG))
-				return NrmNULLQUARK;
-		}
-	}
-
 	return NrmStringToQuark(cp+1);
 }
 	
