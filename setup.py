@@ -214,8 +214,9 @@ for array_module in array_modules:
 #
 #----------------------------------------------------------------------
   if len(array_modules) > 1:
-    print "====> Removing build's *.o files..."
+    print "====> Removing build's *.o and *.so files..."
     os.system("find build -name '*.o' -exec /bin/rm {} \;")
+    os.system("find build -name '*.so' -exec /bin/rm {} \;")
 
   setup (name         = 'Nio',
          version      = pynio_version,
