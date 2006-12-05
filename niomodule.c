@@ -2655,6 +2655,11 @@ NioVariableObject_str(NioVariableObject *var)
 	int j, dim_ix;
 	int n_atts;
 
+	if (! check_if_open(file, -1)) {
+		PyErr_SetString(NIOError, "file has been closed: variable no longer valid");
+		return NULL;
+	}
+
 	buf = malloc(bufinc);
 	buflen = bufinc;
 	for(i = 0; i < nfile->file.n_vars; i++) {
