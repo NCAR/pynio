@@ -78,9 +78,9 @@ pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
 
 if HAS_HDFEOS > 0:
-    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','g2c']
+    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','grib2c','jasper','g2c']
 else:
-    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','g2c']
+    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','grib2c','jasper','g2c']
     
 #
 # The long path below is for the g95 compiler on the Intel Mac.
