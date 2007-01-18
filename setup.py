@@ -7,6 +7,11 @@ except:
   HAS_HDFEOS = 1
 
 try:
+  HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
+except:
+  HAS_GRIB2 = 1
+
+try:
   path = os.environ["PYNIO2PYNGL"]
   pynio2pyngl = True
 except:
@@ -77,11 +82,17 @@ ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
 
+LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf']
+
 if HAS_HDFEOS > 0:
-    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','hdfeos','Gctp','grib2c','jasper','g2c']
-else:
-    LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf','grib2c','jasper','g2c']
+    LIBRARIES.append('hdfeos','Gctp')
+
+if HAS_GRIB2 > 0:
+    LIBRARIES.append('grib2c')
+    LIBRARIES.append('jasper')
     
+LIBRARIES.append('g2c')   # Put on the end.
+
 #
 # The long path below is for the g95 compiler on the Intel Mac.
 #
