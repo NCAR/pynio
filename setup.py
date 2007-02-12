@@ -85,7 +85,8 @@ pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
 LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf']
 
 if HAS_HDFEOS > 0:
-    LIBRARIES.append('hdfeos','Gctp')
+    LIBRARIES.append('hdfeos')
+    LIBRARIES.append('Gctp')
 
 if HAS_GRIB2 > 0:
     LIBRARIES.append('grib2c')
