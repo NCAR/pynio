@@ -1643,8 +1643,11 @@ NioVariableObject_dealloc(NioVariableObject *self)
 {
   if (self->dimids != NULL)
     free(self->dimids);
+  if (self->dimensions != NULL)
+    free(self->dimensions);
   if (self->name != NULL)
     free(self->name);
+  Py_XDECREF(self->attributes);
   Py_XDECREF(self->file);
   PyMem_DEL(self);
 }
@@ -1896,6 +1899,8 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   d = 0;
   nitems = 1;
   nio_ncerr = 0;
+  int is_own;
+
   if (!check_if_open(self->file, -1)) {
     free(indices);
     return NULL;
@@ -2008,10 +2013,10 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  }
 		  }
 		  _NclDestroyObj((NclObj)md);
-		  if (sel_ptr)
-			  free(sel_ptr);
 
 	  }		  
+	  if (sel_ptr)
+		  free(sel_ptr);
   }
 #else
   if (nitems > 0 && self->type == PyArray_OBJECT) {
@@ -2050,19 +2055,14 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  }
 		  }
 		  _NclDestroyObj((NclObj)md);
-		  if (sel_ptr)
-			  free(sel_ptr);
 
 	  }		  
+	  if (sel_ptr)
+		  free(sel_ptr);
   }
 #endif
   else if (nitems > 0) {
-#ifdef USE_NUMPY	  
-	  array = (PyArrayObject *)PyArray_SimpleNew(d, dims, self->type);
-#else
-	  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
-#endif
-	  if (array && self->nd == 0) {
+	  if (self->nd == 0) {
 		  NclFile nfile = (NclFile) self->file->id;
 		  NclMultiDValData md = _NclFileReadVarValue
 			  (nfile,NrmStringToQuark(self->name),NULL);
@@ -2072,12 +2072,26 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  Py_DECREF(array);
 			  array = NULL;
 		  }
-		  /* all we care about is the actual value */
-		  array->data = md->multidval.val;
+#ifdef USE_NUMPY 			  
+		  array =(PyArrayObject *)
+			  PyArray_New(&PyArray_Type,d,
+				      dims,self->type,NULL,md->multidval.val,
+				      0,0,NULL);
+		  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+		  if (!is_own) {
+			  array->flags |= NPY_OWNDATA;
+		  }
+				  
+#else
+		  array = (PyArrayObject *)
+			  PyArray_FromDimsAndData(d,dims,self->type,
+						  (char*)md->multidval.val);
+		  array->flags |= OWN_DATA;
+#endif
 		  md->multidval.val = NULL;
 		  _NclDestroyObj((NclObj)md);
 	  }
-	  else if (array) {
+	  else {
 		  NclSelectionRecord *sel_ptr;
 		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
 		  if (sel_ptr != NULL) {
@@ -2101,9 +2115,25 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 				  Py_DECREF(array);
 				  array = NULL;
 			  }
-		    
-			  /* all we care about is the actual value */
-			  array->data = md->multidval.val;
+#ifdef USE_NUMPY 			  
+			  array =(PyArrayObject *)
+				  PyArray_New(&PyArray_Type,d,
+					      dims,self->type,NULL,md->multidval.val,
+					      0,0,NULL);
+			  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+			  if (!is_own) {
+				  array->flags |= NPY_OWNDATA;
+			  }
+				  
+			  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+#else
+			  array = (PyArrayObject *)
+				  PyArray_FromDimsAndData(d,dims,self->type,
+							  (char*)md->multidval.val);
+			  array->flags |= OWN_DATA;
+
+#endif
+
 			  md->multidval.val = NULL;
 			  _NclDestroyObj((NclObj)md);
 			  free(sel_ptr);
