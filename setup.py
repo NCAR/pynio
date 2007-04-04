@@ -76,7 +76,7 @@ else:
 pynio_vfile = "pynio_version.py"      # PyNIO version file.
 
 ncarg_root = os.getenv("NCARG_ROOT")
-lib_paths = [ os.path.join(ncarg_root,'lib') ]
+lib_paths = [ os.path.join(ncarg_root,'lib'),'/Users/haley/lib' ]
 
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
@@ -131,7 +131,7 @@ if sys.platform == "darwin":
       LIBRARIES.remove('g2c')
       LIBRARIES.append('f95')
 
-INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
+INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include'),'/Users/haley/include']
 
 #----------------------------------------------------------------------
 #
@@ -200,6 +200,7 @@ for array_module in array_modules:
     vfile.write("HAS_NUM = 2\n")
 
   vfile.write("array_module_version = '%s'\n" % array_module_version)
+  vfile.write("python_version = '%s'\n" % sys.version[:3])
   vfile.close()
 
 #----------------------------------------------------------------------
