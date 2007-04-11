@@ -18,17 +18,24 @@ except:
   pynio2pyngl = False
 
 #
-# Determine whether we want to build a Numeric and/or Numpy version
-# of PyNIO.  If the environment variable USE_NUMPY is set, it will
-# try to build a NumPy version. USE_NUMPY doesn't need to be set to
-# any value; it just has to be set.  If USE_NUMERPY is set, then
-# both versions of PyNIO will be built, and the Numeric version will
-# be put in package PyNIO, and the numpy version in package PyNIO_numpy.
+# Determine whether we want to build a Numeric and/or NumPy version
+# of PyNIO. The following USE_XXXX variables don't need to be set to
+# anything, they should just be set. I.e:
 #
-# HAS_NUM will be set by this script depending on USE_NUMPY and USE_NUMERPY.
+#       setenv USE_NUMERIC
 #
-# HAS_NUM = 3 --> install both numpy and Numeric versions of module
-# HAS_NUM = 2 --> install numpy version of module
+#   - If none of the USE_XXXX are set, only a NumPy version is built.
+#   - If USE_NUMERIC is set, a Numeric version is built.
+#   - If USE_NUMERPY is set, then both Numeric and NumPy versions are built.
+#
+#  The NumPy version will be installed to the site-packages directory
+#  "PyNIO", and the Numeric version to "PyNIO_numeric".
+#
+#
+# HAS_NUM will be set by this script depending on the above.
+#
+# HAS_NUM = 3 --> install both NumPy and Numeric versions of module
+# HAS_NUM = 2 --> install NumPy version of module
 # HAS_NUM = 1 --> install Numeric version of module
 # HAS_NUM = 0 --> You're hosed, you have neither module
 #
@@ -37,20 +44,20 @@ try:
   HAS_NUM = 3
 except:
   try:
-    path = os.environ["USE_NUMPY"]
-    HAS_NUM = 2
-  except:
+    path = os.environ["USE_NUMERIC"]
     HAS_NUM = 1
+  except:
+    HAS_NUM = 2
 
 #
-# Test to make sure we actually the Numeric and/or numpy modules
+# Test to make sure we actually the Numeric and/or NumPy modules
 # that we have requested.
 #
 if HAS_NUM > 1:
   try:
     import numpy
   except ImportError:
-    print "Cannot find numpy; we'll try Numeric."
+    print "Cannot find NumPy; we'll try Numeric."
     HAS_NUM = 1
 
 if HAS_NUM == 1 or HAS_NUM == 3:
@@ -67,7 +74,7 @@ elif HAS_NUM == 2:
 elif HAS_NUM == 1:
   array_modules = ['Numeric']
 else:
-  print "Cannot find Numeric or numpy; good-bye!"
+  print "Cannot find Numeric or NumPy; good-bye!"
   exit
 
 #
@@ -142,7 +149,7 @@ INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include'),'/Users/haley/in
 for array_module in array_modules:
 #----------------------------------------------------------------------
 #
-# Set some variables based on whether we're doing a numpy or Numeric
+# Set some variables based on whether we're doing a NumPy or Numeric
 # build.
 #
 #----------------------------------------------------------------------
@@ -150,12 +157,12 @@ for array_module in array_modules:
     from Numeric import  __version__ as array_module_version
 
     if pynio2pyngl:
-      pynio_pkg_name = 'PyNGL'
-      pynio_files    = ['Nio.py',pynio_vfile]
+      pynio_pkg_name = 'PyNGL_numeric'
       pynio_pth_file = []
+      pynio_files    = ['Nio.py',pynio_vfile]
     else:
-      pynio_pkg_name = 'PyNIO'
-      pynio_pth_file = [pynio_pkg_name + '.pth']
+      pynio_pkg_name = 'PyNIO_numeric'
+      pynio_pth_file = []
       pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile]
 
     DMACROS =  [ ('NeedFuncProto','1') ]
@@ -164,13 +171,13 @@ for array_module in array_modules:
     from numpy import __version__ as array_module_version
 
     if pynio2pyngl:
-      pynio_pkg_name = 'PyNGL_numpy'
+      pynio_pkg_name = 'PyNGL'
+      pynio_pth_file = []
       pynio_files    = ['Nio.py',pynio_vfile]
-      pynio_pth_file = []
     else:
-      pynio_pkg_name = 'PyNIO_numpy'
+      pynio_pkg_name = 'PyNIO'
+      pynio_pth_file = [pynio_pkg_name + '.pth']
       pynio_files    = ['Nio.py', '__init__.py',pynio_vfile]
-      pynio_pth_file = []
 
     DMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
 
@@ -192,7 +199,7 @@ for array_module in array_modules:
 
 #
 # The Ngl.py and Nio.py files use HAS_NUM to tell whether to use
-# Numeric or numpy specific operations.
+# Numeric or NumPy specific operations.
 #
   if array_module == 'Numeric':
     vfile.write("HAS_NUM = 1\n")
@@ -208,7 +215,7 @@ for array_module in array_modules:
 # Here are the instructions for compiling the "nio.so" file.
 #
 #----------------------------------------------------------------------
-  print '====> Installing the',array_module,'version of Nio to the',pynio_pkg_name,'package directory.'
+  print '====> Installing the',array_module,'version of Nio to the "'+pynio_pkg_name+'" site packages directory.'
 
   module1 = [Extension('nio',
                       define_macros = DMACROS,
