@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,platform
 from distutils.core import setup, Extension
 
 try:
@@ -115,6 +115,12 @@ if sys.platform == "irix6-64":
     LIBRARIES.append('ftn')
     LIBRARIES.append('fortran')
     LIBRARIES.append('sz')
+
+if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
+    platform.python_compiler() == "GCC 4.1.1":
+    print("Using gcc4 compiler, thus removing g2c...")
+    LIBRARIES.remove('g2c')
+    LIBRARIES.append('gfortran')
 
 if sys.platform == "sunos5":
     os.environ["CC"]="/opt/SUNWspro/bin/cc"
