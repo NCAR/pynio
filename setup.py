@@ -105,10 +105,18 @@ LIBRARIES.append('g2c')   # Put on the end.
 # The long path below is for the g95 compiler on the Intel Mac.
 #
 if sys.platform == "darwin":
-    dirs = ['/sw/lib','/Users/haley/lib/gcc-lib/i386-apple-darwin8.6.1/4.0.3']
+    dirs = ['/sw/lib','/Users/haley/lib/gcc-lib/i386-apple-darwin8.9.1/4.0.3']
     for dir in dirs:
       if(os.path.exists(dir)):
+        print "appending",dir
         lib_paths.append(dir)
+#
+# Special test for Intel Mac platform, which is using the g95 compiler
+# and doesn't need g2c loaded.
+#
+    if "i386" in os.uname():
+      LIBRARIES.remove('g2c')
+      LIBRARIES.append('f95')
 
 if sys.platform == "irix6-64":
     LIBRARIES.remove('g2c')
