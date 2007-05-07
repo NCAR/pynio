@@ -108,7 +108,7 @@ if sys.platform == "darwin":
     dirs = ['/sw/lib','/Users/haley/lib/gcc-lib/i386-apple-darwin8.9.1/4.0.3']
     for dir in dirs:
       if(os.path.exists(dir)):
-        print "appending",dir
+#        print "appending",dir
         lib_paths.append(dir)
 #
 # Special test for Intel Mac platform, which is using the g95 compiler
@@ -249,8 +249,9 @@ for array_module in array_modules:
 #----------------------------------------------------------------------
   if len(array_modules) > 1:
     print "====> Removing build's *.o and *.so files..."
-    os.system("find build -name '*.o' -exec /bin/rm {} \;")
-    os.system("find build -name '*.so' -exec /bin/rm {} \;")
+    if os.path.exists("build"):
+      os.system("find build -name '*.o' -exec /bin/rm {} \;")
+      os.system("find build -name '*.so' -exec /bin/rm {} \;")
 
   setup (name         = 'Nio',
          version      = pynio_version,
