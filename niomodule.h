@@ -13,6 +13,7 @@ extern "C" {
 
 
 #include <stdio.h>
+#include "Python.h"
 
 /* NIOFile object */
 
@@ -39,7 +40,7 @@ typedef struct {
   PyObject *attributes;   /* dictionary */
   char *name;
   int *dimids;
-  size_t *dimensions;
+  Py_ssize_t *dimensions;
   int type;               /* same as array types */
   int nd;
   int id;
@@ -50,9 +51,9 @@ typedef struct {
 /* Variable index structure */
 
 typedef struct {
-  int start;
-  int stop;
-  int stride;
+  Py_ssize_t start;
+  Py_ssize_t stop;
+  Py_ssize_t stride;
   int item;
 } NioIndex;
 
@@ -84,7 +85,7 @@ typedef struct {
 /* Create a new dimension. Returns -1 if there was an error. */
 #define NioFile_CreateDimension_RET int
 #define NioFile_CreateDimension_PROTO \
-        Py_PROTO((NioFileObject *file, char *name, long size))
+        Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
 #define NioFile_CreateDimension_NUM 5
 
 /* Create a NIO variable and return the variable object */
@@ -106,7 +107,7 @@ typedef struct {
 #define NioVariable_GetRank_NUM 8
 
 /* Get variable shape */
-#define NioVariable_GetShape_RET size_t *
+#define NioVariable_GetShape_RET Py_ssize_t *
 #define NioVariable_GetShape_PROTO Py_PROTO((NioVariableObject *var))
 #define NioVariable_GetShape_NUM 9
 

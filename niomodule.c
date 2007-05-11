@@ -963,7 +963,7 @@ nio_file_init(NioFileObject *self)
 /* Create dimension */
 
 int
-NioFile_CreateDimension(NioFileObject *file, char *name, long size)
+NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size)
 {
   PyObject *size_ob;
   NrmQuark qname;
@@ -989,7 +989,7 @@ NioFile_CreateDimension(NioFileObject *file, char *name, long size)
 			  file->recdim = _NclFileIsDim(nfile,qname);
 		  }
 		  else {
-			  size_ob = PyInt_FromLong(size);
+			  size_ob = PyInt_FromLong((long)size);
 			  PyDict_SetItemString(file->dimensions, name, size_ob);
 			  Py_DECREF(size_ob);
 		  }
@@ -1005,13 +1005,13 @@ NioFileObject_new_dimension(NioFileObject *self, PyObject *args)
 {
   char *name;
   PyObject *size_ob;
-  long size;
+  Py_ssize_t size;
   if (!PyArg_ParseTuple(args, "sO", &name, &size_ob))
     return NULL;
   if (size_ob == Py_None)
     size = 0;
   else if (PyInt_Check(size_ob))
-    size = PyInt_AsLong(size_ob);
+    size = (Py_ssize_t)PyInt_AsLong(size_ob);
   else {
     PyErr_SetString(PyExc_TypeError, "size must be None or integer");
     return NULL;
@@ -1673,7 +1673,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
     self->dimids = dimids;
     self->unlimited = 0;
     if (ndims > 0) {
-	    self->dimensions = (size_t *)malloc(ndims*sizeof(size_t));
+	    self->dimensions = (Py_ssize_t *)malloc(ndims*sizeof(Py_ssize_t));
 	    if (self->dimensions != NULL) {
 		    for (i = 0; i < ndims; i++) {
 			    self->dimensions[i] = nfile->file.file_dim_info[dimids[i]]->dim_size;
@@ -1752,7 +1752,7 @@ NioVariable_GetRank( NioVariableObject *var)
   return var->nd;
 }
 
-static size_t *
+static Py_ssize_t *
 NioVariable_GetShape(NioVariableObject *var)
 {
   int i;
@@ -2178,7 +2178,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   int *dims;
   PyArrayObject *array;
   int i, d;
-  int nitems,var_el_count;
+  Py_ssize_t nitems,var_el_count;
   int error = 0;
   int ret = 0;
 
@@ -2209,7 +2209,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   */
 
   for (i = 0; i < self->nd; i++) {
-	  var_el_count *= self->dimensions[i];
+	  var_el_count *= (int)self->dimensions[i];
 	  error = error || (indices[i].stride == 0);
 	  if (indices[i].stride < 0) {
 		  indices[i].stop += 1;
@@ -2233,7 +2233,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  indices[i].stop = self->dimensions[i] - 1;
 	  }
 	  if (indices[i].item == 0) {
-		  dims[d] = abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
+		  dims[d] = (int)abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
 		  if (dims[d] < 0)
 			  dims[d] = 0;
 		  nitems *= dims[d];
@@ -2269,7 +2269,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  select_all = 0;
 	  else {
 		  for (i = 0; i < self->nd; i++) {
-			  if (dims[i] == array->dimensions[i])
+			  if (dims[i] == (int)array->dimensions[i])
 				  continue;
 			  select_all = 0;
 			  break;
@@ -2381,7 +2381,7 @@ NioVariable_WriteString(NioVariableObject *self, PyStringObject *value)
 
 
 static PyObject *
-NioVariableObject_item(NioVariableObject *self, int i)
+NioVariableObject_item(NioVariableObject *self, Py_ssize_t i)
 {
   NioIndex *indices;
   if (self->nd == 0) {
@@ -2399,7 +2399,7 @@ NioVariableObject_item(NioVariableObject *self, int i)
 }
 
 static PyObject *
-NioVariableObject_slice(NioVariableObject *self, int low, int high)
+NioVariableObject_slice(NioVariableObject *self, Py_ssize_t low, Py_ssize_t high)
 {
   NioIndex *indices;
   if (self->nd == 0) {
@@ -2420,7 +2420,7 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
 {
   NioIndex *indices;
   if (PyInt_Check(index)) {
-    int i = PyInt_AsLong(index);
+    Py_ssize_t i = (Py_ssize_t)PyInt_AsLong(index);
     return NioVariableObject_item(self, i);
   }
   if (self->nd == 0) {
@@ -2437,12 +2437,13 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
     if (PyTuple_Check(index)) {
       int ni = PyTuple_Size(index);
       if (ni <= self->nd) {
-	int i, d;
+	int d;
 	d = 0;
+	Py_ssize_t i;
 	for (i = 0; i < ni; i++) {
 	  PyObject *subscript = PyTuple_GetItem(index, i);
 	  if (PyInt_Check(subscript)) {
-	    int n = PyInt_AsLong(subscript);
+	    Py_ssize_t n = (Py_ssize_t)PyInt_AsLong(subscript);
 	    indices[d].start = n;
 	    indices[d].stop = n+1;
 	    indices[d].item = 1;
@@ -2478,7 +2479,7 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
 }
 
 static int
-NioVariableObject_ass_item(NioVariableObject *self, int i, PyObject *value)
+NioVariableObject_ass_item(NioVariableObject *self, Py_ssize_t i, PyObject *value)
 {
   NioIndex *indices;
   if (value == NULL) {
@@ -2500,7 +2501,7 @@ NioVariableObject_ass_item(NioVariableObject *self, int i, PyObject *value)
 }
 
 static int
-NioVariableObject_ass_slice(NioVariableObject *self, int low, int high, PyObject *value)
+NioVariableObject_ass_slice(NioVariableObject *self, Py_ssize_t low, Py_ssize_t high, PyObject *value)
 {
   NioIndex *indices;
   if (value == NULL) {
@@ -2525,7 +2526,7 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 {
   NioIndex *indices;
   if (PyInt_Check(index)) {
-    int i = PyInt_AsLong(index);
+    Py_ssize_t i = (Py_ssize_t) PyInt_AsLong(index);
     return NioVariableObject_ass_item(self, i, value);
   }
   if (value == NULL) {
@@ -2551,7 +2552,7 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	for (i = 0; i < ni; i++) {
 	  PyObject *subscript = PyTuple_GetItem(index, i);
 	  if (PyInt_Check(subscript)) {
-	    int n = PyInt_AsLong(subscript);
+	    Py_ssize_t n = (Py_ssize_t)PyInt_AsLong(subscript);
 	    indices[d].start = n;
 	    indices[d].stop = n+1;
 	    indices[d].item = 1;
@@ -2959,7 +2960,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 	  PyObject *dict = PyObject_GetAttrString(options,"__dict__");
 	  PyObject *keys = PyMapping_Keys(dict);
 	  int len_dims = 1;
-	  int i;
+	  Py_ssize_t i;
 	  NrmQuark qsafe_mode = NrmStringToQuark("safemode");
 
 	  for (i = 0; i < PySequence_Length(keys); i++) {
