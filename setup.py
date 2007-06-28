@@ -2,6 +2,11 @@ import os,sys,platform
 from distutils.core import setup, Extension
 
 try:
+  HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
+except:
+  HAS_NETCDF4 = 0
+
+try:
   HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
 except:
   HAS_HDFEOS = 1
@@ -90,6 +95,10 @@ pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
 
 LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf']
+
+if HAS_NETCDF4 > 0:
+    LIBRARIES.append('hdf5')
+    LIBRARIES.append('hdf5_hl')
 
 if HAS_HDFEOS > 0:
     LIBRARIES.append('hdfeos')
