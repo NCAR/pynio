@@ -97,8 +97,9 @@ pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
 LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf']
 
 if HAS_NETCDF4 > 0:
-    LIBRARIES.append('hdf5')
     LIBRARIES.append('hdf5_hl')
+    LIBRARIES.append('hdf5')
+    LIBRARIES.append('sz')
 
 if HAS_HDFEOS > 0:
     LIBRARIES.append('hdfeos')
