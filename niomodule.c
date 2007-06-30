@@ -96,19 +96,25 @@ Valid options for NetCDF files:\n\
         'Classic' -- (default) standard file (generally file size < 2GB)\n\
         'LargeFile' or '64BitOffset' -- (fixed-size variables or record\n\
             elements of unlimited dimension variables each up to 4GB)\n\
+        'NetCDF4Classic' -- Classic mode NetCDF 4 file (uses HDF 5 as the\n\
+            underlying format but is restricted to features of the classic\n\
+            NetCDF data model).\n\
+    CompressionLevel -- Specify the level of data compression on a scale\n\
+            of 0 - 9 (ignored unless Format is set to 'NetCDF4Classic').\n\
     HeaderReserveSpace -- Reserve <int-value> extra bytes in the header\n\
         of a file open for writing. Used to subsequently add dimensions,\n\
         attributes, and variables to existing files efficiently.\n\
     MissingToFillValue -- If set True (the default), create a virtual\n\
         '_FillValue' attribute only for variables that have a\n\
-        'missing_value' but no '_FillValue'\n\
+        'missing_value' but no '_FillValue'.\n\
     PreFill -- If set True (the default), fill all elements of newly\n\
         defined variables with a fill value. If set False, elements are\n\
         undefined until data is written.\n\
     SafeMode -- Close the file after each individual operation on the file.\n\
 \n\
 Valid options for GRIB files:\n\
-    DefaultNCEPTable -- Specify the table to use in certain ambiguous cases:\n\
+    DefaultNCEPTable -- (GRIB 1 only) Specify the table to use in certain\n\
+        ambiguous cases:\n\
         'Operational' -- (default) Use the NCEP operational parameter table\n\
         'Reanalysis' -- Use the NCEP reanalysis parameter table\n\
     InitialTimeCoordinateType -- Specify the type of the coordinate\n\
@@ -116,10 +122,16 @@ Valid options for GRIB files:\n\
         dimensions:\n\
         'Numeric' -- (default) use CF-compliant numeric coordinates\n\
         'String' -- use date strings as the coordinates\n\
+    SingleElementDimensions -- Specify that dimensional types with only a\n\
+        single representative element be treated as full-fledged dimensions.\n\
+        'None' -- (default) no single element dimensions are created\n\
+        'All' -- all possible single element dimensions are created.\n\
+        The names of individual dimension types may be specified individually:\n\
+        'Initial_time', 'Forecast_time', 'Level', 'Ensemble', or 'Probability'.\n\
     ThinnedGridInterpolation -- Specify the type of interpolation for\n\
-        thinned (GRIB 'quasi-regular) grids:\n\
-        'Linear' -- (default) use linear interpolation\n\
-        'Cubic' -- use cubic interpolation\n\n\
+        thinned (GRIB 'quasi-regular') grids:\n\
+        'Cubic' -- (cubic) use cubic interpolation\n\
+        'Linear' -- use linear interpolation\n\n\
 ";
 
 static char *niofile_type_doc =
