@@ -393,6 +393,8 @@ nio_seterror(void)
   }
 }
 
+static char err_buf[256];
+
 /*
  * Python equivalents to NIO data types
  *
@@ -549,6 +551,7 @@ nio_type_from_code(int code)
 	  type = NrmStringToQuark("character");
 	  break;
   case '1':
+  case 'b':
   case 'B':
 	  type = NrmStringToQuark("byte");
 	  break;
@@ -1063,6 +1066,7 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
           int ncl_ndims = ndim;
 	  define_mode(file, 1);
 
+
 	  variable = (NioVariableObject *) PyDict_GetItemString(file->variables,name);
 	  if (variable) {
 		  printf("variable %s exists: cannot create\n",name);
@@ -1088,17 +1092,10 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  for (i = 0; i < ndim; i++) {
 		  qdims[i] = NrmStringToQuark(dimension_names[i]);
 		  dimids[i] = _NclFileIsDim(nfile,qdims[i]);
-                  /*
-		  for (j = 0; j < nfile->file.n_file_dims; j++) {
-			  dimids[i] = -1;
-			  if (nfile->file.file_dim_info[j]->dim_name_quark != qdims[i])
-				  continue;
-			  dimids[i] = j;
-			  break;
-		  }
-		  */
 		  if (dimids[i] == -1) {
-			  nio_seterror();
+			  sprintf(err_buf,"Dimension (%s) not found",dimension_names[i]);
+			  PyErr_SetString(NIOError, err_buf);
+			  PyErr_Print();
 			  if (qdims != NULL) 
 				  free(qdims);
 			  if (dimids != NULL)
@@ -1146,13 +1143,16 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   char* type;
   int i;
   char errbuf[256];
+  char ltype;
+
   if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
     return NULL;
 
+  ltype = type[0];
 #ifdef USE_NUMPY
   if (strlen(type) > 1) {
 	  if (type[0] == 'S' && type[1] == '1') {
-		  type[0] = 'c';
+		  ltype  = 'c';
 	  }
 	  else {
 		  sprintf (errbuf,"Cannot create variable %s: string arrays not yet supported on write",name);
@@ -1187,7 +1187,12 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
       return NULL;
     }
   }
-  var = NioFile_CreateVariable(self, name, (int) type[0], dimension_names, ndim);
+  var = NioFile_CreateVariable(self, name, (int) ltype, dimension_names, ndim);
+  if (! var) {
+	  sprintf(err_buf,"Failed to create variable (%s)",name);
+	  PyErr_SetString(NIOError, err_buf);
+  }
+
   free(dimension_names);
   return (PyObject *)var;
 }
@@ -1546,18 +1551,26 @@ NioFileObject_str(NioFileObject *file)
 			continue;
 		}
 		vname = NrmQuarkToString(nfile->file.var_info[i]->var_name_quark);
-		sprintf(tbuf,"      %s %s [ ",
-			_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type),vname);
-		BUF_INSERT(tbuf);
-		for(j=0; j < nfile->file.var_info[i]->num_dimensions; j++) {
-			dim_ix = nfile->file.var_info[i]->file_dim_num[j];
-			if (j != nfile->file.var_info[i]->num_dimensions - 1) {
-				sprintf(tbuf,"%s, ",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
-			}
-			else {
-				sprintf(tbuf,"%s ]\n",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
-			}
+		if (nfile->file.var_info[i]->num_dimensions == 1 && 
+		    nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[0]]->dim_name_quark == scalar_dim) {
+			sprintf(tbuf,"      %s %s\n",
+				_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type),vname);
 			BUF_INSERT(tbuf);
+		}
+		else {
+			sprintf(tbuf,"      %s %s [ ",
+				_NclBasicDataTypeToName(nfile->file.var_info[i]->data_type),vname);
+			BUF_INSERT(tbuf);
+			for(j=0; j < nfile->file.var_info[i]->num_dimensions; j++) {
+				dim_ix = nfile->file.var_info[i]->file_dim_num[j];
+				if (j != nfile->file.var_info[i]->num_dimensions - 1) {
+					sprintf(tbuf,"%s, ",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+				}
+				else {
+					sprintf(tbuf,"%s ]\n",NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+				}
+				BUF_INSERT(tbuf);
+			}
 		}
 		vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
 		step = nfile->file.var_att_info[i];
@@ -1908,6 +1921,7 @@ PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
 #ifdef USE_NUMPY
+  int is_own;
   npy_intp *dims;
 #else
   int *dims;
@@ -1919,7 +1933,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   d = 0;
   nitems = 1;
   nio_ncerr = 0;
-  int is_own;
 
   if (!check_if_open(self->file, -1)) {
     free(indices);
@@ -2271,6 +2284,9 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
     return -1;
   }
   array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+
+  /* PyArray_C.. collapses single element dimensions apparently */
+
   if (array != NULL) {
 	  NrmQuark qtype;
 	  int n_dims;
@@ -2279,43 +2295,46 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  NclMultiDValData md;
 	  NhlErrorTypes nret;
 	  int select_all = 1;
+	  int array_dim = 0;
 
-	  n_dims = array->nd;
+	  n_dims = d + 1;
 	  if (array->nd == 0) {
 		  n_dims = 1;
 	  }
-	  /*
-	  if (array->nd != self->nd)
-		  select_all = 0;
-	  else {
-		  for (i = 0; i < self->nd; i++) {
-			  if (dims[i] == (int)array->dimensions[i])
-				  continue;
-			  select_all = 0;
-			  break;
-		  }
-	  }
-	  */
+
+
 	  if (nitems < var_el_count || self->unlimited)
 		  select_all = 0;
 	  qtype = nio_type_from_code(array->descr->type);
-#ifdef USE_NUMPY
-	  if (array->nd > self->nd) {
-		  dims = realloc(dims,sizeof(int) * array->nd);
+
+	  if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
+		  PyArrayObject *array2 = (PyArrayObject *)
+			  PyArray_Cast(array, PyArray_INT);
+		  Py_DECREF(array);
+		  array = array2;
+		  qtype = NrmStringToQuark("integer");
 	  }
-	  for (i = 0; i < array->nd; i++) {
-		  dims[i] = (int) array->dimensions[i];
+	  if (array->nd > self->nd) {
+		  n_dims = array->nd;
+		  dims = realloc(dims,sizeof(int) * array->nd);
+		  for (i = 0; i < array->nd; i++) {
+			  dims[i] = (int) array->dimensions[array_dim++];
+		  }
+	  }
+	  else if (array->nd > 0) {
+		  for (i = 0; i < n_dims; i++) {
+			  if (self->dimensions[i] == 1) {
+				  dims[i] = 1;
+			  }
+			  else {
+				  dims[i] = (int) array->dimensions[array_dim++];
+			  }
+		  }
 	  }
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : dims,
 				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-#else
-	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-				   (void*)array->data,NULL,n_dims,
-				   array->nd == 0 ? &scalar_size : array->dimensions,
-				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-#endif
 	  if (! md) {
 		  nret = NhlFATAL;
 	  }
@@ -2705,12 +2724,14 @@ NioVariableObject_str(NioVariableObject *var)
 	long long total;
 	int j, dim_ix;
 	int n_atts;
+	NrmQuark qncl_scalar;
 
 	if (! check_if_open(file, -1)) {
 		PyErr_SetString(NIOError, "file has been closed: variable no longer valid");
 		return NULL;
 	}
 
+	qncl_scalar = NrmStringToQuark("ncl_scalar");
 	buf = malloc(bufinc);
 	buflen = bufinc;
 	for(i = 0; i < nfile->file.n_vars; i++) {
@@ -2737,64 +2758,71 @@ NioVariableObject_str(NioVariableObject *var)
 	BUF_INSERT(tbuf);
 	sprintf(tbuf,"            %lld values\n",total);
 	BUF_INSERT(tbuf);
-	sprintf(tbuf,"Number of Dimensions: %d\n",nfile->file.var_info[i]->num_dimensions);
-	BUF_INSERT(tbuf);
-	sprintf(tbuf,"Dimensions and sizes:\t");
-	BUF_INSERT(tbuf);
-	for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
-		sprintf(tbuf,"[");
+	if (nfile->file.var_info[i]->num_dimensions == 1 && 
+	    nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[0]]->dim_name_quark == qncl_scalar) {
+		sprintf(tbuf,"Number of Dimensions: %d\n",0);
 		BUF_INSERT(tbuf);
-		sprintf(tbuf,"%s | ",
-			NrmQuarkToString(nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_name_quark));
+	}
+	else {
+		sprintf(tbuf,"Number of Dimensions: %d\n",nfile->file.var_info[i]->num_dimensions);
 		BUF_INSERT(tbuf);
-		sprintf(tbuf,"%lld]",
-			(long long) nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_size);
+		sprintf(tbuf,"Dimensions and sizes:\t");
 		BUF_INSERT(tbuf);
-		if(j != nfile->file.var_info[i]->num_dimensions-1) {
-			sprintf(tbuf," x ");
+		for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
+			sprintf(tbuf,"[");
 			BUF_INSERT(tbuf);
-		}
-	}	
-	sprintf(tbuf,"\nCoordinates: \n");
-	BUF_INSERT(tbuf);
-	for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
-		NclVar tmp_var;
-		dim_ix = nfile->file.var_info[i]->file_dim_num[j];
-		if(_NclFileVarIsCoord(nfile,
-				      nfile->file.file_dim_info[dim_ix]->dim_name_quark)!= -1) {
-			sprintf(tbuf,"            ");
+			sprintf(tbuf,"%s | ",
+				NrmQuarkToString(nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_name_quark));
 			BUF_INSERT(tbuf);
-			sprintf(tbuf,"%s: [", 
-				NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+			sprintf(tbuf,"%lld]",
+				(long long) nfile->file.file_dim_info[nfile->file.var_info[i]->file_dim_num[j]]->dim_size);
 			BUF_INSERT(tbuf);
-			tmp_var = _NclFileReadCoord(nfile,nfile->file.file_dim_info[dim_ix]->dim_name_quark,NULL);
-			if(tmp_var != NULL) {
-				NclMultiDValData tmp_md;
-
-				tmp_md = (NclMultiDValData)_NclGetObj(tmp_var->var.thevalue_id);
-				printval(tbuf,tmp_md->multidval.type->type_class.data_type,tmp_md->multidval.val);
+			if(j != nfile->file.var_info[i]->num_dimensions-1) {
+				sprintf(tbuf," x ");
 				BUF_INSERT(tbuf);
-				sprintf(tbuf,"..");
-				BUF_INSERT(tbuf);
-				printval(tbuf,tmp_md->multidval.type->type_class.data_type,(char *) tmp_md->multidval.val +
-					 (tmp_md->multidval.totalelements -1)*tmp_md->multidval.type->type_class.size);
-				BUF_INSERT(tbuf);
-				sprintf(tbuf,"]\n");
-				BUF_INSERT(tbuf);
-				if(tmp_var->obj.status != PERMANENT) {
-					_NclDestroyObj((NclObj)tmp_var);
-				}
-
 			}
-		}
-		else {
-			sprintf(tbuf,"            ");
-			BUF_INSERT(tbuf);
-			sprintf(tbuf,"%s: not a coordinate variable\n",
-				NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
-			BUF_INSERT(tbuf);
-		}
-	}	
+		}	
+		sprintf(tbuf,"\nCoordinates: \n");
+		BUF_INSERT(tbuf);
+		for(j = 0; j < nfile->file.var_info[i]->num_dimensions;j++) {
+			NclVar tmp_var;
+			dim_ix = nfile->file.var_info[i]->file_dim_num[j];
+			if(_NclFileVarIsCoord(nfile,
+					      nfile->file.file_dim_info[dim_ix]->dim_name_quark)!= -1) {
+				sprintf(tbuf,"            ");
+				BUF_INSERT(tbuf);
+				sprintf(tbuf,"%s: [", 
+					NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+				BUF_INSERT(tbuf);
+				tmp_var = _NclFileReadCoord(nfile,nfile->file.file_dim_info[dim_ix]->dim_name_quark,NULL);
+				if(tmp_var != NULL) {
+					NclMultiDValData tmp_md;
+
+					tmp_md = (NclMultiDValData)_NclGetObj(tmp_var->var.thevalue_id);
+					printval(tbuf,tmp_md->multidval.type->type_class.data_type,tmp_md->multidval.val);
+					BUF_INSERT(tbuf);
+					sprintf(tbuf,"..");
+					BUF_INSERT(tbuf);
+					printval(tbuf,tmp_md->multidval.type->type_class.data_type,(char *) tmp_md->multidval.val +
+						 (tmp_md->multidval.totalelements -1)*tmp_md->multidval.type->type_class.size);
+					BUF_INSERT(tbuf);
+					sprintf(tbuf,"]\n");
+					BUF_INSERT(tbuf);
+					if(tmp_var->obj.status != PERMANENT) {
+						_NclDestroyObj((NclObj)tmp_var);
+					}
+
+				}
+			}
+			else {
+				sprintf(tbuf,"            ");
+				BUF_INSERT(tbuf);
+				sprintf(tbuf,"%s: not a coordinate variable\n",
+					NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
+				BUF_INSERT(tbuf);
+			}
+		}	
+	}
 	step = nfile->file.var_att_info[i];
 	n_atts = 0;
 	while(step != NULL) {
