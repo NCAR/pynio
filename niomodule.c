@@ -995,7 +995,7 @@ NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size)
 	  NhlErrorTypes ret;
 	  
 	  if (PyDict_GetItemString(file->dimensions,name)) {
-		  printf("dimension %s exists: cannot create\n",name);
+		  printf("dimension (%s) exists: cannot create\n",name);
 		  return 0;
 	  }
 	  if (size == 0 && file->recdim != -1) {
@@ -1069,7 +1069,7 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 
 	  variable = (NioVariableObject *) PyDict_GetItemString(file->variables,name);
 	  if (variable) {
-		  printf("variable %s exists: cannot create\n",name);
+		  printf("variable (%s) exists: cannot create\n",name);
 		  return variable;
 	  }
 		  
@@ -1155,14 +1155,14 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
 		  ltype  = 'c';
 	  }
 	  else {
-		  sprintf (errbuf,"Cannot create variable %s: string arrays not yet supported on write",name);
+		  sprintf (errbuf,"Cannot create variable (%s): string arrays not yet supported on write",name);
 		  PyErr_SetString(PyExc_TypeError, errbuf);
 		  return NULL;
 	  }
   }
 #else
   if (type[0] == 'O') {
-	  sprintf (errbuf,"Cannot create variable %s: string arrays not supported on write",name);
+	  sprintf (errbuf,"Cannot create variable (%s): string arrays not supported on write",name);
 	  PyErr_SetString(PyExc_TypeError, errbuf);
 	  return NULL;
   }
@@ -2208,7 +2208,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 static int
 NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *value)
 {
-  int *dims;
+  int *dims = NULL;
   PyArrayObject *array;
   int i, d;
   Py_ssize_t nitems,var_el_count;
@@ -2283,11 +2283,32 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
       free(indices);
     return -1;
   }
-  array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+  if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
+	  array = (PyArrayObject *) value;
+	  if (array->descr->type == 'l' && array->descr->elsize == 8) {
+		  PyArrayObject *array2 = (PyArrayObject *)  PyArray_Cast(array, PyArray_INT);
+		  sprintf(err_buf,"coercing 8-byte long data to 4-byte integer variable (%s): possible data loss due to overflow",
+			  self->name);
+		  PyErr_SetString(NIOError, err_buf);
+		  PyErr_Print();
+		  array = (PyArrayObject *)PyArray_ContiguousFromObject((PyObject*)array2,self->type,0,d);
+		  Py_DECREF(array2);
+	  }
+	  else {
+		  array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+	  }
+  }
+  else {
+	  array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+  }
 
-  /* PyArray_C.. collapses single element dimensions apparently */
-
-  if (array != NULL) {
+  if (array == NULL) {
+	  sprintf(err_buf,"type or dimensional mismatch writing to variable (%s)",self->name);
+	  PyErr_SetString(NIOError, err_buf);
+	  PyErr_Print();
+	  ret = -1;
+  }
+  else {
 	  NrmQuark qtype;
 	  int n_dims;
 	  int scalar_size = 1;
@@ -2297,11 +2318,10 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  int select_all = 1;
 	  int array_dim = 0;
 
-	  n_dims = d + 1;
+	  n_dims = d;
 	  if (array->nd == 0) {
 		  n_dims = 1;
 	  }
-
 
 	  if (nitems < var_el_count || self->unlimited)
 		  select_all = 0;
@@ -2313,7 +2333,14 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  Py_DECREF(array);
 		  array = array2;
 		  qtype = NrmStringToQuark("integer");
+		  sprintf(err_buf,"coercing 8-byte long to 4-byte integer: possible data loss due to overflow");
+		  PyErr_SetString(NIOError, err_buf);
+		  PyErr_Print();
 	  }
+	  else if (qtype == NrmStringToQuark("long")) {
+		  qtype = NrmStringToQuark("integer");
+	  }
+
 	  if (array->nd > self->nd) {
 		  n_dims = array->nd;
 		  dims = realloc(dims,sizeof(int) * array->nd);
@@ -2321,16 +2348,13 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  dims[i] = (int) array->dimensions[array_dim++];
 		  }
 	  }
-	  else if (array->nd > 0) {
+#if 0
+	  else if (array->nd == n_dims) {
 		  for (i = 0; i < n_dims; i++) {
-			  if (self->dimensions[i] == 1) {
-				  dims[i] = 1;
-			  }
-			  else {
-				  dims[i] = (int) array->dimensions[array_dim++];
-			  }
+			  dims[i] = (int) array->dimensions[array_dim++];
 		  }
 	  }
+#endif
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : dims,
@@ -2368,8 +2392,10 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   /* update shape */
   (void) NioVariable_GetShape(self);
-  free(dims);
-  free(indices);
+  if (dims != NULL)
+	  free(dims);
+  if (indices != NULL)
+	  free(indices);
   return ret;
 }
 
