@@ -2503,8 +2503,8 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
       int ni = PyTuple_Size(index);
       if (ni <= self->nd) {
 	int d;
-	d = 0;
 	Py_ssize_t i;
+	d = 0;
 	for (i = 0; i < ni; i++) {
 	  PyObject *subscript = PyTuple_GetItem(index, i);
 	  if (PyInt_Check(subscript)) {
