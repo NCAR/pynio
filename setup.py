@@ -201,7 +201,7 @@ for array_module in array_modules:
     else:
       pynio_pkg_name = 'PyNIO'
       pynio_pth_file = [pynio_pkg_name + '.pth']
-      pynio_files    = ['Nio.py', '__init__.py',pynio_vfile]
+      pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile]
 
     DMACROS =  [ ('USE_NUMPY','1'), ('NeedFuncProto','1') ]
 
