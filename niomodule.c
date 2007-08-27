@@ -821,7 +821,7 @@ NioFileObject_dealloc(NioFileObject *self)
   Py_XDECREF(self->attributes);
   Py_XDECREF(self->name);
   Py_XDECREF(self->mode);
-  PyMem_DEL(self);
+  PyObject_DEL(self);
 }
 
 static int GetNioMode(char* filename,char *mode) 
@@ -897,7 +897,6 @@ NioFile_Open(char *filename, char *mode)
   else {
 	  NioFileObject_dealloc(self);
 	  PyErr_SetString(NIOError,"Unable to open file");
-	  PyErr_Print();
 	  return NULL;
   }
   self->name = PyString_FromString(filename);
@@ -1095,7 +1094,6 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		  if (dimids[i] == -1) {
 			  sprintf(err_buf,"Dimension (%s) not found",dimension_names[i]);
 			  PyErr_SetString(NIOError, err_buf);
-			  PyErr_Print();
 			  if (qdims != NULL) 
 				  free(qdims);
 			  if (dimids != NULL)
@@ -1265,9 +1263,6 @@ NioFileObject_close(NioFileObject *self, PyObject *args)
 	  if (check_if_open(self,1)) {
 		  NioFile_AddHistoryLine(self, history);
 	  }
-	  else {
-		  PyErr_Print();
-	  }
   }
 
   if (NioFile_Close(self) == 0) {
@@ -1317,7 +1312,7 @@ NioFile_GetAttribute(NioFileObject *self, char *name)
     }
     else {
         PyErr_Clear();
-      return Py_FindMethod(NioFileObject_methods, (PyObject *)self, name);
+        return Py_FindMethod(NioFileObject_methods, (PyObject *)self, name);
     }
   }
   else
@@ -1682,7 +1677,7 @@ NioVariableObject_dealloc(NioVariableObject *self)
     free(self->name);
   Py_XDECREF(self->attributes);
   Py_XDECREF(self->file);
-  PyMem_DEL(self);
+  PyObject_DEL(self);
 }
 
 /* Create variable object */
@@ -2305,7 +2300,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   if (array == NULL) {
 	  sprintf(err_buf,"type or dimensional mismatch writing to variable (%s)",self->name);
 	  PyErr_SetString(NIOError, err_buf);
-	  PyErr_Print();
 	  ret = -1;
   }
   else {
@@ -3013,7 +3007,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 
   if (extq == NrmNULLQUARK) {
 	  PyErr_SetString(NIOError,"invalid extension or invalid file type");
-	  PyErr_Print();
 	  return NULL;
   }
 
@@ -3027,7 +3020,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   
   if (options != Py_None && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
 	  PyErr_SetString(NIOError, "options argument must be an NioOptions class instance");
-	  PyErr_Print();
   }
   else if (options != Py_None) {
 	  NclMultiDValData md = NULL;
@@ -3061,7 +3053,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 				  strncat(s,keystr,255);
 				  strncat(s," value is an invalid type for option",255);
 				  PyErr_SetString(NIOError,s);
-				  PyErr_Print();
 				  Py_DECREF(key);
 				  Py_DECREF(value);
 				  continue;
@@ -3092,7 +3083,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 			  strncat(s,keystr,255);
 			  strncat(s," is not an option for this format",255);
 			  PyErr_SetString(NIOError,s);
-			  PyErr_Print();
 			  Py_DECREF(key);
 			  continue;
 		  }
@@ -3140,7 +3130,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 			  strncat(s,keystr,255);
 			  strncat(s," value is an invalid type for option",255);
 			  PyErr_SetString(NIOError,s);
-			  PyErr_Print();
 			  Py_DECREF(key);
 			  Py_DECREF(value);
 			  continue;
@@ -3159,9 +3148,6 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   if (strlen(history) > 0) {
 	  if (check_if_open(file,1)) {
 		  NioFile_AddHistoryLine(file, history);
-	  }
-	  else {
-		  PyErr_Print();
 	  }
   }
   return (PyObject *)file;
