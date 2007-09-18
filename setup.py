@@ -4,7 +4,7 @@ from distutils.core import setup, Extension
 try:
   HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
 except:
-  HAS_NETCDF4 = 0
+  HAS_NETCDF4 = 1
 
 try:
   HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
