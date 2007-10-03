@@ -431,6 +431,8 @@ int data_type(NclBasicDataTypes ntype)
 		return PyArray_UBYTE;
         case NCL_char:
 		return PyArray_CHAR;
+        case NCL_logical:
+		return PyArray_BOOL;
         case NCL_string:
 #ifdef USE_NUMPY
 		return PyArray_STRING;
@@ -472,6 +474,9 @@ typecode(int type)
 #ifdef USE_NUMPY
 
   switch(type) {
+  case PyArray_BOOL:
+	  buf[0] = PyArray_BOOLLTR;
+	  break;
   case PyArray_BYTE:
 	  buf[0] = PyArray_BYTELTR;
 	  break;
@@ -507,6 +512,9 @@ typecode(int type)
 
 #else
   switch(type) {
+  case PyArray_BOOL:
+	  buf[0] = '?';
+	  break;
   case PyArray_CHAR:
 	  buf[0] = 'c';
 	  break;
@@ -573,6 +581,9 @@ nio_type_from_code(int code)
   case 'S':
 	  type = NrmStringToQuark("string");
 	  break;
+  case '?':
+	  type = NrmStringToQuark("logical");
+	  break;
   default:
 	  type = NrmNULLQUARK;
   }
@@ -608,6 +619,9 @@ nio_type_from_code(int code)
 	  break;
   case 'O':
 	  type = NrmStringToQuark("string");
+	  break;
+  case '?':
+	  type = NrmStringToQuark("logical");
 	  break;
   default:
 	  type = NrmNULLQUARK;
