@@ -15,11 +15,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "nio.h"
-#ifdef USE_NUMPY
 #include <numpy/arrayobject.h>
-#else
-#include <Numeric/arrayobject.h>
-#endif
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -185,7 +181,6 @@ length -- a positive integer specifying the dimension length. If set to\n\
 None or 0, specifies the unlimited dimension.\n\
 ";
 
-#ifdef USE_NUMPY
 static char *create_variable_doc =
 "\n\
 Create a new variable with given name, type, and dimensions in a writable file.\
@@ -201,24 +196,6 @@ type -- a type identifier. The following are currently supported:\n\
     'S1','c' -- character\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
-#else
-static char *create_variable_doc =
-"\n\
-Create a new variable with given name, type, and dimensions in a writable file.\
-\n\n\
-f.create_variable(name,type,dimensions)\n\
-name -- a string specifying the variable name.\n\
-type -- a type identifier. The following are currently supported:\n\
-    Float, Float64, 'd'  -- 64 bit real\n\
-    Float0, Float32, 'f'-- 32 bit real\n\
-    Int, Int32, 'l' -- 32 bit integer\n\
-    Int16, 's' -- 16 bit integer\n\
-    Int0, Int8, 'b', '1' -- 8 bit signed or unsigned integer\n\
-    'c' -- character\n\
-dimensions -- a tuple of dimension names (strings), previously defined\n\
-";
-#endif
-
 
 static char *niovariable_type_doc =
 "\n\
@@ -251,7 +228,6 @@ Methods:\n\
  * v.typecode.__doc__
  */
 
-#ifdef USE_NUMPY
 static char *assign_value_doc =
 "\n\
 Assign a value to a variable in the file.\n\n\
@@ -263,21 +239,7 @@ This method is the only way to assign a scalar value. There is no way to\n\
 indicate a slice. For array variables direct assignment using slicing\n\
 syntax is more flexible.\n\
 ";
-#else
-static char *assign_value_doc =
-"\n\
-Assign a value to a variable in the file.\n\n\
-v = f.variables['varname']\n\
-v.assign_value(value)\n\
-value - a Numeric array or a Python sequence of values that are coercible\n\
-to the type of variable 'v'.\n\
-This method is the only way to assign a scalar value. There is no way to\n\
-indicate a slice. For array variables direct assignment using slicing\n\
-syntax is more flexible.\n\
-";
-#endif
 
-#ifdef USE_NUMPY
 static char *get_value_doc =
 "\n\
 Retrieve the value of a variable in the file.\n\n\
@@ -288,20 +250,7 @@ This method is the only way to retrieve the scalar value from a file.\n\
 There is no way to indicate a slice. For array variables direct assignment\n\
 using slicing syntax is more flexible.\n\
 ";
-#else
-static char *get_value_doc =
-"\n\
-Retrieve the value of a variable in the file.\n\n\
-v = f.variables['varname']\n\
-val = v.get_value()\n\
-'val' is returned as a Numeric array.\n\
-This method is the only way to retrieve the scalar value from a file.\n\
-There is no way to indicate a slice. For array variables direct assignment\n\
-using slicing syntax is more flexible.\n\
-";
-#endif
 
-#ifdef USE_NUMPY
 static char *typecode_doc =
 "\n\
 Return a character code representing the variable's type.\n\n\
@@ -316,22 +265,6 @@ Return variable 't' will be one of the following:\n\
     'S1' -- character\n\
     'S' -- string\n\
 ";
-#else
-static char *typecode_doc =
-"\n\
-Return a character code representing the variable's type.\n\n\
-v = f.variables['varname']\n\
-t = v.typecode()\n\
-Return variable 't' will be one of the following:\n\
-    'd'  -- 64 bit real\n\
-    'f'-- 32 bit real\n\
-    'l' -- 32 bit integer\n\
-    's' -- 16 bit integer\n\
-    'b' -- 8 bit integer\n\
-    'c' -- character\n\
-    'O' -- string\n\
-";
-#endif
 
 /*
  * global used in NclMultiDValData
@@ -434,11 +367,7 @@ int data_type(NclBasicDataTypes ntype)
         case NCL_logical:
 		return PyArray_BOOL;
         case NCL_string:
-#ifdef USE_NUMPY
 		return PyArray_STRING;
-#else
-		return PyArray_OBJECT; /* this works for read-only */
-#endif
 	default:
 		return PyArray_NOTYPE;
 	}
@@ -471,7 +400,6 @@ typecode(int type)
 
    memset(buf,0,3);
 
-#ifdef USE_NUMPY
 
   switch(type) {
   case PyArray_BOOL:
@@ -509,47 +437,8 @@ typecode(int type)
 	  break;
   }
   return &buf[0];
-
-#else
-  switch(type) {
-  case PyArray_BOOL:
-	  buf[0] = '?';
-	  break;
-  case PyArray_CHAR:
-	  buf[0] = 'c';
-	  break;
-  case PyArray_SBYTE:
-	  buf[0] = '1';
-	  break;
-  case PyArray_UBYTE:
-	  buf[0] = 'b';
-	  break;
-  case PyArray_SHORT:
-	  buf[0] = 's';
-	  break;
-  case PyArray_INT:
-	  buf[0] = 'i';
-	  break;
-  case PyArray_LONG:
-	  buf[0] = 'l';
-	  break;
-  case PyArray_FLOAT:
-	  buf[0] = 'f';
-	  break;
-  case PyArray_DOUBLE:
-	  buf[0] = 'd';
-	  break;
-  case PyArray_OBJECT: /* used for string arrays only */
-	  buf[0] = 'O';
-	  break;
-  default: 
-	  buf[0] = ' ';
-  }
-  return &buf[0];
-#endif
 }
 
-#ifdef USE_NUMPY
 static NrmQuark
 nio_type_from_code(int code)
 {
@@ -589,46 +478,6 @@ nio_type_from_code(int code)
   }
   return type;
 }
-#else
-static NrmQuark
-nio_type_from_code(int code)
-{
-  NrmQuark type;
-  switch((char) code) {
-  case 'c':
-	  type = NrmStringToQuark("character");
-	  break;
-  case 'b':
-  case '1':
-	  type = NrmStringToQuark("byte");
-	  break;
-  case 's':
-	  type = NrmStringToQuark("short");
-	  break;
-  case 'i':
-	  type = NrmStringToQuark("integer");
-	  break;
-  case 'l':
-	  type = NrmStringToQuark("long");
-	  break;
-  case 'f':
-	  type = NrmStringToQuark("float");
-	  break;
-  case 'd':
-	  type = NrmStringToQuark("double");
-	  break;
-  case 'O':
-	  type = NrmStringToQuark("string");
-	  break;
-  case '?':
-	  type = NrmStringToQuark("logical");
-	  break;
-  default:
-	  type = NrmNULLQUARK;
-  }
-  return type;
-}
-#endif
 
 static void
 collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
@@ -741,7 +590,6 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 			   qtype = NrmStringToQuark("integer");
                   }
                   if (array) {
-#ifdef USE_NUMPY
 			   int *dims;
 			   int malloced = 0;
 			   int i;
@@ -763,12 +611,6 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
 			   if (malloced)
 				   free(dims);
-#else
-	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-		                                    (void*)array->data,NULL,n_dims,
-				                    array->nd == 0 ? &dim_sizes : array->dimensions,
-				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-#endif
                   }
            }
   }
@@ -1161,7 +1003,6 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
     return NULL;
 
   ltype = type[0];
-#ifdef USE_NUMPY
   if (strlen(type) > 1) {
 	  if (type[0] == 'S' && type[1] == '1') {
 		  ltype  = 'c';
@@ -1172,13 +1013,6 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
 		  return NULL;
 	  }
   }
-#else
-  if (type[0] == 'O') {
-	  sprintf (errbuf,"Cannot create variable (%s): string arrays not supported on write",name);
-	  PyErr_SetString(PyExc_TypeError, errbuf);
-	  return NULL;
-  }
-#endif
   ndim = PyTuple_Size(dim);
   if (ndim == 0)
     dimension_names = NULL;
@@ -1495,11 +1329,7 @@ NioFileObject_str(NioFileObject *file)
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef USE_NUMPY
 				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
-#else
-				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
-#endif
 
 				format_object(tbuf,att,att_arr_val->descr->type);
 				BUF_INSERT(tbuf);
@@ -1509,13 +1339,8 @@ NioFileObject_str(NioFileObject *file)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
-#else
-					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
-										    k * att_arr_val->descr->elsize);
-#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					BUF_INSERT(tbuf);
 					if (k < att_arr_val->dimensions[0] - 1) {
@@ -1596,11 +1421,7 @@ NioFileObject_str(NioFileObject *file)
 				int k;
 				PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 				if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
-#else
-					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
-#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					/*sprintf(tbuf,"%s\n",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
@@ -1610,14 +1431,9 @@ NioFileObject_str(NioFileObject *file)
 					sprintf(tbuf,"[");
 					BUF_INSERT(tbuf);
 					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef USE_NUMPY
 						PyObject *att = 
 							att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
-#else
-						PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
-											    k * att_arr_val->descr->elsize);
-#endif
 
 						format_object(tbuf,att,att_arr_val->descr->type);
 						/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
@@ -1929,12 +1745,8 @@ NioVariable_Indices(NioVariableObject *var)
 PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
-#ifdef USE_NUMPY
   int is_own;
   npy_intp *dims;
-#else
-  int *dims;
-#endif
   PyArrayObject *array = NULL;
   int i, d;
   int nitems;
@@ -1951,11 +1763,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   if (self->nd == 0)
     dims = NULL;
   else {
-#ifdef USE_NUMPY
     dims = (npy_intp *)malloc(self->nd*sizeof(npy_intp));
-#else
-    dims = (int *)malloc(self->nd*sizeof(int));
-#endif
     if (dims == NULL) {
       free(indices);
       return (PyArrayObject *)PyErr_NoMemory();
@@ -2008,7 +1816,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     return NULL;
   }
 
-#ifdef USE_NUMPY
   if (nitems > 0 && self->type == PyArray_STRING) {
 	  NclMultiDValData md;
 	  NclSelectionRecord *sel_ptr = NULL;
@@ -2060,49 +1867,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 	  if (sel_ptr)
 		  free(sel_ptr);
   }
-#else
-  if (nitems > 0 && self->type == PyArray_OBJECT) {
-	  NclMultiDValData md;
-	  NclSelectionRecord *sel_ptr = NULL;
-	  NclFile nfile = (NclFile) self->file->id;
-	  if (self->nd > 0) {
-		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
-		  if (sel_ptr != NULL) {
-			  sel_ptr->n_entries = self->nd;
-			  for (i = 0; i < self->nd; i++) {
-				  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
-				  sel_ptr->selection[i].dim_num = i;
-				  sel_ptr->selection[i].u.sub.start = indices[i].start;
-				  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
-				  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
-				  sel_ptr->selection[i].u.sub.is_single = 
-					  indices[i].item != 0;
-			  }
-		  }
-	  }
-	  md = _NclFileReadVarValue(nfile,NrmStringToQuark(self->name),sel_ptr);
-	  if (! md) {
-		  nio_ncerr = 23;
-		  nio_seterror();
-	  }
-	  else {
-		  NrmQuark qstr;
-		  PyObject *pystr;
-		  array = (PyArrayObject *)PyArray_FromDims(d, dims, self->type);
-		  for (i = 0; i < nitems; i++) {
-			  qstr = ((NrmQuark *)md->multidval.val)[i];
-			  pystr = PyString_FromString(NrmQuarkToString(qstr));
-			  if (pystr != NULL) {
-				  array->descr->setitem(pystr,array->data + i * array->descr->elsize);
-			  }
-		  }
-		  _NclDestroyObj((NclObj)md);
-
-	  }		  
-	  if (sel_ptr)
-		  free(sel_ptr);
-  }
-#endif
   else if (nitems > 0) {
 	  if (self->nd == 0) {
 		  NclFile nfile = (NclFile) self->file->id;
@@ -2114,7 +1878,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  Py_DECREF(array);
 			  array = NULL;
 		  }
-#ifdef USE_NUMPY 			  
 		  array =(PyArrayObject *)
 			  PyArray_New(&PyArray_Type,d,
 				      dims,self->type,NULL,md->multidval.val,
@@ -2124,12 +1887,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  array->flags |= NPY_OWNDATA;
 		  }
 				  
-#else
-		  array = (PyArrayObject *)
-			  PyArray_FromDimsAndData(d,dims,self->type,
-						  (char*)md->multidval.val);
-		  array->flags |= OWN_DATA;
-#endif
 		  md->multidval.val = NULL;
 		  _NclDestroyObj((NclObj)md);
 	  }
@@ -2157,7 +1914,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 				  Py_DECREF(array);
 				  array = NULL;
 			  }
-#ifdef USE_NUMPY 			  
 			  array =(PyArrayObject *)
 				  PyArray_New(&PyArray_Type,d,
 					      dims,self->type,NULL,md->multidval.val,
@@ -2168,13 +1924,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  }
 				  
 			  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
-#else
-			  array = (PyArrayObject *)
-				  PyArray_FromDimsAndData(d,dims,self->type,
-							  (char*)md->multidval.val);
-			  array->flags |= OWN_DATA;
-
-#endif
 
 			  md->multidval.val = NULL;
 			  _NclDestroyObj((NclObj)md);
@@ -2880,11 +2629,7 @@ NioVariableObject_str(NioVariableObject *var)
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *)att_val;
 			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-#ifdef USE_NUMPY
 				PyObject *att = att_arr_val->descr->f->getitem(PyArray_DATA(att_val),att_val);
-#else
-				PyObject *att = att_arr_val->descr->getitem(att_arr_val->data);
-#endif
 				format_object(tbuf,att,att_arr_val->descr->type);
 				BUF_INSERT(tbuf);
 				BUF_INSERT("\n");
@@ -2894,13 +2639,8 @@ NioVariableObject_str(NioVariableObject *var)
 				sprintf(tbuf,"[");
 				BUF_INSERT(tbuf);
 				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-#ifdef USE_NUMPY
 					PyObject *att = att_arr_val->descr->f->getitem(att_arr_val->data + 
 										       k * att_arr_val->descr->elsize,att_val);
-#else
-					PyObject *att = att_arr_val->descr->getitem(att_arr_val->data + 
-										    k * att_arr_val->descr->elsize);
-#endif
 					format_object(tbuf,att,att_arr_val->descr->type);
 					/*sprintf(tbuf,"%s",PyString_AsString(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
@@ -3228,7 +2968,6 @@ initnio(void)
  
   /* Import the array module */
 /*#ifdef import_array*/
-/*#ifdef USE_NUMPY*/
   import_array();
 /*#endif*/
 

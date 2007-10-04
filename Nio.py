@@ -69,5 +69,4 @@ import pynio_version
 __version__              = pynio_version.version
 __array_module__         = pynio_version.array_module
 __array_module_version__ = pynio_version.array_module_version
-HAS_NUM                  = pynio_version.HAS_NUM
 del pynio_version

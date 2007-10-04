@@ -3,9 +3,7 @@ SUBDIRS = test
 
 MYNAME	= nio.so
 
-#ifdef UseNumpy
-NUMPY_DEFS = -DUSE_NUMPY -I$(PYTHONPKGSDIR)/numpy/core/include
-#endif
+NUMPY_DEFS = -I$(PYTHONPKGSDIR)/numpy/core/include
 
 SRCS = niomodule.c
 OBJS = niomodule.o
