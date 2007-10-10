@@ -487,7 +487,7 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
   NclFAttRec *att;
   NclFVarRec *fvar = NULL;
   char *name;
-  int length;
+  npy_intp length;
   int py_type;
   int i;
   if (varid > -1) {
@@ -522,12 +522,12 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 	  }
 	  else {
 		  PyObject *array;
-		  length = md->multidval.totalelements;
+		  length = (npy_intp) md->multidval.totalelements;
 		  py_type = data_type(att->data_type);
-		  array = PyArray_FromDims(1, &length, py_type);
+		  array = PyArray_SimpleNew(1, &length, py_type);
 		  if (array != NULL) {
 			  memcpy(((PyArrayObject *)array)->data,
-				 md->multidval.val,length * md->multidval.type->type_class.size);
+				 md->multidval.val,(size_t)length * md->multidval.type->type_class.size);
 			  array = PyArray_Return((PyArrayObject *)array);
 			  if (array != NULL) {
 				  PyDict_SetItemString(attributes, name, array);
@@ -578,7 +578,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 	  if (tmparray != NULL) {
 		  pyarray_type = tmparray->descr->type_num;
 	  }
-	  array = (PyArrayObject *)PyArray_ContiguousFromObject(value, pyarray_type, 0, 1);
+	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value, pyarray_type, 0, 1);
           if (array) {
 	          n_dims = (array->nd == 0) ? 1 : array->nd;
 	          qtype = nio_type_from_code(array->descr->type);
@@ -1968,14 +1968,14 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 {
   int *dims = NULL;
   PyArrayObject *array;
-  int i, d;
+  int i, n_dims;
   Py_ssize_t nitems,var_el_count;
   int error = 0;
   int ret = 0;
 
   /* update shape */
   (void) NioVariable_GetShape(self);
-  d = 0;
+  n_dims = 0;
   nitems = 1;
   var_el_count = 1;
   if (!check_if_open(self->file, 1)) {
@@ -2024,11 +2024,11 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  indices[i].stop = self->dimensions[i] - 1;
 	  }
 	  if (indices[i].item == 0) {
-		  dims[d] = (int)abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
-		  if (dims[d] < 0)
-			  dims[d] = 0;
-		  nitems *= dims[d];
-		  d++;
+		  dims[n_dims] = (int)abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
+		  if (dims[n_dims] < 0)
+			  dims[n_dims] = 0;
+		  nitems *= dims[n_dims];
+		  n_dims++;
 	  }
 	  else
 		  indices[i].stop = indices[i].start;
@@ -2049,15 +2049,15 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  self->name);
 		  PyErr_SetString(NIOError, err_buf);
 		  PyErr_Print();
-		  array = (PyArrayObject *)PyArray_ContiguousFromObject((PyObject*)array2,self->type,0,d);
+		  array = (PyArrayObject *)PyArray_ContiguousFromAny((PyObject*)array2,self->type,0,n_dims);
 		  Py_DECREF(array2);
 	  }
 	  else {
-		  array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
 	  }
   }
   else {
-	  array = (PyArrayObject *)PyArray_ContiguousFromObject(value,self->type,0,d);
+	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
   }
 
   if (array == NULL) {
@@ -2067,7 +2067,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   else {
 	  NrmQuark qtype;
-	  int n_dims;
 	  int scalar_size = 1;
 	  NclFile nfile = (NclFile) self->file->id;
 	  NclMultiDValData md;
@@ -2075,7 +2074,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  int select_all = 1;
 	  int array_dim = 0;
 
-	  n_dims = d;
 	  if (array->nd == 0) {
 		  n_dims = 1;
 	  }
@@ -2105,13 +2103,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  dims[i] = (int) array->dimensions[array_dim++];
 		  }
 	  }
-#if 0
-	  else if (array->nd == n_dims) {
-		  for (i = 0; i < n_dims; i++) {
-			  dims[i] = (int) array->dimensions[array_dim++];
-		  }
-	  }
-#endif
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : dims,
