@@ -50,7 +50,7 @@ ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
             'site-packages')
 
-LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','z','netcdf']
+LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','png','z','netcdf']
 
 if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
@@ -64,6 +64,8 @@ if HAS_HDFEOS > 0:
 if HAS_GRIB2 > 0:
     LIBRARIES.append('grib2c')
     LIBRARIES.append('jasper')
+    LIBRARIES.append('png')
+    LIBRARIES.append('z')
     
 LIBRARIES.append('g2c')   # Put on the end.
 
