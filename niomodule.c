@@ -147,7 +147,7 @@ Attributes (do not modify):\n\
 Methods:\n\
     close([history]) -- close the file.\n\
     create_dimension(name,length) -- create a dimension in the file.\n\
-    create_variable(name,length) -- create a variable in the file.\n\n\
+    create_variable(name,type,dimensions) -- create a variable in the file.\n\n\
 ";
 
 /* NioFile object method doc strings */
@@ -1094,6 +1094,9 @@ NioFile_Close(NioFileObject *file)
 {
   if (check_if_open(file, 0)) {
 	  _NclDestroyObj((NclObj)file->id);
+	  /* it is necessary to delete the variable dictionary here because the
+	     variables contain references to the file object */
+	  PyDict_Clear(file->variables);  
 	  file->open = 0;
 	  return 0;
   }
@@ -1466,7 +1469,7 @@ NioFileObject_str(NioFileObject *file)
 statichere PyTypeObject NioFile_Type = {
   PyObject_HEAD_INIT(NULL)
   0,		/*ob_size*/
-  "NioFile",	/*tp_name*/
+  "Nio.NioFile",	/*tp_name*/
   sizeof(NioFileObject),	/*tp_basicsize*/
   0,		/*tp_itemsize*/
   /* methods */
@@ -1485,8 +1488,38 @@ statichere PyTypeObject NioFile_Type = {
   0,			/*tp_getattro*/
   0,                    /*tp_setattro*/
   0,			/*tp_as_buffer*/
-  0,                    /*tp_flags*/
-  0                     /*tp_doc*/
+  (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE),  /*tp_flags*/
+  0,                     /*tp_doc*/
+  (traverseproc)0,                          /*tp_traverse */
+  (inquiry)0,                               /*tp_clear */
+  (richcmpfunc)0,           /*tp_richcompare */
+  0,     /*tp_weaklistoffset */
+
+  /* Iterator support (use standard) */
+
+  (getiterfunc) 0,                  /* tp_iter */
+  (iternextfunc)0,                          /* tp_iternext */
+
+  /* Sub-classing (new-style object) support */
+
+  NioFileObject_methods,                    /* tp_methods */
+  0,                                        /* tp_members */
+  0,                                        /* tp_getset */
+  0,                                        /* tp_base */
+  0,                                        /* tp_dict */
+  0,                                        /* tp_descr_get */
+  0,                                        /* tp_descr_set */
+  0,                                        /* tp_dictoffset */
+  (initproc)0,                              /* tp_init */
+  0,                                        /* tp_alloc */
+  0,                                        /* tp_new */
+  0,                                        /* tp_free */
+  0,                                        /* tp_is_gc */
+  0,                                        /* tp_bases */
+  0,                                        /* tp_mro */
+  0,                                        /* tp_cache */
+  0,                                        /* tp_subclasses */
+  0                                         /* tp_weaklist */
 };
 
 /*
@@ -1530,6 +1563,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
     self->nd = ndims;
     self->dimids = dimids;
     self->unlimited = 0;
+    self->dimensions = NULL;
     if (ndims > 0) {
 	    self->dimensions = (Py_ssize_t *)malloc(ndims*sizeof(Py_ssize_t));
 	    if (self->dimensions != NULL) {
@@ -1715,7 +1749,7 @@ NioVariable_SetAttributeString(NioVariableObject *self, char *name, char *value)
 
 /* Subscripting */
 
-static int
+static Py_ssize_t
 NioVariableObject_length(NioVariableObject *self)
 {
   if (self->nd > 0)
@@ -2405,35 +2439,54 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 static PyObject *
 NioVariableObject_error1(NioVariableObject *self, NioVariableObject *other)
 {
-  PyErr_SetString(PyExc_TypeError, "can't add NIO variables");
+  PyErr_SetString(PyExc_TypeError, "can't concatenate NIO variables");
   return NULL;
 }
 
 static PyObject *
-NioVariableObject_error2(NioVariableObject *self,  int n)
+NioVariableObject_error2(NioVariableObject *self,  Py_ssize_t n)
 {
-  PyErr_SetString(PyExc_TypeError, "can't multiply NIO variables");
+  PyErr_SetString(PyExc_TypeError, "can't repeat NIO variables");
   return NULL;
 }
 
+#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 
 static PySequenceMethods NioVariableObject_as_sequence = {
   (inquiry)NioVariableObject_length,		/*sq_length*/
-  (binaryfunc)NioVariableObject_error1,       /*nb_add*/
-  (intargfunc)NioVariableObject_error2,       /*nb_multiply*/
+  (binaryfunc)NioVariableObject_error1,       /*sq_concat*/
+  (intargfunc)NioVariableObject_error2,       /*sq_repeat*/
   (intargfunc)NioVariableObject_item,		/*sq_item*/
   (intintargfunc)NioVariableObject_slice,	/*sq_slice*/
   (intobjargproc)NioVariableObject_ass_item,	/*sq_ass_item*/
   (intintobjargproc)NioVariableObject_ass_slice,   /*sq_ass_slice*/
 };
 
-
-
 static PyMappingMethods NioVariableObject_as_mapping = {
   (inquiry)NioVariableObject_length,		/*mp_length*/
   (binaryfunc)NioVariableObject_subscript,	      /*mp_subscript*/
   (objobjargproc)NioVariableObject_ass_subscript,   /*mp_ass_subscript*/
 };
+
+#else
+
+static PySequenceMethods NioVariableObject_as_sequence = {
+  (lenfunc)NioVariableObject_length,		/*sq_length*/
+  (binaryfunc)NioVariableObject_error1,       /*sq_concat*/
+  (ssizeargfunc)NioVariableObject_error2,       /*sq_repeat*/
+  (ssizeargfunc)NioVariableObject_item,		/*sq_item*/
+  (ssizessizeargfunc)NioVariableObject_slice,	/*sq_slice*/
+  (ssizeobjargproc)NioVariableObject_ass_item,	/*sq_ass_item*/
+  (ssizessizeobjargproc)NioVariableObject_ass_slice,   /*sq_ass_slice*/
+};
+
+static PyMappingMethods NioVariableObject_as_mapping = {
+  (lenfunc)NioVariableObject_length,		/*mp_length*/
+  (binaryfunc)NioVariableObject_subscript,	      /*mp_subscript*/
+  (objobjargproc)NioVariableObject_ass_subscript,   /*mp_ass_subscript*/
+};
+
+#endif
 
 void printval(char *buf,NclBasicDataTypes type,void *val)
 {
@@ -2655,7 +2708,7 @@ NioVariableObject_str(NioVariableObject *var)
 statichere PyTypeObject NioVariable_Type = {
   PyObject_HEAD_INIT(NULL)
   0,		     /*ob_size*/
-  "NioVariable",  /*tp_name*/
+  "Nio.NioVariable",  /*tp_name*/
   sizeof(NioVariableObject),	     /*tp_basicsize*/
   0,		     /*tp_itemsize*/
   /* methods */
@@ -2670,7 +2723,42 @@ statichere PyTypeObject NioVariable_Type = {
   &NioVariableObject_as_mapping,	/*tp_as_mapping*/
   0,			/*tp_hash*/
   0,                    /*tp_call*/
-  (reprfunc)NioVariableObject_str   /*tp_str*/ 
+  (reprfunc)NioVariableObject_str,   /*tp_str*/ 
+  (getattrofunc)0,                          /*tp_getattro*/
+  (setattrofunc)0,                          /*tp_setattro*/
+  0,                         /*tp_as_buffer*/
+  (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE),  /*tp_flags*/
+  0,                     /*tp_doc*/
+  (traverseproc)0,                          /*tp_traverse */
+  (inquiry)0,                               /*tp_clear */
+  (richcmpfunc)0,           /*tp_richcompare */
+  0,     /*tp_weaklistoffset */
+
+  /* Iterator support (use standard) */
+
+  (getiterfunc) 0,                  /* tp_iter */
+  (iternextfunc)0,                          /* tp_iternext */
+
+  /* Sub-classing (new-style object) support */
+
+  NioVariableObject_methods,                    /* tp_methods */
+  0,                                        /* tp_members */
+  0,                                        /* tp_getset */
+  0,                                        /* tp_base */
+  0,                                        /* tp_dict */
+  0,                                        /* tp_descr_get */
+  0,                                        /* tp_descr_set */
+  0,                                        /* tp_dictoffset */
+  (initproc)0,                              /* tp_init */
+  0,                                        /* tp_alloc */
+  0,                                        /* tp_new */
+  0,                                        /* tp_free */
+  0,                                        /* tp_is_gc */
+  0,                                        /* tp_bases */
+  0,                                        /* tp_mro */
+  0,                                        /* tp_cache */
+  0,                                        /* tp_subclasses */
+  0                                         /* tp_weaklist */
 };
 
 
@@ -2929,16 +3017,14 @@ static PyMethodDef nio_methods[] = {
 
 /* Module initialization */
 
-void
+PyMODINIT_FUNC
 initnio(void)
 {
   PyObject *m, *d;
   static void *PyNIO_API[PyNIO_API_pointers];
 
   /* Initialize type object headers */
-  NioFile_Type.ob_type = &PyType_Type;
   NioFile_Type.tp_doc = niofile_type_doc;
-  NioVariable_Type.ob_type = &PyType_Type;
   NioVariable_Type.tp_doc = niovariable_type_doc;
 
   /* these cannot be initialized statically */
@@ -2951,6 +3037,10 @@ initnio(void)
   NioVariableObject_methods[1].ml_doc = get_value_doc; 
   NioVariableObject_methods[2].ml_doc = typecode_doc; 
   
+  if (PyType_Ready(&NioFile_Type) < 0)
+	  return;
+  if (PyType_Ready(&NioVariable_Type) < 0)
+	  return;
   
   /* Create the module and add the functions */
   m = Py_InitModule("nio", nio_methods);
@@ -2962,11 +3052,19 @@ initnio(void)
   import_array();
 /*#endif*/
 
-  /* Add error object the module */
+  /* Add error object to the module */
   d = PyModule_GetDict(m);
   NIOError = PyString_FromString("NIOError");
   PyDict_SetItemString(d, "NIOError", NIOError);
  
+  /* make NioFile and NioVariable visible to the module for subclassing */ 
+  Py_INCREF(&NioFile_Type);
+  PyModule_AddObject(m,"NioFile", (PyObject *) &NioFile_Type);
+  Py_INCREF(&NioVariable_Type);
+  PyModule_AddObject(m,"NioVariable", (PyObject *) &NioVariable_Type);
+  Py_INCREF(m);
+  PyModule_AddObject(m,"Nio", (PyObject *) m);
+
 
   /* Initialize C API pointer array and store in module */
   PyNIO_API[NioFile_Type_NUM] = (void *)&NioFile_Type;
