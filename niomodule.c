@@ -1,11 +1,11 @@
 /*
- * Objects representing NIO files and variables.
- *
- * David I. Brown
- * Adapted from netcdfmodule.c which was
- * Written by Konrad Hinsen
- * last revision: 1998-3-14
- */
+* Objects representing NIO files and variables.
+*
+* David I. Brown
+* Adapted from netcdfmodule.c which was
+* Written by Konrad Hinsen
+* last revision: 1998-3-14
+*/
 
 #ifndef PYNIO
 #define PYNIO
@@ -23,11 +23,10 @@
 /* Py_ssize_t for old Pythons */
 /* This code is as recommended by: */
 /* http://www.python.org/dev/peps/pep-0353/#conversion-guidelines */
-#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+#if PY_VERSION_HEX < 0x20500000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
 #define PY_SSIZE_T_MAX INT_MAX
 #define PY_SSIZE_T_MIN INT_MIN
-#define NO_SSIZE_T
 #endif
 
 #define _NIO_MODULE
@@ -45,22 +44,22 @@ f = Nio.open_file(filepath, mode='r',options=None, history='')\n\n\
 filepath -- path of file with data in a supported format. The path  must end\n\
 with an extension indicating the expected format of the file, whether or not\n\
 it is part of the actual file name. Valid extensions include:\n\
-    .nc, .cdf, .netcdf -- NetCDF\n\
-    .grb, .grib -- GRIB\n\
-    .hd, .hdf -- HDF\n\
-    .he2, .he4, .hdfeos -- HDFEOS\n\
-    .ccm -- CCM history files\n\
+.nc, .cdf, .netcdf -- NetCDF\n\
+.grb, .grib -- GRIB\n\
+.hd, .hdf -- HDF\n\
+.he2, .he4, .hdfeos -- HDFEOS\n\
+.ccm -- CCM history files\n\
 Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all\n\
 indicate a GRIB file.\n\
 mode -- access mode (optional):\n\
-     'r' -- open an existing file for reading\n\
-     'w','r+','rw','a' -- open an existing file for modification\n\
-     'c' -- create a new file open for writing\n\
+'r' -- open an existing file for reading\n\
+'w','r+','rw','a' -- open an existing file for modification\n\
+'c' -- create a new file open for writing\n\
 options -- instance of NioOptions class used to specify format-specific\n\
-    options\n\
+options\n\
 history -- a string specifying text to be appended to the file\'s global\n\
-    attribute. The attribute is created if it does not exist. Only valid\n\
-    if the file is open for writing\n\n\
+attribute. The attribute is created if it does not exist. Only valid\n\
+if the file is open for writing\n\n\
 Returns an NioFile object.\n\
 ";
 
@@ -76,9 +75,9 @@ print opt.__doc__ to see valid options.\n\
 
 
 /*
- * opt = Nio.options()
- * opt.__doc__
- */
+* opt = Nio.options()
+* opt.__doc__
+*/
 
 static char *option_class_doc = 
 "\n\
@@ -89,46 +88,46 @@ opt.OptionName = value\n\
 All option names and string option values are handled case-insensitively.\n\
 \n\
 Valid options for NetCDF files:\n\
-    Format -- Specify the format of newly created files (string):\n\
-        'Classic' -- (default) standard file (generally file size < 2GB)\n\
-        'LargeFile' or '64BitOffset' -- (fixed-size variables or record\n\
-            elements of unlimited dimension variables each up to 4GB)\n\
-        'NetCDF4Classic' -- Classic mode NetCDF 4 file (uses HDF 5 as the\n\
-            underlying format but is restricted to features of the classic\n\
-            NetCDF data model).\n\
-    CompressionLevel -- Specify the level of data compression on a scale\n\
-            of 0 - 9 (ignored unless Format is set to 'NetCDF4Classic').\n\
-    HeaderReserveSpace -- Reserve <int-value> extra bytes in the header\n\
-        of a file open for writing. Used to subsequently add dimensions,\n\
-        attributes, and variables to existing files efficiently.\n\
-    MissingToFillValue -- If set True (the default), create a virtual\n\
-        '_FillValue' attribute only for variables that have a\n\
-        'missing_value' but no '_FillValue'.\n\
-    PreFill -- If set True (the default), fill all elements of newly\n\
-        defined variables with a fill value. If set False, elements are\n\
-        undefined until data is written.\n\
-    SafeMode -- Close the file after each individual operation on the file.\n\
+Format -- Specify the format of newly created files (string):\n\
+'Classic' -- (default) standard file (generally file size < 2GB)\n\
+'LargeFile' or '64BitOffset' -- (fixed-size variables or record\n\
+    elements of unlimited dimension variables each up to 4GB)\n\
+'NetCDF4Classic' -- Classic mode NetCDF 4 file (uses HDF 5 as the\n\
+    underlying format but is restricted to features of the classic\n\
+    NetCDF data model).\n\
+CompressionLevel -- Specify the level of data compression on a scale\n\
+    of 0 - 9 (ignored unless Format is set to 'NetCDF4Classic').\n\
+HeaderReserveSpace -- Reserve <int-value> extra bytes in the header\n\
+of a file open for writing. Used to subsequently add dimensions,\n\
+attributes, and variables to existing files efficiently.\n\
+MissingToFillValue -- If set True (the default), create a virtual\n\
+'_FillValue' attribute only for variables that have a\n\
+'missing_value' but no '_FillValue'.\n\
+PreFill -- If set True (the default), fill all elements of newly\n\
+defined variables with a fill value. If set False, elements are\n\
+undefined until data is written.\n\
+SafeMode -- Close the file after each individual operation on the file.\n\
 \n\
 Valid options for GRIB files:\n\
-    DefaultNCEPTable -- (GRIB 1 only) Specify the table to use in certain\n\
-        ambiguous cases:\n\
-        'Operational' -- (default) Use the NCEP operational parameter table\n\
-        'Reanalysis' -- Use the NCEP reanalysis parameter table\n\
-    InitialTimeCoordinateType -- Specify the type of the coordinate\n\
-        associated with initial_time (as opposed to forecast_time)\n\
-        dimensions:\n\
-        'Numeric' -- (default) use CF-compliant numeric coordinates\n\
-        'String' -- use date strings as the coordinates\n\
-    SingleElementDimensions -- Specify that dimensional types with only a\n\
-        single representative element be treated as full-fledged dimensions.\n\
-        'None' -- (default) no single element dimensions are created\n\
-        'All' -- all possible single element dimensions are created.\n\
-        The names of individual dimension types may be specified individually:\n\
-        'Initial_time', 'Forecast_time', 'Level', 'Ensemble', or 'Probability'.\n\
-    ThinnedGridInterpolation -- Specify the type of interpolation for\n\
-        thinned (GRIB 'quasi-regular') grids:\n\
-        'Cubic' -- (cubic) use cubic interpolation\n\
-        'Linear' -- use linear interpolation\n\n\
+DefaultNCEPTable -- (GRIB 1 only) Specify the table to use in certain\n\
+ambiguous cases:\n\
+'Operational' -- (default) Use the NCEP operational parameter table\n\
+'Reanalysis' -- Use the NCEP reanalysis parameter table\n\
+InitialTimeCoordinateType -- Specify the type of the coordinate\n\
+associated with initial_time (as opposed to forecast_time)\n\
+dimensions:\n\
+'Numeric' -- (default) use CF-compliant numeric coordinates\n\
+'String' -- use date strings as the coordinates\n\
+SingleElementDimensions -- Specify that dimensional types with only a\n\
+single representative element be treated as full-fledged dimensions.\n\
+'None' -- (default) no single element dimensions are created\n\
+'All' -- all possible single element dimensions are created.\n\
+The names of individual dimension types may be specified individually:\n\
+'Initial_time', 'Forecast_time', 'Level', 'Ensemble', or 'Probability'.\n\
+ThinnedGridInterpolation -- Specify the type of interpolation for\n\
+thinned (GRIB 'quasi-regular') grids:\n\
+'Cubic' -- (cubic) use cubic interpolation\n\
+'Linear' -- use linear interpolation\n\n\
 ";
 
 static char *niofile_type_doc =
@@ -136,29 +135,29 @@ static char *niofile_type_doc =
 NioFile object\n\n\
 If 'f' is file object variable, get summary of contents including all\n\
 dimensions, variables, and attributes using:\n\
-    print f\n\
+print f\n\
 Assign global file attributes to writable files using:\n\
-    f.global_att = global_att_value\n\
+f.global_att = global_att_value\n\
 Attributes (do not modify):\n\
-    dimensions -- a dictionary with dimension names as keys and dimension.\n\
-        lengths as values.\n\
-    variables -- a dictionary with variable names as keys and NioVariable.\n\
-        objects as values.\n\
-    __dict__ -- a dictionary containing global attribute names and values.\n\
+dimensions -- a dictionary with dimension names as keys and dimension.\n\
+lengths as values.\n\
+variables -- a dictionary with variable names as keys and NioVariable.\n\
+objects as values.\n\
+__dict__ -- a dictionary containing global attribute names and values.\n\
 Methods:\n\
-    close([history]) -- close the file.\n\
-    create_dimension(name,length) -- create a dimension in the file.\n\
-    create_variable(name,type,dimensions) -- create a variable in the file.\n\n\
+close([history]) -- close the file.\n\
+create_dimension(name,length) -- create a dimension in the file.\n\
+create_variable(name,type,dimensions) -- create a variable in the file.\n\n\
 ";
 
 /* NioFile object method doc strings */
 
 /*
- * f = Nio.open_file(..)
- * f.close.__doc__
- * f.create_dimension.__doc__
- * f.create_variable.__doc__
- */
+* f = Nio.open_file(..)
+* f.close.__doc__
+* f.create_dimension.__doc__
+* f.create_variable.__doc__
+*/
 
 static char *close_doc =
 
@@ -2452,8 +2451,7 @@ NioVariableObject_error2(NioVariableObject *self,  Py_ssize_t n)
   return NULL;
 }
 
-
-#ifdef NO_SSIZE_T
+#if PY_VERSION_HEX < 0x20500000
 
 static PySequenceMethods NioVariableObject_as_sequence = {
   (inquiry)NioVariableObject_length,		/*sq_length*/
