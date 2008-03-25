@@ -25,8 +25,9 @@
 /* http://www.python.org/dev/peps/pep-0353/#conversion-guidelines */
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
-# define PY_SSIZE_T_MAX INT_MAX
-# define PY_SSIZE_T_MIN INT_MIN
+#define PY_SSIZE_T_MAX INT_MAX
+#define PY_SSIZE_T_MIN INT_MIN
+#define NO_SSIZE_T
 #endif
 
 #define _NIO_MODULE
@@ -672,13 +673,14 @@ NioFileObject_dealloc(NioFileObject *self)
   if (self->open)
     NioFile_Close(self);
 */
-  Py_XDECREF(self->dimensions);
-  Py_XDECREF(self->variables);
-  Py_XDECREF(self->attributes);
-  Py_XDECREF(self->name);
-  Py_XDECREF(self->mode);
-  PyObject_DEL(self);
+	Py_XDECREF(self->dimensions);
+	Py_XDECREF(self->variables);
+	Py_XDECREF(self->attributes);
+	Py_XDECREF(self->name);
+	Py_XDECREF(self->mode);
+	PyObject_DEL(self);
 }
+
 
 static int GetNioMode(char* filename,char *mode) 
 {
@@ -2450,7 +2452,8 @@ NioVariableObject_error2(NioVariableObject *self,  Py_ssize_t n)
   return NULL;
 }
 
-#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+
+#ifdef NO_SSIZE_T
 
 static PySequenceMethods NioVariableObject_as_sequence = {
   (inquiry)NioVariableObject_length,		/*sq_length*/
