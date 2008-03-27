@@ -70,3 +70,53 @@ __version__              = pynio_version.version
 __array_module__         = pynio_version.array_module
 __array_module_version__ = pynio_version.array_module_version
 del pynio_version
+
+def pyniopath_ncarg():
+#
+#  Find the root directory that contains the supplemental PyNIO files,
+#  in particular, the grib2 codetables. For now the default is to look
+#  in site-packages/PyNGL/ncarg. Otherwise, check the PYNGL_NCARG
+#  environment variable. This may change if the grib2 codetables 
+#  are moved into the PyNIO tree.
+#  
+#
+  import sys
+  pkgs_path = None
+  for path in sys.path:
+    slen = len('site-packages')
+    i = path.rfind('site-packages')
+    if i > -1 and i + slen == len(path):
+      pkgs_path = path
+      break
+
+  pyngl1_dir  = os.path.join(pkgs_path,"PyNGL","ncarg")
+  pyngl2_dir  = os.environ.get("PYNGL_NCARG")
+  ncarg_dir  = os.environ.get("NCARG_ROOT")
+
+  if pyngl2_dir != None and os.path.exists(pyngl2_dir):
+    pyngl_ncarg = pyngl2_dir
+  elif os.path.exists(pyngl1_dir):
+    pyngl_ncarg = pyngl1_dir
+  else:
+    if os.path.exists(ncarg_dir):
+	pyngl_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
+	if not os.path.exists(pyngl_ncarg):
+	    print "pynglpath: directory " + pyngl1_dir + \
+        	  "\n           does not exist and " + \
+          	  "environment variable PYNGL_NCARG is not set and " + \
+		  "no usable NCARG installation found"
+            sys.exit()
+    else:
+	sys.exit()
+
+  return pyngl_ncarg
+
+#
+# Set the NCARG_NCARG environment variable.
+# This should allow the grib2_codetables directory to be found without
+# requiring any environment variables to be set by the user
+
+import os
+os.environ["NCARG_NCARG"] = pyniopath_ncarg()
+del pyniopath_ncarg
+del os
