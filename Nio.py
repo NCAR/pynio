@@ -330,6 +330,8 @@ def get_masked_array_mode(options):
 	
         return  [lval,key,val] 
 
+    return ['maskediffillatt',None,None]
+
 def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
 
     ret  = get_masked_array_mode(options)
