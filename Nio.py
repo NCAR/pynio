@@ -120,3 +120,288 @@ import os
 os.environ["NCARG_NCARG"] = pyniopath_ncarg()
 del pyniopath_ncarg
 del os
+
+#
+# This part of the code creates the NioFile and NioVariable classes as
+# proxies for the C API private classes _NioFile and _NioVariable
+# It also implements support for Juerg Schmidli's coordinate selection 
+# code
+
+
+from nio import _Nio
+import numpy
+from numpy import ma
+from coordsel import *
+
+def get_integer_version(strversion):
+    d = strversion.split('.')
+    v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
+    return v
+
+is_new_ma = get_integer_version(numpy.__version__) > 10004
+
+class Proxy(object):
+    """ base class for all proxies """
+    def __init__(self, obj):
+        super(Proxy, self).__init__(obj)
+        super(Proxy,self).__setattr__('_obj', obj)
+	super(Proxy,self).__setattr__('attributes',{})
+        #super(Proxy, self).__delattr__('__doc__')
+	for key in obj.__dict__.keys():
+	   super(Proxy,self).__setattr__(key,obj.__dict__[key])
+	   self.attributes[key] = obj.__dict__[key]
+
+    def __getattribute__(self, attrib):
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','create_variable','cf_dimensions', 'cf2dims', 'ma_mode']
+
+	if attrib in localatts:
+	    return super(Proxy,self).__getattribute__(attrib)
+	else:
+	    return getattr(self._obj,attrib)
+
+    def __setattr__(self, attrib, value):
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
+	if attrib in localatts:
+	    super(Proxy,self).__setattr__(attrib,value)
+	else:
+	    setattr(self._obj,attrib,value)
+
+    def __delattr__(self, attrib):
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
+	if attrib in localatts:
+            raise AttributeError, "Aattempt to modify read only attribute"
+	else:
+	    delattr(self._obj,attrib)
+
+def make_binder(unbound_method):
+    def f(self, *a, **k): return unbound_method(self._obj, *a, **k)
+    # in 2.4, only: f.__name__ = unbound_method.__name__
+    return f
+
+known_proxy_classes = {  }
+
+def proxy(obj, *specials, **regulars):
+    ''' factory-function for a proxy able to delegate special methods '''
+    # do we already have a suitable customized class around?
+    obj_cls = type(obj)
+    key = obj_cls, specials
+    cls = known_proxy_classes.get(key)
+    if cls is None:
+        # we don't have a suitable class around, so let's make it
+	cls_dict = {}
+	cls_dict['__doc__'] = obj_cls.__doc__
+	# this removes the underscore in the name as supplied by the C API module
+	# to give the user-visible name
+        name = obj_cls.__name__[1:] 
+        cls = type(name, (Proxy,), cls_dict)
+        for name in specials:
+            name = '__%s__' % name
+            unbound_method = getattr(obj_cls, name)
+            setattr(cls, name, make_binder(unbound_method))
+	for key in regulars.keys():
+            setattr(cls, key, regulars[key])
+	    
+        # also cache it for the future
+        known_proxy_classes[key] = cls
+    # instantiate and return the needed proxy
+    instance = cls(obj)
+    return instance
+
+def __getitem__(self, xsel):
+    """ Return data specified by the extended selection object xsel.
+	If there is a fill value return a masked array; otherwise an ndarray
+    """
+
+    ret = get_variable(self.file, self.varname, xsel)
+
+    #
+    # _FillValue is the preferred fill value attribute but if it is not set
+    # then look for missing_value
+    #
+    if self.file.ma_mode == 'maskednever':
+	# MaskedNever -- just return a numpy array
+	return ret
+    elif self.file.ma_mode == 'maskediffillattandvalue':
+	# MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
+	if self.__dict__.has_key('_FillValue'):
+	    if ret.__contains__(self.__dict__['_FillValue'][0]):
+		ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
+        	ret.set_fill_value(self.__dict__['_FillValue'][0])
+        elif self.__dict__.has_key('missing_value'):
+	    if ret.__contains__(self.__dict__['missing_value'][0]):
+	        ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
+                ret.set_fill_value(self.__dict__['missing_value'][0])
+    else: 
+	# Handles MaskedIfFillAtt and MaskedAlways
+	if self.__dict__.has_key('_FillValue'):
+	    ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
+            ret.set_fill_value(self.__dict__['_FillValue'][0])
+        elif self.__dict__.has_key('missing_value'):
+            ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
+            ret.set_fill_value(self.__dict__['missing_value'][0])
+	elif self.file.ma_mode == 'maskedalways':
+	    # supply a mask of all False, but just allow the fill_value to default
+	    mask = numpy.zeros(ret.shape,dtype='?')
+	    ret = ma.array(ret,mask=mask)
+
+    return ret
+
+
+def __setitem__(self, xsel,value):
+    """ Set data into file variable with subscripts specified by the extended selection object xsel.
+       If the value is a masked array fill it using the file variable fill value if it exists; 
+       otherwise use the masked array fill value.
+    """
+
+    fill_value = None
+    existing_fill_value = True
+    xsel = inp2xsel(self.file, self.varname, xsel)
+
+    if ma.isMaskedArray(value):
+        #
+	# if the file variable already has a _FillValue or missing_value attribute
+        # use it for the fill_value when converting the masked array.
+        # _FillValue is the preferred fill value attribute but if it is not set
+        # then look for missing_value.
+        #
+	if self.__dict__.has_key('_FillValue'):
+	    fill_value = self.__dict__['_FillValue'][0]
+	elif self.__dict__.has_key('missing_value'):
+	    fill_value = self.__dict__['missing_value'][0]
+	elif is_new_ma:
+	    fill_value = value.fill_value
+  	    existing_fill_value = False
+	else:
+	    fill_value = value.fill_value()
+  	    existing_fill_value = False
+	value = value.filled(fill_value)
+    if not isinstance(xsel, xSelect) or xsel.isbasic:
+        self._obj[xsel] = value
+    else:
+        bb = xsel.bndbox()
+        rsel = xsel - bb
+        ret = self._obj[bb]
+        ret[rsel] = value
+    '''
+    if isinstance(xsel, xselect):
+        bb = xsel.bndbox()
+        rsel = xsel - bb
+        ret = self._obj[bb]
+	ret[rsel] = value
+    else:
+        self._obj[xsel] = value
+    '''
+    if not existing_fill_value:
+        setattr(self._obj,'_FillValue',fill_value)
+
+def create_variable(self,name,type,dimensions):
+    """create variable and store a reference"""
+    #print 'in create variable'
+    v = self._obj.create_variable(name,type,dimensions)
+    if not v is None:
+	vp  = proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+	vp.file = self
+	vp.varname = name
+	vp.cf_dimensions = vp.dimensions
+	self.variables[name] = vp
+    return vp
+
+def get_masked_array_mode(options):
+
+    # ma_mode specifies when to return masked arrays
+    # MaskedNever: never return a masked array for any variable: default for backwards compatibility
+    # MaskedIfFillAtt: return a masked array iff file variable has a _FillValue or a missing_value
+    # MaskedAlways: return a masked array for all variables
+    # MaskedIfFillAttAndValue: return a masked array iff file variable has a _FillValue or a missing_value and
+    #                          the returned data array actually contains 1 or more fill values.
+
+    optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue' ]
+
+    if options == None:
+	return ['maskediffillatt',None,None]
+    for key in options.__dict__.keys():
+	lkey = key.lower()
+	if not lkey == 'maskedarraymode':
+	    continue
+	val = options.__dict__[key]
+	lval = val.lower()
+	if optvals.count(lval) == 0:
+            raise ValueError, 'Invalid value for MaskArrayMode option'
+	
+        return  [lval,key,val] 
+
+def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
+
+    ret  = get_masked_array_mode(options)
+    lval = ret[0]
+    key = ret[1]
+    val = ret[2]
+    if key is None:
+        file = _Nio.open_file(filename,mode,options,history)
+    else:
+	# Since _Nio does not recognize this option, temporarily remove it.
+	options.__dict__.pop(key)
+        file = _Nio.open_file(filename,mode,options,history)
+	# put it back for future use
+	options.__dict__[key] = val
+
+    file_proxy = proxy(file, 'str', create_variable=create_variable)
+    file_proxy.file = file
+    file_proxy.ma_mode = lval
+
+    if cfdims:
+        cf_dims = get_cf_dims(file)
+        newdims = {}
+        cf2dims = {}
+        dimensions = file_proxy.dimensions
+        for dim in dimensions:
+            try:
+                newdim = cf_dims[dim]
+            except KeyError:
+                newdim = dim
+            newdims[newdim] = dimensions[dim]
+            cf2dims[newdim] = dim
+    else:
+        cf2dims = None
+        newdims = file_proxy.dimensions
+    file_proxy.cf_dimensions = newdims
+    file_proxy.cf2dims = cf2dims
+
+    variable_proxies = {}
+    for var in file.variables.keys():
+        vp  = proxy(file.variables[var],'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+	vp.file = file_proxy
+	vp.varname = var
+	variable_proxies[var] = vp
+        if cfdims:
+            newdims = []
+            dimensions = vp.dimensions
+            for dim in dimensions:
+                try:
+                    newdim = cf_dims[dim]
+                except KeyError:
+                    newdim = dim
+                newdims.append(newdim)
+            vp.cf_dimensions = tuple(newdims)
+        else:
+            vp.cf_dimensions = vp.dimensions
+    file_proxy.variables = variable_proxies
+
+    #print file_proxy, file_proxy.variables
+    return file_proxy
+
+
+def get_cf_dims(file):
+    ret = {}
+    for dim in file.dimensions:
+        if dim in file.variables:
+            try:
+                axis = file.variables[dim].axis
+                ret[dim] = axis.lower()
+            except AttributeError:
+                pass
+    return ret
+	    
+def options():
+	opt = _Nio.options()
+	return opt

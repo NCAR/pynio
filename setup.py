@@ -133,10 +133,11 @@ if pynio2pyngl:
   pynio_pkg_name = 'PyNGL'
   pynio_pth_file = []
   pynio_files    = ['Nio.py',pynio_vfile]
+  pynio_files    = ['Nio.py',pynio_vfile,'coordsel.py','xarray.py']
 else:
   pynio_pkg_name = 'PyNIO'
   pynio_pth_file = [pynio_pkg_name + '.pth']
-  pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile]
+  pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile,'coordsel.py','xarray.py']
 
 DMACROS =  [ ('NeedFuncProto','1') ]
 
