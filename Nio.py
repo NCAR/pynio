@@ -259,22 +259,33 @@ def __setitem__(self, xsel,value):
 
     if ma.isMaskedArray(value):
         #
-	# if the file variable already has a _FillValue or missing_value attribute
+	# If the file variable already has a _FillValue or missing_value attribute
         # use it for the fill_value when converting the masked array.
         # _FillValue is the preferred fill value attribute but if it is not set
         # then look for missing_value.
-        #
+        # Note that it is important to generate the fill_value with the correct type.
+        # If there is an existing fill value in the file, make it conform to that type (??)
+	# Otherwise use the type of the numpy array value
+	#
 	if self.__dict__.has_key('_FillValue'):
-	    fill_value = self.__dict__['_FillValue'][0]
+	    fval = self.__dict__['_FillValue'][0]
+	    fill_value = numpy.array(fval,dtype=fval.dtype)
 	elif self.__dict__.has_key('missing_value'):
-	    fill_value = self.__dict__['missing_value'][0]
+	    fval = self.__dict__['missing_value'][0]
+	    fill_value = numpy.array(fval,dtype=fval.dtype)
 	elif is_new_ma:
-	    fill_value = value.fill_value
+	    fill_value = numpy.array(value.fill_value,dtype=value.dtype)
   	    existing_fill_value = False
 	else:
-	    fill_value = value.fill_value()
+	    fill_value = numpy.array(value.fill_value(),dtype=value.dtype)
   	    existing_fill_value = False
 	value = value.filled(fill_value)
+
+    # Convert the type if necessary
+    # Not now: this may break some things
+    #
+    # value = numpy.require(value,dtype=self.typecode())
+
     if not isinstance(xsel, xSelect) or xsel.isbasic:
         self._obj[xsel] = value
     else:

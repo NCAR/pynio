@@ -45,12 +45,16 @@ def do_setup(filename):
     f.variables['yc'][:] = yc
     f.variables['zc'][:] = zc
     f.variables['time'][:] = N.arange(nt, dtype='float32')*dt
-    a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
+    a = N.arange(nt*nz*ny*nx,dtype = 'float32')
+    #a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
+    a = a.reshape(nt,nz,ny,nx)
+    print a.shape
     mask = N.zeros(a.shape,N.bool_)
     mask[:,3,:,:] = 1
     # tests adding a fill value
+
     am = ma.array(a,mask=mask)
-    f.variables['PT'][:] = am
+    f.variables['PT'][:] = am[:]
     #if verbose: print f.variables['PT']
     H = 5000.
     topo = 1000*N.cos(2*N.pi*(xc-10000.)/20000.)+1000.
@@ -79,7 +83,7 @@ class test_masked_default(NumpyTestCase):
 	v = file.variables['PT']
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
-	assert_equal(vm._fill_value,1e20)
+	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
 	if verbose: print vm[0]
         file.close()
 
@@ -105,8 +109,8 @@ class test_masked_if_fill_att(NumpyTestCase):
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
 	assert_equal(ma.isMaskedArray(vm),True)
-	assert_equal(vm._fill_value,1e20)
-	print type(vm),vm[0].__repr__()
+	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
+	if verbose: print type(vm),vm[0].__repr__()
         file.close()
 
 
@@ -126,7 +130,7 @@ class test_masked_always(NumpyTestCase):
 	v = file.variables['lat']
 	assert_equal(hasattr(v,'_FillValue'),False)
 	vm = v[:]
-	assert_equal(vm._fill_value,1e20)
+	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
 	if verbose: print vm[1].__repr__
         file.close()
 
@@ -168,6 +172,7 @@ class test_masked_if_att_and_val(NumpyTestCase):
 	vm = v[0,3:5,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),True)
+	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
 	vm = v[0,4:6,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),False)

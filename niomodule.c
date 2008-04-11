@@ -2027,6 +2027,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
     }
   }
   define_mode(self->file, 0);
+
   /* convert from Python to NCL indexing */
   /* negative stride in Python requires the start index to be greater than
      the end index: in NCL negative stride reverses the direction 
@@ -2087,7 +2088,18 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  Py_DECREF(array2);
 	  }
 	  else {
-		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
+		  int single_el_dim_count = 0;
+		  /* 
+		   * Use numpy semantics.
+		   * Numpy allows single element 'slow' dimensions to be discarded on assignmen
+		   */
+		  for (i = 0; i < array->nd; i++) {
+			  if (array->dimensions[i] == 1)
+				  single_el_dim_count++;
+			  else
+				  break;
+		  }
+		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
 	  }
   }
   else {
@@ -2106,10 +2118,50 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  NclMultiDValData md;
 	  NhlErrorTypes nret;
 	  int select_all = 1;
-	  int array_dim = 0;
+	  Py_ssize_t array_el_count = 1;;
 
+	  /*
+	   * PyNIO does not support broadcasting except for the special case of a scalar 
+	   * applied to an array.
+	   * However, it does ignore pre-pended single element dimensions either in the file
+	   * variable or in the assigned array.
+	   */
+	  
 	  if (array->nd == 0) {
 		  n_dims = 1;
+	  }
+	  else {
+		  int var_dim = 0;
+		  i = 0;
+		  while (array->dimensions[i] == 1)
+			  i++;
+		  while (dims[var_dim] == 1)
+			  var_dim++;
+		  for ( ; i < array->nd; i++) {
+			  array_el_count *= array->dimensions[i];
+			  if (array->dimensions[i] != dims[var_dim]) {
+				  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
+				  PyErr_SetString(NIOError, err_buf);
+				  ret = -1;
+				  goto err_ret;
+			  }
+			  var_dim++;
+		  }
+		  if (var_dim != n_dims) {
+			  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
+			  PyErr_SetString(NIOError, err_buf);
+			  ret = -1;
+			  goto err_ret;
+		  }
+	  }
+	  if (array_el_count < nitems) {
+		  /*
+		   * This test should be redundant, but just in case.
+		   */
+		  sprintf(err_buf,"Not enough elements supplied for write to variable (%s)",self->name);
+		  PyErr_SetString(NIOError, err_buf);
+		  ret = -1;
+		  goto err_ret;
 	  }
 
 	  if (nitems < var_el_count || self->unlimited)
@@ -2130,13 +2182,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  qtype = NrmStringToQuark("integer");
 	  }
 
-	  if (array->nd > self->nd) {
-		  n_dims = array->nd;
-		  dims = realloc(dims,sizeof(int) * array->nd);
-		  for (i = 0; i < array->nd; i++) {
-			  dims[i] = (int) array->dimensions[array_dim++];
-		  }
-	  }
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 				   (void*)array->data,NULL,n_dims,
 				   array->nd == 0 ? &scalar_size : dims,
@@ -2172,6 +2217,9 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  if (nret < NhlWARNING)
 		  ret = -1;
   }
+
+  err_ret:
+
   /* update shape */
   (void) NioVariable_GetShape(self);
   if (dims != NULL)
