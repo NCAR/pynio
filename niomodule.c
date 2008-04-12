@@ -2153,15 +2153,15 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  ret = -1;
 			  goto err_ret;
 		  }
-	  }
-	  if (array_el_count < nitems) {
-		  /*
-		   * This test should be redundant, but just in case.
-		   */
-		  sprintf(err_buf,"Not enough elements supplied for write to variable (%s)",self->name);
-		  PyErr_SetString(NIOError, err_buf);
-		  ret = -1;
-		  goto err_ret;
+		  if (array_el_count < nitems) {
+			  /*
+			   * This test should be redundant, but just in case.
+			   */
+			  sprintf(err_buf,"Not enough elements supplied for write to variable (%s)",self->name);
+			  PyErr_SetString(NIOError, err_buf);
+			  ret = -1;
+			  goto err_ret;
+		  }
 	  }
 
 	  if (nitems < var_el_count || self->unlimited)
