@@ -50,7 +50,7 @@ def do_setup(filename):
     a = N.arange(nt*nz*ny*nx,dtype = 'float32')
     #a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
     a = a.reshape(nt,nz,ny,nx)
-    print a.shape
+    #print a.shape
     mask = N.zeros(a.shape,N.bool_)
     mask[:,3,:,:] = 1
     # tests adding a fill value
@@ -95,7 +95,7 @@ class test_sub_2_assign(NumpyTestCase):
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_masked_default(self):
+    def check_test_sub_2_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -111,7 +111,7 @@ class test_sub_3_assign(NumpyTestCase):
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_masked_default(self):
+    def check_test_sub_3_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -128,11 +128,11 @@ class test_sub_4_assign(NumpyTestCase):
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_masked_default(self):
+    def check_test_sub_4_assign(self):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing sub 3 assign'
+	if verbose: print 'testing sub 4 assign'
 	v = file.variables['PTS']
 	vm = v[0,0,:,:,:]
 	vm = vm.reshape([1,1,vm.shape[0],vm.shape[1],vm.shape[2]])

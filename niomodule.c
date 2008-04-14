@@ -273,7 +273,7 @@ short NCLnoPrintElem = 0;
 staticforward int nio_file_init(NioFileObject *self);
 staticforward NioVariableObject *nio_variable_new(
 	NioFileObject *file, char *name, int id, 
-	int type, int ndims, int *dimids, int nattrs);
+	int type, int ndims, NrmQuark *qdims, int nattrs);
 
 
 /* Error object and error messages for nio-specific errors */
@@ -765,76 +765,80 @@ NioFile_Open(char *filename, char *mode)
 static int
 nio_file_init(NioFileObject *self)
 {
-  NclFile file = (NclFile) self->id;
-  int ndims, nvars, ngattrs;
-  int i,j;
-  int scalar_dim_ix = -1;
-  NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
-  self->dimensions = PyDict_New();
-  self->variables = PyDict_New();
-  self->attributes = PyDict_New();
-  ndims = file->file.n_file_dims;
-  nvars = file->file.n_vars;
-  ngattrs = file->file.n_file_atts;
-  self->recdim = -1; /* for now */
-  for (i = 0; i < ndims; i++) {
-    char *name;
-    long size;
-    PyObject *size_ob;
-    NclFDimRec *fdim = file->file.file_dim_info[i];
-    if (fdim->dim_name_quark != scalar_dim) {
-	    name = NrmQuarkToString(fdim->dim_name_quark);
-	    size = fdim->dim_size;
-	    size_ob = PyInt_FromLong(size);
-	    PyDict_SetItemString(self->dimensions, name, size_ob);
-	    Py_DECREF(size_ob);
-    }
-    else {
-	    scalar_dim_ix = i;
-    }
-  }
-  for (i = 0; i < nvars; i++) {
-    char *name;
-    NclBasicDataTypes datatype;
-    NclFVarRec *fvar;
-    NclFileAttInfoList *att_list;
-    int ndimensions, nattrs;
-    int *dimids;
-    NioVariableObject *variable;
-    fvar = file->file.var_info[i];
-    ndimensions = fvar->num_dimensions;
-    datatype = fvar->data_type;
-    nattrs = 0;
-    att_list = file->file.var_att_info[i];
-    while (att_list != NULL) {
-	    nattrs++;
-	    att_list = att_list->next;
-    }
-    name = NrmQuarkToString(fvar->var_name_quark);
-    if (ndimensions == 1 && fvar->file_dim_num[0] == scalar_dim_ix) {
-	    ndimensions = 0;
-	    dimids = NULL;
-    }
-    else if (ndimensions > 0) {
-      dimids = (int *)malloc(ndimensions*sizeof(int));
-      if (dimids == NULL) {
-	PyErr_NoMemory();
-	return 0;
-      }
-      for (j = 0; j < ndimensions; j++)
-	      dimids[j] = fvar->file_dim_num[j];
-    }
-    else
-      dimids = NULL;
-    variable = nio_variable_new(self, name, i, data_type(datatype),
-				   ndimensions, dimids, nattrs);
-    PyDict_SetItemString(self->variables, name, (PyObject *)variable);
-    Py_DECREF(variable);
-  }
+	NclFile file = (NclFile) self->id;
+	int ndims, nvars, ngattrs;
+	int i,j;
+	int scalar_dim_ix = -1;
+	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+	self->dimensions = PyDict_New();
+	self->variables = PyDict_New();
+	self->attributes = PyDict_New();
+	ndims = file->file.n_file_dims;
+	nvars = file->file.n_vars;
+	ngattrs = file->file.n_file_atts;
+	self->recdim = -1; /* for now */
+	for (i = 0; i < ndims; i++) {
+		char *name;
+		long size;
+		PyObject *size_ob;
+		NclFDimRec *fdim = file->file.file_dim_info[i];
+		if (fdim->dim_name_quark != scalar_dim) {
+			name = NrmQuarkToString(fdim->dim_name_quark);
+			size = fdim->dim_size;
+			size_ob = PyInt_FromLong(size);
+			PyDict_SetItemString(self->dimensions, name, size_ob);
+			Py_DECREF(size_ob);
+		}
+		else {
+			scalar_dim_ix = i;
 
-  collect_attributes(self->id, NC_GLOBAL, self->attributes, ngattrs);
+		}
+	}
+	for (i = 0; i < nvars; i++) {
+		char *name;
+		NclBasicDataTypes datatype;
+		NclFVarRec *fvar;
+		NclFileAttInfoList *att_list;
+		int ndimensions, nattrs;
+		NioVariableObject *variable;
+		NrmQuark *qdims;
 
-  return 1;
+		fvar = file->file.var_info[i];
+		ndimensions = fvar->num_dimensions;
+		datatype = fvar->data_type;
+		nattrs = 0;
+		att_list = file->file.var_att_info[i];
+		while (att_list != NULL) {
+			nattrs++;
+			att_list = att_list->next;
+		}
+		name = NrmQuarkToString(fvar->var_name_quark);
+		if (ndimensions == 1 && fvar->file_dim_num[0] == scalar_dim_ix) {
+			ndimensions = 0;
+			qdims = NULL;
+		}
+		else if (ndimensions > 0) {
+			qdims = (NrmQuark *) malloc(ndimensions *sizeof(NrmQuark));
+
+			if (qdims == NULL) {
+				PyErr_NoMemory();
+				return 0;
+			}
+			for (j = 0; j < ndimensions; j++) {
+				qdims[j] = file->file.file_dim_info[fvar->file_dim_num[j]]->dim_name_quark;
+			}
+		}
+		else
+			qdims = NULL;
+		variable = nio_variable_new(self, name, i, data_type(datatype),
+					    ndimensions, qdims, nattrs);
+		PyDict_SetItemString(self->variables, name, (PyObject *)variable);
+		Py_DECREF(variable);
+	}
+
+	collect_attributes(self->id, NC_GLOBAL, self->attributes, ngattrs);
+
+	return 1;
 }
 
 
@@ -902,6 +906,7 @@ NioFileObject_new_dimension(NioFileObject *self, PyObject *args)
     return NULL;
 }
 
+
 /* Create variable */
 
 NioVariableObject *
@@ -913,8 +918,8 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  NioVariableObject *variable;
 	  int i,id;
 	  NclFile nfile = (NclFile) file->id;
-	  int *dimids = NULL;
 	  NrmQuark *qdims = NULL; 
+	  int dimid;
 	  NhlErrorTypes ret;
 	  NrmQuark qvar;
 	  NrmQuark qtype;
@@ -930,14 +935,13 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		  
 	  if (ndim > 0) {
 		  qdims = (NrmQuark *)malloc(ndim*sizeof(NrmQuark));
-		  dimids = (int *) malloc(ndim*sizeof(NrmQuark));
-		  if (! (qdims && dimids)) {
+		  if (! qdims) {
 			  return (NioVariableObject *)PyErr_NoMemory();
 		  }
 	  }
 	  else if (ndim == 0) {
 		  qdims = (NrmQuark *)malloc(sizeof(NrmQuark));
-		  dimids = NULL;
+		  dimid = -1;
 		  if (! qdims) {
 			  return (NioVariableObject *)PyErr_NoMemory();
 		  }
@@ -946,14 +950,12 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  }
 	  for (i = 0; i < ndim; i++) {
 		  qdims[i] = NrmStringToQuark(dimension_names[i]);
-		  dimids[i] = _NclFileIsDim(nfile,qdims[i]);
-		  if (dimids[i] == -1) {
+		  dimid = _NclFileIsDim(nfile,qdims[i]);
+		  if (dimid == -1) {
 			  sprintf(err_buf,"Dimension (%s) not found",dimension_names[i]);
 			  PyErr_SetString(NIOError, err_buf);
 			  if (qdims != NULL) 
 				  free(qdims);
-			  if (dimids != NULL)
-				  free(dimids);
 			  return NULL;
 		  }
 	  }
@@ -967,17 +969,15 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		  id = _NclFileIsVar(nfile,qvar);
 		  variable = nio_variable_new(file, name, id, 
 					      data_type(nfile->file.var_info[id]->data_type),
-					      ndim, dimids, 0);
+					      ndim, qdims, 0);
 		  PyDict_SetItemString(file->variables, name, (PyObject *)variable);
-		  if (qdims != NULL) 
-			  free(qdims);
 		  return variable;
 	  }
 	  else {
+		  sprintf(err_buf,"Error creating variable (%s)",name);
+		  PyErr_SetString(NIOError, err_buf);
 		  if (qdims != NULL) 
 			  free(qdims);
-		  if (dimids != NULL)
-			  free(dimids);
 		  return NULL;
 	  }
   }
@@ -1039,7 +1039,8 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
 	  PyErr_SetString(NIOError, err_buf);
   }
 
-  free(dimension_names);
+  if (dimension_names)
+	  free(dimension_names);
   return (PyObject *)var;
 }
 
@@ -1532,8 +1533,8 @@ statichere PyTypeObject NioFile_Type = {
 static void
 NioVariableObject_dealloc(NioVariableObject *self)
 {
-  if (self->dimids != NULL)
-    free(self->dimids);
+  if (self->qdims != NULL)
+    free(self->qdims);
   if (self->dimensions != NULL)
     free(self->dimensions);
   if (self->name != NULL)
@@ -1547,7 +1548,7 @@ NioVariableObject_dealloc(NioVariableObject *self)
 
 statichere NioVariableObject *
 nio_variable_new(NioFileObject *file, char *name, int id, 
-		 int type, int ndims, int *dimids, int nattrs)
+		 int type, int ndims, NrmQuark *qdims, int nattrs)
 {
   NioVariableObject *self;
   NclFile nfile = (NclFile) file->id;
@@ -1555,21 +1556,27 @@ nio_variable_new(NioFileObject *file, char *name, int id,
   if (check_if_open(file, -1)) {
     self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
     if (self == NULL)
-      return NULL;
+        return NULL;
     self->file = file;
     Py_INCREF(file);
     self->id = id;
     self->type = type;
     self->nd = ndims;
-    self->dimids = dimids;
+    self->qdims = qdims;
     self->unlimited = 0;
     self->dimensions = NULL;
     if (ndims > 0) {
 	    self->dimensions = (Py_ssize_t *)malloc(ndims*sizeof(Py_ssize_t));
 	    if (self->dimensions != NULL) {
 		    for (i = 0; i < ndims; i++) {
-			    self->dimensions[i] = nfile->file.file_dim_info[dimids[i]]->dim_size;
-			    if (nfile->file.file_dim_info[dimids[i]]->is_unlimited)
+			    int dimid = _NclFileIsDim(nfile,qdims[i]);
+			    if (dimid < 0) {
+				    sprintf(err_buf,"Dimension (%s) not found",NrmQuarkToString(qdims[i]));
+				    PyErr_SetString(NIOError, err_buf);
+				    return NULL;
+			    }
+			    self->dimensions[i] = nfile->file.file_dim_info[dimid]->dim_size;
+			    if (nfile->file.file_dim_info[dimid]->is_unlimited)
 				    self->unlimited = 1;
 		    }
 	    }
@@ -1651,7 +1658,8 @@ NioVariable_GetShape(NioVariableObject *var)
   if (check_if_open(var->file, -1)) {
 	  NclFile nfile = (NclFile) var->file->id;
 	  for (i = 0; i < var->nd; i++) {
-		  var->dimensions[i] = nfile->file.file_dim_info[var->dimids[i]]->dim_size;
+		  int dimid = _NclFileIsDim(nfile,var->qdims[i]);
+		  var->dimensions[i] = nfile->file.file_dim_info[dimid]->dim_size;
 	  }
 	  return var->dimensions;
   }
@@ -1693,7 +1701,8 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
       NclFile nfile = (NclFile) self->file->id;
       tuple = PyTuple_New(self->nd);
       for (i = 0; i < self->nd; i++) {
-	      name = NrmQuarkToString(nfile->file.file_dim_info[self->dimids[i]]->dim_name_quark);
+	      int dimid = _NclFileIsDim(nfile,self->qdims[i]);
+	      name = NrmQuarkToString(nfile->file.file_dim_info[dimid]->dim_name_quark);
 	      PyTuple_SetItem(tuple, i, PyString_FromString(name));
       }
       return tuple;
@@ -2133,20 +2142,31 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  else {
 		  int var_dim = 0;
 		  i = 0;
-		  while (array->dimensions[i] == 1)
+		  while (i < array->nd && array->dimensions[i] == 1)
 			  i++;
-		  while (dims[var_dim] == 1)
+		  while (var_dim < n_dims && dims[var_dim] == 1)
 			  var_dim++;
-		  for ( ; i < array->nd; i++) {
+		  for ( ; i < array->nd; ) {
 			  array_el_count *= array->dimensions[i];
 			  if (array->dimensions[i] != dims[var_dim]) {
+				  if (dims[var_dim] == 1) {
+					  var_dim++;
+					  continue;
+				  }
+				  if (array->dimensions[i] == 1) {
+					  i++;
+					  continue;
+				  }
 				  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
 				  PyErr_SetString(NIOError, err_buf);
 				  ret = -1;
 				  goto err_ret;
 			  }
 			  var_dim++;
+			  i++;
 		  }
+		  while (var_dim < n_dims && dims[var_dim] == 1)
+			  var_dim++;
 		  if (var_dim != n_dims) {
 			  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
 			  PyErr_SetString(NIOError, err_buf);

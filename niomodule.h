@@ -31,7 +31,6 @@ typedef struct {
   int recdim;
 } NioFileObject;
 
-
 /* NIOVariable object */
 
 typedef struct {
@@ -39,7 +38,7 @@ typedef struct {
   NioFileObject *file;
   PyObject *attributes;   /* dictionary */
   char *name;
-  int *dimids;
+  NrmQuark *qdims;
   Py_ssize_t *dimensions;
   int type;               /* same as array types */
   int nd;
