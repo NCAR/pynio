@@ -275,6 +275,7 @@ staticforward NioVariableObject *nio_variable_new(
 	NioFileObject *file, char *name, int id, 
 	int type, int ndims, NrmQuark *qdims, int nattrs);
 
+static PyObject *Niomodule; /* the Nio Module object */
 
 /* Error object and error messages for nio-specific errors */
 
@@ -2847,15 +2848,18 @@ GetExtension ( char * filename)
 }
 	
 
-void SetNioOptionDefaults(NrmQuark extq, int mode)
+void InitializeNioOptions(NrmQuark extq, int mode)
 {
 	NclMultiDValData md;
 	int len_dims = 1;
 	logical *lval;
 	NrmQuark *qval;
-	
-	if (_NclFormatEqual(extq,NrmStringToQuark("nc"))) {
-		_NclFileSetOptionDefaults(NrmStringToQuark("nc"),NrmNULLQUARK);
+	NrmQuark qnc = NrmStringToQuark("nc");
+	NrmQuark qgrb = NrmStringToQuark("qgrb");
+
+	if (_NclFormatEqual(extq,qnc)) {
+		_NclFileSetOptionDefaults(qnc,NrmNULLQUARK);
+
 		if (mode < 1) {
 			/* if opened for writing default "definemode" to True */
 			lval = (logical *)malloc( sizeof(logical));
@@ -2875,8 +2879,8 @@ void SetNioOptionDefaults(NrmQuark extq, int mode)
 		_NclFileSetOption(NULL,extq,NrmStringToQuark("suppressclose"),md);
 		_NclDestroyObj((NclObj)md);
 	}
-	else if (_NclFormatEqual(extq,NrmStringToQuark("grb"))) {
-		_NclFileSetOptionDefaults(NrmStringToQuark("grb"),NrmNULLQUARK);
+	else if (_NclFormatEqual(extq,qgrb)) {
+		_NclFileSetOptionDefaults(qgrb,NrmNULLQUARK);
 		qval = (NrmQuark *) malloc(sizeof(NrmQuark));
 		*qval = NrmStringToQuark("numeric");
 		md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
@@ -2884,6 +2888,143 @@ void SetNioOptionDefaults(NrmQuark extq, int mode)
 					 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
 		_NclFileSetOption(NULL,extq,NrmStringToQuark("initialtimecoordinatetype"),md);
 		_NclDestroyObj((NclObj)md);
+	}
+}
+
+
+void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_defaults)
+{
+	NclMultiDValData md = NULL;
+	PyObject *keys = PyMapping_Keys(options);
+	int len_dims = 1;
+	Py_ssize_t i;
+	NrmQuark qsafe_mode = NrmStringToQuark("safemode");
+
+	for (i = 0; i < PySequence_Length(keys); i++) {
+
+
+		PyObject *key = PySequence_GetItem(keys,i);
+		char *keystr = PyString_AsString(key);
+		NrmQuark qkeystr = NrmStringToQuark(keystr);
+		PyObject *value = PyMapping_GetItemString(options,keystr);
+
+		/* handle the PyNIO-defined "SafeMode" option */
+		if (_NclFormatEqual(extq,NrmStringToQuark("nc")) &&
+		    (_NclGetLower(qkeystr) == qsafe_mode)) {
+			/* 
+			 * SafeMode == True:
+			 *    DefineMode = False (if writable file)
+			 *    SuppressClose = False
+			 * SafeMode == False:
+			 *    DefineMode = True (if writable file)
+			 *    SuppressClose = True
+			 */
+			        
+			logical *lval;
+			if (! PyBool_Check(value)) {
+				char s[256] = "";
+				strncat(s,keystr,255);
+				strncat(s," value is an invalid type for option",255);
+				PyErr_SetString(NIOError,s);
+				Py_DECREF(key);
+				Py_DECREF(value);
+				continue;
+			}
+			lval = (logical *) malloc(sizeof(logical));
+			/* Note opposite */
+			if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
+				*lval = True;
+				/* printf("%s False\n",keystr);*/
+			}
+			else {
+				*lval = False;
+				/*printf("%s True\n",keystr); */
+			}
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)lval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+			if (mode < 1)
+				_NclFileSetOption(NULL,extq,NrmStringToQuark("DefineMode"),md);
+			_NclFileSetOption(NULL,extq,NrmStringToQuark("SuppressClose"),md);
+			_NclDestroyObj((NclObj)md);
+			Py_DECREF(key);
+			Py_DECREF(value);
+			continue;
+		}
+		else if (! _NclFileIsOption(extq,qkeystr)) {
+			if (options == option_defaults) { 
+				/* 
+				 * this means we're setting the option defaults; more permissive:
+				 * options for all file formats may be present
+				 */
+				continue;
+			}
+			if (PyDict_Contains(option_defaults,key) && ! _NclFileIsOption(NrmNULLQUARK,qkeystr)) {
+				/* 
+				 * Options that are user-defined are passed through, but not built-in options that
+				 *  apply only to another file format
+				 */
+				continue;
+			}
+			char s[256] = "";
+			strncat(s,keystr,255);
+			strncat(s," is not a valid option for this file format",255);
+			PyErr_SetString(NIOError,s);
+			Py_DECREF(key);
+			continue;
+		}
+		if (PyString_Check(value)) {
+			char *valstr = PyString_AsString(value);
+			NrmQuark *qval = (NrmQuark *) malloc(sizeof(NrmQuark));
+			*qval = NrmStringToQuark(valstr);
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)qval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
+			/* printf("%s %s\n", keystr,valstr); */
+		}
+		else if (PyBool_Check(value)) {
+			logical * lval = (logical *) malloc(sizeof(logical));
+			if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
+				*lval = False;
+				/* printf("%s False\n",keystr);*/
+			}
+			else {
+				*lval = True;
+				/*printf("%s True\n",keystr); */
+			}
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)lval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
+		}
+		else if (PyInt_Check(value)) {
+			int* ival = (int *) malloc(sizeof(int));
+			*ival = (int) PyInt_AsLong(value);
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)ival,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypeintClass);
+			/* printf("%s %ld\n",keystr,PyInt_AsLong(value));*/
+		}
+		else if (PyFloat_Check(value)) {
+			float *fval = (float *) malloc(sizeof(float));
+			*fval = (float) PyFloat_AsDouble(value);
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)fval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypefloatClass);
+			/*printf("%s %lg\n",keystr,PyFloat_AsDouble(value));*/
+		}
+		else {
+			char s[256] = "";
+			strncat(s,keystr,255);
+			strncat(s," value is an invalid type for option",255);
+			PyErr_SetString(NIOError,s);
+			Py_DECREF(key);
+			Py_DECREF(value);
+			continue;
+		}
+		_NclFileSetOption(NULL,extq,qkeystr,md);
+		_NclDestroyObj((NclObj)md);
+		Py_DECREF(key);
+		Py_DECREF(value);
 	}
 }
 	
@@ -2900,6 +3041,7 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   NrmQuark extq;
   int crw;
   static char *argnames[] = { "filepath", "mode", "options", "history", NULL };
+  PyObject *option_defaults;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sOs:open_file", argnames, &filepath, &mode, &options, &history))
     return NULL;
@@ -2917,130 +3059,28 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
 	  nio_seterror();
 	  return NULL;
   }
-  SetNioOptionDefaults(extq,crw);
+  /* 
+   * Three step to handle options
+   * First set the hard-coded library defaults -- including a few module-specific values.
+   * Then set the option defaults (which are modifiable by the user and allow for user-specified keys)
+   * Finally set the options explicitly passed for this instance.
+   */
+
+  InitializeNioOptions(extq,crw);
   
-  if (options != Py_None && !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
-	  PyErr_SetString(NIOError, "options argument must be an NioOptions class instance");
-  }
-  else if (options != Py_None) {
-	  NclMultiDValData md = NULL;
-	  PyObject *dict = PyObject_GetAttrString(options,"__dict__");
-	  PyObject *keys = PyMapping_Keys(dict);
-	  int len_dims = 1;
-	  Py_ssize_t i;
-	  NrmQuark qsafe_mode = NrmStringToQuark("safemode");
-
-	  for (i = 0; i < PySequence_Length(keys); i++) {
-		  PyObject *key = PySequence_GetItem(keys,i);
-		  char *keystr = PyString_AsString(key);
-		  NrmQuark qkeystr = NrmStringToQuark(keystr);
-		  PyObject *value = PyMapping_GetItemString(dict,keystr);
-
-		  /* handle the PyNIO-defined "SafeMode" option */
-		  if (_NclFormatEqual(extq,NrmStringToQuark("nc")) &&
-		      (_NclGetLower(qkeystr) == qsafe_mode)) {
-			  /* 
-			   * SafeMode == True:
-			   *    DefineMode = False (if writable file)
-			   *    SuppressClose = False
-			   * SafeMode == False:
-			   *    DefineMode = True (if writable file)
-			   *    SuppressClose = True
-			   */
-			        
-			  logical *lval;
-			  if (! PyBool_Check(value)) {
-				  char s[256] = "";
-				  strncat(s,keystr,255);
-				  strncat(s," value is an invalid type for option",255);
-				  PyErr_SetString(NIOError,s);
-				  Py_DECREF(key);
-				  Py_DECREF(value);
-				  continue;
-			  }
-			  lval = (logical *) malloc(sizeof(logical));
-			  /* Note opposite */
-			  if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
-				  *lval = True;
-				  /* printf("%s False\n",keystr);*/
-			  }
-			  else {
-				  *lval = False;
-				  /*printf("%s True\n",keystr); */
-			  }
-			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						   (void*)lval,NULL,1,&len_dims,
-						   TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
-			  if (crw < 1)
-				  _NclFileSetOption(NULL,extq,NrmStringToQuark("DefineMode"),md);
-			  _NclFileSetOption(NULL,extq,NrmStringToQuark("SuppressClose"),md);
-			  _NclDestroyObj((NclObj)md);
-			  Py_DECREF(key);
-			  Py_DECREF(value);
-			  continue;
-		  }
-		  else if (! _NclFileIsOption(extq,qkeystr)) {
-			  char s[256] = "";
-			  strncat(s,keystr,255);
-			  strncat(s," is not an option for this format",255);
-			  PyErr_SetString(NIOError,s);
-			  Py_DECREF(key);
-			  continue;
-		  }
-		  if (PyString_Check(value)) {
-			  char *valstr = PyString_AsString(value);
-			  NrmQuark *qval = (NrmQuark *) malloc(sizeof(NrmQuark));
-			  *qval = NrmStringToQuark(valstr);
-			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						   (void*)qval,NULL,1,&len_dims,
-						   TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
-			  /* printf("%s %s\n", keystr,valstr); */
-		  }
-		  else if (PyBool_Check(value)) {
-			  logical * lval = (logical *) malloc(sizeof(logical));
-			  if (PyObject_RichCompareBool(value,Py_False,Py_EQ)) {
-				  *lval = False;
-				  /* printf("%s False\n",keystr);*/
-			  }
-			  else {
-				  *lval = True;
-				  /*printf("%s True\n",keystr); */
-			  }
-			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						   (void*)lval,NULL,1,&len_dims,
-						   TEMPORARY,NULL,(NclTypeClass)nclTypelogicalClass);
-		  }
-		  else if (PyInt_Check(value)) {
-			  int* ival = (int *) malloc(sizeof(int));
-			  *ival = (int) PyInt_AsLong(value);
-			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						   (void*)ival,NULL,1,&len_dims,
-						   TEMPORARY,NULL,(NclTypeClass)nclTypeintClass);
-			  /* printf("%s %ld\n",keystr,PyInt_AsLong(value));*/
-		  }
-		  else if (PyFloat_Check(value)) {
-			  float *fval = (float *) malloc(sizeof(float));
-			  *fval = (float) PyFloat_AsDouble(value);
-			  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						   (void*)fval,NULL,1,&len_dims,
-						   TEMPORARY,NULL,(NclTypeClass)nclTypefloatClass);
-			  /*printf("%s %lg\n",keystr,PyFloat_AsDouble(value));*/
-		  }
-		  else {
-			  char s[256] = "";
-			  strncat(s,keystr,255);
-			  strncat(s," value is an invalid type for option",255);
-			  PyErr_SetString(NIOError,s);
-			  Py_DECREF(key);
-			  Py_DECREF(value);
-			  continue;
-		  }
-		  _NclFileSetOption(NULL,extq,qkeystr,md);
-		  _NclDestroyObj((NclObj)md);
-		  Py_DECREF(key);
-		  Py_DECREF(value);
+  option_defaults = PyObject_GetAttrString(Niomodule,"option_defaults");
+  SetNioOptions(extq,crw,option_defaults,option_defaults);
+  if (options != Py_None) {
+	  PyObject *options_dict;
+	  if ( !(PyInstance_Check(options) && PyObject_HasAttrString(options,"__dict__"))) {
+		  PyErr_SetString(NIOError, "options argument must be an NioOptions class instance");
 	  }
+	  options_dict = PyObject_GetAttrString(options,"__dict__");
+	  SetNioOptions(extq,crw,options_dict,option_defaults);
+	  Py_DECREF(options_dict);
   }
+  Py_DECREF(option_defaults);
+
   file = NioFile_Open(filepath, mode);
   if (file == NULL) {
     nio_seterror();
@@ -3073,7 +3113,46 @@ NioFile_Options(PyObject *self, PyObject *args)
 	return PyInstance_New(class,NULL,NULL);
 }
 
+static PyObject *
+SetUpDefaultOptions( void )
+{
+	PyObject *dict = PyDict_New();
+	PyObject *opt, *val;
 
+	opt = PyString_FromFormat("Format");
+	val = PyString_FromFormat("classic");
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("HeaderReserveSpace");
+	val = PyInt_FromLong(0);
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("MissingToFillValue");
+	val = PyBool_FromLong(1);
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("PreFill");
+	val = PyBool_FromLong(1);
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("SafeMode");
+	val = PyBool_FromLong(0);
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("CompressionLevel");
+	val = PyInt_FromLong(-1);
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("DefaultNCEPPtable");
+	val = PyString_FromFormat("operational");
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("InitialTimeCoordinateType");
+	val = PyString_FromFormat("numeric");
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("SingleElementDimensions");
+	val = PyString_FromFormat("none");
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("ThinnedGridInterpolation");
+	val = PyString_FromFormat("cubic");
+	PyDict_SetItem(dict,opt,val);
+		
+	return dict;
+
+}
 
 /* Table of functions defined in the module */
 
@@ -3089,6 +3168,7 @@ PyMODINIT_FUNC
 initnio(void)
 {
   PyObject *m, *d;
+  PyObject *def_opt_dict;
   static void *PyNIO_API[PyNIO_API_pointers];
 
   /* Initialize type object headers */
@@ -3112,6 +3192,9 @@ initnio(void)
   
   /* Create the module and add the functions */
   m = Py_InitModule("nio", nio_methods);
+  Niomodule = m;
+
+  /* Initialize the NIO library (this function for now appears in the ncl source directory in nio.c) */
 
   NioInitialize();
  
@@ -3133,6 +3216,9 @@ initnio(void)
   Py_INCREF(m);
   PyModule_AddObject(m,"_Nio", (PyObject *) m);
 
+  def_opt_dict = SetUpDefaultOptions();
+
+  PyModule_AddObject(m,"option_defaults", (PyObject *) def_opt_dict);
 
   /* Initialize C API pointer array and store in module */
   PyNIO_API[NioFile_Type_NUM] = (void *)&NioFile_Type;

@@ -133,6 +133,8 @@ import numpy
 from numpy import ma
 from coordsel import *
 
+_Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
+
 def get_integer_version(strversion):
     d = strversion.split('.')
     v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
@@ -317,7 +319,7 @@ def create_variable(self,name,type,dimensions):
 	self.variables[name] = vp
     return vp
 
-def get_masked_array_mode(options):
+def get_masked_array_mode(options,option_defaults):
 
     # ma_mode specifies when to return masked arrays
     # MaskedNever: never return a masked array for any variable: default for backwards compatibility
@@ -329,7 +331,10 @@ def get_masked_array_mode(options):
     optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue' ]
 
     if options == None:
-	return ['maskediffillatt',None,None]
+	if option_defaults.has_key('MaskedArrayMode'):
+	    return option_defaults['MaskedArrayMode'].lower()
+	else:
+	    return 'maskediffillatt'
     for key in options.__dict__.keys():
 	lkey = key.lower()
 	if not lkey == 'maskedarraymode':
@@ -339,28 +344,22 @@ def get_masked_array_mode(options):
 	if optvals.count(lval) == 0:
             raise ValueError, 'Invalid value for MaskArrayMode option'
 	
-        return  [lval,key,val] 
+        return  lval
 
-    return ['maskediffillatt',None,None]
+    if option_defaults.has_key('MaskedArrayMode'):
+	return option_defaults['MaskedArrayMode'].lower()
+    else:
+	return 'maskediffillatt'
 
 def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
 
-    ret  = get_masked_array_mode(options)
-    lval = ret[0]
-    key = ret[1]
-    val = ret[2]
-    if key is None:
-        file = _Nio.open_file(filename,mode,options,history)
-    else:
-	# Since _Nio does not recognize this option, temporarily remove it.
-	options.__dict__.pop(key)
-        file = _Nio.open_file(filename,mode,options,history)
-	# put it back for future use
-	options.__dict__[key] = val
+    ma_mode  = get_masked_array_mode(options,_Nio.option_defaults)
+
+    file = _Nio.open_file(filename,mode,options,history)
 
     file_proxy = proxy(file, 'str', create_variable=create_variable)
     file_proxy.file = file
-    file_proxy.ma_mode = lval
+    file_proxy.ma_mode = ma_mode
 
     if cfdims:
         cf_dims = get_cf_dims(file)
