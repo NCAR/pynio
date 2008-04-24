@@ -44,7 +44,9 @@ def do_setup(filename):
     f.variables['yc'][:] = yc
     f.variables['zc'][:] = zc
     f.variables['time'][:] = N.arange(nt, dtype='float32')*dt
-    a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
+    #a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
+    a = N.arange(nt*nz*ny*nx,dtype = 'float32')
+    a = a.reshape(nt,nz,ny,nx)
     f.variables['PT'][:] = a
     #a = N.zeros((nz,ny,nx))
     #a[:] = N.arange(nz)[:,N.newaxis,N.newaxis]
