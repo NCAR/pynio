@@ -36,14 +36,29 @@ def get_variable(file, varname, xsel):
     """ get variable from file using extended selection """
     
     dims = file.variables[varname].cf_dimensions
+    order = []
+    do_transpose = False
     if isinstance(xsel, str):
         xsel = crdSelect(xsel, dims)
+	if hasattr(xsel,'names'):
+	    # can't index a tuple, so copy dims to a list
+	    tdims = [] 
+	    for d in dims:
+               tdims.append(d)
+	    for name in xsel.names:
+                order.append(tdims.index(name))
+	    for i in xrange(len(order)-1):
+            	if order[i] > order[i+1]:
+                    do_transpose = True
+            if not do_transpose:
+                order = []
     if isinstance(xsel, crdSelect):
         xsel = crdsel2idxsel(file, xsel)
     if isinstance(xsel, idxSelect):
-        xsel = idxsel2xsel(file, xsel, dims)
+        xsel = idxsel2xsel(file, xsel, dims, order)
 
-    #print 'get_variable', xsel
+    if hasattr(xsel,'order'):
+	order = xsel.order
     if not isinstance(xsel, xSelect) or xsel.isbasic:
         ret = file.file.variables[varname][xsel]
     else:
@@ -55,6 +70,9 @@ def get_variable(file, varname, xsel):
             ret = file.file.variables[varname][bb]
             rsel = xsel - bb
             ret = intp(ret, rsel)
+
+    if do_transpose and len(order) > 1:
+	ret = ret.transpose(order)
 
     return ret
 #@-node:schmidli.20080322120238.2:get_variable
@@ -90,7 +108,7 @@ def inp2xsel(file, varname, xsel):
     if isinstance(xsel, crdSelect):
         xsel = crdsel2idxsel(file, xsel)
     if isinstance(xsel, idxSelect):
-        xsel = idxsel2xsel(file, xsel, dims)
+        xsel = idxsel2xsel(file, xsel, dims,[])
 
     return xsel
 #@-node:schmidli.20080322135142:inp2xsel
@@ -105,13 +123,14 @@ class crdSelect(dict):
     """
     #@	@+others
     #@+node:schmidli.20080322120238.5:__init__
+
     def __init__(self, inp, dimensions):
         """ crdSelect(inp, dimensions) """
+	self.names = []
         if isinstance(inp, str):
             inp = inp.strip()
             inpv = inp.split(' ')
             data = {}
-            names = []
             if '|' in inp:      # named axes input
                 for item in inpv:
                     itemv = item.split('|')
@@ -122,12 +141,12 @@ class crdSelect(dict):
                     if dimensions is not None:
                         if key in dimensions:
                             data[key] = axisSelect(value)
-                            names.append(key)
+                            self.names.append(key)
                         else:
                             pass
                     else:
                         data[key] = axisSelect(value)
-                        names.append(key)
+                        self.names.append(key)
             else:               # positional input
                 if dimensions is None:
                     raise TypeError, "Invalid type for dimensions"
@@ -136,15 +155,14 @@ class crdSelect(dict):
                 for i in range(len(inpv)):
                     key = dimensions[i]
                     data[key] = axisSelect(inpv[i])
-                    names.append(key)
+                    self.names.append(key)
                 if len(inpv) < len(dimensions):
                     for i in range(len(inpv), len(dimensions)):
                         key = dimensions[i]
                         data[key] = axisSelect('i:')
-                        names.append(key)
+                        self.names.append(key)
     
-            self = dict.__init__(self, data)
-            #self.names = names
+            dict.__init__(self, data)
         else:
             raise TypeError, "Invalid input type"
     #@-node:schmidli.20080322120238.5:__init__
@@ -282,7 +300,7 @@ def crdsel2idxsel(file, csel):
     return isel
 #@-node:schmidli.20080322120238.14:crdsel2idxsel
 #@+node:schmidli.20080322120238.15:idxsel2xsel
-def idxsel2xsel(file, isel, dimensions):
+def idxsel2xsel(file, isel, dimensions, order):
     """ convert a index space selection object to an xSelect object
     """
 
@@ -297,7 +315,9 @@ def idxsel2xsel(file, isel, dimensions):
     masked = False
     multidim = False
 
+    i = 0
     for axis in dimensions:
+	inc_i = True
         try:
             idx = isel[axis]
             if idx.interp: interp = True
@@ -316,13 +336,28 @@ def idxsel2xsel(file, isel, dimensions):
                 xsel[axis] = slice(res[0], res[1], res[2])
             elif N.isscalar(idx):
                 xsel[axis] = idx
+                if len(order) > 0:
+		    order.remove(i)
+                    for val in order:
+                        if val > i:
+                            order[order.index(val)] = val - 1
+                            inc_i = False
             else:
                 #xsel[axis] = idx.copy()
                 xsel[axis] = copy.copy(idx)
+                if len(idx.shape) == 0 or idx.shape == 1:
+                    if len(order) > 0:
+		        order.remove(i)
+                        for val in order:
+                            if val > i:
+                                order[order.index(val)] = val - 1
+                                inc_i = False
         except KeyError, e:
             dimsize = file.cf_dimensions[axis]
             xsel[axis] = (slice(0, dimsize, 1))
             xsel_dims[axis] = None
+        if inc_i:
+	    i += 1
 
     if isarray:
         # convert slices to 1d-arrays and determine result size
@@ -392,6 +427,7 @@ def idxsel2xsel(file, isel, dimensions):
     ret.isbasic = isbasic
     ret.interp = interp
     ret.masked = masked
+    ret.order = order
 
     return ret            
 #@-node:schmidli.20080322120238.15:idxsel2xsel

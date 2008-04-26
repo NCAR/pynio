@@ -307,7 +307,7 @@ class test_old(NumpyTestCase):
                     'time|i6 zc|50, yc|i0 xc|i0', \
                     'time|i6 zc|i5, yc|i0 xc|i0',\
                     'time|i6 zc|50,100,175,350 yc|i1 xc|i0', \
-                    'zc|50,100,175,350 yc|i1 xc|i0 time|i6:9',\
+                    'zc|50,100,175,350 yc|i1 xc|i0 time|i5:9',\
                     'time|i6:9 zc|50,100,175,350 yc|i1 xc|i0', \
                     'time|i6 zc|ZP|1.5 yc|i1:3 xc|i0:3', \
                     'time|i6 zc|ZP|1.5 yc|i1 xc|i1.5i', \
@@ -315,11 +315,11 @@ class test_old(NumpyTestCase):
                     'time|i6 zc|ZP|1.5,2.5 yc|i1 xc|i0', \
                     'time|i6 zc|ZP|1.5:2.5:0.5 yc|i1 xc|i0', \
                     'time|i6 zc|ZP|1.5:2.5:0.5 yc|: xc|:', \
-                    'time|i6 zc|alt|1.5:2.5:0.5 yc|: xc|:', \
+                    'zc|ZP|1.5:2.5:0.5 time|d20070321-09:12 yc|: xc|:', \
                     )
         results = ((6,), (6,), (), (4,), (2,), (4,), (10,4,21,21), \
-                (4,), (3,), (1,), (1,), (4,), (4,4), (4,4), (3,4), (), \
-                (2,4), (2,), (3,), (3,21,21))
+                (4,), (3,), (1,), (1,), (4,), (4,5), (4,4), (3,4), (), \
+                (2,4), (2,), (3,), (3,21,21), (3,4,21,21))
 
         for (cstr, res) in zip(cstr_list, results):
             if verbose: print cstr
@@ -408,7 +408,7 @@ class test_topo(NumpyTestCase):
             #pt = file.variables['ZP'][:]
             #pt = xArray(pt)[xsel]
             if verbose: print pt.shape
-            print pt
+            if verbose: print pt
             assert_equal(pt.shape, res)
 
         # ERROR:

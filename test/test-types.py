@@ -65,46 +65,60 @@ file.create_dimension("dim3",4)
 #
 #  Create some variables.
 #
+print "creating and assigning scalar double"
 v1 = file.create_variable("v1", 'd', ())
 v1.assign_value(42.0)
 
+print "creating and assigning scalar float"
 v2 = file.create_variable("v2", 'f', ())
 v2.assign_value(52.0)
 
+print "creating and assigning scalar integer"
 v3 = file.create_variable("v3", 'i', ())
 v3.assign_value(42)
 
+print "creating and assigning scalar long"
 v4 = file.create_variable("v4", 'l', ())
 v4.assign_value(42)
 
+print "creating and assigning scalar short"
 v5 = file.create_variable("v5", 'h', ())
 v5.assign_value(42)
 
+print "creating and assigning scalar byte"
 v6 = file.create_variable("v6", 'b', ())
 v6.assign_value(42)
 
+print "creating and assigning scalar char"
 v7 = file.create_variable("v7", 'S1', ())
 v7.assign_value('x')
 
+print "creating and assigning array double"
 v11 = file.create_variable("v11", 'd', ('array',))
 v11.assign_value([42.0,43.0,44.0])
 
+print "creating and assigning array float"
 v22 = file.create_variable("v22", 'f', ('array',))
 v22.assign_value([52.0,53.0,54.0])
 
+print "creating and assigning array integer"
 v33 = file.create_variable("v33", 'i', ('array',))
 v33.assign_value([42,43,44])
 
+print "creating and assigning array long"
 v44 = file.create_variable("v44", 'l', ('array',))
 a = numpy.array([42,43,44],'l')
 v44.assign_value(a)
 
+print "creating and assigning array short"
 v55 = file.create_variable("v55", 'h', ('array',))
 v55.assign_value([42,43,44])
 
+print "creating and assigning array byte"
 v66 = file.create_variable("v66", 'b', ('array',))
 v66.assign_value([42,43,44])
 
+print "creating and assigning array char"
 v77 = file.create_variable("v77", 'S1', ('array','strlen'))
 #v77.assign_value(['bcdef ','uvwxyz','ijklmn'])
 #v77.assign_value(['ab','uv','ij'])
