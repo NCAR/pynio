@@ -71,6 +71,8 @@ __array_module__         = pynio_version.array_module
 __array_module_version__ = pynio_version.array_module_version
 del pynio_version
 
+__all__ = [ 'open_file', 'option_defaults', 'options' ]
+
 def pyniopath_ncarg():
 #
 #  Find the root directory that contains the supplemental PyNIO files,
@@ -134,60 +136,61 @@ from numpy import ma
 from coordsel import *
 
 _Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
+_Nio.option_defaults['UseAxisAttribute'] = False
 
 def get_integer_version(strversion):
     d = strversion.split('.')
     v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
     return v
 
-is_new_ma = get_integer_version(numpy.__version__) > 10004
+_is_new_ma = get_integer_version(numpy.__version__) > 10004
+del get_integer_version
 
-class Proxy(object):
+class _Proxy(object):
     """ base class for all proxies """
     def __init__(self, obj):
-        super(Proxy, self).__init__(obj)
-        super(Proxy,self).__setattr__('_obj', obj)
-	super(Proxy,self).__setattr__('attributes',{})
-        #super(Proxy, self).__delattr__('__doc__')
+        super(_Proxy, self).__init__(obj)
+        super(_Proxy,self).__setattr__('_obj', obj)
+	super(_Proxy,self).__setattr__('attributes',{})
 	for key in obj.__dict__.keys():
-	   super(Proxy,self).__setattr__(key,obj.__dict__[key])
+	   super(_Proxy,self).__setattr__(key,obj.__dict__[key])
 	   self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
         localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','create_variable','cf_dimensions', 'cf2dims', 'ma_mode']
 
 	if attrib in localatts:
-	    return super(Proxy,self).__getattribute__(attrib)
+	    return super(_Proxy,self).__getattribute__(attrib)
 	else:
 	    return getattr(self._obj,attrib)
 
     def __setattr__(self, attrib, value):
         localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
 	if attrib in localatts:
-	    super(Proxy,self).__setattr__(attrib,value)
+	    super(_Proxy,self).__setattr__(attrib,value)
 	else:
 	    setattr(self._obj,attrib,value)
 
     def __delattr__(self, attrib):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
+        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
 	if attrib in localatts:
             raise AttributeError, "Aattempt to modify read only attribute"
 	else:
 	    delattr(self._obj,attrib)
 
-def make_binder(unbound_method):
+def _make_binder(unbound_method):
     def f(self, *a, **k): return unbound_method(self._obj, *a, **k)
     # in 2.4, only: f.__name__ = unbound_method.__name__
     return f
 
-known_proxy_classes = {  }
+_known_proxy_classes = {  }
 
-def proxy(obj, *specials, **regulars):
+def _proxy(obj, *specials, **regulars):
     ''' factory-function for a proxy able to delegate special methods '''
     # do we already have a suitable customized class around?
     obj_cls = type(obj)
     key = obj_cls, specials
-    cls = known_proxy_classes.get(key)
+    cls = _known_proxy_classes.get(key)
     if cls is None:
         # we don't have a suitable class around, so let's make it
 	cls_dict = {}
@@ -195,16 +198,16 @@ def proxy(obj, *specials, **regulars):
 	# this removes the underscore in the name as supplied by the C API module
 	# to give the user-visible name
         name = obj_cls.__name__[1:] 
-        cls = type(name, (Proxy,), cls_dict)
+        cls = type(name, (_Proxy,), cls_dict)
         for name in specials:
             name = '__%s__' % name
             unbound_method = getattr(obj_cls, name)
-            setattr(cls, name, make_binder(unbound_method))
+            setattr(cls, name, _make_binder(unbound_method))
 	for key in regulars.keys():
             setattr(cls, key, regulars[key])
 	    
         # also cache it for the future
-        known_proxy_classes[key] = cls
+        _known_proxy_classes[key] = cls
     # instantiate and return the needed proxy
     instance = cls(obj)
     return instance
@@ -275,7 +278,7 @@ def __setitem__(self, xsel,value):
 	elif self.__dict__.has_key('missing_value'):
 	    fval = self.__dict__['missing_value'][0]
 	    fill_value = numpy.array(fval,dtype=fval.dtype)
-	elif is_new_ma:
+	elif _is_new_ma:
 	    fill_value = numpy.array(value.fill_value,dtype=value.dtype)
   	    existing_fill_value = False
 	else:
@@ -307,19 +310,19 @@ def __setitem__(self, xsel,value):
     if not existing_fill_value:
         setattr(self._obj,'_FillValue',fill_value)
 
-def create_variable(self,name,type,dimensions):
+def _create_variable(self,name,type,dimensions):
     """create variable and store a reference"""
     #print 'in create variable'
     v = self._obj.create_variable(name,type,dimensions)
     if not v is None:
-	vp  = proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+	vp  = _proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
 	vp.file = self
 	vp.varname = name
 	vp.cf_dimensions = vp.dimensions
 	self.variables[name] = vp
     return vp
 
-def get_masked_array_mode(options,option_defaults):
+def _get_masked_array_mode(options,option_defaults):
 
     # ma_mode specifies when to return masked arrays
     # MaskedNever: never return a masked array for any variable: default for backwards compatibility
@@ -351,18 +354,36 @@ def get_masked_array_mode(options,option_defaults):
     else:
 	return 'maskediffillatt'
 
-def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
+def _get_axis_att(options,option_defaults):
 
-    ma_mode  = get_masked_array_mode(options,_Nio.option_defaults)
+    if options == None:
+	if option_defaults.has_key('UseAxisAttribute'):
+	    return option_defaults['UseAxisAttribute']
+	else:
+	    return False
+    for key in options.__dict__.keys():
+	lkey = key.lower()
+	if not lkey == 'useaxisattribute':
+	    continue
+	val = options.__dict__[key]
+	if val:
+	    return True
+	return False
+    return False
+
+def open_file(filename,mode = 'r', options=None, history=''):
+
+    ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
+    use_axis_att = _get_axis_att(options,_Nio.option_defaults)
 
     file = _Nio.open_file(filename,mode,options,history)
 
-    file_proxy = proxy(file, 'str', create_variable=create_variable)
+    file_proxy = _proxy(file, 'str', create_variable=_create_variable)
     file_proxy.file = file
     file_proxy.ma_mode = ma_mode
 
-    if cfdims:
-        cf_dims = get_cf_dims(file)
+    if use_axis_att:
+        cf_dims = _get_cf_dims(file)
         newdims = {}
         cf2dims = {}
         dimensions = file_proxy.dimensions
@@ -381,11 +402,11 @@ def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
 
     variable_proxies = {}
     for var in file.variables.keys():
-        vp  = proxy(file.variables[var],'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+        vp  = _proxy(file.variables[var],'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
 	vp.file = file_proxy
 	vp.varname = var
 	variable_proxies[var] = vp
-        if cfdims:
+        if use_axis_att:
             newdims = []
             dimensions = vp.dimensions
             for dim in dimensions:
@@ -403,7 +424,7 @@ def open_file(filename,mode = 'r', options=None, history='',cfdims=False):
     return file_proxy
 
 
-def get_cf_dims(file):
+def _get_cf_dims(file):
     ret = {}
     for dim in file.dimensions:
         if dim in file.variables:
@@ -417,3 +438,4 @@ def get_cf_dims(file):
 def options():
 	opt = _Nio.options()
 	return opt
+
