@@ -254,7 +254,9 @@ class test_extended(NumpyTestCase):
 class test_cf_extended(NumpyTestCase):
     def setUp(self):
         do_setup(filename)
-        self.f = Nio.open_file(filename, cfdims=True)
+        opt = Nio.options()
+	opt.UseAxisAttribute = True
+        self.f = Nio.open_file(filename, options = opt)
 
     def check_cf_extended(self):
         file = self.f
