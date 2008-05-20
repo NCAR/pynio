@@ -1798,6 +1798,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   d = 0;
   nitems = 1;
   nio_ncerr = 0;
+  int dir;
 
   if (!check_if_open(self->file, -1)) {
     free(indices);
@@ -1823,9 +1824,11 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     if (indices[i].stride < 0) {
 	    indices[i].stop += 1;
 	    indices[i].stride = -indices[i].stride;
+	    dir = -1;
     }
     else {
 	    indices[i].stop -= 1;
+	    dir = 1;
     }
     if (indices[i].start < 0)
       indices[i].start += self->dimensions[i];
@@ -1844,7 +1847,8 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 	indices[i].stop = 0;
       if (indices[i].stop > self->dimensions[i] -1)
 	indices[i].stop = self->dimensions[i] -1;
-      dims[d] = abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
+      /* Python only creates a reverse-ordered return value if the stride is less than 0 */   
+      dims[d] = ((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
       if (dims[d] < 0)
 	dims[d] = 0;
       nitems *= dims[d];
@@ -1860,6 +1864,15 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     return NULL;
   }
 
+  if (nitems == 0) {
+	  array =(PyArrayObject *)  PyArray_New(&PyArray_Type,d,
+						dims,self->type,NULL,NULL,0,0,NULL);
+	  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+	  if (!is_own) {
+		  array->flags |= NPY_OWNDATA;
+	  }
+				  
+  }
   if (nitems > 0 && self->type == PyArray_STRING) {
 	  NclMultiDValData md;
 	  NclSelectionRecord *sel_ptr = NULL;
@@ -2016,6 +2029,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   Py_ssize_t nitems,var_el_count;
   int error = 0;
   int ret = 0;
+  int dir;
 
   /* update shape */
   (void) NioVariable_GetShape(self);
@@ -2050,9 +2064,11 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  if (indices[i].stride < 0) {
 		  indices[i].stop += 1;
 		  indices[i].stride = -indices[i].stride;
+		  dir = -1;
 	  }
 	  else {
 		  indices[i].stop -= 1;
+		  dir = 1;
 	  }
 	  if (indices[i].start < 0)
 		  indices[i].start += self->dimensions[i];
@@ -2069,7 +2085,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  indices[i].stop = self->dimensions[i] - 1;
 	  }
 	  if (indices[i].item == 0) {
-		  dims[n_dims] = (int)abs((indices[i].stop-indices[i].start)/indices[i].stride)+1;
+		  dims[n_dims] = (int)((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
 		  if (dims[n_dims] < 0)
 			  dims[n_dims] = 0;
 		  nitems *= dims[n_dims];
@@ -2080,11 +2096,13 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   if (error) {
     PyErr_SetString(PyExc_IndexError, "illegal index");
-    if (dims != NULL)
-      free(dims);
-    if (indices != NULL)
-      free(indices);
-    return -1;
+    ret = -1;
+    goto err_ret;
+  }
+  if (nitems == 0) {
+	  /* nothing to write; this is not an error; return 0 */
+	  ret = 0;
+	  goto err_ret;
   }
   if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
 	  array = (PyArrayObject *) value;
