@@ -25,7 +25,7 @@ from xarray import intp, rindex, xArray
 __version__ = '0.1.0'
 __all__ = ['get_variable', 'inp2csel', 'inp2isel', 'inp2xsel', 'idxsel2xsel', \
         'xSelect', 'crdSelect', 'idxSelect', '__version__']
-        
+
 fact = {'k': 10**3, 'M': 10**6, 'h': 3600, 'm': 60, 'H': 100}
 fact_keys = fact.keys()
 #@-node:schmidli.20080322120238.1:<< coordsel declarations >>
@@ -34,17 +34,14 @@ fact_keys = fact.keys()
 #@+node:schmidli.20080322120238.2:get_variable
 def get_variable(file, varname, xsel):
     """ get variable from file using extended selection """
-    
+
     dims = file.variables[varname].cf_dimensions
     order = []
     do_transpose = False
     if isinstance(xsel, str):
         xsel = crdSelect(xsel, dims)
 	if hasattr(xsel,'names'):
-	    # can't index a tuple, so copy dims to a list
-	    tdims = [] 
-	    for d in dims:
-               tdims.append(d)
+	    tdims = list(dims) 
 	    for name in xsel.names:
                 order.append(tdims.index(name))
 	    for i in xrange(len(order)-1):
@@ -123,7 +120,6 @@ class crdSelect(dict):
     """
     #@	@+others
     #@+node:schmidli.20080322120238.5:__init__
-
     def __init__(self, inp, dimensions):
         """ crdSelect(inp, dimensions) """
 	self.names = []
@@ -161,7 +157,7 @@ class crdSelect(dict):
                         key = dimensions[i]
                         data[key] = axisSelect('i:')
                         self.names.append(key)
-    
+
             dict.__init__(self, data)
         else:
             raise TypeError, "Invalid input type"
@@ -173,7 +169,7 @@ class crdSelect(dict):
         for key in self.keys():
             _str += str(key) +': ' + str(self[key]) + ', '
         _str = _str[:-2] + ' ))'
-    
+
         return(_str)
     #@-node:schmidli.20080322120238.6:__str__
     #@-others
@@ -187,29 +183,29 @@ class idxSelect(dict):
     Examples:
         idxSelect(dimensions)
     """
-    
+
     #@	@+others
     #@+node:schmidli.20080322120238.8:__init__
     def __init__(self, dimensions):
         """ idxSelect(dimensions) """
-        
+
         if not isinstance(dimensions, list):
             raise TypeError, "Invalid argument type"
         data = {}
         for key in dimensions:
             data[key] = axisSelect('i:')
-    
+
         self = dict.__init__(self, data)
     #@-node:schmidli.20080322120238.8:__init__
     #@+node:schmidli.20080322120238.9:__str__
     def __str__(self):
         """ string representation """
-        
+
         _str = 'idxSelect(( '
         for key in self.keys():
             _str += str(key) +': ' + str(self[key]) + ', '
         _str = _str[:-2] + ' ))'
-    
+
         return(_str)
     #@-node:schmidli.20080322120238.9:__str__
     #@-others
@@ -221,7 +217,7 @@ class xSelect(tuple):
     Create an extended selection object to be used with xArray.
 
     """
-    
+
     #@	@+others
     #@+node:schmidli.20080322120238.11:bndbox
     def bndbox(self):
@@ -244,11 +240,16 @@ class xSelect(tuple):
                 stop = N.ceil(stop).astype(N.int)
             if not isinstance(idx, slice):
                 stop += 1
-    
+            # should be true only for interpolation cases, therefore stop>= 2
+            if start < 0: 
+                start = 0
+                stop = max(2, stop)
+
             ret.append(slice(start, stop))
         return tuple(ret)
-    
-        bb = property(bndbox)
+
+	# does this do anything?
+        bb = property(bndbox)   
     #@-node:schmidli.20080322120238.11:bndbox
     #@+node:schmidli.20080322120238.12:__sub__
     def __sub__(self, bb):
@@ -271,7 +272,7 @@ class xSelect(tuple):
         for item in self:
             _str += str(item) + ', '
         _str = _str[:-2] + '; isbasic: ' +str(self.isbasic)+ ')'
-    
+
         return(_str)
     #@-node:schmidli.20080322120238.13:__str__
     #@-others
@@ -549,18 +550,18 @@ class axisSelect(object):
             .interp False/True
             .clip   True/False
         """
-    
+
         if not isinstance(inp, str):
             raise TypeError, "Invalid argument type"
         if len(inp) == 0:
             raise ValueError, "Empty string is not a valid input"
-    
+
         # default settings
         self.type = 'slice'
         self.fmt = 'number'
         self.iscrd = True
         self.clip = True
-    
+
         # check prefix
         if inp[0] == 'd':
             self.fmt = 'datetime'
@@ -568,22 +569,22 @@ class axisSelect(object):
         elif inp[0] == 'i':
             self.iscrd = False
             inp = inp[1:]
-    
+
         # check postfix
         if inp[-1] in 'in':
             postfix = inp[-1]
             inp = inp[:-1]
         else:
             postfix = None
-        
+
         # check if to clip field
         if inp[-1] == 'm':
             self.clip = False
             inp = inp[:-1]
-    
+
         if len(inp) == 0:
             raise ValueError, "Invalid input string"   
-    
+
         # check for multi-dimensional coordinate name
         inpv = inp.split('|')
         if len(inpv) > 1:
@@ -600,7 +601,7 @@ class axisSelect(object):
                 self.interp = True
             else:
                 self.interp = False
-    
+
         # determine selection type
         inpv = inp.split(':')
         if len(inpv) > 1 and len(inpv) <= 3:
@@ -614,7 +615,7 @@ class axisSelect(object):
                 if inpv[-1] == '': inpv = inpv[:-1]
             else:
                 self.type = 'scalar'
-    
+
         # parse the selection string
         data = []
         if self.type == 'slice' and len(inpv) == 3:
@@ -702,7 +703,7 @@ class axisSelect(object):
     def toindex(self, file, axis, mdcrd=None, isel=None, clip=True, ep=0.0):
         """ Convert a axisSelect object from coordinate space to index space
         """
-    
+
         dimsize = None; refdate = None
         dims = None
         if self.iscrd:
@@ -741,23 +742,23 @@ class axisSelect(object):
     def toindex_crd(self, crd, dimsize=None, refdate=None, clip=True, ep=0.0):
         """ Convert a axisSelect object from coordinate space to index space
         """
-    
+
         interp = self.interp
         round_ = not interp
         clip = self.clip
         ep = 0.5
-    
+
         cidx = self
         data = copy.copy(self.__data)
         idx = axisIdxSelect(self)
-    
+
         # convert datetime to seconds since a reference date
         if cidx.fmt == 'datetime':
             for i in xrange(len(data)):
                 if data[i] is not None:
                     data[i] = data[i] - refdate
                     data[i] = data[i].days*86400. + data[i].seconds
-    
+
         # if interp=True: convert slice to vector object
         if cidx.type == 'slice' and interp:
             if data[0] is None:
@@ -778,7 +779,7 @@ class axisSelect(object):
             if data[-1]+cidx.step == stop:
                 data = N.concatenate((data, [stop]))        
             idx.type = 'vector'
-    
+
         # convert from coordinate to index space
         if cidx.iscrd:
             if idx.type == 'slice':
@@ -792,7 +793,7 @@ class axisSelect(object):
                         idx.step = N.round(cidx.step/(crd[1]-crd[0])).astype(N.int)
                     else:
                         idx.step = None
-    
+
             else:
                 if crd is None: raise ValueError, "Missing coordinate variable"
                 if cidx.type == 'scalar':
@@ -808,7 +809,7 @@ class axisSelect(object):
                 else:
                     for i in xrange(len(data)):
                         data[i] = N.round(data[i]).astype(N.int)
-    
+
         if cidx.type == 'scalar' and len(data) == 1: data = data[0]
         if idx.type != 'slice': 
             if not isinstance(data, N.ma.MaskedArray):
@@ -820,7 +821,7 @@ class axisSelect(object):
     #@+node:schmidli.20080322120238.24:getstart
     def getstart(self):
         """ return start value of slice object """
-    
+
         if self.type == 'slice':
             return self.__data[0]
         else:
@@ -829,7 +830,7 @@ class axisSelect(object):
     #@+node:schmidli.20080322120238.25:setstart
     def setstart(self, value):
         """ return start value of slice object """
-    
+
         if self.type == 'slice':
             self.__data[0] = value
         else:
@@ -839,7 +840,7 @@ class axisSelect(object):
     start = property(getstart, setstart)
     def getstop(self):
         """ return stop value of slice object """
-    
+
         if self.type == 'slice':
             return self.__data[1]
         else:
@@ -848,7 +849,7 @@ class axisSelect(object):
     #@+node:schmidli.20080322120238.27:setstop
     def setstop(self, value):
         """ return stop value of slice object """
-    
+
         if self.type == 'slice':
             self.__data[1] = value
         else:
@@ -858,7 +859,7 @@ class axisSelect(object):
     stop = property(getstop, setstop)
     def getstep(self):
         """ return step value of slice object """
-    
+
         if self.type == 'slice':
             return self.__step
         else:
@@ -867,7 +868,7 @@ class axisSelect(object):
     #@+node:schmidli.20080322120238.29:setstep
     def setstep(self, value):
         """ return step value of slice object """
-    
+
         if self.type == 'slice':
             self.__step = value
         else:
@@ -945,7 +946,7 @@ class axisIdxSelect(object):
             .type   one of 'scalar', 'slice', 'vector'
             .interp False/True
         """
-    
+
         if isinstance(cidx, axisSelect):
             # copy data members
             self.type = cidx.type
@@ -990,7 +991,7 @@ class axisIdxSelect(object):
     #@+node:schmidli.20080322120238.39:getstart
     def getstart(self):
         """ return start value of slice object """
-    
+
         if self.type == 'slice':
             return self.__data[0]
         else:
@@ -999,7 +1000,7 @@ class axisIdxSelect(object):
     #@+node:schmidli.20080322120238.40:setstart
     def setstart(self, value):
         """ return start value of slice object """
-    
+
         if self.type == 'slice':
             self.__data[0] = value
         else:
@@ -1009,7 +1010,7 @@ class axisIdxSelect(object):
     start = property(getstart, setstart)
     def getstop(self):
         """ return stop value of slice object """
-    
+
         if self.type == 'slice':
             return self.__data[1]
         else:
@@ -1018,7 +1019,7 @@ class axisIdxSelect(object):
     #@+node:schmidli.20080322120238.42:setstop
     def setstop(self, value):
         """ return stop value of slice object """
-    
+
         if self.type == 'slice':
             self.__data[1] = value
         else:
@@ -1028,7 +1029,7 @@ class axisIdxSelect(object):
     stop = property(getstop, setstop)
     def getstep(self):
         """ return step value of slice object """
-    
+
         if self.type == 'slice':
             return self.__step
         else:
@@ -1037,7 +1038,7 @@ class axisIdxSelect(object):
     #@+node:schmidli.20080322120238.44:setstep
     def setstep(self, value):
         """ return step value of slice object """
-    
+
         if self.type == 'slice':
             self.__step = value
         else:
@@ -1233,3 +1234,4 @@ def is_scalar(inp):
 #@-others
 #@-node:schmidli.20080322120238:@thin pymfio/coordsel.py
 #@-leo
+

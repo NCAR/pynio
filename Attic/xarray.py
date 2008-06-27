@@ -1,3 +1,4 @@
+
 #@+leo-ver=4-thin
 #@+node:schmidli.20080321230001.1:@thin xarray.py
 #@@language python
@@ -18,7 +19,7 @@ in addition to numpy's basic slicing and advanced selection mechanisms.
 import numpy as N
 from numpy import asarray
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __all__ = ['xArray', 'intp', 'rindex', 'rindex2', 'rline', '__version__']
 
 #@-node:schmidli.20080321230001.2:<< xarray declarations >>
@@ -41,7 +42,7 @@ class xArray(N.ndarray):
         if isinstance(data, N.ma.MaskedArray):
             mask = data.mask
             masked = True
-            fill_value = data.fill_value()
+            fill_value = data._fill_value
             data = data.filled(fill_value)
         else:
             mask = False
@@ -83,7 +84,7 @@ class xArray(N.ndarray):
     #@+node:schmidli.20080321230001.8:__str__
     def __str__(self):
         """ informal string representation """
-        
+
         if self.masked:
             r = 'Masked: '
         else:
@@ -94,7 +95,7 @@ class xArray(N.ndarray):
     #@+node:schmidli.20080321230001.9:__repr__
     def __repr__(self):
         """ full string representation """
-        
+
         r = 'xArray(' + self.__str__() + ')'
         return r
     #@-node:schmidli.20080321230001.9:__repr__
@@ -102,7 +103,7 @@ class xArray(N.ndarray):
     def getA(self):
         """ base array """
         return asarray(self)
-    
+
     A = property(getA)
     #@nonl
     #@-node:schmidli.20080321230001.10:getA
@@ -114,7 +115,7 @@ def intp(ar, sltup):
     """
         Returns the result of applying an extended selection
         tuple to the array. 
-        
+
         In addition to numpy's basic slicing and advanced selection,
         masked indexing arrays and multi-linear interpolation are
         supported.
@@ -147,21 +148,26 @@ def intp(ar, sltup):
             axis = i
             break
 
-    # quit, if no interpolation required
+    # if no interpolation required: apply selection and quit
     if axis is None:
         if len(sltup) == 0:
             return ar[sltup]
         elif ismasked_tuple(sltup):
-            #print "intp: ismasked"
-            #mask = sltup[0].mask
             sltup = list(sltup)
+            axis_mask = 0
             for n in range(len(sltup)):
                 if isinstance(sltup[n], N.ma.MaskedArray):
                     mask = sltup[n].mask
                     sltup[n] = sltup[n].filled(0)
-            #sltup[0] = sltup[0].filled(0)
+                    axis_mask = n
             sltup = tuple(sltup)
             r = ar[sltup]
+            #print "r.shape, mask.shape:", r.shape, mask.shape, axis_mask
+            if axis_mask > 0:
+                new_mask = N.zeros(r.shape, dtype='bool')
+                sl = (None,)*axis_mask + (slice(None),)
+                new_mask[:] = mask[sl]
+                mask = new_mask
             if isinstance(r, N.ma.MaskedArray): 
                 return N.ma.array(r, mask=mask | r.mask)
             else:
@@ -200,11 +206,11 @@ def rindex(ar, val, axis=0, ep=0.5, clip=True, round=False, squeeze=True):
                     False: set rj.mask = rj < -ep or rj > (n-1)+ep
         res[nv,I]
 
-        >>> print rindex(N.arange(10), 5.5)
+print rindex(N.arange(10), 5.5)
         [ 5.5]
-        >>> print rindex(N.arange(10), -1)
+print rindex(N.arange(10), -1)
         [-0.5]
-        >>> print rindex(N.arange(10), [2,4.5])
+print rindex(N.arange(10), [2,4.5])
         [ 2.   4.5]
     """
 
@@ -230,17 +236,33 @@ def rindex(ar, val, axis=0, ep=0.5, clip=True, round=False, squeeze=True):
     if ar.shape[0] == 1:
         rj = N.zeros((1,ar.shape[1]), dtype=N.int)
     else:
-        j1 = N.apply_along_axis(N.searchsorted, 0, ar, val).reshape(nv,ni)
-        j1 = N.clip(j1, 1, nj-1)
-        j0 = j1-1
-        i = N.arange(ni).reshape(1,ni)
-        rj = j0 + 1.0*(val.reshape(nv,1) - ar[j0,i])/(ar[j1,i] - ar[j0,i])
-        if clip:
-            rj = N.clip(rj, -ep, (nj-1)+ep)
-        else:
-            mask = (rj<-ep)|(rj>nj-1+ep)
-            if mask.any():
-                rj = N.ma.array(rj, mask=mask)
+        if ar[0,0] < ar[1,0]: # ascending order
+            j1 = N.apply_along_axis(N.searchsorted, 0, ar, val).reshape(nv,ni)
+            j1 = N.clip(j1, 1, nj-1)
+            j0 = j1-1
+            i = N.arange(ni).reshape(1,ni)
+            rj = j0 + 1.0*(val.reshape(nv,1) - ar[j0,i])/(ar[j1,i] - ar[j0,i])
+            if clip:
+                rj = N.clip(rj, -ep, (nj-1)+ep)
+            else:
+                mask = (rj<-ep)|(rj>nj-1+ep)
+                if mask.any():
+                    rj = N.ma.array(rj, mask=mask)
+        else: #descending order
+            j1 = N.apply_along_axis(N.searchsorted, 0, ar[::-1], val).reshape(nv,ni)
+            j1 = nj - j1 - 1
+            j1 = j1.clip(0,nj-2)
+            j0 = j1+1
+            i = N.arange(ni).reshape(1,ni)
+            rj = j0 - 1.0*(val.reshape(nv,1) - ar[j0,i])/(ar[j1,i] - ar[j0,i])
+            if clip:
+                rj = N.clip(rj, -ep, (nj-1)+ep)
+            else:
+                mask = (rj<-ep)|(rj>nj-1+ep)
+                if mask.any():
+                    rj = N.ma.array(rj, mask=mask)
+
+
 
     # back to multdimensional
     ar.shape = ar_shape
@@ -277,16 +299,12 @@ def rindex2(ar, val, axis=0, ep=0.5, clip=True, round=False):
     val_ndim = N.array(val).ndim
     rj = rindex(ar, val, axis=axis, ep=ep, clip=clip, round=round, 
                 squeeze=False)
-    
+
     # determine selection tuples for the remaining dimensions
     rj_shape = list(rj.shape)
     rtup = []
-    rj_masked = isinstance(rj, N.ma.MaskedArray)
     for i in xrange(rj.ndim):
-        if rj_masked:
-            idx = N.ma.arange(rj.shape[i])
-        else:
-            idx = N.arange(rj.shape[i])
+        idx = N.arange(rj.shape[i])
         idx_shape = N.ones(rj.ndim)
         idx_shape[i] = rj.shape[i]
         idx.shape = idx_shape
@@ -349,3 +367,4 @@ def ismasked_tuple(sltup):
 #@-others
 #@-node:schmidli.20080321230001.1:@thin xarray.py
 #@-leo
+
