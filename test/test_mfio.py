@@ -423,7 +423,8 @@ class test_topo(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().run()
+    NumpyTest().test(level=11,all=False)
+    #NumpyTest().run()
     #NumpyTest().test(testcase_pattern='test_nocrd')
     if os.path.exists(filename): os.remove(filename)
 

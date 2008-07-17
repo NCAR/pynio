@@ -53,7 +53,7 @@ For more detailed information:
 
 For complete documentation see:
 
-	http://www.pyngl.ucar.edu/Nio.html
+        http://www.pyngl.ucar.edu/Nio.html
 """
 
 from nio import *
@@ -101,15 +101,15 @@ def pyniopath_ncarg():
     pyngl_ncarg = pyngl1_dir
   else:
     if os.path.exists(ncarg_dir):
-	pyngl_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
-	if not os.path.exists(pyngl_ncarg):
-	    print "pynglpath: directory " + pyngl1_dir + \
-        	  "\n           does not exist and " + \
-          	  "environment variable PYNGL_NCARG is not set and " + \
-		  "no usable NCARG installation found"
+        pyngl_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
+        if not os.path.exists(pyngl_ncarg):
+            print "pynglpath: directory " + pyngl1_dir + \
+                  "\n           does not exist and " + \
+                  "environment variable PYNGL_NCARG is not set and " + \
+                  "no usable NCARG installation found"
             sys.exit()
     else:
-	sys.exit()
+        sys.exit()
 
   return pyngl_ncarg
 
@@ -140,7 +140,12 @@ _Nio.option_defaults['UseAxisAttribute'] = False
 
 def get_integer_version(strversion):
     d = strversion.split('.')
-    v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
+    if len(d) > 2:
+       v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
+    elif len(d) is 2:
+       v = int(d[0]) * 10000 + int(d[1]) * 100
+    else:
+       v = int(d[0]) * 10000
     return v
 
 _is_new_ma = get_integer_version(numpy.__version__) > 10004
@@ -151,32 +156,32 @@ class _Proxy(object):
     def __init__(self, obj):
         super(_Proxy, self).__init__(obj)
         super(_Proxy,self).__setattr__('_obj', obj)
-	super(_Proxy,self).__setattr__('attributes',{})
-	for key in obj.__dict__.keys():
-	   super(_Proxy,self).__setattr__(key,obj.__dict__[key])
-	   self.attributes[key] = obj.__dict__[key]
+        super(_Proxy,self).__setattr__('attributes',{})
+        for key in obj.__dict__.keys():
+           super(_Proxy,self).__setattr__(key,obj.__dict__[key])
+           self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
         localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','create_variable','cf_dimensions', 'cf2dims', 'ma_mode']
 
-	if attrib in localatts:
-	    return super(_Proxy,self).__getattribute__(attrib)
-	else:
-	    return getattr(self._obj,attrib)
+        if attrib in localatts:
+            return super(_Proxy,self).__getattribute__(attrib)
+        else:
+            return getattr(self._obj,attrib)
 
     def __setattr__(self, attrib, value):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
-	if attrib in localatts:
-	    super(_Proxy,self).__setattr__(attrib,value)
-	else:
-	    setattr(self._obj,attrib,value)
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']    
+        if attrib in localatts:
+            super(_Proxy,self).__setattr__(attrib,value)
+        else:
+            setattr(self._obj,attrib,value)
 
     def __delattr__(self, attrib):
-        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']	
-	if attrib in localatts:
+        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode'] 
+        if attrib in localatts:
             raise AttributeError, "Aattempt to modify read only attribute"
-	else:
-	    delattr(self._obj,attrib)
+        else:
+            delattr(self._obj,attrib)
 
 def _make_binder(unbound_method):
     def f(self, *a, **k): return unbound_method(self._obj, *a, **k)
@@ -193,19 +198,19 @@ def _proxy(obj, *specials, **regulars):
     cls = _known_proxy_classes.get(key)
     if cls is None:
         # we don't have a suitable class around, so let's make it
-	cls_dict = {}
-	cls_dict['__doc__'] = obj_cls.__doc__
-	# this removes the underscore in the name as supplied by the C API module
-	# to give the user-visible name
+        cls_dict = {}
+        cls_dict['__doc__'] = obj_cls.__doc__
+        # this removes the underscore in the name as supplied by the C API module
+        # to give the user-visible name
         name = obj_cls.__name__[1:] 
         cls = type(name, (_Proxy,), cls_dict)
         for name in specials:
             name = '__%s__' % name
             unbound_method = getattr(obj_cls, name)
             setattr(cls, name, _make_binder(unbound_method))
-	for key in regulars.keys():
+        for key in regulars.keys():
             setattr(cls, key, regulars[key])
-	    
+            
         # also cache it for the future
         _known_proxy_classes[key] = cls
     # instantiate and return the needed proxy
@@ -214,7 +219,7 @@ def _proxy(obj, *specials, **regulars):
 
 def __getitem__(self, xsel):
     """ Return data specified by the extended selection object xsel.
-	If there is a fill value return a masked array; otherwise an ndarray
+        If there is a fill value return a masked array; otherwise an ndarray
     """
 
     ret = get_variable(self.file, self.varname, xsel)
@@ -224,30 +229,30 @@ def __getitem__(self, xsel):
     # then look for missing_value
     #
     if self.file.ma_mode == 'maskednever':
-	# MaskedNever -- just return a numpy array
-	return ret
+        # MaskedNever -- just return a numpy array
+        return ret
     elif self.file.ma_mode == 'maskediffillattandvalue':
-	# MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
-	if self.__dict__.has_key('_FillValue'):
-	    if ret.__contains__(self.__dict__['_FillValue'][0]):
-		ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
-        	ret.set_fill_value(self.__dict__['_FillValue'][0])
+        # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
+        if self.__dict__.has_key('_FillValue'):
+            if ret.__contains__(self.__dict__['_FillValue'][0]):
+                ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
+                ret.set_fill_value(self.__dict__['_FillValue'][0])
         elif self.__dict__.has_key('missing_value'):
-	    if ret.__contains__(self.__dict__['missing_value'][0]):
-	        ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
+            if ret.__contains__(self.__dict__['missing_value'][0]):
+                ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
                 ret.set_fill_value(self.__dict__['missing_value'][0])
     else: 
-	# Handles MaskedIfFillAtt and MaskedAlways
-	if self.__dict__.has_key('_FillValue'):
-	    ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
+        # Handles MaskedIfFillAtt and MaskedAlways
+        if self.__dict__.has_key('_FillValue'):
+            ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
             ret.set_fill_value(self.__dict__['_FillValue'][0])
         elif self.__dict__.has_key('missing_value'):
             ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
             ret.set_fill_value(self.__dict__['missing_value'][0])
-	elif self.file.ma_mode == 'maskedalways':
-	    # supply a mask of all False, but just allow the fill_value to default
-	    mask = numpy.zeros(ret.shape,dtype='?')
-	    ret = ma.array(ret,mask=mask)
+        elif self.file.ma_mode == 'maskedalways':
+            # supply a mask of all False, but just allow the fill_value to default
+            mask = numpy.zeros(ret.shape,dtype='?')
+            ret = ma.array(ret,mask=mask)
 
     return ret
 
@@ -264,27 +269,27 @@ def __setitem__(self, xsel,value):
 
     if ma.isMaskedArray(value):
         #
-	# If the file variable already has a _FillValue or missing_value attribute
+        # If the file variable already has a _FillValue or missing_value attribute
         # use it for the fill_value when converting the masked array.
         # _FillValue is the preferred fill value attribute but if it is not set
         # then look for missing_value.
         # Note that it is important to generate the fill_value with the correct type.
         # If there is an existing fill value in the file, make it conform to that type (??)
-	# Otherwise use the type of the numpy array value
-	#
-	if self.__dict__.has_key('_FillValue'):
-	    fval = self.__dict__['_FillValue'][0]
-	    fill_value = numpy.array(fval,dtype=fval.dtype)
-	elif self.__dict__.has_key('missing_value'):
-	    fval = self.__dict__['missing_value'][0]
-	    fill_value = numpy.array(fval,dtype=fval.dtype)
-	elif _is_new_ma:
-	    fill_value = numpy.array(value.fill_value,dtype=value.dtype)
-  	    existing_fill_value = False
-	else:
-	    fill_value = numpy.array(value.fill_value(),dtype=value.dtype)
-  	    existing_fill_value = False
-	value = value.filled(fill_value)
+        # Otherwise use the type of the numpy array value
+        #
+        if self.__dict__.has_key('_FillValue'):
+            fval = self.__dict__['_FillValue'][0]
+            fill_value = numpy.array(fval,dtype=fval.dtype)
+        elif self.__dict__.has_key('missing_value'):
+            fval = self.__dict__['missing_value'][0]
+            fill_value = numpy.array(fval,dtype=fval.dtype)
+        elif _is_new_ma:
+            fill_value = numpy.array(value.fill_value,dtype=value.dtype)
+            existing_fill_value = False
+        else:
+            fill_value = numpy.array(value.fill_value(),dtype=value.dtype)
+            existing_fill_value = False
+        value = value.filled(fill_value)
 
     # Convert the type if necessary
     # Not now: this may break some things
@@ -303,7 +308,7 @@ def __setitem__(self, xsel,value):
         bb = xsel.bndbox()
         rsel = xsel - bb
         ret = self._obj[bb]
-	ret[rsel] = value
+        ret[rsel] = value
     else:
         self._obj[xsel] = value
     '''
@@ -315,11 +320,11 @@ def _create_variable(self,name,type,dimensions):
     #print 'in create variable'
     v = self._obj.create_variable(name,type,dimensions)
     if not v is None:
-	vp  = _proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
-	vp.file = self
-	vp.varname = name
-	vp.cf_dimensions = vp.dimensions
-	self.variables[name] = vp
+        vp  = _proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+        vp.file = self
+        vp.varname = name
+        vp.cf_dimensions = vp.dimensions
+        self.variables[name] = vp
     return vp
 
 def _get_masked_array_mode(options,option_defaults):
@@ -334,41 +339,41 @@ def _get_masked_array_mode(options,option_defaults):
     optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue' ]
 
     if options == None:
-	if option_defaults.has_key('MaskedArrayMode'):
-	    return option_defaults['MaskedArrayMode'].lower()
-	else:
-	    return 'maskediffillatt'
+        if option_defaults.has_key('MaskedArrayMode'):
+            return option_defaults['MaskedArrayMode'].lower()
+        else:
+            return 'maskediffillatt'
     for key in options.__dict__.keys():
-	lkey = key.lower()
-	if not lkey == 'maskedarraymode':
-	    continue
-	val = options.__dict__[key]
-	lval = val.lower()
-	if optvals.count(lval) == 0:
+        lkey = key.lower()
+        if not lkey == 'maskedarraymode':
+            continue
+        val = options.__dict__[key]
+        lval = val.lower()
+        if optvals.count(lval) == 0:
             raise ValueError, 'Invalid value for MaskArrayMode option'
-	
+        
         return  lval
 
     if option_defaults.has_key('MaskedArrayMode'):
-	return option_defaults['MaskedArrayMode'].lower()
+        return option_defaults['MaskedArrayMode'].lower()
     else:
-	return 'maskediffillatt'
+        return 'maskediffillatt'
 
 def _get_axis_att(options,option_defaults):
 
     if options == None:
-	if option_defaults.has_key('UseAxisAttribute'):
-	    return option_defaults['UseAxisAttribute']
-	else:
-	    return False
+        if option_defaults.has_key('UseAxisAttribute'):
+            return option_defaults['UseAxisAttribute']
+        else:
+            return False
     for key in options.__dict__.keys():
-	lkey = key.lower()
-	if not lkey == 'useaxisattribute':
-	    continue
-	val = options.__dict__[key]
-	if val:
-	    return True
-	return False
+        lkey = key.lower()
+        if not lkey == 'useaxisattribute':
+            continue
+        val = options.__dict__[key]
+        if val:
+            return True
+        return False
     return False
 
 def open_file(filename,mode = 'r', options=None, history=''):
@@ -403,9 +408,9 @@ def open_file(filename,mode = 'r', options=None, history=''):
     variable_proxies = {}
     for var in file.variables.keys():
         vp  = _proxy(file.variables[var],'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
-	vp.file = file_proxy
-	vp.varname = var
-	variable_proxies[var] = vp
+        vp.file = file_proxy
+        vp.varname = var
+        variable_proxies[var] = vp
         if use_axis_att:
             newdims = []
             dimensions = vp.dimensions
@@ -434,8 +439,8 @@ def _get_cf_dims(file):
             except AttributeError:
                 pass
     return ret
-	    
+            
 def options():
-	opt = _Nio.options()
-	return opt
+        opt = _Nio.options()
+        return opt
 

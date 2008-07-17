@@ -33,7 +33,7 @@ class xArray(N.ndarray):
     numbers and masked arrays.
 
     """
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080321230001.4:__new__
     def __new__(subtype, data, dtype=None, copy=True):
         """

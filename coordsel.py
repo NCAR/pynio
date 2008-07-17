@@ -40,12 +40,12 @@ def get_variable(file, varname, xsel):
     do_transpose = False
     if isinstance(xsel, str):
         xsel = crdSelect(xsel, dims)
-	if hasattr(xsel,'names'):
-	    tdims = list(dims) 
-	    for name in xsel.names:
+        if hasattr(xsel,'names'):
+            tdims = list(dims) 
+            for name in xsel.names:
                 order.append(tdims.index(name))
-	    for i in xrange(len(order)-1):
-            	if order[i] > order[i+1]:
+            for i in xrange(len(order)-1):
+                if order[i] > order[i+1]:
                     do_transpose = True
             if not do_transpose:
                 order = []
@@ -55,7 +55,7 @@ def get_variable(file, varname, xsel):
         xsel = idxsel2xsel(file, xsel, dims, order)
 
     if hasattr(xsel,'order'):
-	order = xsel.order
+        order = xsel.order
     if not isinstance(xsel, xSelect) or xsel.isbasic:
         ret = file.file.variables[varname][xsel]
     else:
@@ -69,7 +69,7 @@ def get_variable(file, varname, xsel):
             ret = intp(ret, rsel)
 
     if do_transpose and len(order) > 1:
-	ret = ret.transpose(order)
+        ret = ret.transpose(order)
 
     return ret
 #@-node:schmidli.20080322120238.2:get_variable
@@ -118,14 +118,14 @@ class crdSelect(dict):
     Examples:
         crdSelect('time|d20070321-6:18:3h xc|10k:20k:2k')
     """
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.5:__init__
     def __init__(self, inp, dimensions):
         """ crdSelect(inp, dimensions) """
-	self.names = []
+        self.names = []
         if isinstance(inp, str):
             inp = inp.strip()
-            inpv = inp.split(' ')
+            inpv = inp.split()
             data = {}
             if '|' in inp:      # named axes input
                 for item in inpv:
@@ -184,7 +184,7 @@ class idxSelect(dict):
         idxSelect(dimensions)
     """
 
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.8:__init__
     def __init__(self, dimensions):
         """ idxSelect(dimensions) """
@@ -218,13 +218,13 @@ class xSelect(tuple):
 
     """
 
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.11:bndbox
     def bndbox(self):
         """ Return the bounding box of the current selection object. """
-    	ret = []
-    	for idx in self:
-    	    if isinstance(idx, slice):
+        ret = []
+        for idx in self:
+            if isinstance(idx, slice):
                 start = idx.start
                 stop = idx.stop
             elif isinstance(idx, N.ndarray):
@@ -248,13 +248,13 @@ class xSelect(tuple):
             ret.append(slice(start, stop))
         return tuple(ret)
 
-	# does this do anything?
+        # does this do anything?
         bb = property(bndbox)   
     #@-node:schmidli.20080322120238.11:bndbox
     #@+node:schmidli.20080322120238.12:__sub__
     def __sub__(self, bb):
         """ Subtract the bounding box (bb) from the current selection object. """
-    	rsel = list(self)
+        rsel = list(self)
         if len(rsel) != len(bb):
             raise ValueError, "Incompatible operands"
         for i in range(len(rsel)):
@@ -318,7 +318,7 @@ def idxsel2xsel(file, isel, dimensions, order):
 
     i = 0
     for axis in dimensions:
-	inc_i = True
+        inc_i = True
         try:
             idx = isel[axis]
             if idx.interp: interp = True
@@ -338,7 +338,7 @@ def idxsel2xsel(file, isel, dimensions, order):
             elif N.isscalar(idx):
                 xsel[axis] = idx
                 if len(order) > 0:
-		    order.remove(i)
+                    order.remove(i)
                     for val in order:
                         if val > i:
                             order[order.index(val)] = val - 1
@@ -348,7 +348,7 @@ def idxsel2xsel(file, isel, dimensions, order):
                 xsel[axis] = copy.copy(idx)
                 if len(idx.shape) == 0 or idx.shape == 1:
                     if len(order) > 0:
-		        order.remove(i)
+                        order.remove(i)
                         for val in order:
                             if val > i:
                                 order[order.index(val)] = val - 1
@@ -358,7 +358,7 @@ def idxsel2xsel(file, isel, dimensions, order):
             xsel[axis] = (slice(0, dimsize, 1))
             xsel_dims[axis] = None
         if inc_i:
-	    i += 1
+            i += 1
 
     if isarray:
         # convert slices to 1d-arrays and determine result size
@@ -540,7 +540,7 @@ class axisSelect(object):
         cidx = axisSelect('20k:100k:5k')
         cidx = axisSelect('ZP|1500n')
     """
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.18:__init__
     def __init__(self, inp):
         """ Overview of attributes:
@@ -705,7 +705,7 @@ class axisSelect(object):
         """
 
         dimsize = None; refdate = None
-        dims = None
+        dims = None; axis_no = 0
         if self.iscrd:
             if mdcrd is None:
                 if file.cf2dims is not None:
@@ -720,26 +720,27 @@ class axisSelect(object):
                 crd = get_variable(file, mdcrd, isel)
                 var = file.variables[mdcrd]
                 dims = list(var.cf_dimensions)
-                if self.type == 'scalar': dims.remove(axis)
                 for axis2 in isel.keys():
-                    if isel[axis2].type == 'scalar': 
+                    if isel[axis2].type == 'scalar' and axis2 != axis: 
                         try:
                             dims.remove(axis2)
                         except ValueError, e:
                             pass
+                axis_no = dims.index(axis)
+                if self.type == 'scalar': dims.remove(axis)
                 if var.rank < 2:
                     raise ValueError, "Coordinate variable "+self.mdcrd+ " is not multidimensional"
         else:
             dimsize = file.cf_dimensions[axis]
             crd = None
-        ret = self.toindex_crd(crd, dimsize=dimsize, refdate=refdate, 
+        ret = self.toindex_crd(crd, axis_no=axis_no, dimsize=dimsize, refdate=refdate, 
                                clip=clip, ep=0.0)
         ret.dims = dims
         ret.axis = axis
         return ret
     #@-node:schmidli.20080322120238.22:toindex
     #@+node:schmidli.20080322120238.23:toindex_crd
-    def toindex_crd(self, crd, dimsize=None, refdate=None, clip=True, ep=0.0):
+    def toindex_crd(self, crd, axis_no=0, dimsize=None, refdate=None, clip=True, ep=0.0):
         """ Convert a axisSelect object from coordinate space to index space
         """
 
@@ -785,7 +786,7 @@ class axisSelect(object):
             if idx.type == 'slice':
                 for i in xrange(len(data)):
                     if data[i] is not None: 
-                        data[i] = rindex(crd, data[i], round=False, clip=clip, ep=ep)
+                        data[i] = rindex(crd, data[i], axis=axis_no, round=False, clip=clip, ep=ep)
                         if i == 0: data[i] = N.ceil(data[i]).astype(N.int)
                         if i == 1: data[i] = N.floor(data[i]).astype(N.int) + 1
                 if cidx.step is not None:
@@ -797,9 +798,9 @@ class axisSelect(object):
             else:
                 if crd is None: raise ValueError, "Missing coordinate variable"
                 if cidx.type == 'scalar':
-                    data[0] = rindex(crd, data[0], round=round_, clip=clip, ep=ep)
+                    data[0] = rindex(crd, data[0], axis=axis_no, round=round_, clip=clip, ep=ep)
                 else:
-                    data = rindex(crd, data, round=round_, clip=clip, ep=ep)
+                    data = rindex(crd, data, axis=axis_no, round=round_, clip=clip, ep=ep)
         else:
             if not interp:
                 if idx.type == 'slice':
@@ -939,7 +940,7 @@ class axisIdxSelect(object):
         cidx = axisSelect('d20070321-09:18:3h')
         idx = axisIdxSelect(cidx)
     """
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.36:__init__
     def __init__(self, cidx):
         """ Overview of attributes:
@@ -1121,7 +1122,7 @@ class realSelect(object):
     Examples:
         rsel = realSelect()[5.5, 2.2:4.4:1.1, (2.2,3,3.5),:]]
     """
-    #@	@+others
+    #@  @+others
     #@+node:schmidli.20080322120238.53:__init__
     def __init__(self):
         pass
@@ -1234,4 +1235,3 @@ def is_scalar(inp):
 #@-others
 #@-node:schmidli.20080322120238:@thin pymfio/coordsel.py
 #@-leo
-
