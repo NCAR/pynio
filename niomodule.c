@@ -2859,7 +2859,7 @@ GetExtension ( char * filename)
 
 	/* for now only regular files are accepted */
 	if (stat(filename,&statbuf) >= 0) {
-		if (! (statbuf.st_mode & S_IFREG))
+		if (! (S_ISREG(statbuf.st_mode)))
 			return NrmNULLQUARK;
 	}
 	return NrmStringToQuark(cp+1);
