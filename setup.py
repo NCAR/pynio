@@ -99,9 +99,7 @@ if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
     LIBRARIES.append('gfortran')
 
 if sys.platform == "sunos5":
-    os.environ["CC"]="/opt/SUNWspro/bin/cc"
     LIBRARIES.remove('g2c')
-    LIBRARIES.append('f77compat')
     LIBRARIES.append('fsu')
     LIBRARIES.append('sunmath')
 
