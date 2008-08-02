@@ -3054,16 +3054,22 @@ NioFile(PyObject *self, PyObject *args,PyObject *kwds)
   char *filepath;
   char *mode = "r";
   char *history = "";
+  char *format = "";
   PyObject *options = Py_None;
   NioFileObject *file;
   NrmQuark extq;
   int crw;
-  static char *argnames[] = { "filepath", "mode", "options", "history", NULL };
+  static char *argnames[] = { "filepath", "mode", "options", "history", "format", NULL };
   PyObject *option_defaults;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sOs:open_file", argnames, &filepath, &mode, &options, &history))
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|sOss:open_file", argnames, &filepath, &mode, &options, &history,&format))
     return NULL;
 
+  if (strlen(format) > 0 && strlen(format) < 16 && strlen(filepath) > 0) {
+	  char *tfile = filepath;
+	  filepath = malloc(strlen(filepath) + strlen(format) + 2);
+	  sprintf(filepath,"%s.%s",tfile,format);
+  }	  
   extq = GetExtension(filepath);
 
   if (extq == NrmNULLQUARK) {

@@ -405,8 +405,9 @@ class test_topo(NumpyTestCase):
 
         for (cstr, res) in zip(cstr_list, results):
             if verbose: print cstr
-            xsel = Nio.inp2xsel(file, 'ZP', cstr)
-            pt = file.variables['ZP'][cstr]
+            print "in check_topo"
+            xsel = Nio.inp2xsel(file, 'PT', cstr)
+            pt = file.variables['PT'][cstr]
             #pt = file.variables['ZP'][:]
             #pt = xArray(pt)[xsel]
             if verbose: print pt.shape

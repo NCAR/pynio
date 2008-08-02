@@ -135,10 +135,14 @@ import numpy
 from numpy import ma
 from coordsel import *
 
-_Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
 _Nio.option_defaults['UseAxisAttribute'] = False
+_Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
+_Nio.option_defaults['ExplicitFillValues'] = None
+_Nio.option_defaults['MaskBelowValue'] = None
+_Nio.option_defaults['MaskAboveValue'] = None
 
 def get_integer_version(strversion):
+    ''' converts string version number into an integer '''
     d = strversion.split('.')
     if len(d) > 2:
        v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
@@ -162,7 +166,9 @@ class _Proxy(object):
            self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','create_variable','cf_dimensions', 'cf2dims', 'ma_mode']
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname', \
+	             'create_variable','cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
+                     'mask_below_value', 'mask_above_value', 'set_option','__class__']
 
         if attrib in localatts:
             return super(_Proxy,self).__getattribute__(attrib)
@@ -170,16 +176,20 @@ class _Proxy(object):
             return getattr(self._obj,attrib)
 
     def __setattr__(self, attrib, value):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode']    
+        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname', \
+                     'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
+                     'mask_below_value', 'mask_above_value', 'set_option','__class__']    
         if attrib in localatts:
             super(_Proxy,self).__setattr__(attrib,value)
         else:
             setattr(self._obj,attrib,value)
 
     def __delattr__(self, attrib):
-        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname','cf_dimensions', 'cf2dims', 'ma_mode'] 
+        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname', \
+                     'cf_dimensions', 'cf2dims', 'ma_mode','explicit_fill_values', \
+                     'mask_below_value', 'mask_above_value', 'set_option','__class__' ] 
         if attrib in localatts:
-            raise AttributeError, "Aattempt to modify read only attribute"
+            raise AttributeError, "Attempt to modify read only attribute"
         else:
             delattr(self._obj,attrib)
 
@@ -217,11 +227,11 @@ def _proxy(obj, *specials, **regulars):
     instance = cls(obj)
     return instance
 
+    
 def __getitem__(self, xsel):
     """ Return data specified by the extended selection object xsel.
         If there is a fill value return a masked array; otherwise an ndarray
     """
-
     ret = get_variable(self.file, self.varname, xsel)
 
     #
@@ -231,6 +241,35 @@ def __getitem__(self, xsel):
     if self.file.ma_mode == 'maskednever':
         # MaskedNever -- just return a numpy array
         return ret
+    elif self.file.ma_mode == 'maskedexplicit':
+	# handle user-specified masking -- first ranges, then explicit single values
+        # note that masked_where does not remove previously applied mask values 
+        # so it can be applied in stages
+
+	if self.file.mask_below_value is not None and self.file.mask_above_value is not None:
+            if self.file.mask_below_value > self.file.mask_above_value: 
+                # mask a band of values
+                ret = ma.masked_where((ret < self.file.mask_below_value) & (ret > self.file.mask_above_value),ret,copy=0)
+            else:
+                # mask high and low values                    
+                ret = ma.masked_where((ret < self.file.mask_below_value) | (ret > self.file.mask_above_value),ret,copy=0)
+        elif self.file.mask_below_value is not None:
+            # mask low values
+            ret = ma.masked_where(ret < self.file.mask_below_value,ret,copy=0)
+        elif self.file.mask_above_value is not None:
+            # mask high values
+            ret = ma.masked_where(ret > self.file.mask_above_value,ret,copy=0)
+
+	# now apply single fill values
+        if hasattr(self.file.explicit_fill_values,'__iter__'):
+            # multiple explicit fill values
+            for fval in self.file.explicit_fill_values:
+                ret = ma.masked_where(ret == fval,ret,copy=0)
+            ret.set_fill_value(self.file.explicit_fill_values[0])
+        elif self.file.explicit_fill_values is not None:
+            ret = ma.masked_where(ret == self.file.explicit_fill_values,ret,copy=0)
+            ret.set_fill_value(self.file.explicit_fill_values)
+
     elif self.file.ma_mode == 'maskediffillattandvalue':
         # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
         if self.__dict__.has_key('_FillValue'):
@@ -264,7 +303,7 @@ def __setitem__(self, xsel,value):
     """
 
     fill_value = None
-    existing_fill_value = True
+    add_fill_value_att = False
     xsel = inp2xsel(self.file, self.varname, xsel)
 
     if ma.isMaskedArray(value):
@@ -285,16 +324,11 @@ def __setitem__(self, xsel,value):
             fill_value = numpy.array(fval,dtype=fval.dtype)
         elif _is_new_ma:
             fill_value = numpy.array(value.fill_value,dtype=value.dtype)
-            existing_fill_value = False
+            add_fill_value_att = True
         else:
             fill_value = numpy.array(value.fill_value(),dtype=value.dtype)
-            existing_fill_value = False
+            add_fill_value_att = True
         value = value.filled(fill_value)
-
-    # Convert the type if necessary
-    # Not now: this may break some things
-    #
-    # value = numpy.require(value,dtype=self.typecode())
 
     if not isinstance(xsel, xSelect) or xsel.isbasic:
         self._obj[xsel] = value
@@ -303,16 +337,8 @@ def __setitem__(self, xsel,value):
         rsel = xsel - bb
         ret = self._obj[bb]
         ret[rsel] = value
-    '''
-    if isinstance(xsel, xselect):
-        bb = xsel.bndbox()
-        rsel = xsel - bb
-        ret = self._obj[bb]
-        ret[rsel] = value
-    else:
-        self._obj[xsel] = value
-    '''
-    if not existing_fill_value:
+
+    if add_fill_value_att:
         setattr(self._obj,'_FillValue',fill_value)
 
 def _create_variable(self,name,type,dimensions):
@@ -328,6 +354,10 @@ def _create_variable(self,name,type,dimensions):
     return vp
 
 def _get_masked_array_mode(options,option_defaults):
+    ''' 
+        get the MaskedArrayMode value considering the default setting and any option value set 
+        when the file is opened 
+    '''
 
     # ma_mode specifies when to return masked arrays
     # MaskedNever: never return a masked array for any variable: default for backwards compatibility
@@ -336,23 +366,18 @@ def _get_masked_array_mode(options,option_defaults):
     # MaskedIfFillAttAndValue: return a masked array iff file variable has a _FillValue or a missing_value and
     #                          the returned data array actually contains 1 or more fill values.
 
-    optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue' ]
+    optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue', 'maskedexplicit' ]
 
-    if options == None:
-        if option_defaults.has_key('MaskedArrayMode'):
-            return option_defaults['MaskedArrayMode'].lower()
-        else:
-            return 'maskediffillatt'
-    for key in options.__dict__.keys():
-        lkey = key.lower()
-        if not lkey == 'maskedarraymode':
-            continue
-        val = options.__dict__[key]
-        lval = val.lower()
-        if optvals.count(lval) == 0:
-            raise ValueError, 'Invalid value for MaskArrayMode option'
-        
-        return  lval
+    if options is not None:
+        for key in options.__dict__.keys():
+            lkey = key.lower()
+            if not lkey == 'maskedarraymode':
+                continue
+            val = options.__dict__[key]
+            lval = val.lower()
+            if optvals.count(lval) == 0:
+                raise ValueError, 'Invalid value for MaskArrayMode option'
+            return  lval
 
     if option_defaults.has_key('MaskedArrayMode'):
         return option_defaults['MaskedArrayMode'].lower()
@@ -360,7 +385,7 @@ def _get_masked_array_mode(options,option_defaults):
         return 'maskediffillatt'
 
 def _get_axis_att(options,option_defaults):
-
+    ''' Get a value for the UseAxisAttribute option '''
     if options == None:
         if option_defaults.has_key('UseAxisAttribute'):
             return option_defaults['UseAxisAttribute']
@@ -376,19 +401,65 @@ def _get_axis_att(options,option_defaults):
         return False
     return False
 
-def open_file(filename,mode = 'r', options=None, history=''):
+def _get_option_value(options,option_defaults,name):
+    ''' Get an option value when the file is opened, considering 
+        the default value and and any value set using  options keyword.
+        The name must be one of the valid Python-level options and 
+	have a default value of None.
+    '''
+
+    if options is not None:
+        lname = name.lower()
+        for key in options.__dict__.keys():
+            lkey = key.lower()
+            if not lkey == lname:
+                continue
+            val = options.__dict__[key]
+            if val:
+                return val
+            return None
+
+    if option_defaults.has_key(name):
+        return option_defaults[name]
+    else:
+        return None
+
+def set_option(self,option,value):
+    valid_opts = {'maskedarraymode':'ma_mode', 'explicitfillvalues':'explicit_fill_values',
+                  'maskbelowvalue' : 'mask_below_value', 'maskabovevalue' : 'mask_above_value' }
+    if hasattr(option,'lower'):
+        loption = option.lower()
+    else:
+        loption = option
+    if not valid_opts.has_key(loption):
+        raise KeyError, "Option %s invalid or cannot be set on open NioFile" % (option,)
+        
+    if hasattr(value,'lower'):
+        lvalue = value.lower()
+    else:
+	lvalue = value
+    return setattr(self,valid_opts[loption],lvalue)
+
+def open_file(filename, mode = 'r', options=None, history='',format=''):
 
     ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
     use_axis_att = _get_axis_att(options,_Nio.option_defaults)
+    explicit_fill_values = _get_option_value(options,_Nio.option_defaults,'ExplicitFillValues')
+    mask_below_value = _get_option_value(options,_Nio.option_defaults,'MaskBelowValue')
+    mask_above_value = _get_option_value(options,_Nio.option_defaults,'MaskAboveValue')
 
-    file = _Nio.open_file(filename,mode,options,history)
+    file = _Nio.open_file(filename,mode,options,history,format)
 
     file_proxy = _proxy(file, 'str', create_variable=_create_variable)
+    setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
     file_proxy.ma_mode = ma_mode
+    file_proxy.explicit_fill_values = explicit_fill_values
+    file_proxy.mask_below_value = mask_below_value
+    file_proxy.mask_above_value = mask_above_value
 
     if use_axis_att:
-        cf_dims = _get_cf_dims(file)
+        cf_dims = _get_cf_dims(file_proxy)
         newdims = {}
         cf2dims = {}
         dimensions = file_proxy.dimensions
@@ -432,9 +503,9 @@ def open_file(filename,mode = 'r', options=None, history=''):
 def _get_cf_dims(file):
     ret = {}
     for dim in file.dimensions:
-        if dim in file.variables:
+        if dim in file._obj.variables:
             try:
-                axis = file.variables[dim].axis
+                axis = file._obj.variables[dim].axis
                 ret[dim] = axis.lower()
             except AttributeError:
                 pass
@@ -444,3 +515,5 @@ def options():
         opt = _Nio.options()
         return opt
 
+
+ 

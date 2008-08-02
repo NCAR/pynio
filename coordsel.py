@@ -139,7 +139,7 @@ class crdSelect(dict):
                             data[key] = axisSelect(value)
                             self.names.append(key)
                         else:
-                            pass
+                            raise ValueError, '"' + key + '" is not a valid axis name (UseAxisAttribute option setting?)'
                     else:
                         data[key] = axisSelect(value)
                         self.names.append(key)
@@ -733,14 +733,14 @@ class axisSelect(object):
         else:
             dimsize = file.cf_dimensions[axis]
             crd = None
-        ret = self.toindex_crd(crd, axis_no=axis_no, dimsize=dimsize, refdate=refdate, 
+        ret = self.toindex_crd(crd, axis=axis, axis_no=axis_no, dimsize=dimsize, refdate=refdate, 
                                clip=clip, ep=0.0)
         ret.dims = dims
         ret.axis = axis
         return ret
     #@-node:schmidli.20080322120238.22:toindex
     #@+node:schmidli.20080322120238.23:toindex_crd
-    def toindex_crd(self, crd, axis_no=0, dimsize=None, refdate=None, clip=True, ep=0.0):
+    def toindex_crd(self, crd, axis= None, axis_no=0, dimsize=None, refdate=None, clip=True, ep=0.0):
         """ Convert a axisSelect object from coordinate space to index space
         """
 
@@ -811,7 +811,14 @@ class axisSelect(object):
                     for i in xrange(len(data)):
                         data[i] = N.round(data[i]).astype(N.int)
 
-        if cidx.type == 'scalar' and len(data) == 1: data = data[0]
+        if cidx.type == 'scalar' and len(data) == 1: 
+            data = data[0]
+            if dimsize is not None:
+                # note that the selection mechanism cannot handle indexing less than 0 
+                # unlike Python scalar indexing which allows values from 0 to -dimsize for backwards indexing
+                # the problem is in the xSelect.bndbox routine
+                if data < -dimsize or data >= dimsize:    
+                    raise IndexError, axis + " axis index out of range"
         if idx.type != 'slice': 
             if not isinstance(data, N.ma.MaskedArray):
                 data = N.asarray(data)
