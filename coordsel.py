@@ -563,7 +563,9 @@ class axisSelect(object):
         self.clip = True
 
         # check prefix
+
         if inp[0] == 'd':
+            raise NotImplementedError, "Date/time selection is not yet implemented"
             self.fmt = 'datetime'
             inp = inp[1:]
         elif inp[0] == 'i':
@@ -706,6 +708,13 @@ class axisSelect(object):
 
         dimsize = None; refdate = None
         dims = None; axis_no = 0
+        if self.iscrd:
+            if file.cf2dims is not None:
+                axfile = file.cf2dims[axis]
+            else:
+                axfile = axis
+            if not file.file.variables.has_key(axfile):
+                self.iscrd = False
         if self.iscrd:
             if mdcrd is None:
                 if file.cf2dims is not None:

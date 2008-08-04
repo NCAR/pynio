@@ -230,10 +230,10 @@ class test_extended(NumpyTestCase):
         file = self.f
 
         # basic case
-        cstr_list = ('time|d20070321-6:12:3h zc|:3k:1k yc|i5:8:1 xc|0k:10k:2k', \
-                'time|d20070321-6:12:3h zc|0:3k:500i yc|i5.5:8:0.5i xc|0k:10k:2k', \
-                'time|d20070321-6:12:3h zc|ZP|2.5 yc|i5.5:8:0.5i xc|0k:10k:2k', \
-                'time|d20070321-6:12:3h zc|ZP|2.5,3.5 yc|i5.5:8:0.5i xc|0k:10k:2k')
+        cstr_list = ('time|i0:6:3 zc|:3k:1k yc|i5:8:1 xc|0k:10k:2k', \
+                'time|i0:6:3 zc|0:3k:500i yc|i5.5:8:0.5i xc|0k:10k:2k', \
+                'time|i0:6:3 zc|ZP|2.5 yc|i5.5:8:0.5i xc|0k:10k:2k', \
+                'time|i0:6:3 zc|ZP|2.5,3.5 yc|i5.5:8:0.5i xc|0k:10k:2k')
         results = ((3,4,4,6), (3,7,6,6), (3,6,6), (3,2,6,6))
 
         for (cstr, res) in zip(cstr_list, results):
@@ -243,7 +243,7 @@ class test_extended(NumpyTestCase):
             assert_equal(pt.shape, res)
  
         # ERROR:
-        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|d20070321-6:12:3h'
+        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|i0:6:3'
         #if verbose: print cstr
         #pt = file.variables['PT'][cstr]
         #if verbose: print pt.shape
@@ -262,10 +262,10 @@ class test_cf_extended(NumpyTestCase):
         file = self.f
 
         # basic case
-        cstr_list = ('t|d20070321-6:12:3h z|:3k:1k y|i5:8:1 x|0k:10k:2k', \
-                't|d20070321-6:12:3h z|0:3k:500i y|i5.5:8:0.5i x|0k:10k:2k', \
-                't|d20070321-6:12:3h z|ZP|2500 y|i5.5:8:0.5i x|0k:10k:2k', \
-                't|d20070321-6:12:3h z|ZP|2500,3500 y|i5.5:8:0.5i x|0k:10k:2k')
+        cstr_list = ('t|i0:6:3 z|:3k:1k y|i5:8:1 x|0k:10k:2k', \
+                't|i0:6:3 z|0:3k:500i y|i5.5:8:0.5i x|0k:10k:2k', \
+                't|i0:6:3 z|ZP|2500 y|i5.5:8:0.5i x|0k:10k:2k', \
+                't|i0:6:3 z|ZP|2500,3500 y|i5.5:8:0.5i x|0k:10k:2k')
         results = ((3,4,4,6), (3,7,6,6), (3,6,6), (3,2,6,6))
 
         for (cstr, res) in zip(cstr_list, results):
@@ -275,7 +275,7 @@ class test_cf_extended(NumpyTestCase):
             assert_equal(pt.shape, res)
 
         # ERROR:
-        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|d20070321-6:12:3h'
+        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|i0:6:3'
         #if verbose: print cstr
         #pt = file.variables['PT'][cstr]
         #if verbose: print pt.shape
@@ -297,11 +297,11 @@ class test_old(NumpyTestCase):
         if verbose: print pt
         assert_equal(pt.shape, (5,))
 
-        cstr_list = ('time|d20070321-09 zc|i0 yc|i0 xc|0k:10k:2k', \
-                    'd20070321-09 i0 i0 0k:10k:2k', \
-                    'time|d20070321-09 zc|i0 yc|i0 xc|0', \
-                    'time|d20070321-09:12 zc|i1 yc|i0 xc|2', \
-                    'time|d20070321-06:12:6h zc|i1 yc|i0 xc|2', \
+        cstr_list = ('time|i3 zc|i0 yc|i0 xc|0k:10k:2k', \
+                    'i3 i0 i0 0k:10k:2k', \
+                    'time|i3 zc|i0 yc|i0 xc|0', \
+                    'time|i3:6 zc|i1 yc|i0 xc|2', \
+                    'time|i0:6:6 zc|i1 yc|i0 xc|2', \
                     'time|i2:8:2 zc|i0 yc|i0 xc|i0',\
                     'zc|200,300,450,600', \
                     'time|i6 zc|200,300,450,600 yc|i0 xc|i0', \
@@ -317,7 +317,7 @@ class test_old(NumpyTestCase):
                     'time|i6 zc|ZP|1.5,2.5 yc|i1 xc|i0', \
                     'time|i6 zc|ZP|1.5:2.5:0.5 yc|i1 xc|i0', \
                     'time|i6 zc|ZP|1.5:2.5:0.5 yc|: xc|:', \
-                    'zc|ZP|1.5:2.5:0.5 time|d20070321-09:12 yc|: xc|:', \
+                    'zc|ZP|1.5:2.5:0.5 time|i3:6 yc|: xc|:', \
                     )
         results = ((6,), (6,), (), (4,), (2,), (4,), (10,4,21,21), \
                 (4,), (3,), (1,), (1,), (4,), (4,5), (4,4), (3,4), (), \
@@ -341,10 +341,10 @@ class test_lonlat(NumpyTestCase):
         file = self.f
         var = file.variables['PT']
 
-        cstr_list = ('time|d20070321-09 zc|i0 yc|lat|20k xc|0', \
-                    'time|d20070321-09 zc|i0 yc|i0 xc|lon|10k', \
-                    #'time|d20070321-09 zc|i0 yc|lat|20k xc|lon|10k', \
-                    #'time|d20070321-09 zc|i0:2 yc|lat|20k xc|lon|10k', \
+        cstr_list = ('time|i3 zc|i0 yc|lat|20k xc|0', \
+                    'time|i3 zc|i0 yc|i0 xc|lon|10k', \
+                    #'time|i3 zc|i0 yc|lat|20k xc|lon|10k', \
+                    #'time|i3 zc|i0:2 yc|lat|20k xc|lon|10k', \
                     #'time|i6 zc|ZP|1.5 yc|lat|i1:3 xc|lon|i0:3', \
                     )
         results = ((), (), (), (3,), (3,4))
@@ -397,10 +397,10 @@ class test_topo(NumpyTestCase):
         file = self.f
 
         # basic case
-        cstr_list = ('time|d20070321-6 zc|ZP|2500 yc|i5 xc|:', \
-                'time|d20070321-6 zc|ZP|2500m yc|i5 xc|:', \
-                'time|d20070321-6 zc|ZP|1500m yc|i5 xc|:', \
-                'time|d20070321-6 zc|ZP|1000,1500m yc|i5.5 xc|:')
+        cstr_list = ('time|i0 zc|ZP|2500 yc|i5 xc|:', \
+                'time|i0 zc|ZP|2500m yc|i5 xc|:', \
+                'time|i0 zc|ZP|1500m yc|i5 xc|:', \
+                'time|i0 zc|ZP|1000,1500m yc|i5.5 xc|:')
         results = ((21,), (21,), (21,), (2,21))
 
         for (cstr, res) in zip(cstr_list, results):
@@ -415,7 +415,7 @@ class test_topo(NumpyTestCase):
             assert_equal(pt.shape, res)
 
         # ERROR:
-        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|d20070321-6:12:3h'
+        #cstr = 'xc|10k yc|i5.5:8:0.5i zc|ZP|2.5,3.5 time|i0:6:3'
         #if verbose: print cstr
         #pt = file.variables['PT'][cstr]
         #if verbose: print pt.shape
