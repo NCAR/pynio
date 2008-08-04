@@ -20,7 +20,7 @@ import datetime
 import time
 import numpy as N
 import Nio
-from xarray import intp, rindex, xArray
+from _xarray import _intp, _rindex, _xArray
 
 __version__ = '0.1.0'
 __all__ = ['get_variable', 'inp2csel', 'inp2isel', 'inp2xsel', 'idxsel2xsel', \
@@ -61,12 +61,12 @@ def get_variable(file, varname, xsel):
     else:
         if xsel.masked:
             ret = file.file.variables[varname][:]
-            ret = xArray(ret)[xsel]
+            ret = _xArray(ret)[xsel]
         else:
             bb = xsel.bndbox()
             ret = file.file.variables[varname][bb]
             rsel = xsel - bb
-            ret = intp(ret, rsel)
+            ret = _intp(ret, rsel)
 
     if do_transpose and len(order) > 1:
         ret = ret.transpose(order)
@@ -214,7 +214,7 @@ class idxSelect(dict):
 class xSelect(tuple):
     """ xSelect(inp)
 
-    Create an extended selection object to be used with xArray.
+    Create an extended selection object to be used with _xArray.
 
     """
 
@@ -469,7 +469,7 @@ def numpy2xsel(isel):
             if idx.ndim > 1: 
                 multidim = True      # conversion not supported for multidim
 
-    # convert selection objects to compatible intp arrays if necessary
+    # convert selection objects to compatible _intp arrays if necessary
     if isarray and not multidim:
         # convert slices to 1d-arrays
         for i in xrange(len(xsel)):
@@ -786,7 +786,7 @@ class axisSelect(object):
             if idx.type == 'slice':
                 for i in xrange(len(data)):
                     if data[i] is not None: 
-                        data[i] = rindex(crd, data[i], axis=axis_no, round=False, clip=clip, ep=ep)
+                        data[i] = _rindex(crd, data[i], axis=axis_no, round=False, clip=clip, ep=ep)
                         if i == 0: data[i] = N.ceil(data[i]).astype(N.int)
                         if i == 1: data[i] = N.floor(data[i]).astype(N.int) + 1
                 if cidx.step is not None:
@@ -798,9 +798,9 @@ class axisSelect(object):
             else:
                 if crd is None: raise ValueError, "Missing coordinate variable"
                 if cidx.type == 'scalar':
-                    data[0] = rindex(crd, data[0], axis=axis_no, round=round_, clip=clip, ep=ep)
+                    data[0] = _rindex(crd, data[0], axis=axis_no, round=round_, clip=clip, ep=ep)
                 else:
-                    data = rindex(crd, data, axis=axis_no, round=round_, clip=clip, ep=ep)
+                    data = _rindex(crd, data, axis=axis_no, round=round_, clip=clip, ep=ep)
         else:
             if not interp:
                 if idx.type == 'slice':

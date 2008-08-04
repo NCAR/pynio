@@ -6,9 +6,9 @@
 #@+node:schmidli.20080321230412:<< xarray documentation >>
 """xarray module 
 
-Defines the class xArray and some helper functions.
+Defines the class _xArray and some helper functions.
 
-xArray supports multilinear interpolation and masked indexing arrays
+_xArray supports multilinear interpolation and masked indexing arrays
 in addition to numpy's basic slicing and advanced selection mechanisms.
 
 """
@@ -20,13 +20,13 @@ import numpy as N
 from numpy import asarray
 
 __version__ = '0.1.1'
-__all__ = ['xArray', 'intp', 'rindex', 'rindex2', 'rline', '__version__']
+__all__ = ['_xArray', '_intp', '_rindex', '_rindex2', '_rline', '__version__']
 
 #@-node:schmidli.20080321230001.2:<< xarray declarations >>
 #@nl
 #@+others
-#@+node:schmidli.20080321230001.3:class xArray
-class xArray(N.ndarray):
+#@+node:schmidli.20080321230001.3:class _xArray
+class _xArray(N.ndarray):
     """ Extends numpy's ndarray class to support multilinear 
     interpolation and masked indexing arrays. In other words the
     elements of the selection tuble may contain floating point 
@@ -37,7 +37,7 @@ class xArray(N.ndarray):
     #@+node:schmidli.20080321230001.4:__new__
     def __new__(subtype, data, dtype=None, copy=True):
         """
-            Returns an xArray object.
+            Returns an _xArray object.
         """
         if isinstance(data, N.ma.MaskedArray):
             mask = data.mask
@@ -77,7 +77,7 @@ class xArray(N.ndarray):
     def __getitem__(self, index):
         """x.__getitem__(y) <==> x[y]
         """
-        ret = intp(asarray(self), index)
+        ret = _intp(asarray(self), index)
         return ret
     #@nonl
     #@-node:schmidli.20080321230001.7:__getitem__
@@ -96,7 +96,7 @@ class xArray(N.ndarray):
     def __repr__(self):
         """ full string representation """
 
-        r = 'xArray(' + self.__str__() + ')'
+        r = '_xArray(' + self.__str__() + ')'
         return r
     #@-node:schmidli.20080321230001.9:__repr__
     #@+node:schmidli.20080321230001.10:getA
@@ -109,9 +109,9 @@ class xArray(N.ndarray):
     #@-node:schmidli.20080321230001.10:getA
     #@-others
 #@nonl
-#@-node:schmidli.20080321230001.3:class xArray
-#@+node:schmidli.20080321230001.12:intp
-def intp(ar, sltup):
+#@-node:schmidli.20080321230001.3:class _xArray
+#@+node:schmidli.20080321230001.12:_intp
+def _intp(ar, sltup):
     """
         Returns the result of applying an extended selection
         tuple to the array. 
@@ -188,11 +188,11 @@ def intp(ar, sltup):
     slp[axis] = jp
     sl = tuple(sl); slp = tuple(slp)
 
-    res = intp(ar, sl)*f1j + intp(ar, slp)*f0j
+    res = _intp(ar, sl)*f1j + _intp(ar, slp)*f0j
     return res
-#@-node:schmidli.20080321230001.12:intp
-#@+node:schmidli.20080321230916:rindex
-def rindex(ar, val, axis=0, ep=0.5, clip=True, round=False, squeeze=True):
+#@-node:schmidli.20080321230001.12:_intp
+#@+node:schmidli.20080321230916:_rindex
+def _rindex(ar, val, axis=0, ep=0.5, clip=True, round=False, squeeze=True):
     """
         Assuming that ar is sorted in ascending order along axis, this
         function returns real indices of where val would fit (using linear
@@ -206,11 +206,11 @@ def rindex(ar, val, axis=0, ep=0.5, clip=True, round=False, squeeze=True):
                     False: set rj.mask = rj < -ep or rj > (n-1)+ep
         res[nv,I]
 
-print rindex(N.arange(10), 5.5)
+print _rindex(N.arange(10), 5.5)
         [ 5.5]
-print rindex(N.arange(10), -1)
+print _rindex(N.arange(10), -1)
         [-0.5]
-print rindex(N.arange(10), [2,4.5])
+print _rindex(N.arange(10), [2,4.5])
         [ 2.   4.5]
     """
 
@@ -289,15 +289,15 @@ print rindex(N.arange(10), [2,4.5])
         #    rj = rj[0]
     return rj
 
-#@-node:schmidli.20080321230916:rindex
-#@+node:schmidli.20080322212349:rindex2
-def rindex2(ar, val, axis=0, ep=0.5, clip=True, round=False):
+#@-node:schmidli.20080321230916:_rindex
+#@+node:schmidli.20080322212349:_rindex2
+def _rindex2(ar, val, axis=0, ep=0.5, clip=True, round=False):
     """
-        As function rindex, but returns a complete selection tuple.
+        As function _rindex, but returns a complete selection tuple.
     """
 
     val_ndim = N.array(val).ndim
-    rj = rindex(ar, val, axis=axis, ep=ep, clip=clip, round=round, 
+    rj = _rindex(ar, val, axis=axis, ep=ep, clip=clip, round=round, 
                 squeeze=False)
 
     # determine selection tuples for the remaining dimensions
@@ -317,9 +317,9 @@ def rindex2(ar, val, axis=0, ep=0.5, clip=True, round=False):
             if i != axis: del(r_shape[axis])
             rtup[i].shape = r_shape
     return tuple(rtup)
-#@-node:schmidli.20080322212349:rindex2
-#@+node:schmidli.20080325135032:rline
-def rline(edges, delta=None, ns=None):
+#@-node:schmidli.20080322212349:_rindex2
+#@+node:schmidli.20080325135032:_rline
+def _rline(edges, delta=None, ns=None):
     """
         Returns a discretized polyline
         -> 
@@ -355,7 +355,7 @@ def rline(edges, delta=None, ns=None):
         t.shape = (t.shape[0],1)
         rj[idx[i]:idx[i+1]+1,:] = edges[i,:] + b[i,:]*t
     return rj
-#@-node:schmidli.20080325135032:rline
+#@-node:schmidli.20080325135032:_rline
 #@+node:schmidli.20080321230001.13:ismasked_tuple
 def ismasked_tuple(sltup):
     """ """

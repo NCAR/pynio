@@ -131,7 +131,7 @@ if pynio2pyngl:
   pynio_pkg_name = 'PyNGL'
   pynio_pth_file = []
   pynio_files    = ['Nio.py',pynio_vfile]
-  pynio_files    = ['Nio.py',pynio_vfile,'coordsel.py','xarray.py']
+  pynio_files    = ['Nio.py',pynio_vfile,'coordsel.py','_xarray.py']
 else:
   pynio_pkg_name = 'PyNIO'
   pynio_pth_file = [pynio_pkg_name + '.pth']
