@@ -1,5 +1,6 @@
 import os,sys,platform
 from distutils.core import setup, Extension
+from distutils.sysconfig import get_python_lib
 
 try:
   HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
@@ -47,8 +48,7 @@ ncarg_root = os.getenv("NCARG_ROOT")
 lib_paths = [ os.path.join(ncarg_root,'lib'),'/Users/haley/lib' ]
 
 ncl_src_dir = '../ni/src/ncl/'
-pkgs_pth  = os.path.join(sys.exec_prefix, 'lib', 'python'+sys.version[:3],
-            'site-packages')
+pkgs_pth    = get_python_lib()
 
 LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','png','z','netcdf']
 
@@ -135,7 +135,7 @@ if pynio2pyngl:
 else:
   pynio_pkg_name = 'PyNIO'
   pynio_pth_file = [pynio_pkg_name + '.pth']
-  pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile,'coordsel.py','xarray.py']
+  pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile,'coordsel.py','_xarray.py']
 
 DMACROS =  [ ('NeedFuncProto','1') ]
 
