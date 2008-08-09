@@ -181,7 +181,7 @@ class test_masked_explicit(NumpyTestCase):
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedExplicit'
-        self.f = Nio.open_file(filename,options=opt)
+        self.f = Nio.open_file(filename,options = opt)
 
     def check_masked_explict(self):
         file = self.f
@@ -193,6 +193,8 @@ class test_masked_explicit(NumpyTestCase):
 	vm = v[0,3:5,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),False)
+        file.set_option('MaskedArrayMode','maskediffillatt')
+        #setting explicitfillvalues sets maskedarraymode to 'maskedexplicit'
         file.set_option('explicitFillValues',1e20)
 	vm = v[0,3:5,0]
 	if verbose: print type(vm),vm

@@ -331,9 +331,13 @@ def idxsel2xsel(file, isel, dimensions, order):
             if isinstance(idx, slice):
                 dimsize = file.cf_dimensions[axis]
                 res = [idx.start, idx.stop, idx.step]
-                if idx.start is None: res[0] = 0 
-                if idx.stop is None: res[1] = dimsize
-                if idx.step is None: res[2] = 1
+                if (idx.step is not None and idx.step < 0):
+                    if idx.start is None: res[0] = dimsize - 1
+                    if idx.stop is None: res[1] = None
+                else:
+                    if idx.start is None: res[0] = 0 
+                    if idx.stop is None: res[1] = dimsize
+                    if idx.step is None: res[2] = 1
                 xsel[axis] = slice(res[0], res[1], res[2])
             elif N.isscalar(idx):
                 xsel[axis] = idx
@@ -621,8 +625,15 @@ class axisSelect(object):
         # parse the selection string
         data = []
         if self.type == 'slice' and len(inpv) == 3:
-            self.__step = str2float(inpv[2])
-            inpv = inpv[:2]
+            step = inpv[2]
+            if len(step) == 0:
+                self.__step = None
+            else:
+                if step[0] == 'i':
+                    self._index_step = 1
+                    step = step[1:]
+                self.__step = str2float(step)
+                inpv = inpv[:2]
         else:
             self.__step = None
         is_first = True
@@ -775,35 +786,67 @@ class axisSelect(object):
                 if cidx.iscrd:
                     start = crd.min()
                 else:
-                    start = 0.0
+                    if cidx.step < 0:
+                        start = dimsize
+                    else:
+                        start = 0.0
             else:
                 start = data[0]
+                if start < 0: start += dimsize
             if data[1] is None: 
                 if cidx.iscrd:
                     stop = crd.max()
                 else:
-                    stop = dimsize
+                    if cidx.step < 0:
+                        stop = 0
+                    else:
+                        stop = dimsize
             else:
                 stop = data[1]
+                if stop < 0: stop += dimsize
+            if cidx.iscrd and hasattr(self,'_index_step'):
+                start = _rindex(crd, start, axis=axis_no, round=round_, clip=clip, ep=ep)
+                stop = _rindex(crd, stop, axis=axis_no, round=round_, clip=clip, ep=ep)
+                cidx.iscrd = False
+
             data = N.arange(start, stop, cidx.step)
-            if data[-1]+cidx.step == stop:
+            if len(data) > 0 and data[-1]+cidx.step == stop:
                 data = N.concatenate((data, [stop]))        
             idx.type = 'vector'
 
         # convert from coordinate to index space
         if cidx.iscrd:
             if idx.type == 'slice':
+                dir = 1
+                if cidx.step is not None:
+                    if len(crd > 1):
+                        if hasattr(self,'_index_step'):
+                            if idx.step < 0: dir = -1
+                            idx.step = N.round(idx.step).astype(N.int)
+                        else:
+                            # Note this assumes equally spaced coordinate values.
+                            idx.step = cidx.step/(crd[1]-crd[0])
+                            if idx.step < 0: dir = -1
+                            idx.step = N.round(idx.step).astype(N.int)
+                        # step size less than spacing is treated as default step (pos or neg)
+                        if idx.step == 0: 
+			    if dir == 1: 
+                                idx.step = 1
+                            else: 
+                                idx.step = -1 
+                    else:
+                        idx.step = None
                 for i in xrange(len(data)):
                     if data[i] is not None: 
                         data[i] = _rindex(crd, data[i], axis=axis_no, round=False, clip=clip, ep=ep)
-                        if i == 0: data[i] = N.ceil(data[i]).astype(N.int)
-                        if i == 1: data[i] = N.floor(data[i]).astype(N.int) + 1
-                if cidx.step is not None:
-                    if len(crd > 1):
-                        idx.step = N.round(cidx.step/(crd[1]-crd[0])).astype(N.int)
-                    else:
-                        idx.step = None
-
+                        if dir == 1:
+                            if i == 0: data[i] = N.ceil(data[i]).astype(N.int)
+                            if i == 1: data[i] = N.floor(data[i]).astype(N.int) + 1
+                        else:
+                            if i == 0: data[i] = N.floor(data[i]).astype(N.int)
+                            if i == 1: 
+                                data[i] = N.ceil(data[i]).astype(N.int) - 1
+                                if data[i] == -1: data[i] = None
             else:
                 if crd is None: raise ValueError, "Missing coordinate variable"
                 if cidx.type == 'scalar':
@@ -813,21 +856,49 @@ class axisSelect(object):
         else:
             if not interp:
                 if idx.type == 'slice':
-                    if idx.step is not None: idx.step = N.round(idx.step).astype(N.int)
-                    if data[0] is not None: data[0] = N.ceil(data[0]).astype(N.int)
-                    if data[1] is not None: data[1] = N.floor(data[1]).astype(N.int)+1
-                else:
+                    if idx.step is not None: 
+                        if idx.step < 0: 
+                            dir = -1
+                        else:
+                            dir = 1
+                        idx.step = N.round(idx.step).astype(N.int)
+                        if idx.step == 0: idx.step = dir
+                        if idx.step < 0:
+                            if data[0] is not None: 
+                                data[0] = N.floor(data[0]).astype(N.int)
+                                if data[0] < 0:
+                                    data[0] += dimsize
+                            if data[1] is not None: 
+                                data[1] = N.ceil(data[1]).astype(N.int)-1
+                                if data[1] < -1:
+                                    data[1] += dimsize
+                                elif data[1] == -1:
+                                   data[1] = None
+                    if idx.step is None or idx.step > 0:
+                        if data[0] is not None: 
+                            data[0] = N.ceil(data[0]).astype(N.int)
+                            if data[0] < 0:
+                                data[0] += dimsize
+                        if data[1] is not None: 
+                            data[1] = N.floor(data[1]).astype(N.int)+1
+                            if data[1] < 0:
+                                data[1] += dimsize
+                else: 
+                # not a slice
                     for i in xrange(len(data)):
                         data[i] = N.round(data[i]).astype(N.int)
+                        if data[i] < 0: data[i] += dimsize
 
         if cidx.type == 'scalar' and len(data) == 1: 
             data = data[0]
             if dimsize is not None:
-                # note that the selection mechanism cannot handle indexing less than 0 
-                # unlike Python scalar indexing which allows values from 0 to -dimsize for backwards indexing
-                # the problem is in the xSelect.bndbox routine
+                # dimsize is only defined if operating in index space.
+                # since later processing (xSelect.bndbox) does not handle index space values less than 0
+                # convert them here.
                 if data < -dimsize or data >= dimsize:    
                     raise IndexError, axis + " axis index out of range"
+                elif data < 0:
+                    data += dimsize
         if idx.type != 'slice': 
             if not isinstance(data, N.ma.MaskedArray):
                 data = N.asarray(data)

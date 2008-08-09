@@ -155,8 +155,18 @@ def get_integer_version(strversion):
 _is_new_ma = get_integer_version(numpy.__version__) > 10004
 del get_integer_version
 
+_builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash__', \
+            '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', \
+            '__setattr__', '__str__', '__weakref__', '__getitem__', '__setitem__', '__len__' ]
+
+_localatts = ['attributes','_obj','variables','file','varname', \
+              'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
+              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable']    
+
 class _Proxy(object):
     """ base class for all proxies """
+
+
     def __init__(self, obj):
         super(_Proxy, self).__init__(obj)
         super(_Proxy,self).__setattr__('_obj', obj)
@@ -166,30 +176,23 @@ class _Proxy(object):
            self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname', \
-	             'create_variable','cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
-                     'mask_below_value', 'mask_above_value', 'set_option','__class__']
 
-        if attrib in localatts:
+        if attrib in _localatts or attrib in _builtins:
             return super(_Proxy,self).__getattribute__(attrib)
         else:
             return getattr(self._obj,attrib)
 
     def __setattr__(self, attrib, value):
-        localatts = ['__doc__','__setattr__','attributes','_obj','variables','file','varname', \
-                     'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
-                     'mask_below_value', 'mask_above_value', 'set_option','__class__']    
-        if attrib in localatts:
+        if attrib in _builtins:
+            raise AttributeError, "Attempt to modify read only attribute"
+	elif attrib in _localatts:
             super(_Proxy,self).__setattr__(attrib,value)
         else:
             setattr(self._obj,attrib,value)
 
     def __delattr__(self, attrib):
-        localatts = ['__doc__','__setattr__cd ','attributes','_obj','variables','file','varname', \
-                     'cf_dimensions', 'cf2dims', 'ma_mode','explicit_fill_values', \
-                     'mask_below_value', 'mask_above_value', 'set_option','__class__' ] 
-        if attrib in localatts:
-            raise AttributeError, "Attempt to modify read only attribute"
+        if attrib in _localatts or attrib in _builtins:
+            raise AttributeError, "Attempt to delete read only attribute"
         else:
             delattr(self._obj,attrib)
 
@@ -438,9 +441,13 @@ def set_option(self,option,value):
         lvalue = value.lower()
     else:
 	lvalue = value
+    if loption == 'explicitfillvalues' or loption == 'maskbelowvalue' or loption == 'maskabovevalue':
+        if lvalue is not None:
+            setattr(self,'ma_mode','maskedexplicit')
+
     return setattr(self,valid_opts[loption],lvalue)
 
-def open_file(filename, mode = 'r', options=None, history='',format=''):
+def open_file(filename, mode = 'r', options=None, history='', format=''):
 
     ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
     use_axis_att = _get_axis_att(options,_Nio.option_defaults)
@@ -453,7 +460,10 @@ def open_file(filename, mode = 'r', options=None, history='',format=''):
     file_proxy = _proxy(file, 'str', create_variable=_create_variable)
     setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
-    file_proxy.ma_mode = ma_mode
+    if not (explicit_fill_values is None and mask_below_value is None and mask_above_value is None):
+        file_proxy.ma_mode = 'maskedexplicit'
+    else:
+        file_proxy.ma_mode = ma_mode
     file_proxy.explicit_fill_values = explicit_fill_values
     file_proxy.mask_below_value = mask_below_value
     file_proxy.mask_above_value = mask_above_value

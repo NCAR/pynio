@@ -1821,6 +1821,8 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   */
   for (i = 0; i < self->nd; i++) {
     error = error || (indices[i].stride == 0);
+    if (error)
+	    break;
     if (indices[i].stride < 0) {
 	    indices[i].stop += 1;
 	    indices[i].stride = -indices[i].stride;
@@ -2061,6 +2063,8 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   for (i = 0; i < self->nd; i++) {
 	  var_el_count *= (int)self->dimensions[i];
 	  error = error || (indices[i].stride == 0);
+          if (error)
+		  break;
 	  if (indices[i].stride < 0) {
 		  indices[i].stop += 1;
 		  indices[i].stride = -indices[i].stride;
