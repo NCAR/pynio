@@ -45,7 +45,7 @@ except ImportError:
 pynio_vfile = "pynio_version.py"      # PyNIO version file.
 
 ncarg_root = os.getenv("NCARG_ROOT")
-lib_paths = [ os.path.join(ncarg_root,'lib'),'/Users/haley/lib' ]
+lib_paths = [ os.path.join(ncarg_root,'lib') ]
 
 ncl_src_dir = '../ni/src/ncl/'
 pkgs_pth    = get_python_lib()
@@ -73,7 +73,7 @@ LIBRARIES.append('g2c')   # Put on the end.
 # The long path below is for the g95 compiler on the Intel Mac.
 #
 if sys.platform == "darwin":
-    dirs = ['/sw/lib','/Users/haley/lib/gcc-lib/i386-apple-darwin8.9.1/4.0.3']
+    dirs = ['/sw/lib']
     for dir in dirs:
       if(os.path.exists(dir)):
 #        print "appending",dir
@@ -108,17 +108,7 @@ if sys.platform == "aix5":
     LIBRARIES.remove('g2c')
     LIBRARIES.append('xlf90')
     
-#
-# Special test for Intel Mac platform, which is using the g95 compiler
-# and needs f95 loaded.
-#
-if sys.platform == "darwin":
-    dir = '/Users/haley/lib/gcc-lib/i386-apple-darwin8.6.1/4.0.3'
-    if dir in lib_paths:
-      LIBRARIES.remove('g2c')
-      LIBRARIES.append('f95')
-
-INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include'),'/Users/haley/include']
+INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
 
 #----------------------------------------------------------------------
 #
