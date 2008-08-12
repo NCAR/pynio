@@ -45,9 +45,13 @@ except ImportError:
 pynio_vfile = "pynio_version.py"      # PyNIO version file.
 
 ncarg_root = os.getenv("NCARG_ROOT")
-lib_paths = [ os.path.join(ncarg_root,'lib') ]
+LIB_DIRS = [ os.path.join(ncarg_root,'lib') ]
 
-ncl_src_dir = '../ni/src/ncl/'
+# Path to the private NCL source code. This won't be needed
+# once V5.0.1 of NCL is released.  The NCARG environment variable
+# should be set to the top of the NCL source tree.
+ncl_src_dir = os.path.join(os.environ["NCARG"],"ni","src","ncl")
+
 pkgs_pth    = get_python_lib()
 
 LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','png','z','netcdf']
@@ -67,48 +71,38 @@ if HAS_GRIB2 > 0:
     LIBRARIES.append('png')
     LIBRARIES.append('z')
     
-LIBRARIES.append('g2c')   # Put on the end.
-
-#
-# The long path below is for the g95 compiler on the Intel Mac.
-#
+# Tests for different platforms.
 if sys.platform == "darwin":
-    dirs = ['/sw/lib']
-    for dir in dirs:
-      if(os.path.exists(dir)):
-#        print "appending",dir
-        lib_paths.append(dir)
-#
-# Special test for Intel Mac platform, which is using the g95 compiler
-# and doesn't need g2c loaded.
-#
-    if "i386" in os.uname():
-      LIBRARIES.remove('g2c')
-      LIBRARIES.append('f95')
+    if(os.path.exists('/sw/lib')):
+      LIB_DIRS.append('/sw/lib')
 
-if sys.platform == "irix6-64":
-    LIBRARIES.remove('g2c')
+elif sys.platform == "irix6-64":
     LIBRARIES.append('ftn')
     LIBRARIES.append('fortran')
     LIBRARIES.append('sz')
 
-if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
-    platform.python_compiler() == "GCC 4.1.1":
-    print("Using gcc4 compiler, thus removing g2c...")
-    LIBRARIES.remove('g2c')
+elif sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
+    platform.python_compiler()[:5] == "GCC 4":
     LIBRARIES.append('gfortran')
 
-if sys.platform == "sunos5":
-    LIBRARIES.remove('g2c')
+elif sys.platform == "sunos5":
     LIBRARIES.append('fsu')
     LIBRARIES.append('sunmath')
 
-if sys.platform == "aix5":
+elif sys.platform == "aix5":
     os.putenv('OBJECT_MODE',"64")
-    LIBRARIES.remove('g2c')
     LIBRARIES.append('xlf90')
     
+elif platform.python_compiler()[:5] == "GCC 3":
+    LIBRARIES.append('g2c')
+
 INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
+
+# Include any extra libraries or library/include paths needed here.
+# These are just examples.
+#LIBRARIES.append('f95')
+#LIB_DIRS.append("/usr/local/lib")
+#INCLUDE_DIRS.append("/usr/local/include")
 
 #----------------------------------------------------------------------
 #
@@ -129,7 +123,7 @@ else:
 
 DMACROS =  [ ('NeedFuncProto','1') ]
 
-INCLUDE_DIRS.insert(0,os.path.join(pkgs_pth,"numpy/core/include"))
+INCLUDE_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
 
 #----------------------------------------------------------------------
 #
@@ -159,7 +153,7 @@ module1 = [Extension('nio',
                     define_macros = DMACROS,
                     include_dirs  = INCLUDE_DIRS,
                     libraries     = LIBRARIES,
-                    library_dirs  = lib_paths,
+                    library_dirs  = LIB_DIRS,
                     sources       = ['niomodule.c']
                     )]
 
