@@ -77,10 +77,7 @@ def pyniopath_ncarg():
 #
 #  Find the root directory that contains the supplemental PyNIO files,
 #  in particular, the grib2 codetables. For now the default is to look
-#  in site-packages/PyNGL/ncarg. Otherwise, check the PYNGL_NCARG
-#  environment variable. This may change if the grib2 codetables 
-#  are moved into the PyNIO tree.
-#  
+#  in site-packages/PyNIO/ncarg. Otherwise, check NCARG_ROOT/lib/ncarg.
 #
   import sys
   pkgs_path = None
@@ -91,27 +88,23 @@ def pyniopath_ncarg():
       pkgs_path = path
       break
 
-  pyngl1_dir  = os.path.join(pkgs_path,"PyNGL","ncarg")
-  pyngl2_dir  = os.environ.get("PYNGL_NCARG")
-  ncarg_dir  = os.environ.get("NCARG_ROOT")
+  pynio_dir = os.path.join(pkgs_path,"PyNIO","ncarg")
+  ncarg_dir = os.environ.get("NCARG_ROOT")
 
-  if pyngl2_dir != None and os.path.exists(pyngl2_dir):
-    pyngl_ncarg = pyngl2_dir
-  elif os.path.exists(pyngl1_dir):
-    pyngl_ncarg = pyngl1_dir
+  if os.path.exists(pynio_dir):
+    pynio_ncarg = pynio_dir
   else:
     if os.path.exists(ncarg_dir):
-        pyngl_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
-        if not os.path.exists(pyngl_ncarg):
-            print "pynglpath: directory " + pyngl1_dir + \
+        pynio_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
+        if not os.path.exists(pynio_ncarg):
+            print "pyniopath: directory " + pynio_dir + \
                   "\n           does not exist and " + \
-                  "environment variable PYNGL_NCARG is not set and " + \
                   "no usable NCARG installation found"
             sys.exit()
     else:
         sys.exit()
 
-  return pyngl_ncarg
+  return pynio_ncarg
 
 #
 # Set the NCARG_NCARG environment variable.
