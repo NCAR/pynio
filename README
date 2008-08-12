@@ -1,0 +1,54 @@
+
+PyNIO ("pie-nee-oh") is a Python module that allows read and/or write
+access to a variety of scientific data formats (NetCDF 3/4, GRIB1,
+GRIB2, HDF4, HDF-EOS2, CCM History tape) using an interface modelled
+on NetCDF.
+
+You can import this package with:
+
+  import Nio
+
+PyNIO is available with NumPy support only. (Numeric support was
+dropped October 2007.)
+
+PyNIO been tested against Python 2.5.x, Python 2.4.x, and NumPy
+1.x.
+
+For documentation, see:
+
+  http://www.pyngl.ucar.edu/Nio.shtml
+
+Bug reports and feedback are appreciated (see email addresses below).
+
+David Brown, Fred Clare, and Mary Haley
+National Center for Atmospheric Research
+1850 Table Mesa Drive
+Boulder, CO  80305
+USA
+E-Mail: dbrown@ucar.edu, fred@ucar.edu, haley@ucar.edu
+
+Installation:
+-------------
+
+Required: Python 2.4 or higher and NumPy version 1.0 or higher.
+Earlier or later versions of these packages may work, but we haven't
+tested all of them.
+
+Binary installation is simple:
+
+    python setup.py install
+
+This command may require root privileges on some systems.
+
+Source code installation is not trivial. See the INSTALL file
+in this directory.
+
+Examples:
+---------
+
+There are some PyNIO examples in the "test" directory.
+
+If you also have PyNGL installed, then you can type:
+
+   pynglex nio01 nio02
+
