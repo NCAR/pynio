@@ -1,38 +1,9 @@
-import os,sys,platform
-from distutils.core import setup, Extension
-from distutils.sysconfig import get_python_lib
-
-try:
-  HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
-except:
-  HAS_NETCDF4 = 1
-
-try:
-  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
-except:
-  HAS_HDFEOS = 1
-
-try:
-  HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
-except:
-  HAS_GRIB2 = 1
-
-try:
-  path = os.environ["PYNIO2PYNGL"]
-  pynio2pyngl = True
-except:
-  pynio2pyngl = False
-
 #
-# This script used to build both a Numeric and NumPy version of PyNIO.
-# As of October 2007, it only builds a NumPy version.
+# This script builds PyNIO from source. Some environment variables
+# may be required. See the following comments.
 #
-#  The NumPy version will be installed to the site-packages directory
-#  "PyNIO".
 
-#
 # Test to make sure we actually have NumPy.
-#
 try:
   import numpy
 except ImportError:
@@ -40,50 +11,189 @@ except ImportError:
   sys.exit()
 
 #
-# Initialize some variables.
+# At a minimum, you must have NCL, NetCDF (3.6.0 or later), and 
+# HDF-4 (4.1 or later) installed.
 #
-pynio_vfile = "pynio_version.py"      # PyNIO version file.
+# You must set the environment variables:
+#
+#    NCARG_ROOT
+#    NETCDF_PREFIX
+#    HDF_PREFIX
+#
+# to the parent locations of the NCL, NetCDF-3, and HDF-4 installations.
+#
+# Note: at a minimum, you must have NCARG_ROOT set. If all the other
+# software is installed in this same root directory, then you don't
+# need to set any of the previous or following XXXX_PREFIX variables.
+#
+# You can optionally build PyNIO with NetCDF-4, HDF-EOS 2,
+# and/or GRIB 2 support.  To do this, the corresponding environment
+# variables:
+#
+#    HAS_NETCDF4
+#    HAS_HDFEOS
+#    HAS_GRIB2
+#
+# must be set to 1. In addition, the corresponding environment variables:
+#
+#    NETCDF4_PREFIX
+#    HDFEOS_PREFIX
+#    GRIB2_PREFIX 
+#
+# must be set to the root location of that software, unless they are
+# all the same as a previous setting, like NCARG_ROOT.
+#
+# Finally, you may need to include Fortran system libraries
+# (like "-lgfortran" or "-lf95") to resolve undefined symbols.
+#
+# Use F2CLIBS and F2CLIBS_PREFIX for this. For example, if you
+# need to include "-lgfortran", and this library resides in /sw/lib:
+#
+#  F2CLIBS gfortran
+#  F2CLIBS_PREFIX /sw/lib
+#
 
-ncarg_root = os.getenv("NCARG_ROOT")
-LIB_DIRS = [ os.path.join(ncarg_root,'lib') ]
+import os, sys
 
-# Path to the private NCL source code. This won't be needed
-# once V5.0.1 of NCL is released.  The NCARG environment variable
-# should be set to the top of the NCL source tree.
-ncl_src_dir = os.path.join(os.environ["NCARG"],"ni","src","ncl")
+try:
+  ncarg_root = os.environ["NCARG_ROOT"]
+  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
+  INC_DIRS   = [os.path.join(ncarg_root,'include'),'include']
+except:
+  print "NCARG_ROOT is not set; can't continue!"
+  sys.exit()
 
-pkgs_pth    = get_python_lib()
+# These are the required NCL, HDF4, and NetCDF libraries.
+LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
+# Check for XXXX_PREFIX environment variables.
+try:
+  LIB_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"lib"))
+  INC_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"include"))
+except:
+  pass
 
-LIBRARIES = ['nio','mfhdf', 'df', 'jpeg','png','z','netcdf']
+try:
+  LIB_DIRS.append(os.path.join(os.environ["HDF_PREFIX"],"lib"))
+  INC_DIRS.append(os.path.join(os.environ["HDF_PREFIX"],"include"))
+except:
+  pass
 
-if HAS_NETCDF4 > 0:
+try:
+  HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
+  if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
     LIBRARIES.append('sz')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_NETCDF4 = 0
 
-if HAS_HDFEOS > 0:
+try:
+  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
+  if HAS_HDFEOS > 0:
     LIBRARIES.append('hdfeos')
     LIBRARIES.append('Gctp')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_HDFEOS = 0
 
-if HAS_GRIB2 > 0:
+try:
+  HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
+  if HAS_GRIB2 > 0:
     LIBRARIES.append('grib2c')
     LIBRARIES.append('jasper')
-    LIBRARIES.append('png')
-    LIBRARIES.append('z')
-    
-# Tests for different platforms.
-if sys.platform == "darwin":
-    if(os.path.exists('/sw/lib')):
-      LIB_DIRS.append('/sw/lib')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_GRIB2 = 0
+
+# Depending on what Fortran compiler was used to build, we may need
+# additional library paths or libraries. For example, if you need
+# "-lgfortran", and it is in "/usr/local/lib", then set:
+#
+try:
+  f2clibs = os.environ["F2CLIBS"].split()
+  for lib in f2clibs:
+    LIBRARIES.append(lib)
+except:
+  pass
+
+try:
+  LIB_DIRS.append(os.environ["F2CLIBS_PREFIX"])
+except:
+  pass
+
+#
+# Done with environment variables.
+#
+
+#
+# Function for getting list of needed GRIB2 code tables and
+# copying them over for the PyNIO installation.
+#
+def get_grib2_codetables():
+  plat_dir = os.path.join("build","lib."+get_platform()+"-"+sys.version[:3], \
+                          "PyNIO")
+
+  ncl_lib       = os.path.join(ncarg_root,'lib')
+  ncl_ncarg_dir = os.path.join(ncl_lib,'ncarg')
+  ncarg_dirs    = ["grib2_codetables"]
+
+  cwd = os.getcwd()          # Retain current directory.
+  if not os.path.exists('ncarg'):
+    os.mkdir('ncarg')          # make a directory to copy files to
+  os.chdir(ncl_ncarg_dir)    # cd to $NCARG_ROOT/lib/ncarg
+
+# Walk through each directory and copy some data files.
+  for ncarg_dir in ncarg_dirs:
+    for root, dirs, files in os.walk(ncarg_dir):
+      dir_to_copy_to = os.path.join(cwd,'ncarg',root)
+      if not os.path.exists(dir_to_copy_to):
+        os.mkdir(dir_to_copy_to)
+      for name in files:
+        file_to_copy = os.path.join(ncl_ncarg_dir,root,name)
+        cmd = "cp " + file_to_copy + " " + dir_to_copy_to
+        os.system(cmd)
+        data_files.append(os.path.join('ncarg',root,name))
+
+  os.chdir(cwd)    # cd back to original directory
+
+  return
+
+
+# Main code.
+
+import platform
+from distutils.core import setup, Extension
+from distutils.util import get_platform
+from distutils.sysconfig import get_python_lib
+
+#
+# Initialize some variables.
+#
+pynio_vfile    = "pynio_version"         # PyNIO version file.
+pynio_vfile_py = pynio_vfile + ".py"
+pkgs_pth       = get_python_lib()
+
+if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
+    platform.python_compiler()[:5] == "GCC 4":
+    LIBRARIES.append('gfortran')
 
 elif sys.platform == "irix6-64":
     LIBRARIES.append('ftn')
     LIBRARIES.append('fortran')
     LIBRARIES.append('sz')
-
-elif sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
-    platform.python_compiler()[:5] == "GCC 4":
-    LIBRARIES.append('gfortran')
 
 elif sys.platform == "sunos5":
     LIBRARIES.append('fsu')
@@ -93,17 +203,6 @@ elif sys.platform == "aix5":
     os.putenv('OBJECT_MODE',"64")
     LIBRARIES.append('xlf90')
     
-elif platform.python_compiler()[:5] == "GCC 3":
-    LIBRARIES.append('g2c')
-
-INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
-
-# Include any extra libraries or library/include paths needed here.
-# These are just examples.
-#LIBRARIES.append('f95')
-#LIB_DIRS.append("/usr/local/lib")
-#INCLUDE_DIRS.append("/usr/local/include")
-
 #----------------------------------------------------------------------
 #
 # Set some variables.
@@ -111,31 +210,28 @@ INCLUDE_DIRS = [ncl_src_dir, os.path.join(ncarg_root,'include')]
 #----------------------------------------------------------------------
 from numpy import __version__ as array_module_version
 
-if pynio2pyngl:
-  pynio_pkg_name = 'PyNGL'
-  pynio_pth_file = []
-  pynio_files    = ['Nio.py',pynio_vfile]
-  pynio_files    = ['Nio.py',pynio_vfile,'coordsel.py','_xarray.py']
-else:
-  pynio_pkg_name = 'PyNIO'
-  pynio_pth_file = [pynio_pkg_name + '.pth']
-  pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile,'coordsel.py','_xarray.py']
+pynio_pkg_name = 'PyNIO'
+pynio_pth_file = [pynio_pkg_name + '.pth']
+#pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile, \
+#                  'coordsel.py','_xarray.py']
+pynio_files    = ['Nio', '__init__','test/nio_demo',pynio_vfile, \
+                  'coordsel','_xarray']
 
 DMACROS =  [ ('NeedFuncProto','1') ]
 
-INCLUDE_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
+INC_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
 
 #----------------------------------------------------------------------
 #
 # Create version file that contains version and array module info.
 #
 #----------------------------------------------------------------------
-if os.path.exists(pynio_vfile):
-  os.system("/bin/rm -rf " + pynio_vfile)
+if os.path.exists(pynio_vfile_py):
+  os.system("/bin/rm -rf " + pynio_vfile_py)
 
 pynio_version = open('version','r').readlines()[0].strip('\n')
 
-vfile = open(pynio_vfile,'w')
+vfile = open(pynio_vfile_py,'w')
 vfile.write("version = '%s'\n" % pynio_version)
 vfile.write("array_module = 'numpy'\n")
 vfile.write("array_module_version = '%s'\n" % array_module_version)
@@ -151,14 +247,15 @@ print '====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.
 
 module1 = [Extension('nio',
                     define_macros = DMACROS,
-                    include_dirs  = INCLUDE_DIRS,
+                    include_dirs  = INC_DIRS,
                     libraries     = LIBRARIES,
                     library_dirs  = LIB_DIRS,
                     sources       = ['niomodule.c']
                     )]
 
-DATA_FILES  = [(pkgs_pth, pynio_pth_file),
-               (os.path.join(pkgs_pth,pynio_pkg_name), pynio_files)]
+data_files = []
+if HAS_GRIB2 > 0:
+  get_grib2_codetables()
 
 setup (name         = 'Nio',
        version      = pynio_version,
@@ -169,13 +266,16 @@ setup (name         = 'Nio',
        long_description = '''
        Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
        ''',
-       package_dir = {pynio_pkg_name : ''},
-       ext_modules = module1,
-       ext_package = pynio_pkg_name,
-       data_files  = DATA_FILES)
+       package_dir  = { pynio_pkg_name : '.' },
+       packages     = [ pynio_pkg_name ],
+       ext_modules  = module1,
+       ext_package  = pynio_pkg_name,
+       py_modules   = pynio_files,
+       package_data = { pynio_pkg_name : data_files },
+       data_files   = [(pkgs_pth, pynio_pth_file)])
 
 #
 # Cleanup: remove the pynio_version.py file.
 #
-if os.path.exists(pynio_vfile):
-  os.system("/bin/rm -rf " + pynio_vfile)
+if os.path.exists(pynio_vfile_py):
+  os.system("/bin/rm -rf " + pynio_vfile_py)
