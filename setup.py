@@ -212,8 +212,6 @@ from numpy import __version__ as array_module_version
 
 pynio_pkg_name = 'PyNIO'
 pynio_pth_file = [pynio_pkg_name + '.pth']
-#pynio_files    = ['Nio.py', '__init__.py','test/nio_demo.py',pynio_vfile, \
-#                  'coordsel.py','_xarray.py']
 pynio_files    = ['Nio', '__init__','test/nio_demo',pynio_vfile, \
                   'coordsel','_xarray']
 
