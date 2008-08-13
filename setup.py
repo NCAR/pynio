@@ -119,9 +119,7 @@ except:
   HAS_GRIB2 = 0
 
 # Depending on what Fortran compiler was used to build, we may need
-# additional library paths or libraries. For example, if you need
-# "-lgfortran", and it is in "/usr/local/lib", then set:
-#
+# additional library paths or libraries.
 try:
   f2clibs = os.environ["F2CLIBS"].split()
   for lib in f2clibs:
