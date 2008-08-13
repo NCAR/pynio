@@ -7,7 +7,7 @@
 try:
   import numpy
 except ImportError:
-  print "Cannot find NumPy; good-bye!"
+  print "Error: Cannot import NumPy. Can't continue."
   sys.exit()
 
 #
@@ -180,9 +180,8 @@ from distutils.sysconfig import get_python_lib
 #
 # Initialize some variables.
 #
-pynio_vfile    = "pynio_version"         # PyNIO version file.
-pynio_vfile_py = pynio_vfile + ".py"
-pkgs_pth       = get_python_lib()
+pynio_vfile = "pynio_version.py"         # PyNIO version file.
+pkgs_pth    = get_python_lib()
 
 if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
     platform.python_compiler()[:5] == "GCC 4":
@@ -219,12 +218,12 @@ INC_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
 # Create version file that contains version and array module info.
 #
 #----------------------------------------------------------------------
-if os.path.exists(pynio_vfile_py):
-  os.system("/bin/rm -rf " + pynio_vfile_py)
+if os.path.exists(pynio_vfile):
+  os.system("/bin/rm -rf " + pynio_vfile)
 
 pynio_version = open('version','r').readlines()[0].strip('\n')
 
-vfile = open(pynio_vfile_py,'w')
+vfile = open(pynio_vfile,'w')
 vfile.write("version = '%s'\n" % pynio_version)
 vfile.write("array_module = 'numpy'\n")
 vfile.write("array_module_version = '%s'\n" % array_module_version)
@@ -269,5 +268,5 @@ setup (name         = 'Nio',
 #
 # Cleanup: remove the pynio_version.py file.
 #
-if os.path.exists(pynio_vfile_py):
-  os.system("/bin/rm -rf " + pynio_vfile_py)
+if os.path.exists(pynio_vfile):
+  os.system("/bin/rm -rf " + pynio_vfile)
