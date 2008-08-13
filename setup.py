@@ -212,10 +212,7 @@ from numpy import __version__ as array_module_version
 
 pynio_pkg_name = 'PyNIO'
 pynio_pth_file = [pynio_pkg_name + '.pth']
-pynio_files    = ['Nio', '__init__','test/nio_demo',pynio_vfile, \
-                  'coordsel','_xarray']
-
-DMACROS =  [ ('NeedFuncProto','1') ]
+DMACROS        =  [ ('NeedFuncProto','1') ]
 
 INC_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
 
@@ -268,7 +265,6 @@ setup (name         = 'Nio',
        packages     = [ pynio_pkg_name ],
        ext_modules  = module1,
        ext_package  = pynio_pkg_name,
-       py_modules   = pynio_files,
        package_data = { pynio_pkg_name : data_files },
        data_files   = [(pkgs_pth, pynio_pth_file)])
 
