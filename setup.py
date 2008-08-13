@@ -109,7 +109,8 @@ try:
   HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
   if HAS_GRIB2 > 0:
     LIBRARIES.append('grib2c')
-    LIBRARIES.append('jasper')
+    LIBRARIES.append('jasper')   # png is needed again, b/c it 
+    LIBRARIES.append('png')      # must come after jasper
     try:
       LIB_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
