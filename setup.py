@@ -207,6 +207,11 @@ elif sys.platform == "aix5":
 #----------------------------------------------------------------------
 from numpy import __version__ as array_module_version
 
+# I read somewhere that distutils doesn't update this file properly
+# when the contents of directories change.
+
+if os.path.exists('MANIFEST'): os.remove('MANIFEST')
+
 pynio_pkg_name = 'PyNIO'
 pynio_pth_file = [pynio_pkg_name + '.pth']
 DMACROS        =  [ ('NeedFuncProto','1') ]

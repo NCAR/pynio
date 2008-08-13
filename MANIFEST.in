@@ -1,0 +1,15 @@
+include PyNIO.pth
+include setup.py
+include README
+include INSTALL
+include Nio.py
+include _xarray.py
+include coordsel.py
+include __init__.py
+include niomodule.c
+include niomodule.h
+include version
+recursive-include include *.h
+recursive-include test *
+
+
