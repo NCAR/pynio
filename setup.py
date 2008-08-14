@@ -255,7 +255,7 @@ data_files = []
 if HAS_GRIB2 > 0:
   get_grib2_codetables()
 
-setup (name         = 'Nio',
+setup (name         = 'PyNIO',
        version      = pynio_version,
        description  = 'Multi-format data I/O package',
        author       = 'David I. Brown',
