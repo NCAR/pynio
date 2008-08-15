@@ -86,7 +86,33 @@ object as the 3rd (optional) argument to Nio.open_file:\n\
 opt.OptionName = value\n\
 All option names and string option values are handled case-insensitively.\n\
 \n\
-Valid options for NetCDF files:\n\
+Generic options:\n\
+    MaskedArrayMode -- Specify MaskedArray bahavior (string):\n\
+        'MaskedIfFillAtt' -- Return a masked array iff file variable has a\n\
+            _FillValue or a missing_value attribute (default).\n\
+        'MaskedNever' -- Never return a masked array for any variable.\n\
+        'MaskedAlways' -- Return a masked array for all variables.\n\
+        'MaskedIfFillAttAndValue' -- Return a masked array iff file variable has a\n\
+            _FillValue or a missing_value attribute and the returned data array\n\
+            actually contains 1 or more fill values.\n\
+        'MaskedExplicit' -- Only mask values specified explicitly using options\n\
+            'ExplicitFillValues, MaskBelowValue, and/or MaskAboveValue;\n\
+            ignore fill value attributes associated with the variable.\n\
+    ExplicitFillValues -- A scalar value or a sequence of values to be masked in the\n\
+        return array. The first value becomes the fill_value attribute of the MaskedArray.\n\
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.\n\
+    MaskBelowValue -- A scalar value all values less than which are masked. However, if\n\
+        MaskAboveValue is less than MaskBelowValue, a range of of values become masked.\n\
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.\n\
+    MaskAboveValue -- A scalar value all values greater than which are masked. However, if\n\
+        MaskBelowValue is greater than MaskAboveValue, a range of of values become masked.\n\
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.\n\
+    UseAxisAttribute -- A boolean option that if set True when using extended subscripting,\n\
+        and if coordinate variables have the CF-compliant 'axis' attribute, expects the\n\
+        short names ('T','Z','Y' or 'X') instead of the actual coordinate names in the\n\
+         subscript specification.\n\
+\n\
+NetCDF file options:\n\
     Format -- Specify the format of newly created files (string):\n\
         'Classic' -- (default) standard file (generally file size < 2GB)\n\
         'LargeFile' or '64BitOffset' -- (fixed-size variables or record\n\
@@ -107,7 +133,7 @@ Valid options for NetCDF files:\n\
         undefined until data is written.\n\
     SafeMode -- Close the file after each individual operation on the file.\n\
 \n\
-Valid options for GRIB files:\n\
+GRIB files options\n\
     DefaultNCEPTable -- (GRIB 1 only) Specify the table to use in certain\n\
         ambiguous cases:\n\
         'Operational' -- (default) Use the NCEP operational parameter table\n\
@@ -211,11 +237,12 @@ Attributes:(do not modify)\n\
     rank -- a scalar value indicating the number of dimensions\n\
     shape -- a tuple containing the number of elements in each dimension\n\
     dimensions -- a tuple containing the dimensions names in order\n\
-    __dict__ -- a dictionary containing the variable attributes\n\
+    attributes (or __dict__) -- a dictionary containing the variable attributes\n\
 Methods:\n\
     assign_value(value) -- assign a value to a variable in the file.\n\
     get_value() -- retrieve the value of a variable in the file.\n\
     typecode() -- return a character code representing the variable's type.\n\
+    set_option(option,value) -- set certain options.\n\
 ";
 
 /* NioVariable object method doc strings */
@@ -1780,6 +1807,8 @@ NioVariable_Indices(NioVariableObject *var)
       indices[i].stop = var->dimensions[i];
       indices[i].stride = 1;
       indices[i].item = 0;
+      indices[i].unlimited = (i == 0 && var->unlimited) ? 1 : 0;
+      indices[i].no_start = indices[i].no_stop = 0;
     }
   else
     PyErr_SetString(PyExc_MemoryError, "out of memory");
@@ -2032,6 +2061,14 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   int error = 0;
   int ret = 0;
   int dir;
+  NrmQuark qtype;
+  int scalar_size = 1;
+  NclFile nfile = (NclFile) self->file->id;
+  NclMultiDValData md;
+  NhlErrorTypes nret;
+  int select_all = 1;
+  Py_ssize_t array_el_count = 1;;
+  int undefined_dim = -1, dim_undef = -1;
 
   /* update shape */
   (void) NioVariable_GetShape(self);
@@ -2054,14 +2091,22 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   define_mode(self->file, 0);
 
-  /* convert from Python to NCL indexing */
-  /* negative stride in Python requires the start index to be greater than
-     the end index: in NCL negative stride reverses the direction 
-     implied by the index start and stop.
-  */
-
+  /* Convert from Python to NCL indexing.
+   * Negative stride in Python requires the start index to be greater than
+   * the end index: in NCL negative stride reverses the direction 
+   * implied by the index start and stop.
+   * Determination of unlimited dimensions needs to be deferred until it is 
+   * clear how many elements will be added.
+   */
+ 
   for (i = 0; i < self->nd; i++) {
-	  var_el_count *= (int)self->dimensions[i];
+	  if (indices[i].unlimited) {
+		  if ((indices[i].no_stop && indices[i].stride > 0) ||
+		      (indices[i].no_start && indices[i].stride < 0))
+			  undefined_dim = i;
+	  }
+	  if (i != undefined_dim)
+		  var_el_count *= self->dimensions[i];
 	  error = error || (indices[i].stride == 0);
           if (error)
 		  break;
@@ -2090,13 +2135,17 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
 	  if (indices[i].item == 0) {
 		  dims[n_dims] = (int)((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
-		  if (dims[n_dims] < 0)
+		  if (dims[n_dims] < 0) 
 			  dims[n_dims] = 0;
-		  nitems *= dims[n_dims];
+		  if (i != undefined_dim) 
+			  nitems *= dims[n_dims];
+		  else
+			  dim_undef = n_dims;
 		  n_dims++;
 	  }
-	  else
+	  else {
 		  indices[i].stop = indices[i].start;
+	  }
   }
   if (error) {
     PyErr_SetString(PyExc_IndexError, "illegal index");
@@ -2142,124 +2191,173 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  sprintf(err_buf,"type or dimensional mismatch writing to variable (%s)",self->name);
 	  PyErr_SetString(NIOError, err_buf);
 	  ret = -1;
+	  goto err_ret;
   }
-  else {
-	  NrmQuark qtype;
-	  int scalar_size = 1;
-	  NclFile nfile = (NclFile) self->file->id;
-	  NclMultiDValData md;
-	  NhlErrorTypes nret;
-	  int select_all = 1;
-	  Py_ssize_t array_el_count = 1;;
 
-	  /*
-	   * PyNIO does not support broadcasting except for the special case of a scalar 
-	   * applied to an array.
-	   * However, it does ignore pre-pended single element dimensions either in the file
-	   * variable or in the assigned array.
-	   */
+  /*
+   * PyNIO does not support broadcasting except for the special case of a scalar 
+   * applied to an array.
+   * However, it does ignore pre-pended single element dimensions either in the file
+   * variable or in the assigned array.
+   */
 	  
-	  if (array->nd == 0) {
-		  n_dims = 1;
+  if (array->nd == 0) {
+	  n_dims = 1;
+  }
+  else if (undefined_dim >= 0) {
+	  int adim_count = 0;
+	  int fdim_count = 0;
+	  int *adims, *fdims;
+          adims = malloc (array->nd * sizeof(int));
+          fdims = malloc (self->nd * sizeof(int));
+	  for (i = 0; i < array->nd; i++) {
+		  if (array->dimensions[i] > 1) {
+			  adims[adim_count] = i;
+			  adim_count++;
+		  }
 	  }
-	  else {
-		  int var_dim = 0;
-		  i = 0;
-		  while (i < array->nd && array->dimensions[i] == 1)
-			  i++;
-		  while (var_dim < n_dims && dims[var_dim] == 1)
-			  var_dim++;
-		  for ( ; i < array->nd; ) {
-			  array_el_count *= array->dimensions[i];
-			  if (array->dimensions[i] != dims[var_dim]) {
-				  if (dims[var_dim] == 1) {
-					  var_dim++;
-					  continue;
+	  for (i = 0; i < n_dims; i++) {
+		  if (i == undefined_dim) {
+			  fdims[fdim_count] = i;
+			  fdim_count++;
+		  }
+		  else if (dims[i] > 1) {
+			  fdims[fdim_count] = i;;
+			  fdim_count++;
+		  }
+	  }
+	  if (fdim_count == adim_count) {
+		  int undef_size = 0;
+		  for (i = 0; i < fdim_count; i++) {
+			  if (dims[fdims[i]] == array->dimensions[adims[i]])
+				  continue;
+			  if (fdims[i] == undefined_dim) {
+				  if (dir == 1) {
+					  indices[fdims[i]].stop = indices[fdims[i]].start + (array->dimensions[adims[i]] - 1) * indices[fdims[i]].stride;
+					  var_el_count *= array->dimensions[adims[i]];
+					  undef_size = array->dimensions[adims[i]];
 				  }
-				  if (array->dimensions[i] == 1) {
-					  i++;
-					  continue;
+				  else {
+					  indices[fdims[i]].start = indices[fdims[i]].stop + (array->dimensions[adims[i]] - 1) * indices[fdims[i]].stride;
+					  var_el_count *= array->dimensions[adims[i]];
+					  undef_size = array->dimensions[adims[i]];
 				  }
+				  undef_size =  array->dimensions[adims[i]];
+			  }
+			  else {
 				  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
 				  PyErr_SetString(NIOError, err_buf);
 				  ret = -1;
 				  goto err_ret;
 			  }
-			  var_dim++;
-			  i++;
 		  }
-		  while (var_dim < n_dims && dims[var_dim] == 1)
-			  var_dim++;
-		  if (var_dim != n_dims) {
+		  if (dim_undef > -1 && undef_size > 0) {
+			  dims[dim_undef] = undef_size;
+			  nitems *= undef_size;
+		  }
+	  }
+  }
+  else {
+	  int var_dim = 0;
+	  i = 0;
+
+	  while (i < array->nd && array->dimensions[i] == 1)
+		  i++;
+          if (indices[var_dim].unlimited && dims[var_dim] == 0)
+		  
+	  while (var_dim < n_dims && dims[var_dim] == 1)
+		  var_dim++;
+	  for ( ; i < array->nd; ) {
+		  array_el_count *= array->dimensions[i];
+		  if (array->dimensions[i] != dims[var_dim]) {
+			  if (dims[var_dim] == 1) {
+				  var_dim++;
+				  continue;
+			  }
+			  if (array->dimensions[i] == 1) {
+				  i++;
+				  continue;
+			  }
 			  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
 			  PyErr_SetString(NIOError, err_buf);
 			  ret = -1;
 			  goto err_ret;
 		  }
-		  if (array_el_count < nitems) {
-			  /*
-			   * This test should be redundant, but just in case.
-			   */
-			  sprintf(err_buf,"Not enough elements supplied for write to variable (%s)",self->name);
-			  PyErr_SetString(NIOError, err_buf);
-			  ret = -1;
-			  goto err_ret;
-		  }
+		  var_dim++;
+		  i++;
 	  }
-
-	  if (nitems < var_el_count || self->unlimited)
-		  select_all = 0;
-	  qtype = nio_type_from_code(array->descr->type);
-
-	  if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
-		  PyArrayObject *array2 = (PyArrayObject *)
-			  PyArray_Cast(array, PyArray_INT);
-		  Py_DECREF(array);
-		  array = array2;
-		  qtype = NrmStringToQuark("integer");
-		  sprintf(err_buf,"coercing 8-byte long to 4-byte integer: possible data loss due to overflow");
+	  while (var_dim < n_dims && dims[var_dim] == 1)
+		  var_dim++;
+	  if (var_dim != n_dims) {
+		  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
 		  PyErr_SetString(NIOError, err_buf);
-		  PyErr_Print();
+		  ret = -1;
+		  goto err_ret;
 	  }
-	  else if (qtype == NrmStringToQuark("long")) {
-		  qtype = NrmStringToQuark("integer");
+	  if (array_el_count < nitems) {
+		  /*
+		   * This test should be redundant, but just in case.
+		   */
+		  sprintf(err_buf,"Not enough elements supplied for write to variable (%s)",self->name);
+		  PyErr_SetString(NIOError, err_buf);
+		  ret = -1;
+		  goto err_ret;
 	  }
+  }
 
-	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-				   (void*)array->data,NULL,n_dims,
-				   array->nd == 0 ? &scalar_size : dims,
-				   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-	  if (! md) {
+  if (nitems < var_el_count || self->unlimited || dir == -1)
+	  select_all = 0;
+  qtype = nio_type_from_code(array->descr->type);
+
+  if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
+	  PyArrayObject *array2 = (PyArrayObject *)
+		  PyArray_Cast(array, PyArray_INT);
+	  Py_DECREF(array);
+	  array = array2;
+	  qtype = NrmStringToQuark("integer");
+	  sprintf(err_buf,"coercing 8-byte long to 4-byte integer: possible data loss due to overflow");
+	  PyErr_SetString(NIOError, err_buf);
+	  PyErr_Print();
+  }
+  else if (qtype == NrmStringToQuark("long")) {
+	  qtype = NrmStringToQuark("integer");
+  }
+
+  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+			   (void*)array->data,NULL,n_dims,
+			   array->nd == 0 ? &scalar_size : dims,
+			   TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+  if (! md) {
+	  nret = NhlFATAL;
+  }
+  else if (select_all) {
+	  nret = _NclFileWriteVar(nfile,NrmStringToQuark(self->name),md,NULL);
+  }
+  else {
+	  NclSelectionRecord *sel_ptr;
+	  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
+	  if (sel_ptr == NULL) {
 		  nret = NhlFATAL;
 	  }
-	  else if (select_all) {
-		  nret = _NclFileWriteVar(nfile,NrmStringToQuark(self->name),md,NULL);
-	  }
 	  else {
-		  NclSelectionRecord *sel_ptr;
-		  sel_ptr = (NclSelectionRecord*)malloc(sizeof(NclSelectionRecord));
-		  if (sel_ptr == NULL) {
-			  nret = NhlFATAL;
+		  sel_ptr->n_entries = self->nd;
+		  for (i = 0; i < self->nd; i++) {
+			  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
+			  sel_ptr->selection[i].dim_num = i;
+			  sel_ptr->selection[i].u.sub.start = indices[i].start;
+			  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
+			  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
+			  sel_ptr->selection[i].u.sub.is_single = 
+				  indices[i].item != 0;
 		  }
-		  else {
-			  sel_ptr->n_entries = self->nd;
-			  for (i = 0; i < self->nd; i++) {
-				  sel_ptr->selection[i].sel_type = Ncl_SUBSCR;
-				  sel_ptr->selection[i].dim_num = i;
-				  sel_ptr->selection[i].u.sub.start = indices[i].start;
-				  sel_ptr->selection[i].u.sub.finish = indices[i].stop;
-				  sel_ptr->selection[i].u.sub.stride = indices[i].stride;
-				  sel_ptr->selection[i].u.sub.is_single = 
-					  indices[i].item != 0;
-			  }
-			  nret = _NclFileWriteVar(nfile,NrmStringToQuark(self->name),md,sel_ptr);
-			  free(sel_ptr);
-		  }
+		  nret = _NclFileWriteVar(nfile,NrmStringToQuark(self->name),md,sel_ptr);
+		  free(sel_ptr);
 	  }
-	  Py_DECREF(array);
-	  if (nret < NhlWARNING)
-		  ret = -1;
   }
+  Py_DECREF(array);
+  if (nret < NhlWARNING)
+	  ret = -1;
+
 
   err_ret:
 
@@ -2368,9 +2466,14 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
     if (PySlice_Check(index)) {
-      PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
-			 &indices->start, &indices->stop, &indices->stride);
-      return PyArray_Return(NioVariable_ReadAsArray(self, indices));
+	    PySliceObject *slice = (PySliceObject *)index;
+	    PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
+			       &indices->start, &indices->stop, &indices->stride);
+	    if (slice->start == Py_None)
+		    indices->no_start = 1;
+	    if (slice->stop == Py_None)
+		    indices->no_stop = 1;
+	    return PyArray_Return(NioVariable_ReadAsArray(self, indices));
     }
     if (PyTuple_Check(index)) {
       int ni = PyTuple_Size(index);
@@ -2388,9 +2491,14 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
 	    d++;
 	  }
 	  else if (PySlice_Check(subscript)) {
+	    PySliceObject *slice = (PySliceObject *)subscript;
 	    PySlice_GetIndices((PySliceObject *)subscript, self->dimensions[d],
 			       &indices[d].start, &indices[d].stop,
 			       &indices[d].stride);
+	    if (slice->start == Py_None)
+		    indices[d].no_start = 1;
+	    if (slice->stop == Py_None)
+		    indices[d].no_stop = 1;
 	    d++;
 	  }
 	  else if (subscript == Py_Ellipsis) {
@@ -2478,9 +2586,14 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
     if (PySlice_Check(index)) {
-      PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
-			 &indices->start, &indices->stop, &indices->stride);
-      return NioVariable_WriteArray(self, indices, value);
+	    PySliceObject *slice = (PySliceObject *)index;
+	    PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
+			       &indices->start, &indices->stop, &indices->stride);
+	    if (slice->start == Py_None)
+		    indices->no_start = 1;
+	    if (slice->stop == Py_None)
+		    indices->no_stop = 1;
+	    return NioVariable_WriteArray(self, indices, value);
     }
     if (PyTuple_Check(index)) {
       int ni = PyTuple_Size(index);
@@ -2497,9 +2610,14 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	    d++;
 	  }
 	  else if (PySlice_Check(subscript)) {
+	    PySliceObject *slice = (PySliceObject *)subscript;
 	    PySlice_GetIndices((PySliceObject *)subscript, self->dimensions[d],
 			       &indices[d].start, &indices[d].stop,
 			       &indices[d].stride);
+	    if (slice->start == Py_None)
+		    indices[d].no_start = 1;
+	    if (slice->stop == Py_None)
+		    indices[d].no_stop = 1;
 	    d++;
 	  }
 	  else if (subscript == Py_Ellipsis) {

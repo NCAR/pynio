@@ -6,15 +6,15 @@ import Nio
 
 Class NioFile:
 
-f = Nio.open_file(filepath, mode='r', options=None, history='')
+f = Nio.open_file(filepath, mode='r', options=None, history='',format='')
 
 To see summary of file contents, including all dimensions, attributes,
 and variables:
    print f
 attributes:
-   dimensions -- dimension names (keys), dimension lengths (values)
-   variables -- variable names (keys), variable objects (values)
-   __dict__ --  contains the global attributes associated with the file
+   dimensions -- dictionary with dimension names as keys and dimension lengths as values
+   variables -- dictionary with variable names as keys and variable objects as values
+   attributes (or __dict__) --  contains the global attributes associated with the file
 methods:
    close(history='')
    create_dimension(name, length)
@@ -43,11 +43,13 @@ Attributes:
     rank -- a scalar value indicating the number of dimensions
     shape -- a tuple containing the number of elements in each dimension
     dimensions -- a tuple containing the dimensions names in order
-    __dict__ -- a dictionary containing the variable attributes
+    attributes (or __dict__) -- a dictionary containing the variable attributes
 Methods:
     assign_value(value) -- assign a value to a variable in the file.
     get_value() -- retrieve the value of a variable in the file.
     typecode() -- return a character code representing the variable's type.
+    set_option(option,value) -- set certain options.
+
 For more detailed information:
     print v.__doc__
 
@@ -124,9 +126,11 @@ del os
 
 
 from nio import _Nio
-import numpy
+import numpy as np
 from numpy import ma
-from coordsel import *
+from coordsel import get_variable, inp2csel, inp2isel, inp2xsel, idxsel2xsel, \
+                     xSelect, crdSelect, idxSelect 
+import coordsel as cs
 
 _Nio.option_defaults['UseAxisAttribute'] = False
 _Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
@@ -145,7 +149,7 @@ def get_integer_version(strversion):
        v = int(d[0]) * 10000
     return v
 
-_is_new_ma = get_integer_version(numpy.__version__) > 10004
+_is_new_ma = get_integer_version(np.__version__) > 10004
 del get_integer_version
 
 _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash__', \
@@ -269,24 +273,24 @@ def __getitem__(self, xsel):
     elif self.file.ma_mode == 'maskediffillattandvalue':
         # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
         if self.__dict__.has_key('_FillValue'):
-            if ret.__contains__(self.__dict__['_FillValue'][0]):
-                ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
-                ret.set_fill_value(self.__dict__['_FillValue'][0])
+            if ret.__contains__(self.__dict__['_FillValue']):
+                ret = ma.masked_where(ret == self.__dict__['_FillValue'],ret,copy=0)
+                ret.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
-            if ret.__contains__(self.__dict__['missing_value'][0]):
-                ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
-                ret.set_fill_value(self.__dict__['missing_value'][0])
+            if ret.__contains__(self.__dict__['missing_value']):
+                ret = ma.masked_where(ret == self.__dict__['missing_value'],ret,copy=0)
+                ret.set_fill_value(self.__dict__['missing_value'])
     else: 
         # Handles MaskedIfFillAtt and MaskedAlways
         if self.__dict__.has_key('_FillValue'):
-            ret = ma.masked_where(ret == self.__dict__['_FillValue'][0],ret,copy=0)
-            ret.set_fill_value(self.__dict__['_FillValue'][0])
+            ret = ma.masked_where(ret == self.__dict__['_FillValue'],ret,copy=0)
+            ret.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
-            ret = ma.masked_where(ret == self.__dict__['missing_value'][0],ret,copy=0)
-            ret.set_fill_value(self.__dict__['missing_value'][0])
+            ret = ma.masked_where(ret == self.__dict__['missing_value'],ret,copy=0)
+            ret.set_fill_value(self.__dict__['missing_value'])
         elif self.file.ma_mode == 'maskedalways':
             # supply a mask of all False, but just allow the fill_value to default
-            mask = numpy.zeros(ret.shape,dtype='?')
+            mask = np.zeros(ret.shape,dtype='?')
             ret = ma.array(ret,mask=mask)
 
     return ret
@@ -314,15 +318,15 @@ def __setitem__(self, xsel,value):
         #
         if self.__dict__.has_key('_FillValue'):
             fval = self.__dict__['_FillValue'][0]
-            fill_value = numpy.array(fval,dtype=fval.dtype)
+            fill_value = np.array(fval,dtype=fval.dtype)
         elif self.__dict__.has_key('missing_value'):
             fval = self.__dict__['missing_value'][0]
-            fill_value = numpy.array(fval,dtype=fval.dtype)
+            fill_value = np.array(fval,dtype=fval.dtype)
         elif _is_new_ma:
-            fill_value = numpy.array(value.fill_value,dtype=value.dtype)
+            fill_value = np.array(value.fill_value,dtype=value.dtype)
             add_fill_value_att = True
         else:
-            fill_value = numpy.array(value.fill_value(),dtype=value.dtype)
+            fill_value = np.array(value.fill_value(),dtype=value.dtype)
             add_fill_value_att = True
         value = value.filled(fill_value)
 
@@ -336,6 +340,7 @@ def __setitem__(self, xsel,value):
 
     if add_fill_value_att:
         setattr(self._obj,'_FillValue',fill_value)
+    return
 
 def _create_variable(self,name,type,dimensions):
     """create variable and store a reference"""
@@ -347,7 +352,9 @@ def _create_variable(self,name,type,dimensions):
         vp.varname = name
         vp.cf_dimensions = vp.dimensions
         self.variables[name] = vp
-    return vp
+        return vp
+    else:
+        return None
 
 def _get_masked_array_mode(options,option_defaults):
     ''' 
@@ -356,11 +363,13 @@ def _get_masked_array_mode(options,option_defaults):
     '''
 
     # ma_mode specifies when to return masked arrays
-    # MaskedNever: never return a masked array for any variable: default for backwards compatibility
-    # MaskedIfFillAtt: return a masked array iff file variable has a _FillValue or a missing_value
+    # MaskedIfFillAtt: return a masked array iff file variable has a _FillValue or a missing_value (default)
+    # MaskedNever: never return a masked array for any variable
     # MaskedAlways: return a masked array for all variables
     # MaskedIfFillAttAndValue: return a masked array iff file variable has a _FillValue or a missing_value and
     #                          the returned data array actually contains 1 or more fill values.
+    # MaskedExplicit: only mask values specified explicitly using options ExplicitFillValues, MaskBelowValue,
+    #                 and MaskAboveValue; ignore fill value attributes associated with the variable
 
     optvals = [ 'maskednever', 'maskediffillatt', 'maskedalways', 'maskediffillattandvalue', 'maskedexplicit' ]
 
@@ -421,6 +430,31 @@ def _get_option_value(options,option_defaults,name):
         return None
 
 def set_option(self,option,value):
+    """
+    Set certain options for an open NioFile instance.
+    The option name is specified as a string
+    Options that can be set include:
+    MaskedArrayMode -- Specify MaskedArray bahavior (string):
+        'MaskedIfFillAtt' -- Return a masked array iff file variable has a 
+            _FillValue or a missing_value attribute (default).
+        'MaskedNever' -- Never return a masked array for any variable.
+        'MaskedAlways' -- Return a masked array for all variables.
+        'MaskedIfFillAttAndValue' -- Return a masked array iff file variable has a 
+            _FillValue or a missing_value attribute and the returned data array 
+            actually contains 1 or more fill values.
+        'MaskedExplicit' -- Only mask values specified explicitly using options 
+            'ExplicitFillValues, MaskBelowValue, and/or MaskAboveValue; 
+            ignore fill value attributes associated with the variable.
+    ExplicitFillValues -- A scalar value or a sequence of values to be masked in the 
+        return array. The first value becomes the fill_value attribute of the MaskedArray.
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.
+    MaskBelowValue -- A scalar value all values less than which are masked. However, if
+        MaskAboveValue is less than MaskBelowValue, a range of of values become masked.
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.
+    MaskAboveValue -- A scalar value all values greater than which are masked. However, if
+        MaskBelowValue is greater than MaskAboveValue, a range of of values become masked.
+        Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.
+    """
     valid_opts = {'maskedarraymode':'ma_mode', 'explicitfillvalues':'explicit_fill_values',
                   'maskbelowvalue' : 'mask_below_value', 'maskabovevalue' : 'mask_above_value' }
     if hasattr(option,'lower'):
@@ -441,6 +475,33 @@ def set_option(self,option,value):
     return setattr(self,valid_opts[loption],lvalue)
 
 def open_file(filename, mode = 'r', options=None, history='', format=''):
+    """
+Open a file containing data in a supported format for reading and/or writing.
+
+f = Nio.open_file(filepath, mode='r',options=None, history='', format='')
+filepath -- path of file with data in a supported format. Either the path must
+end with an extension indicating the expected format of the file (it need not
+be part of the actual file name), or it must be specified using the optional 
+'format' argument. Valid extensions include:
+    .nc, .cdf, .netcdf, .nc3, .nc4 -- NetCDF
+    .grb, .grib, .grb1, .grib1, .grb2, .grib2 -- GRIB
+    .hd, .hdf -- HDF
+    .he2, .he4, .hdfeos -- HDFEOS
+    .ccm -- CCM history files
+Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all
+indicate a GRIB file.
+mode -- access mode (optional):
+     'r' -- open an existing file for reading
+     'w','r+','rw','a' -- open an existing file for modification
+     'c' -- create a new file open for writing
+options -- instance of NioOptions class used to specify format-specific options.
+history -- a string specifying text to be appended to the file's global
+attribute. The attribute is created if it does not exist. Only valid
+if the file is open for writing.
+format -- a string specifying the expected format. Valid strings are the
+same as the extensions listed above without the initial period (.). 
+Returns an NioFile object.
+    """
 
     ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
     use_axis_att = _get_axis_att(options,_Nio.option_defaults)
@@ -515,8 +576,14 @@ def _get_cf_dims(file):
     return ret
             
 def options():
-        opt = _Nio.options()
-        return opt
+    """
+Return an NioOptions object for specifying format-specific options.
+opt = Nio.options()
+Assign 'opt' as the third (optional) argument to Nio.open_file.
+print opt.__doc__ to see valid options.
+    """
+    opt = _Nio.options()
+    return opt
 
 
  

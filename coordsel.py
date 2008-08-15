@@ -569,7 +569,7 @@ class axisSelect(object):
         # check prefix
 
         if inp[0] == 'd':
-            raise NotImplementedError, "Date/time selection is not yet implemented"
+            #raise NotImplementedError, "Date/time selection is not yet implemented"
             self.fmt = 'datetime'
             inp = inp[1:]
         elif inp[0] == 'i':

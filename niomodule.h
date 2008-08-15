@@ -53,7 +53,10 @@ typedef struct {
   Py_ssize_t start;
   Py_ssize_t stop;
   Py_ssize_t stride;
-  int item;
+  short item;
+  short unlimited;
+  short no_start; /* start is not None */
+  short no_stop;  /* stop is not None */
 } NioIndex;
 
 /*
