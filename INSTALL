@@ -5,10 +5,10 @@
 
 How to build PyNIO from source code
 
-PyNIO </Nio.shtml> can only be built on UNIX systems. It has been
-successfully built on systems running Linux (32 or 64-bit), MacOSX (PPC
-or Intel), Windows/Cygwin, Suns using native compilers, IBMs running AIX
-(32 or 64-bit), and SGIs running IRIX.
+PyNIO <http://www.pyngl.ucar.edu/Nio.shtml> can only be built on UNIX
+systems. It has been successfully built on systems running Linux (32
+or 64-bit), MacOSX (PPC or Intel), Windows/Cygwin, Suns using native
+compilers, IBMs running AIX (32 or 64-bit), and SGIs running IRIX.
 
 This document covers what external software packages you need for
 PyNIOand how to build them, and then finally how to build PyNIO.
@@ -37,9 +37,10 @@ from source code <build_pyngl_from_src.shtml>" document.
 
     Download and build non-optional external software
 
-/Once you download and install any external software to use with PyNIO,
-you must comply with the license of that software, regardless of PyNIO's
-source code license </Licenses/PyNIO_source_license.shtml>./
+/Once you download and install any external software to use with
+PyNIO, you must comply with the license of that software, regardless
+of PyNIO's source code license
+<http://www.pyngl.ucar.edu/Licenses/PyNIO_source_license.shtml>./
 
 List of external software to install:
 
@@ -253,7 +254,8 @@ to download and install the following packages:
     Download the source code for PyNIO
 
 Accessing, downloading, and/or using PyNIO implies acceptance of the
-PyNIO source code license </Licenses/PyNIO_source_license.shtml>.
+PyNIO source code license
+<http://www.pyngl.ucar.edu/Licenses/PyNIO_source_license.shtml>.
 
 To download the PyNIO source code, follow the instructions at:
 

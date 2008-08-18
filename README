@@ -4,6 +4,11 @@ access to a variety of scientific data formats (NetCDF 3/4, GRIB1,
 GRIB2, HDF4, HDF-EOS2, CCM History tape) using an interface modelled
 on NetCDF.
 
+Use of this software implies agreement of the PyNIO source code
+license:
+
+  http://www.pyngl.ucar.edu/Licenses/PyNIO_source_license.shtml
+
 You can import this package with:
 
   import Nio
