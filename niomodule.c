@@ -574,7 +574,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
   NclMultiDValData md = NULL;
   PyArrayObject *array = NULL;
   
-  if (!value) {
+  if (!value || value == Py_None) {
 	  /* delete attribute */
 	  if (varid == NC_GLOBAL) {
 		  ret = _NclFileDeleteAtt(nfile,NrmStringToQuark(name));
