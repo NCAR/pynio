@@ -27,12 +27,12 @@ file.create_dimension("time", None)     # unlimited dimension
 print file
 
 #
-#  Create a variable of type double with three dimemsions.
+#  Create a variable of type float with three dimemsions.
 #
-var = file.create_variable("var", 'd', ("time",))
-var._FillValue = -999.0
+var = file.create_variable("var", 'f', ("time",))
+var._FillValue = numpy.array(-999.,dtype = numpy.float32)
 
-data = numpy.arange(10)
+data = numpy.arange(10,dtype='f')
 # assign 5 elements of the unlimited dimension
 var[:] = data[0:4]
 print len(var[:]),var[:]

@@ -66,6 +66,18 @@ print "tmp['time|i0 lat|60 lon|100,120 lev|:']"
 print tmp['time|i0 lat|60 lon|100,120 lev|:']
 print ""
 
+# Suppose you need to set some of the values programmatically using variables that
+# have been defined in your code. Although you cannot directly introduce variables into
+# the specification string, you can use Python's string formatting syntax to put the values
+# in the correct location in the string. For instance, suppose you have variables minlon
+# and maxlon that you want to insert into the previous example. Here is one way: 
+
+print "minlon = 100"
+minlon = 100
+print "maxlon = 120"
+maxlon = 120        
+print "tmp['time|i0 lat|60 lon|%f,%f lev|:' % (minlon,maxlon)]"
+print tmp['time|i0 lat|60 lon|%f,%f lev|:' % (minlon,maxlon)]
 
 # Interpolate the level values from 0 to 100000 in steps of 10000.
 # Use 'k' as a short form multiplier of 1000.
@@ -73,6 +85,12 @@ print ""
 
 print "tmp['time|i0 lat|60 lon|100,120 lev|0:100k:10ki']"
 print tmp['time|i0 lat|60 lon|100,120 lev|0:100k:10ki']
+print ""
+
+# Same as above, but reverse the level axis 
+
+print "tmp['time|i0 lat|60 lon|100,120 lev|100k:0:-10ki']"
+print tmp['time|i0 lat|60 lon|100,120 lev|100k:0:-10ki']
 print ""
 
 # Interpolate the level values from 0 to 120000 in steps of 10000.

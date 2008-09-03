@@ -1,4 +1,4 @@
-"""
+'''
 PyNIO enables NetCDF-like access for
 NetCDF (rw), HDF (rw), HDFEOS (r)(optional), GRIB (r), and CCM (r) data files.
 
@@ -56,7 +56,7 @@ For more detailed information:
 For complete documentation see:
 
         http://www.pyngl.ucar.edu/Nio.html
-"""
+'''
 
 from nio import *
 from nio import _C_API
@@ -158,10 +158,10 @@ _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash_
 
 _localatts = ['attributes','_obj','variables','file','varname', \
               'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
-              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable']    
+              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'assign_value', 'get_value']    
 
 class _Proxy(object):
-    """ base class for all proxies """
+    ''' base class for all proxies '''
 
 
     def __init__(self, obj):
@@ -227,12 +227,7 @@ def _proxy(obj, *specials, **regulars):
     instance = cls(obj)
     return instance
 
-    
-def __getitem__(self, xsel):
-    """ Return data specified by the extended selection object xsel.
-        If there is a fill value return a masked array; otherwise an ndarray
-    """
-    ret = get_variable(self.file, self.varname, xsel)
+def _fill_value_to_masked(self, a):
 
     #
     # _FillValue is the preferred fill value attribute but if it is not set
@@ -240,7 +235,7 @@ def __getitem__(self, xsel):
     #
     if self.file.ma_mode == 'maskednever':
         # MaskedNever -- just return a numpy array
-        return ret
+         return a
     elif self.file.ma_mode == 'maskedexplicit':
 	# handle user-specified masking -- first ranges, then explicit single values
         # note that masked_where does not remove previously applied mask values 
@@ -249,62 +244,87 @@ def __getitem__(self, xsel):
 	if self.file.mask_below_value is not None and self.file.mask_above_value is not None:
             if self.file.mask_below_value > self.file.mask_above_value: 
                 # mask a band of values
-                ret = ma.masked_where((ret < self.file.mask_below_value) & (ret > self.file.mask_above_value),ret,copy=0)
+                a = ma.masked_where((a < self.file.mask_below_value) & (a > self.file.mask_above_value),a,copy=0)
             else:
                 # mask high and low values                    
-                ret = ma.masked_where((ret < self.file.mask_below_value) | (ret > self.file.mask_above_value),ret,copy=0)
+                a = ma.masked_where((a < self.file.mask_below_value) | (a > self.file.mask_above_value),a,copy=0)
         elif self.file.mask_below_value is not None:
             # mask low values
-            ret = ma.masked_where(ret < self.file.mask_below_value,ret,copy=0)
+            a = ma.masked_where(a < self.file.mask_below_value,a,copy=0)
         elif self.file.mask_above_value is not None:
             # mask high values
-            ret = ma.masked_where(ret > self.file.mask_above_value,ret,copy=0)
+            a = ma.masked_where(a > self.file.mask_above_value,a,copy=0)
 
 	# now apply single fill values
         if hasattr(self.file.explicit_fill_values,'__iter__'):
             # multiple explicit fill values
             for fval in self.file.explicit_fill_values:
-                ret = ma.masked_where(ret == fval,ret,copy=0)
-            ret.set_fill_value(self.file.explicit_fill_values[0])
+                a = ma.masked_where(a == fval,a,copy=0)
+            a.set_fill_value(self.file.explicit_fill_values[0])
         elif self.file.explicit_fill_values is not None:
-            ret = ma.masked_where(ret == self.file.explicit_fill_values,ret,copy=0)
-            ret.set_fill_value(self.file.explicit_fill_values)
+            a = ma.masked_where(a == self.file.explicit_fill_values,a,copy=0)
+            a.set_fill_value(self.file.explicit_fill_values)
 
     elif self.file.ma_mode == 'maskediffillattandvalue':
         # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
         if self.__dict__.has_key('_FillValue'):
-            if ret.__contains__(self.__dict__['_FillValue']):
-                ret = ma.masked_where(ret == self.__dict__['_FillValue'],ret,copy=0)
-                ret.set_fill_value(self.__dict__['_FillValue'])
+            if a.__contains__(self.__dict__['_FillValue']):
+                a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
+                a.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
-            if ret.__contains__(self.__dict__['missing_value']):
-                ret = ma.masked_where(ret == self.__dict__['missing_value'],ret,copy=0)
-                ret.set_fill_value(self.__dict__['missing_value'])
+            if a.__contains__(self.__dict__['missing_value']):
+                a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
+                a.set_fill_value(self.__dict__['missing_value'])
     else: 
         # Handles MaskedIfFillAtt and MaskedAlways
         if self.__dict__.has_key('_FillValue'):
-            ret = ma.masked_where(ret == self.__dict__['_FillValue'],ret,copy=0)
-            ret.set_fill_value(self.__dict__['_FillValue'])
+            a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
+            a.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
-            ret = ma.masked_where(ret == self.__dict__['missing_value'],ret,copy=0)
-            ret.set_fill_value(self.__dict__['missing_value'])
+            a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
+            a.set_fill_value(self.__dict__['missing_value'])
         elif self.file.ma_mode == 'maskedalways':
             # supply a mask of all False, but just allow the fill_value to default
-            mask = np.zeros(ret.shape,dtype='?')
-            ret = ma.array(ret,mask=mask)
+            mask = np.zeros(a.shape,dtype='?')
+            a = ma.array(a,mask=mask,copy=False) 
+
+    return a
+   
+def __getitem__(self, xsel):
+    ''' 
+Return data as specified by selection object xsel from an NioVariable. 
+Depending on the setting of option MaskedArrayMode and the presence of 
+a fill value attribute and/or fill values in the data, the return value will
+be a MaskedArray or a normal NumPy array.
+    '''
+
+    ret = get_variable(self.file, self.varname, xsel)
+
+    ret = _fill_value_to_masked(self,ret)
 
     return ret
 
+def get_value(self):
+    '''
+Retrieve the value of a variable in the file.
 
-def __setitem__(self, xsel,value):
-    """ Set data into file variable with subscripts specified by the extended selection object xsel.
-       If the value is a masked array fill it using the file variable fill value if it exists; 
-       otherwise use the masked array fill value.
-    """
+v = f.variables['varname']
+val = v.get_value()
 
+'val' is returned as a NumPy array or a MaskedArray depending on the value
+of option MaskedArrayMode. This method is the only way to retrieve the value
+of a scalar variable in a file. For array variables basic or extended selection
+syntax is more flexible.
+    '''
+    
+    ret  = self._obj.get_value()
+    ret = _fill_value_to_masked(self,ret)
+
+    return ret
+
+def _masked_to_fill_value(self,value):
     fill_value = None
     add_fill_value_att = False
-    xsel = inp2xsel(self.file, self.varname, xsel)
 
     if ma.isMaskedArray(value):
         #
@@ -317,10 +337,10 @@ def __setitem__(self, xsel,value):
         # Otherwise use the type of the numpy array value
         #
         if self.__dict__.has_key('_FillValue'):
-            fval = self.__dict__['_FillValue'][0]
+            fval = self.__dict__['_FillValue']
             fill_value = np.array(fval,dtype=fval.dtype)
         elif self.__dict__.has_key('missing_value'):
-            fval = self.__dict__['missing_value'][0]
+            fval = self.__dict__['missing_value']
             fill_value = np.array(fval,dtype=fval.dtype)
         elif _is_new_ma:
             fill_value = np.array(value.fill_value,dtype=value.dtype)
@@ -330,6 +350,22 @@ def __setitem__(self, xsel,value):
             add_fill_value_att = True
         value = value.filled(fill_value)
 
+    if add_fill_value_att:
+        setattr(self._obj,'_FillValue',fill_value)
+
+    return value
+
+def __setitem__(self, xsel, value):
+    ''' 
+Assign elements of value to file variable with subscripts specified by the 
+selection object xsel. If the value is a masked array fill it using the file 
+variable fill value if it exists; otherwise use the masked array fill value.
+    '''
+
+    xsel = inp2xsel(self.file, self.varname, xsel)
+
+    value = _masked_to_fill_value(self,value)
+
     if not isinstance(xsel, xSelect) or xsel.isbasic:
         self._obj[xsel] = value
     else:
@@ -338,16 +374,47 @@ def __setitem__(self, xsel,value):
         ret = self._obj[bb]
         ret[rsel] = value
 
-    if add_fill_value_att:
-        setattr(self._obj,'_FillValue',fill_value)
     return
 
-def _create_variable(self,name,type,dimensions):
-    """create variable and store a reference"""
+def assign_value(self,value):
+    '''
+Assign a value to a variable in the file.
+
+v = f.variables['varname']
+v.assign_value(value)
+value - a NumPy array, a MaskedArray, or a Python sequence of values 
+that are coercible to the type of variable 'v'.
+
+This method is the only way to assign to a scalar variable in the file. 
+For array variables basic or extended selection syntax is more flexible.
+    '''
+
+    value = _masked_to_fill_value(self,value)
+    self._obj.assign_value(value)
+
+    return
+
+def create_variable(self,name,type,dimensions):
+    '''
+Create a new variable with given name, type, and dimensions in a writable file.
+
+f.create_variable(name,type,dimensions)
+name -- a string specifying the variable name.
+type -- a type identifier. The following are currently supported:
+    'd' -- 64 bit real
+    'f' -- 32 bit real
+    'l','i' -- 32 bit integer
+    'h' -- 16 bit integer
+    'b' -- 8 bit integer
+    'S1','c' -- character
+dimensions -- a tuple of dimension names (strings), previously defined
+    '''
+
     #print 'in create variable'
     v = self._obj.create_variable(name,type,dimensions)
     if not v is None:
-        vp  = _proxy(v,'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+        vp  = _proxy(v,'str','len',
+                     __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
         vp.file = self
         vp.varname = name
         vp.cf_dimensions = vp.dimensions
@@ -430,7 +497,7 @@ def _get_option_value(options,option_defaults,name):
         return None
 
 def set_option(self,option,value):
-    """
+    '''
     Set certain options for an open NioFile instance.
     The option name is specified as a string
     Options that can be set include:
@@ -454,7 +521,7 @@ def set_option(self,option,value):
     MaskAboveValue -- A scalar value all values greater than which are masked. However, if
         MaskBelowValue is greater than MaskAboveValue, a range of of values become masked.
         Setting this option causes MaskedArrayMode to be set to 'MaskedExplicit'.
-    """
+    '''
     valid_opts = {'maskedarraymode':'ma_mode', 'explicitfillvalues':'explicit_fill_values',
                   'maskbelowvalue' : 'mask_below_value', 'maskabovevalue' : 'mask_above_value' }
     if hasattr(option,'lower'):
@@ -475,7 +542,7 @@ def set_option(self,option,value):
     return setattr(self,valid_opts[loption],lvalue)
 
 def open_file(filename, mode = 'r', options=None, history='', format=''):
-    """
+    '''
 Open a file containing data in a supported format for reading and/or writing.
 
 f = Nio.open_file(filepath, mode='r',options=None, history='', format='')
@@ -494,14 +561,16 @@ mode -- access mode (optional):
      'r' -- open an existing file for reading
      'w','r+','rw','a' -- open an existing file for modification
      'c' -- create a new file open for writing
-options -- instance of NioOptions class used to specify format-specific options.
+options -- instance of NioOptions class used to specify generic or 
+format-specific options.
 history -- a string specifying text to be appended to the file's global
 attribute. The attribute is created if it does not exist. Only valid
-if the file is open for writing.
+if the file is opened for writing.
 format -- a string specifying the expected format. Valid strings are the
 same as the extensions listed above without the initial period (.). 
+
 Returns an NioFile object.
-    """
+    '''
 
     ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
     use_axis_att = _get_axis_att(options,_Nio.option_defaults)
@@ -511,7 +580,7 @@ Returns an NioFile object.
 
     file = _Nio.open_file(filename,mode,options,history,format)
 
-    file_proxy = _proxy(file, 'str', create_variable=_create_variable)
+    file_proxy = _proxy(file, 'str', create_variable=create_variable)
     setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
     if not (explicit_fill_values is None and mask_below_value is None and mask_above_value is None):
@@ -542,7 +611,8 @@ Returns an NioFile object.
 
     variable_proxies = {}
     for var in file.variables.keys():
-        vp  = _proxy(file.variables[var],'str','len',__setitem__=__setitem__,__getitem__=__getitem__)
+        vp  = _proxy(file.variables[var],'str','len',
+                     __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
         vp.file = file_proxy
         vp.varname = var
         variable_proxies[var] = vp
@@ -576,12 +646,12 @@ def _get_cf_dims(file):
     return ret
             
 def options():
-    """
+    '''
 Return an NioOptions object for specifying format-specific options.
 opt = Nio.options()
 Assign 'opt' as the third (optional) argument to Nio.open_file.
 print opt.__doc__ to see valid options.
-    """
+    '''
     opt = _Nio.options()
     return opt
 
