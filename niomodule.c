@@ -2172,7 +2172,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  int single_el_dim_count = 0;
 		  /* 
 		   * Use numpy semantics.
-		   * Numpy allows single element 'slow' dimensions to be discarded on assignmen
+		   * Numpy allows single element 'slow' dimensions to be discarded on assignment
 		   */
 		  for (i = 0; i < array->nd; i++) {
 			  if (array->dimensions[i] == 1)
@@ -2268,7 +2268,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  while (var_dim < n_dims && dims[var_dim] == 1)
 		  var_dim++;
 	  for ( ; i < array->nd; ) {
-		  array_el_count *= array->dimensions[i];
 		  if (array->dimensions[i] != dims[var_dim]) {
 			  if (dims[var_dim] == 1) {
 				  var_dim++;
@@ -2283,6 +2282,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  ret = -1;
 			  goto err_ret;
 		  }
+		  array_el_count *= array->dimensions[i];
 		  var_dim++;
 		  i++;
 	  }
