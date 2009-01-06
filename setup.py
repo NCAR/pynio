@@ -57,8 +57,11 @@ import os, sys
 
 try:
   ncarg_root = os.environ["NCARG_ROOT"]
-  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
-  INC_DIRS   = [os.path.join(ncarg_root,'include'),'include']
+#  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
+#  INC_DIRS   = [os.path.join(ncarg_root,'include'),'include']
+  LIB_DIRS   = ['libsrc']
+  INC_DIRS   = ['libsrc']
+
 except:
   print "NCARG_ROOT is not set; can't continue!"
   sys.exit()
@@ -215,7 +218,7 @@ if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
 pynio_pkg_name = 'PyNIO'
 pynio_pth_file = [pynio_pkg_name + '.pth']
-DMACROS        =  [ ('NeedFuncProto','1') ]
+DMACROS        =  [ ('NeedFuncProto','1'), ('NIO_LIB_ONLY', '1') ]
 
 INC_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
 

@@ -2060,7 +2060,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   Py_ssize_t nitems,var_el_count;
   int error = 0;
   int ret = 0;
-  int dir;
+  int dir, *dirs;
   NrmQuark qtype;
   int scalar_size = 1;
   NclFile nfile = (NclFile) self->file->id;
@@ -2079,11 +2079,14 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
     free(indices);
     return -1;
   }
-  if (self->nd == 0)
+  if (self->nd == 0) {
     dims = NULL;
+    dirs = NULL;
+  }
   else {
     dims = (int *)malloc(self->nd*sizeof(int));
-    if (dims == NULL) {
+    dirs = (int *)malloc(self->nd*sizeof(int));
+    if (dims == NULL || dirs == NULL) {
       free(indices);
       PyErr_SetString(PyExc_MemoryError, "out of memory");
       return -1;
@@ -2135,6 +2138,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
 	  if (indices[i].item == 0) {
 		  dims[n_dims] = (int)((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
+		  dirs[n_dims] = dir;
 		  if (dims[n_dims] < 0) 
 			  dims[n_dims] = 0;
 		  if (i != undefined_dim) 
@@ -2217,12 +2221,8 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  }
 	  }
 	  for (i = 0; i < n_dims; i++) {
-		  if (i == undefined_dim) {
+		  if (i == undefined_dim || dims[i] > 1) {
 			  fdims[fdim_count] = i;
-			  fdim_count++;
-		  }
-		  else if (dims[i] > 1) {
-			  fdims[fdim_count] = i;;
 			  fdim_count++;
 		  }
 	  }
@@ -2232,7 +2232,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  if (dims[fdims[i]] == array->dimensions[adims[i]])
 				  continue;
 			  if (fdims[i] == undefined_dim) {
-				  if (dir == 1) {
+				  if (dirs[fdims[i]] == 1) {
 					  indices[fdims[i]].stop = indices[fdims[i]].start + (array->dimensions[adims[i]] - 1) * indices[fdims[i]].stride;
 					  var_el_count *= array->dimensions[adims[i]];
 					  undef_size = array->dimensions[adims[i]];
@@ -2305,8 +2305,16 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
   }
 
-  if (nitems < var_el_count || self->unlimited || dir == -1)
+  if (nitems < var_el_count || self->unlimited)
 	  select_all = 0;
+  if (dirs != NULL) {
+	  for (i = 0; i < n_dims; i++) {
+		  if (dirs[i] == -1) {
+			  select_all = 0;
+			  break;
+		  }
+	  }
+  }
   qtype = nio_type_from_code(array->descr->type);
 
   if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
@@ -2365,6 +2373,8 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   (void) NioVariable_GetShape(self);
   if (dims != NULL)
 	  free(dims);
+  if (dirs != NULL)
+	  free(dirs);
   if (indices != NULL)
 	  free(indices);
   return ret;
