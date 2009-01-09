@@ -158,7 +158,7 @@ class _Proxy(object):
 
 
     def __init__(self, obj):
-        super(_Proxy, self).__init__(obj)
+        super(_Proxy, self).__init__()
         super(_Proxy,self).__setattr__('_obj', obj)
         super(_Proxy,self).__setattr__('attributes',{})
         for key in obj.__dict__.keys():
