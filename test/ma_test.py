@@ -1,5 +1,6 @@
-from numpy.testing import *
-#import mfio as Nio
+import unittest as ut
+from numpy.testing import assert_equal
+
 import Nio
 import numpy as N
 from numpy import ma
@@ -69,13 +70,13 @@ def do_setup(filename):
     f.variables['lat'][:] = N.sin(0.1)*xc[N.newaxis,:] + N.cos(0.1)*yc[:,N.newaxis]
     f.close()
 
-class test_masked_default(NumpyTestCase):
+class test_masked_default(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file'
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_masked_default(self):
+    def test_masked_default(self):
         file = self.f
 
         #if verbose: print file
@@ -83,11 +84,11 @@ class test_masked_default(NumpyTestCase):
 	v = file.variables['PT']
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
-	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
+	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
 	if verbose: print vm[0]
         file.close()
 
-class test_masked_if_fill_att(NumpyTestCase):
+class test_masked_if_fill_att(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file'
         do_setup(filename)
@@ -95,7 +96,7 @@ class test_masked_if_fill_att(NumpyTestCase):
         opt.MaskedArrayMode = 'MaskedIfFillAtt'
         self.f = Nio.open_file(filename,options=opt)
 
-    def check_masked_if_fill_att(self):
+    def test_masked_if_fill_att(self):
         file = self.f
 
         #if verbose: print file
@@ -109,12 +110,12 @@ class test_masked_if_fill_att(NumpyTestCase):
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
 	assert_equal(ma.isMaskedArray(vm),True)
-	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
+	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
 	if verbose: print type(vm),vm[0].__repr__()
         file.close()
 
 
-class test_masked_always(NumpyTestCase):
+class test_masked_always(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
@@ -122,7 +123,7 @@ class test_masked_always(NumpyTestCase):
         opt.MaskedArrayMode = 'MaskedAlways'
         self.f = Nio.open_file(filename,options=opt)
 
-    def check_masked_always(self):
+    def test_masked_always(self):
         file = self.f
 
         #if verbose: print file
@@ -130,18 +131,18 @@ class test_masked_always(NumpyTestCase):
 	v = file.variables['lat']
 	assert_equal(hasattr(v,'_FillValue'),False)
 	vm = v[:]
-	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
+	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
 	if verbose: print vm[1].__repr__
         file.close()
 
-class test_masked_never(NumpyTestCase):
+class test_masked_never(ut.TestCase):
     def setUp(self):
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedNever'
         self.f = Nio.open_file(filename,options=opt)
 
-    def check_masked_never(self):
+    def test_masked_never(self):
         file = self.f
 
         #if verbose: print file
@@ -153,14 +154,14 @@ class test_masked_never(NumpyTestCase):
 	assert_equal(ma.isMaskedArray(vm),False)
         file.close()
 	
-class test_masked_if_att_and_val(NumpyTestCase):
+class test_masked_if_att_and_val(ut.TestCase):
     def setUp(self):
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedIfFillAttAndValue'
         self.f = Nio.open_file(filename,options=opt)
 
-    def check_masked_if_att_and_val(self):
+    def test_masked_if_att_and_val(self):
         file = self.f
 
         #if verbose: print file
@@ -170,20 +171,20 @@ class test_masked_if_att_and_val(NumpyTestCase):
 	vm = v[0,3:5,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),True)
-	assert_equal(N.array(vm._fill_value,dtype='f'),N.array(1e20,dtype='f'))
+	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
 	vm = v[0,4:6,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),False)
         file.close()
 
-class test_masked_explicit(NumpyTestCase):
+class test_masked_explicit(ut.TestCase):
     def setUp(self):
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedExplicit'
         self.f = Nio.open_file(filename,options = opt)
 
-    def check_masked_explict(self):
+    def test_masked_explicit(self):
         file = self.f
 
         #if verbose: print file
@@ -217,6 +218,5 @@ class test_masked_explicit(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().test(level=11, all=False)
-    #NumpyTest().test(testcase_pattern='test_nocrd')
-    if os.path.exists(filename): os.remove(filename)
+     ut.main()
+     if os.path.exists(filename): os.remove(filename)

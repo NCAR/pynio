@@ -1,5 +1,6 @@
-from numpy.testing import *
-#import mfio as Nio
+import unittest as ut
+from numpy.testing import assert_equal
+
 import Nio
 import numpy as N
 from numpy import ma
@@ -72,13 +73,13 @@ def do_setup(filename):
     f.variables['lat'][:] = N.sin(0.1)*xc[N.newaxis,:] + N.cos(0.1)*yc[:,N.newaxis]
     f.close()
 
-class test_sub_1_assign(NumpyTestCase):
+class test_sub_1_assign(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_sub_1_assign(self):
+    def test_sub_1_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -89,13 +90,13 @@ class test_sub_1_assign(NumpyTestCase):
         file.close()
 	
 
-class test_sub_2_assign(NumpyTestCase):
+class test_sub_2_assign(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_test_sub_2_assign(self):
+    def test_test_sub_2_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -105,13 +106,13 @@ class test_sub_2_assign(NumpyTestCase):
 	v[0,1:4,4,:] = vm[3:6,:]
         file.close()
 
-class test_sub_3_assign(NumpyTestCase):
+class test_sub_3_assign(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_test_sub_3_assign(self):
+    def test_test_sub_3_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -122,13 +123,13 @@ class test_sub_3_assign(NumpyTestCase):
 	v[0,1:4,4,:] = vm[:,:,3:6,9,:]
         file.close()
 
-class test_sub_4_assign(NumpyTestCase):
+class test_sub_4_assign(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
-    def check_test_sub_4_assign(self):
+    def test_test_sub_4_assign(self):
         file = self.f
 
         #if verbose: print file
@@ -142,6 +143,5 @@ class test_sub_4_assign(NumpyTestCase):
 	
 
 if __name__ == "__main__":
-    NumpyTest().test(level=11, all=False)
-    #NumpyTest().test(testcase_pattern='test_nocrd')
+    ut.main()
     if os.path.exists(filename): os.remove(filename)

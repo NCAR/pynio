@@ -1,5 +1,6 @@
-from numpy.testing import *
-#import mfio as Nio
+import unittest as ut
+from numpy.testing import assert_equal
+
 import Nio
 import numpy as N
 import os
@@ -95,13 +96,13 @@ def do_setup_nocrd(filename):
     f.close()
 
 
-class test_basic(NumpyTestCase):
+class test_basic(ut.TestCase):
     def setUp(self):
         print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_basic(self):
+    def test_basic(self):
         file = self.f
 
         # check inp2xsel
@@ -133,12 +134,12 @@ class test_basic(NumpyTestCase):
         file.close()
 
 
-class test_scalar(NumpyTestCase):
+class test_scalar(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_scalar(self):
+    def test_scalar(self):
         file = self.f
 
         xc_orig = file.variables['xc'][:]
@@ -159,12 +160,12 @@ class test_scalar(NumpyTestCase):
         file.close()
 
 
-class test_slice(NumpyTestCase):
+class test_slice(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_slice(self):
+    def test_slice(self):
         file = self.f
 
         xc_orig = file.variables['xc'][:]
@@ -191,12 +192,12 @@ class test_slice(NumpyTestCase):
         file.close()
 
 
-class test_vector(NumpyTestCase):
+class test_vector(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_vector(self):
+    def test_vector(self):
         file = self.f
 
         xc_orig = file.variables['xc'][:]
@@ -221,12 +222,12 @@ class test_vector(NumpyTestCase):
         file.close()
 
 
-class test_extended(NumpyTestCase):
+class test_extended(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_extended(self):
+    def test_extended(self):
         file = self.f
 
         # basic case
@@ -251,14 +252,14 @@ class test_extended(NumpyTestCase):
         file.close()
 
 
-class test_cf_extended(NumpyTestCase):
+class test_cf_extended(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         opt = Nio.options()
 	opt.UseAxisAttribute = True
         self.f = Nio.open_file(filename, options = opt)
 
-    def check_cf_extended(self):
+    def test_cf_extended(self):
         file = self.f
 
         # basic case
@@ -283,12 +284,12 @@ class test_cf_extended(NumpyTestCase):
         file.close()
 
 
-class test_old(NumpyTestCase):
+class test_old(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_old(self): 
+    def test_old(self): 
         file = self.f
         var = file.variables['PT']
 
@@ -332,12 +333,12 @@ class test_old(NumpyTestCase):
         file.close()
 
 
-class test_lonlat(NumpyTestCase):
+class test_lonlat(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_lonlat(self):
+    def test_lonlat(self):
         file = self.f
         var = file.variables['PT']
 
@@ -358,13 +359,13 @@ class test_lonlat(NumpyTestCase):
         file.close()
 
 
-class test_nocrd(NumpyTestCase):
+class test_nocrd(ut.TestCase):
     def setUp(self):
         #filename = 'dat/test_nocrd.nc'
         do_setup_nocrd(filename)
         self.f = Nio.open_file(filename)
 
-    def check_nocrd(self):
+    def test_nocrd(self):
         file = self.f
         var = file.variables['PT']
 
@@ -388,12 +389,12 @@ class test_nocrd(NumpyTestCase):
         file.close()
 
 
-class test_topo(NumpyTestCase):
+class test_topo(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
-    def check_topo(self):
+    def test_topo(self):
         file = self.f
 
         # basic case
@@ -405,7 +406,7 @@ class test_topo(NumpyTestCase):
 
         for (cstr, res) in zip(cstr_list, results):
             if verbose: print cstr
-            print "in check_topo"
+            print "in test_topo"
             xsel = Nio.inp2xsel(file, 'PT', cstr)
             pt = file.variables['PT'][cstr]
             #pt = file.variables['ZP'][:]
@@ -424,8 +425,6 @@ class test_topo(NumpyTestCase):
 
 
 if __name__ == "__main__":
-    NumpyTest().test(level=11,all=False)
-    #NumpyTest().run()
-    #NumpyTest().test(testcase_pattern='test_nocrd')
-    if os.path.exists(filename): os.remove(filename)
+     ut.main()
+     if os.path.exists(filename): os.remove(filename)
 

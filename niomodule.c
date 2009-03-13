@@ -2476,9 +2476,14 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
     if (PySlice_Check(index)) {
+	    Py_ssize_t slicelen;
 	    PySliceObject *slice = (PySliceObject *)index;
-	    PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
-			       &indices->start, &indices->stop, &indices->stride);
+	    if (PySlice_GetIndicesEx((PySliceObject *)index, self->dimensions[0],
+				   &indices->start, &indices->stop, &indices->stride, &slicelen) < 0) {
+	        PyErr_SetString(PyExc_TypeError, "error in subscript");
+	        free(indices);
+	        return NULL;
+	    }
 	    if (slice->start == Py_None)
 		    indices->no_start = 1;
 	    if (slice->stop == Py_None)
@@ -2501,10 +2506,15 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
 	    d++;
 	  }
 	  else if (PySlice_Check(subscript)) {
+	    Py_ssize_t slicelen;
 	    PySliceObject *slice = (PySliceObject *)subscript;
-	    PySlice_GetIndices((PySliceObject *)subscript, self->dimensions[d],
+	    if (PySlice_GetIndicesEx((PySliceObject *)subscript, self->dimensions[d],
 			       &indices[d].start, &indices[d].stop,
-			       &indices[d].stride);
+			       &indices[d].stride, &slicelen) < 0) {
+	        PyErr_SetString(PyExc_TypeError, "error in subscript");
+	        free(indices);
+	        return NULL;
+	    }
 	    if (slice->start == Py_None)
 		    indices[d].no_start = 1;
 	    if (slice->stop == Py_None)
@@ -2596,9 +2606,14 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
     if (PySlice_Check(index)) {
+	    Py_ssize_t slicelen;
 	    PySliceObject *slice = (PySliceObject *)index;
-	    PySlice_GetIndices((PySliceObject *)index, self->dimensions[0],
-			       &indices->start, &indices->stop, &indices->stride);
+	    if (PySlice_GetIndicesEx((PySliceObject *)index, self->dimensions[0],
+				   &indices->start, &indices->stop, &indices->stride, &slicelen) < 0) {
+	        PyErr_SetString(PyExc_TypeError, "error in subscript");
+	        free(indices);
+	        return -1;
+	    }
 	    if (slice->start == Py_None)
 		    indices->no_start = 1;
 	    if (slice->stop == Py_None)
@@ -2620,10 +2635,15 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	    d++;
 	  }
 	  else if (PySlice_Check(subscript)) {
+	    Py_ssize_t slicelen;
 	    PySliceObject *slice = (PySliceObject *)subscript;
-	    PySlice_GetIndices((PySliceObject *)subscript, self->dimensions[d],
-			       &indices[d].start, &indices[d].stop,
-			       &indices[d].stride);
+	    if (PySlice_GetIndicesEx((PySliceObject *)subscript, self->dimensions[d],
+				   &indices[d].start, &indices[d].stop,
+				   &indices[d].stride, &slicelen) < 0) {
+	        PyErr_SetString(PyExc_TypeError, "error in subscript");
+	        free(indices);
+	        return -1;
+	    }
 	    if (slice->start == Py_None)
 		    indices[d].no_start = 1;
 	    if (slice->stop == Py_None)
