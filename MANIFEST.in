@@ -1,4 +1,4 @@
-include PyNIO.pth
+include Nio.pth
 include setup.py
 include README
 include INSTALL
