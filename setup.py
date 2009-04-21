@@ -136,6 +136,11 @@ try:
 except:
   pass
 
+try:
+  EXTRA_OBJECTS = [os.environ["EXTRA_OBJECTS"]]
+except:
+  EXTRA_OBJECTS = ""
+
 #
 # Done with environment variables.
 #
@@ -251,6 +256,7 @@ module1 = [Extension('nio',
                     include_dirs  = INC_DIRS,
                     libraries     = LIBRARIES,
                     library_dirs  = LIB_DIRS,
+                    extra_objects = EXTRA_OBJECTS,
                     sources       = ['niomodule.c']
                     )]
 
