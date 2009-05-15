@@ -159,92 +159,10 @@ IOOBJS          =       $(IO_OBJS)
 
 LibraryTarget($(MYLIB_IO),$(IOOBJS))
 
-BuildIncludes($(INSTALL_HDRS),ncarg/ncl,../..)
-InstallTarget($(INSTALL_HDRS),$(INSTALL_INC),$(NCLINCPATH))
-
-#ifndef ConditionalInstallTarget
-#define ConditionalInstallTarget(names, mode, dest_prefix,dest)\
-all::]\
-]\
-all-local:: names]\
-]\
-install-local:: names]\
-	@if (test -d dest_prefix); then \ ]\
-	(if (test ! -d dest); then ($(MKDIRHIER) $(PYNIO_SRC_DIR)/include); fi; \ ]\
-	echo "installing headers to $(PYNIO_SRC_DIR)"; \ ]\
-        for name in names; do \ ]\
-        (echo "Installing $$name";\ ]\
-        $(INSTALL) -m mode $$name dest); \ ]\
-        done;) \ ]\
-	fi
-#endif  /* ConditionalInstallTarget */
-
-ConditionalInstallTarget($(NIO_NCL_INCLUDES),$(INSTALL_INC),$(PYNIO_SRC_DIR),$(PYNIO_SRC_DIR)/include)
-
 includes:: $(HDRS)
 depend-local:: $(SRCS)
 DependTarget($(SRCS))
 
-CleanFilesTarget($(GEN_HDRS) $(GEN_SRCS))
-
-TypeSupport.h: TypeSupport.h.sed TypeSupportMatTemplate.h.sed TypeSupportOpTemplate.h.sed TypeSupportMonoOpTemplate.h.sed
-	@$(SHELL) type_support_h.sh
-
-TypeSupport.c: TypeSupport.c.sed TypeSupportMatTemplate.c.sed TypeSupportOpTemplate.c.sed TypeSupportMonoOpTemplate.c.sed
-	@$(SHELL) type_support_c.sh
-
-NclMultiDValData.c: NclMultiDValData.c.sed MultiDValOp.c.sed NclMultiDValData.h math_funcs.sh MatMulDValOp.c.sed
-	@$(SHELL) multid_data_c.sh
-#
-# Data Object dependancies
-#
-
-#define	NclTypeRule_h(type)\
-]\
-NclType##type.h:	data_h.sh NclType.h.sed]\
-	@$(SHELL) data_h.sh type]
-
-#define NclTypeRule_c(type,xtra_dep)\
-]\
-NclType##type.c:	type##_data_c.sh op_funcs.sh NclType##type.c.specific xtra_dep]\
-	@$(SHELL) type##_data_c.sh]
-
-#define NclTypeRule(type,xtra_dep)\
-NclTypeRule_h(type)\
-NclTypeRule_c(type,xtra_dep)
-
-NUM_OP_TMPL	=	TypeDivOpTemplate.c.sed \
-			TypeFunctionOpTemplate.c.sed \
-			TypeMatMulOpTemplate.c.sed \
-			TypeIsMonoFunc.c.sed \
-			TypeMonoOpTemplate.c.sed \
-			TypeResetMissing.c.sed \
-			TypeSelectOpTemplate.c.sed \
-			TypeSimpleOpTemplate.c.sed \
-			TypeXorOpTemplate.c.sed \
-			TypeInitClassTemplate.c.sed \
-			NclType.c.sed \
-			NclType.h.sed
-
-STR_OP_TMPL	=	TypestringCompareOpTemplate.c.sed \
-			TypestringSelectOpTemplate.c.sed \
-			TypeInitClassTemplate.c.sed \
-			NclTypestring.c.sed
-
-FILE_OP_TMPL	=	NclMultiDValData.c.sed MultiDValOp.c.sed 
-
-
-NclTypeRule(double,$(NUM_OP_TMPL))
-NclTypeRule(float,$(NUM_OP_TMPL))
-NclTypeRule(int,$(NUM_OP_TMPL))
-NclTypeRule(long,$(NUM_OP_TMPL))
-NclTypeRule(short,$(NUM_OP_TMPL))
-NclTypeRule(logical,$(NUM_OP_TMPL))
-NclTypeRule(string,$(STR_OP_TMPL))
-NclTypeRule(obj,$(NUM_OP_TMPL))
-NclTypeRule(char,$(NUM_OP_TMPL))
-
-NclTypeRule(byte,$(NUM_OP_TMPL))
 
 
 #
