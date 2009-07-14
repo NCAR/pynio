@@ -1139,7 +1139,7 @@ NioFileObject_close(NioFileObject *self, PyObject *args)
   char *history = NULL;
   if (!PyArg_ParseTuple(args, "|s", &history))
     return NULL;
-  if (history != NULL) {
+  if (history && strlen(history) > 0) {
 	  if (check_if_open(self,1)) {
 		  NioFile_AddHistoryLine(self, history);
 	  }
@@ -3196,6 +3196,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 		Py_DECREF(key);
 		Py_DECREF(value);
 	}
+	Py_DECREF(keys);
 }
 	
 /* Creator for NioFile objects */

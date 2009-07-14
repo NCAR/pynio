@@ -151,7 +151,9 @@ _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash_
 
 _localatts = ['attributes','_obj','variables','file','varname', \
               'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
-              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'assign_value', 'get_value']    
+              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'close', 'assign_value', 'get_value']    
+
+# The Proxy concept is adapted from Martelli, Ravenscroft, & Ascher, 'Python Cookbook' Second Edition, 6.6
 
 class _Proxy(object):
     ''' base class for all proxies '''
@@ -175,7 +177,7 @@ class _Proxy(object):
     def __setattr__(self, attrib, value):
         if attrib in _builtins:
             raise AttributeError, "Attempt to modify read only attribute"
-	elif attrib in _localatts:
+        elif attrib in _localatts:
             super(_Proxy,self).__setattr__(attrib,value)
         else:
             setattr(self._obj,attrib,value)
@@ -211,11 +213,10 @@ def _proxy(obj, *specials, **regulars):
             name = '__%s__' % name
             unbound_method = getattr(obj_cls, name)
             setattr(cls, name, _make_binder(unbound_method))
-        for key in regulars.keys():
-            setattr(cls, key, regulars[key])
-            
         # also cache it for the future
         _known_proxy_classes[key] = cls
+        for key in regulars.keys():
+            setattr(cls, key, regulars[key])
     # instantiate and return the needed proxy
     instance = cls(obj)
     return instance
@@ -230,11 +231,11 @@ def _fill_value_to_masked(self, a):
         # MaskedNever -- just return a numpy array
          return a
     elif self.file.ma_mode == 'maskedexplicit':
-	# handle user-specified masking -- first ranges, then explicit single values
+        # handle user-specified masking -- first ranges, then explicit single values
         # note that masked_where does not remove previously applied mask values 
         # so it can be applied in stages
 
-	if self.file.mask_below_value is not None and self.file.mask_above_value is not None:
+        if self.file.mask_below_value is not None and self.file.mask_above_value is not None:
             if self.file.mask_below_value > self.file.mask_above_value: 
                 # mask a band of values
                 a = ma.masked_where((a < self.file.mask_below_value) & (a > self.file.mask_above_value),a,copy=0)
@@ -248,7 +249,7 @@ def _fill_value_to_masked(self, a):
             # mask high values
             a = ma.masked_where(a > self.file.mask_above_value,a,copy=0)
 
-	# now apply single fill values
+        # now apply single fill values
         if hasattr(self.file.explicit_fill_values,'__iter__'):
             # multiple explicit fill values
             for fval in self.file.explicit_fill_values:
@@ -387,6 +388,28 @@ For array variables basic or extended selection syntax is more flexible.
 
     return
 
+def close(self,history=""):
+    '''
+Close a file, ensuring all modifications are up-to-date if open for writing.
+
+f.close([history])
+history -- optional string appended to the global 'history' attribute
+before closing a writable file. The attribute is created if it does not
+already exist.
+Read or write access attempts on the file object after closing
+raise an exception.
+    '''
+
+    self._obj.close(history)
+    # Delete the proxy variable and file references so that the objects can be freed.
+    # Note that the attributes cannot be deleted, but setting them to None accomplishes 
+    # the same objective.
+
+    self.variables = None
+    self.file = None
+
+    return
+
 def create_variable(self,name,type,dimensions):
     '''
 Create a new variable with given name, type, and dimensions in a writable file.
@@ -470,7 +493,7 @@ def _get_option_value(options,option_defaults,name):
     ''' Get an option value when the file is opened, considering 
         the default value and and any value set using  options keyword.
         The name must be one of the valid Python-level options and 
-	have a default value of None.
+        have a default value of None.
     '''
 
     if options is not None:
@@ -527,7 +550,7 @@ def set_option(self,option,value):
     if hasattr(value,'lower'):
         lvalue = value.lower()
     else:
-	lvalue = value
+        lvalue = value
     if loption == 'explicitfillvalues' or loption == 'maskbelowvalue' or loption == 'maskabovevalue':
         if lvalue is not None:
             setattr(self,'ma_mode','maskedexplicit')
@@ -573,7 +596,7 @@ Returns an NioFile object.
 
     file = _Nio.open_file(filename,mode,options,history,format)
 
-    file_proxy = _proxy(file, 'str', create_variable=create_variable)
+    file_proxy = _proxy(file, 'str', create_variable=create_variable,close=close)
     setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
     if not (explicit_fill_values is None and mask_below_value is None and mask_above_value is None):
