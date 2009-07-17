@@ -27,6 +27,16 @@ HDFEOS_OBJS = NclHDFEOS.o
 #define HDFEOSLIB
 #endif
 
+#ifdef BuildHDFEOS5
+HDFEOS5_DEFS = -DBuildHDFEOS5 $(HDF4_NETCDF)
+HDFEOS5_SRCS = NclHDFEOS5.c
+HDFEOS5_OBJS = NclHDFEOS5.o
+#else
+#define HDFEOS5_SRCS
+#define HDFEOS5_OBJS
+#define HDFEOS5LIB
+#endif
+
 #ifdef BuildGRIB2
 #if defined(IRIX64) || defined(x86_64)
 GRIB2_DEFS = -DBuildGRIB2 -D__64BIT__
@@ -44,14 +54,17 @@ GRIB2_OBJS = NclGRIB2.o
 NIO_DEFS = -DNIO_LIB_ONLY
 
 NGCALLF_DEF= -D"NGCALLF(reg,caps)=$(NGCALLF)"
+NGCALLF_DEF= 
 
-EXTRA_CDEFINES = $(OS1_DEF) $(MAJOR_DEF) $(NETCDF4_DEFS) $(HDFEOS_DEFS) $(GRIB2_DEFS) $(UDUNITS_DEFS) $(V5D_DEFS) $(NIO_DEFS) $(NGCALLF_DEF)
+EXTRA_CDEFINES = $(OS1_DEF) $(MAJOR_DEF) $(NETCDF4_DEFS) $(HDFEOS_DEFS) $(HDFEOS5_DEFS) $(GRIB2_DEFS) $(UDUNITS_DEFS) $(V5D_DEFS) $(NIO_DEFS) $(NGCALLF_DEF)
 HDRS		=	$(GEN_HDRS) $(STATIC_HDRS) $(INSTALL_HDRS) 
 
 GEN_HDRS	=	NclTypeobj.h NclTypelogical.h \
 			NclTypedouble.h NclTypefloat.h \
 			NclTypeint.h NclTypelong.h \
 			NclTypeshort.h NclTypestring.h \
+			NclTypeushort.h NclTypeuint.h NclTypeulong.h \
+			NclTypeint64.h NclTypeuint64.h \
 			NclTypebyte.h NclTypechar.h TypeSupport.h 
 
 STATIC_HDRS     =       ApiRecords.h AttSupport.h DataSupport.h FileSupport.h  \
@@ -77,7 +90,7 @@ STATIC_HDRS     =       ApiRecords.h AttSupport.h DataSupport.h FileSupport.h  \
                         ncep_reanal_gtb.h ncep_128_gtb.h ncep_129_gtb.h  ncep_130_gtb.h \
                         ncep_131_gtb.h  ncep_133_gtb.h  ncep_140_gtb.h  ncep_141_gtb.h jma_3_gtb.h
 
-INSTALL_HDRS	= defs.h NclVar.h \
+INSTALL_HDRS	= 	defs.h NclVar.h \
 			NclDataDefs.h \
 			NclFileInterfaces.h $(NIO_HDRS)
 
@@ -111,13 +124,15 @@ GEN_TYPE_SRCS	=	NclTypedouble.c NclTypefloat.c \
 			NclTypeint.c NclTypelogical.c \
 			NclTypelong.c NclTypeobj.c \
 			NclTypeshort.c NclTypestring.c \
+			NclTypeushort.c NclTypeuint.c NclTypeulong.c \
+			NclTypeint64.c NclTypeuint64.c \
 			NclTypebyte.c NclTypechar.c TypeSupport.c \
 			NclMultiDValData.c 
 
 GEN_SRCS        =       $(GEN_TYPE_SRCS)
 
 
-IOSRCS          =       $(IO_SRCS) $(GEN_TYPE_SRCS) $(STATIC_IO_SRCS) $(HDFEOS_SRCS) $(GRIB2_SRCS)
+IOSRCS          =       $(IO_SRCS) $(GEN_TYPE_SRCS) $(STATIC_IO_SRCS) $(HDFEOS_SRCS) $(HDFEOS5_SRCS) $(GRIB2_SRCS)
 
 
 FIO_SRCS        =       llmap.f llmisc.f
@@ -130,6 +145,8 @@ GEN_TYPE_OBJS	=	NclTypedouble.o NclTypefloat.o \
 			NclTypeint.o NclTypelogical.o \
 			NclTypelong.o NclTypeobj.o \
 			NclTypeshort.o NclTypestring.o \
+			NclTypeushort.o NclTypeuint.o NclTypeulong.o \
+			NclTypeint64.o NclTypeuint64.o \
 			NclTypebyte.o NclTypechar.o TypeSupport.o \
 			NclMultiDValData.o 
 
@@ -151,7 +168,7 @@ FMAP_OBJS       =       llmap.o llmisc.o
 
 FOBJS		=	qu2reg3.o rowina3.o scm0.o ncepcode.o
 
-COMMON_OBJS	=	$(GEN_TYPE_OBJS) $(STATIC_IO_OBJS) $(FOBJS) $(HDFEOS_OBJS) $(GRIB2_OBJS)
+COMMON_OBJS	=	$(GEN_TYPE_OBJS) $(STATIC_IO_OBJS) $(FOBJS) $(HDFEOS_OBJS) $(HDFEOS5_OBJS) $(GRIB2_OBJS)
 
 IO_OBJS         =       $(IO_EXTRA_OBJS) $(COMMON_OBJS) $(FMAP_OBJS)
 
@@ -182,6 +199,13 @@ NclHDFEOS.o: NclHDFEOS.c
 	  @echo These can safely be ignored.
       $(CC) -c $(HDFDEFINES) $(HDF4_NETCDF) $(CFLAGS) NclHDFEOS.c
 	  @echo 
+
+NclHDFEOS5.o: NclHDFEOS5.c
+	@echo
+	@echo Compiling NclHDFEOS5.c will generate warning messages.
+	@echo These can safely be ignored.
+	$(CC) -c $(HDFDEFINES) $(HDF4_NETCDF) $(CFLAGS) NclHDFEOS5.c
+	@echo
 
 #
 # NIO dependencies
