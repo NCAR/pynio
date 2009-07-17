@@ -57,10 +57,10 @@ import os, sys
 
 try:
   ncarg_root = os.environ["NCARG_ROOT"]
-#  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
-#  INC_DIRS   = [os.path.join(ncarg_root,'include'),'include']
-  LIB_DIRS   = ['libsrc']
-  INC_DIRS   = ['libsrc']
+  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
+  INC_DIRS   = [os.path.join(ncarg_root,'include/ncarg/nio')]
+  #LIB_DIRS   = ['libsrc']
+  #INC_DIRS   = ['libsrc']
 
 except:
   print "NCARG_ROOT is not set; can't continue!"
