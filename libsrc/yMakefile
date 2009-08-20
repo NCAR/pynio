@@ -13,10 +13,6 @@ NETCDF4_DEFS = -DUSE_NETCDF4
 #define NETCDF4LIB
 #endif
 
-# HDF4.2r2 requires this definition because we ask users to
-# build it w/o internal netCDF support
-HDF4_NETCDF = -DH4_HAVE_NETCDF
-
 #ifdef BuildHDFEOS
 HDFEOS_DEFS = -DBuildHDFEOS $(HDF4_NETCDF)
 HDFEOS_SRCS = NclHDFEOS.c
