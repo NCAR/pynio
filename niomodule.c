@@ -718,7 +718,7 @@ static int GetNioMode(char* filename,char *mode)
 
 	switch (mode[0]) {
 	case 'a':
-		if (stat(filename,&buf) < 0)
+		if (stat(_NGResolvePath(filename),&buf) < 0)
 			crw = -1;
 		else 
 			crw = 0;
@@ -728,7 +728,7 @@ static int GetNioMode(char* filename,char *mode)
 		break;
 	case 'r':
 		if (strlen(mode) > 1 && (mode[1] == '+' || mode[1] == 'w')) {
-			if (stat(filename,&buf) < 0)
+			if (stat(_NGResolvePath(filename),&buf) < 0)
 				crw = -1;
 			else 
 				crw = 0;
@@ -737,7 +737,7 @@ static int GetNioMode(char* filename,char *mode)
 			crw = 1;
 		break;
 	case 'w':
-		if (stat(filename,&buf) < 0)
+		if (stat(_NGResolvePath(filename),&buf) < 0)
 			crw = -1;
 		else
 			crw = 0;
