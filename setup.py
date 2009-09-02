@@ -238,7 +238,8 @@ pynio_pkg_name = 'PyNIO'
 pynio_pth_file = ['Nio.pth']
 DMACROS        =  [ ('NeedFuncProto','1'), ('NIO_LIB_ONLY', '1') ]
 
-INC_DIRS.insert(0,os.path.join(pkgs_pth,"numpy","core","include"))
+INC_DIRS.insert(0,numpy.get_include())
+
 
 #----------------------------------------------------------------------
 #
