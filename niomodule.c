@@ -379,10 +379,20 @@ int data_type(NclBasicDataTypes ntype)
 	switch (ntype) {
 	case NCL_short:
 		return PyArray_SHORT;
+	case NCL_ushort:
+		return PyArray_USHORT;
 	case NCL_int:
 		return PyArray_INT;  /* netcdf 3.x has only a long type */
+	case NCL_uint:
+		return PyArray_UINT;  /* netcdf 3.x has only a long type */
 	case NCL_long:
 		return PyArray_LONG;
+	case NCL_ulong:
+		return PyArray_ULONG;
+	case NCL_int64:
+		return PyArray_LONGLONG;
+	case NCL_uint64:
+		return PyArray_ULONGLONG;
 	case NCL_float:
 		return PyArray_FLOAT;
 	case NCL_double:
@@ -441,11 +451,26 @@ typecode(int type)
   case PyArray_SHORT:
 	  buf[0] = PyArray_SHORTLTR;
 	  break;
+  case PyArray_USHORT:
+	  buf[0] = PyArray_USHORTLTR;
+	  break;
   case PyArray_INT:
 	  buf[0] = PyArray_INTLTR;
 	  break;
+  case PyArray_UINT:
+	  buf[0] = PyArray_UINTLTR;
+	  break;
   case PyArray_LONG:
 	  buf[0] = PyArray_LONGLTR;
+	  break;
+  case PyArray_ULONG:
+	  buf[0] = PyArray_ULONGLTR;
+	  break;
+  case PyArray_LONGLONG:
+	  buf[0] = PyArray_LONGLONGLTR;
+	  break;
+  case PyArray_ULONGLONG:
+	  buf[0] = PyArray_ULONGLONGLTR;
 	  break;
   case PyArray_FLOAT:
 	  buf[0] = PyArray_FLOATLTR;
@@ -482,11 +507,26 @@ nio_type_from_code(int code)
   case 'h':
 	  type = NrmStringToQuark("short");
 	  break;
+  case 'H':
+	  type = NrmStringToQuark("ushort");
+	  break;
   case 'i':
 	  type = NrmStringToQuark("integer");
 	  break;
+  case 'I':
+	  type = NrmStringToQuark("uint");
+	  break;
   case 'l':
 	  type = NrmStringToQuark("long");
+	  break;
+  case 'L':
+	  type = NrmStringToQuark("ulong");
+	  break;
+  case 'q':
+	  type = NrmStringToQuark("int64");
+	  break;
+  case 'Q':
+	  type = NrmStringToQuark("uint64");
 	  break;
   case 'f':
 	  type = NrmStringToQuark("float");
@@ -3325,6 +3365,9 @@ SetUpDefaultOptions( void )
 	PyDict_SetItem(dict,opt,val);
 	opt = PyString_FromFormat("ThinnedGridInterpolation");
 	val = PyString_FromFormat("cubic");
+	PyDict_SetItem(dict,opt,val);
+	opt = PyString_FromFormat("TimePeriodSuffix");
+	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict,opt,val);
 		
 	return dict;
