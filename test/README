@@ -1,0 +1,6 @@
+To run the tests in this directory using python 2.6.x or python2.5.x:
+
+./test2.5.sh
+./test2.6.sh
+
+Compare results to the "test_compare" file.

@@ -1,0 +1,971 @@
+Creating temporary file:  /var/tmp/test_1DepcJ.nc
+Creating temporary file:  /var/tmp/test_1DepcJ.nc
+(10, 12, 21, 21)
+testing MaskedArrayMode MaskedAlways
+<bound method MaskedArray.__repr__ of masked_array(data = [995.004150391 1094.83752441 1194.67102051 1294.50439453 1394.33776855
+ 1494.17126465 1594.00463867 1693.83813477 1793.67138672 1893.50488281
+ 1993.33837891 2093.171875 2193.00512695 2292.83837891 2392.671875
+ 2492.50537109 2592.33886719 2692.17236328 2792.00561523 2891.83886719
+ 2991.67236328],
+             mask = [False False False False False False False False False False False False
+ False False False False False False False False False],
+       fill_value = 1e+20)
+>
+Creating temporary file
+(10, 12, 21, 21)
+testing MaskedArrayMode default
+[  0.   1.   2.   3.   4.   5.   6.   7.   8.   9.  10.  11.  12.  13.  14.
+  15.  16.  17.  18.  19.  20.]
+(10, 12, 21, 21)
+testing MaskedArrayMode MaskedExplicit
+<type 'numpy.ndarray'> [[  1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20]
+ [  1.76400000e+03   1.76500000e+03   1.76600000e+03   1.76700000e+03
+    1.76800000e+03   1.76900000e+03   1.77000000e+03   1.77100000e+03
+    1.77200000e+03   1.77300000e+03   1.77400000e+03   1.77500000e+03
+    1.77600000e+03   1.77700000e+03   1.77800000e+03   1.77900000e+03
+    1.78000000e+03   1.78100000e+03   1.78200000e+03   1.78300000e+03
+    1.78400000e+03]]
+<class 'numpy.ma.core.MaskedArray'> [[-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --]
+ [1764.0 1765.0 1766.0 1767.0 1768.0 1769.0 1770.0 1771.0 1772.0 1773.0
+  1774.0 1775.0 1776.0 1777.0 1778.0 1779.0 1780.0 1781.0 1782.0 1783.0
+  1784.0]]
+<class 'numpy.ma.core.MaskedArray'> [[-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --]
+ [-- -- -- -- -- -- 1770.0 1771.0 1772.0 1773.0 1774.0 1775.0 1776.0 1777.0
+  1778.0 1779.0 1780.0 1781.0 1782.0 1783.0 1784.0]]
+<class 'numpy.ma.core.MaskedArray'> [[-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --]
+ [-- -- -- -- -- -- 1770.0 1771.0 1772.0 1773.0 1774.0 1775.0 1776.0 1777.0
+  1778.0 1779.0 1780.0 -- -- -- --]]
+<class 'numpy.ma.core.MaskedArray'> [[-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --]
+ [1764.0 1765.0 1766.0 1767.0 1768.0 1769.0 1770.0 -- -- -- -- -- -- -- --
+  -- 1780.0 1781.0 1782.0 1783.0 1784.0]]
+(10, 12, 21, 21)
+testing MaskedArrayMode MaskedIfFillAttAndValue
+<class 'numpy.ma.core.MaskedArray'> [[-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --]
+ [1764.0 1765.0 1766.0 1767.0 1768.0 1769.0 1770.0 1771.0 1772.0 1773.0
+  1774.0 1775.0 1776.0 1777.0 1778.0 1779.0 1780.0 1781.0 1782.0 1783.0
+  1784.0]]
+<type 'numpy.ndarray'> [[ 1764.  1765.  1766.  1767.  1768.  1769.  1770.  1771.  1772.  1773.
+   1774.  1775.  1776.  1777.  1778.  1779.  1780.  1781.  1782.  1783.
+   1784.]
+ [ 2205.  2206.  2207.  2208.  2209.  2210.  2211.  2212.  2213.  2214.
+   2215.  2216.  2217.  2218.  2219.  2220.  2221.  2222.  2223.  2224.
+   2225.]]
+Creating temporary file
+(10, 12, 21, 21)
+testing MaskedArrayMode MaskedIfFillAtt
+<type 'numpy.ndarray'> array([    0.        ,    99.83341217,   199.66682434,   299.50024414,
+         399.33364868,   499.16708374,   599.00048828,   698.83392334,
+         798.66729736,   898.50073242,   998.33416748,  1098.16760254,
+        1198.00097656,  1297.83435059,  1397.66784668,  1497.5012207 ,
+        1597.33459473,  1697.16809082,  1797.00146484,  1896.83483887,
+        1996.66833496], dtype=float32)
+<class 'numpy.ma.core.MaskedArray'> masked_array(data = [  0.   1.   2.   3.   4.   5.   6.   7.   8.   9.  10.  11.  12.  13.  14.
+  15.  16.  17.  18.  19.  20.],
+             mask = False,
+       fill_value = 1.00000002004e+20)
+
+(10, 12, 21, 21)
+testing MaskedArrayMode MaskedNever
+<type 'numpy.ndarray'> [[  1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20   1.00000002e+20   1.00000002e+20   1.00000002e+20
+    1.00000002e+20]
+ [  1.76400000e+03   1.76500000e+03   1.76600000e+03   1.76700000e+03
+    1.76800000e+03   1.76900000e+03   1.77000000e+03   1.77100000e+03
+    1.77200000e+03   1.77300000e+03   1.77400000e+03   1.77500000e+03
+    1.77600000e+03   1.77700000e+03   1.77800000e+03   1.77900000e+03
+    1.78000000e+03   1.78100000e+03   1.78200000e+03   1.78300000e+03
+    1.78400000e+03]]
+dimension (xyz) exists: cannot create
+dimension (n) exists: cannot create
+dimension (t) exists: cannot create
+variable (foo) exists: cannot create
+[42  1 42]
+('n', 'xyz')
+variable (bar) exists: cannot create
+(10, 20)
+Nio file:	test.nc
+   global attributes:
+      history : Created Fri Jan  9 12:44:02 2009 by David Brown
+Created Fri Jan  9 12:47:02 2009 by David Brown
+Created Fri Mar 13 14:22:35 2009 by David Brown
+Created Fri Mar 13 14:28:10 2009 by David Brown
+Created Fri Mar 13 14:40:08 2009 by David Brown
+Created Tue Jul 14 17:42:10 2009 by David Brown
+Created Tue Jul 14 17:43:02 2009 by David Brown
+Created Thu Jul 16 13:18:03 2009 by David Brown
+      title : Just some useless junk
+      series : [1, 2, 3, 4, 5, 6]
+      version : 45
+   dimensions:
+      xyz = 3
+      n = 20
+      t = 10 // unlimited
+   variables:
+      integer foo [ n, xyz ]
+         units :	arbitrary
+      integer bar [ t, n ]
+
+{'xyz': 3, 't': 10, 'n': 20}
+{'foo': <Nio.NioVariable object at 0x14a4050>, 'bar': <Nio.NioVariable object at 0x14a4370>}
+Variable: foo
+Type: integer
+Total Size: 240 bytes
+            60 values
+Number of Dimensions: 2
+Dimensions and sizes:	[n | 20] x [xyz | 3]
+Coordinates: 
+            n: not a coordinate variable
+            xyz: not a coordinate variable
+Number of Attributes: 1
+         units :	arbitrary
+ Variable: bar
+Type: integer
+Total Size: 800 bytes
+            200 values
+Number of Dimensions: 2
+Dimensions and sizes:	[t | 10] x [n | 20]
+Coordinates: 
+            t: not a coordinate variable
+            n: not a coordinate variable
+Number of Attributes: 0
+
+{'xyz': 3, 't': 10, 'n': 20}
+{'foo': <Nio.NioVariable object at 0x14a4430>, 'bar': <Nio.NioVariable object at 0x14a4490>}
+Nio file:	test.nc
+   global attributes:
+      history : Created Fri Jan  9 12:44:02 2009 by David Brown
+Created Fri Jan  9 12:47:02 2009 by David Brown
+Created Fri Mar 13 14:22:35 2009 by David Brown
+Created Fri Mar 13 14:28:10 2009 by David Brown
+Created Fri Mar 13 14:40:08 2009 by David Brown
+Created Tue Jul 14 17:42:10 2009 by David Brown
+Created Tue Jul 14 17:43:02 2009 by David Brown
+Created Thu Jul 16 13:18:03 2009 by David Brown
+      title : Just some useless junk
+      series : [1, 2, 3, 4, 5, 6]
+      version : 45
+   dimensions:
+      xyz = 3
+      n = 20
+      t = 10 // unlimited
+   variables:
+      integer foo [ n, xyz ]
+         units :	arbitrary
+      integer bar [ t, n ]
+
+Variable: foo
+Type: integer
+Total Size: 240 bytes
+            60 values
+Number of Dimensions: 2
+Dimensions and sizes:	[n | 20] x [xyz | 3]
+Coordinates: 
+            n: not a coordinate variable
+            xyz: not a coordinate variable
+Number of Attributes: 1
+         units :	arbitrary
+
+[42  1 42]
+creating and assigning scalar double
+creating and assigning scalar float
+creating and assigning scalar integer
+creating and assigning scalar long
+creating and assigning scalar short
+creating and assigning scalar byte
+creating and assigning scalar char
+creating and assigning array double
+creating and assigning array float
+creating and assigning array integer
+creating and assigning array long
+creating and assigning array short
+creating and assigning array byte
+creating and assigning array char
+[['a']
+ ['u']
+ ['i']]
+Variable: v_single
+Type: float
+Total Size: 32 bytes
+            8 values
+Number of Dimensions: 3
+Dimensions and sizes:	[dim1 | 2] x [dim2 | 1] x [dim3 | 4]
+Coordinates: 
+            dim1: not a coordinate variable
+            dim2: not a coordinate variable
+            dim3: not a coordinate variable
+Number of Attributes: 0
+
+[[[ 1.  2.  3.  4.]]
+
+ [[ 5.  6.  7.  8.]]]
+[[[  9.96920997e+36   9.96920997e+36   9.96920997e+36   9.96920997e+36]]
+
+ [[  9.96920997e+36   9.96920997e+36   9.96920997e+36   9.96920997e+36]]]
+[[[ 1.  2.  3.  4.]]
+
+ [[ 5.  6.  7.  8.]]]
+[[[ 1.  2.  3.  4.]]
+
+ [[ 5.  6.  7.  8.]]]
+printing PyNIO var summaries
+['v22', 'v33', 'v77', 'v55', 'v66', 'v11', 'v_single', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v44']
+Variable: v22
+Type: float
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v33
+Type: integer
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v77
+Type: character
+Total Size: 3 bytes
+            3 values
+Number of Dimensions: 2
+Dimensions and sizes:	[array | 3] x [strlen | 1]
+Coordinates: 
+            array: not a coordinate variable
+            strlen: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v55
+Type: short
+Total Size: 6 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v66
+Type: byte
+Total Size: 3 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v11
+Type: double
+Total Size: 24 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v_single
+Type: float
+Total Size: 32 bytes
+            8 values
+Number of Dimensions: 3
+Dimensions and sizes:	[dim1 | 2] x [dim2 | 1] x [dim3 | 4]
+Coordinates: 
+            dim1: not a coordinate variable
+            dim2: not a coordinate variable
+            dim3: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v1
+Type: double
+Total Size: 8 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v2
+Type: float
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v3
+Type: integer
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v4
+Type: integer
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v5
+Type: short
+Total Size: 2 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v6
+Type: byte
+Total Size: 1 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v7
+Type: character
+Total Size: 1 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v44
+Type: integer
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+printing var info derived from PyNIO calls
+['v22', 'v33', 'v77', 'v55', 'v66', 'v11', 'v_single', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v44']
+  v22
+  [ 52.  53.  54.]
+  dimensions: ('array',)
+  rank: 1
+  typecode: f
+
+  v33
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: i
+
+  v77
+  [['a']
+ ['u']
+ ['i']]
+  dimensions: ('array', 'strlen')
+  rank: 2
+  typecode: S1
+
+  v55
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: h
+
+  v66
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: B
+
+  v11
+  [ 42.  43.  44.]
+  dimensions: ('array',)
+  rank: 1
+  typecode: d
+
+  v_single
+  [[[  1.   2.  11.   4.]]
+
+ [[  5.   6.  12.   8.]]]
+  dimensions: ('dim1', 'dim2', 'dim3')
+  rank: 3
+  typecode: f
+
+  v1
+  42.0
+  dimensions: ()
+  rank: 0
+  typecode: d
+
+  v2
+  52.0
+  dimensions: ()
+  rank: 0
+  typecode: f
+
+  v3
+  42
+  dimensions: ()
+  rank: 0
+  typecode: i
+
+  v4
+  42
+  dimensions: ()
+  rank: 0
+  typecode: i
+
+  v5
+  42
+  dimensions: ()
+  rank: 0
+  typecode: h
+
+  v6
+  42
+  dimensions: ()
+  rank: 0
+  typecode: B
+
+  v7
+  x
+  dimensions: ()
+  rank: 0
+  typecode: S1
+
+  v44
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: i
+
+
+On read, a summary of the file contents:
+Nio file:	test-types.nc
+   global attributes:
+      history : Created Thu Jul 16 13:18:03 2009 by David Brown
+      title : Nio test NetCDF file
+      series : [1, 2, 3, 4, 5, 6]
+      version : 45
+   dimensions:
+      array = 3
+      strlen = 1
+      dim1 = 2
+      dim2 = 1
+      dim3 = 4
+   variables:
+      double v1
+      float v2
+      integer v3
+      integer v4
+      short v5
+      byte v6
+      character v7
+      double v11 [ array ]
+      float v22 [ array ]
+      integer v33 [ array ]
+      integer v44 [ array ]
+      short v55 [ array ]
+      byte v66 [ array ]
+      character v77 [ array, strlen ]
+      float v_single [ dim1, dim2, dim3 ]
+
+
+On read, file dimensions:
+  {'dim2': 1, 'dim3': 4, 'array': 3, 'dim1': 2, 'strlen': 1}
+On read, file variables:
+  {'v22': <Nio.NioVariable object at 0x14a6ef0>, 'v33': <Nio.NioVariable object at 0x14a6e30>, 'v66': <Nio.NioVariable object at 0x14a6f50>, 'v11': <Nio.NioVariable object at 0x14a6f90>, 'v_single': <Nio.NioVariable object at 0x14a6fd0>, 'v3': <Nio.NioVariable object at 0x156d0d0>, 'v1': <Nio.NioVariable object at 0x156d090>, 'v2': <Nio.NioVariable object at 0x156d0b0>, 'v55': <Nio.NioVariable object at 0x14a6f10>, 'v77': <Nio.NioVariable object at 0x14a6ed0>, 'v5': <Nio.NioVariable object at 0x156d110>, 'v6': <Nio.NioVariable object at 0x156d130>, 'v7': <Nio.NioVariable object at 0x156d150>, 'v4': <Nio.NioVariable object at 0x156d0f0>, 'v44': <Nio.NioVariable object at 0x156d170>}
+printing PyNIO var summaries
+Variable: v22
+Type: float
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v33
+Type: integer
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v66
+Type: byte
+Total Size: 3 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v11
+Type: double
+Total Size: 24 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v_single
+Type: float
+Total Size: 32 bytes
+            8 values
+Number of Dimensions: 3
+Dimensions and sizes:	[dim1 | 2] x [dim2 | 1] x [dim3 | 4]
+Coordinates: 
+            dim1: not a coordinate variable
+            dim2: not a coordinate variable
+            dim3: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v3
+Type: integer
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v1
+Type: double
+Total Size: 8 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v2
+Type: float
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v55
+Type: short
+Total Size: 6 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v77
+Type: character
+Total Size: 3 bytes
+            3 values
+Number of Dimensions: 2
+Dimensions and sizes:	[array | 3] x [strlen | 1]
+Coordinates: 
+            array: not a coordinate variable
+            strlen: not a coordinate variable
+Number of Attributes: 0
+
+Variable: v5
+Type: short
+Total Size: 2 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v6
+Type: byte
+Total Size: 1 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v7
+Type: character
+Total Size: 1 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v4
+Type: integer
+Total Size: 4 bytes
+            1 values
+Number of Dimensions: 0
+Number of Attributes: 0
+
+Variable: v44
+Type: integer
+Total Size: 12 bytes
+            3 values
+Number of Dimensions: 1
+Dimensions and sizes:	[array | 3]
+Coordinates: 
+            array: not a coordinate variable
+Number of Attributes: 0
+
+printing var info derived from PyNIO calls
+  v22
+  [ 52.  53.  54.]
+  dimensions: ('array',)
+  rank: 1
+  typecode: f
+
+  v33
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: i
+
+  v66
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: B
+
+  v11
+  [ 42.  43.  44.]
+  dimensions: ('array',)
+  rank: 1
+  typecode: d
+
+  v_single
+  [[[  1.   2.  11.   4.]]
+
+ [[  5.   6.  12.   8.]]]
+  dimensions: ('dim1', 'dim2', 'dim3')
+  rank: 3
+  typecode: f
+
+  v3
+  42
+  dimensions: ()
+  rank: 0
+  typecode: i
+
+  v1
+  42.0
+  dimensions: ()
+  rank: 0
+  typecode: d
+
+  v2
+  52.0
+  dimensions: ()
+  rank: 0
+  typecode: f
+
+  v55
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: h
+
+  v77
+  [['a']
+ ['u']
+ ['i']]
+  dimensions: ('array', 'strlen')
+  rank: 2
+  typecode: S1
+
+  v5
+  42
+  dimensions: ()
+  rank: 0
+  typecode: h
+
+  v6
+  42
+  dimensions: ()
+  rank: 0
+  typecode: B
+
+  v7
+  x
+  dimensions: ()
+  rank: 0
+  typecode: S1
+
+  v4
+  42
+  dimensions: ()
+  rank: 0
+  typecode: i
+
+  v44
+  [42 43 44]
+  dimensions: ('array',)
+  rank: 1
+  typecode: i
+
+Nio file:	test-unlim.nc
+   global attributes:
+      title : Unlimited dimension test file
+   dimensions:
+      time = 0 // unlimited
+   variables:
+
+4 [ 0.  1.  2.  3.]
+13 [ 0.  1.  2.  0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+20 [ 0.  1.  2.  0.  1.  2.  3.  4.  5.  6.  0.  1.  2.  3.  4.  5.  6.  7.
+  8.  9.]
+39 [0.0 1.0 2.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0
+ 8.0 9.0 0.0 -- 1.0 -- 2.0 -- 3.0 -- 4.0 -- 5.0 -- 6.0 -- 7.0 -- 8.0 -- 9.0]
+After assigning elements of unlimited dimension:
+Nio file:	test-unlim.nc
+   global attributes:
+      title : Unlimited dimension test file
+   dimensions:
+      time = 39 // unlimited
+   variables:
+      float var [ time ]
+         _FillValue :	-999
+
+Closing 'test-unlim.nc' file...
+
+Creating temporary file:  /var/tmp/test_HrDVgy.nc
+Creating temporary file:  /var/tmp/test_HrDVgy.nc
+xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
+   9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
+  18000.  19000.  20000.]
+pt.shape:  (10, 12, 21, 21)
+
+xsel:  5
+xc[xsel]:  5000.0
+
+xsel:  slice(5, 8, None)
+xc[xsel]:  [ 5000.  6000.  7000.]
+
+xsel:  slice(None, None, None)
+xc[xsel]:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
+   9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
+  18000.  19000.  20000.]
+
+xsel:  slice(None, None, 4)
+xc[xsel]:  [     0.   4000.   8000.  12000.  16000.  20000.]
+
+ptsel:  (1, 1, 1, 1)
+pt[ptsel].shape:  ()
+
+ptsel:  (1, slice(None, None, None), 0, 0)
+pt[ptsel].shape:  (12,)
+
+ptsel:  (1, 3, slice(5, 8, None))
+pt[ptsel].shape:  (3, 21)
+
+ptsel:  (slice(None, None, None), 3, slice(None, None, None), 1)
+pt[ptsel].shape:  (10, 21)
+
+t|i0:6:3 z|:3k:1k y|i5:8:1 x|0k:10k:2k
+(3, 4, 4, 6)
+t|i0:6:3 z|0:3k:500i y|i5.5:8:0.5i x|0k:10k:2k
+(3, 7, 6, 6)
+t|i0:6:3 z|ZP|2500 y|i5.5:8:0.5i x|0k:10k:2k
+(3, 6, 6)
+t|i0:6:3 z|ZP|2500,3500 y|i5.5:8:0.5i x|0k:10k:2k
+(3, 2, 6, 6)
+time|i0:6:3 zc|:3k:1k yc|i5:8:1 xc|0k:10k:2k
+(3, 4, 4, 6)
+time|i0:6:3 zc|0:3k:500i yc|i5.5:8:0.5i xc|0k:10k:2k
+(3, 7, 6, 6)
+time|i0:6:3 zc|ZP|2.5 yc|i5.5:8:0.5i xc|0k:10k:2k
+(3, 6, 6)
+time|i0:6:3 zc|ZP|2.5,3.5 yc|i5.5:8:0.5i xc|0k:10k:2k
+(3, 2, 6, 6)
+time|i3 zc|i0 yc|lat|20k xc|0
+()
+time|i3 zc|i0 yc|i0 xc|lon|10k
+()
+var[2,3,0,5:10]      # Nio selection works as usual
+[ 6505.  6506.  6507.  6508.  6509.]
+time|i9 zc|i0 yc|i0 xc|i10:18:2
+(5,)
+i9 i0 i0 i10:18:2
+(5,)
+time|i2:8:2 zc|i0 yc|i0 xc|i0
+(4,)
+var[2,3,0,5:10]      # Nio selection works as usual
+[ 11912.  11913.  11914.  11915.  11916.]
+time|i3 zc|i0 yc|i0 xc|0k:10k:2k
+(6,)
+i3 i0 i0 0k:10k:2k
+(6,)
+time|i3 zc|i0 yc|i0 xc|0
+()
+time|i3:6 zc|i1 yc|i0 xc|2
+(4,)
+time|i0:6:6 zc|i1 yc|i0 xc|2
+(2,)
+time|i2:8:2 zc|i0 yc|i0 xc|i0
+(4,)
+zc|200,300,450,600
+(10, 4, 21, 21)
+time|i6 zc|200,300,450,600 yc|i0 xc|i0
+(4,)
+time|i6 zc|i0,2,3 yc|i0 xc|i0
+(3,)
+time|i6 zc|50, yc|i0 xc|i0
+(1,)
+time|i6 zc|i5, yc|i0 xc|i0
+(1,)
+time|i6 zc|50,100,175,350 yc|i1 xc|i0
+(4,)
+zc|50,100,175,350 yc|i1 xc|i0 time|i5:9
+(4, 5)
+time|i6:9 zc|50,100,175,350 yc|i1 xc|i0
+(4, 4)
+time|i6 zc|ZP|1.5 yc|i1:3 xc|i0:3
+(3, 4)
+time|i6 zc|ZP|1.5 yc|i1 xc|i1.5i
+()
+time|i6 zc|ZP|1.5 yc|i1,1 xc|i0:3
+(2, 4)
+time|i6 zc|ZP|1.5,2.5 yc|i1 xc|i0
+(2,)
+time|i6 zc|ZP|1.5:2.5:0.5 yc|i1 xc|i0
+(3,)
+time|i6 zc|ZP|1.5:2.5:0.5 yc|: xc|:
+(3, 21, 21)
+zc|ZP|1.5:2.5:0.5 time|i3:6 yc|: xc|:
+(3, 4, 21, 21)
+xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
+   9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
+  18000.  19000.  20000.]
+pt.shape:  (10, 12, 21, 21)
+
+xsel:  1500
+xc[xsel]:  2000.0
+
+xsel:  1500i
+xc[xsel]:  1500.0
+
+xsel:  xc|i5
+xc[xsel]:  5000.0
+
+xsel:  xc|i5.5
+xc[xsel]:  6000.0
+
+xsel:  xc|i5.5i
+xc[xsel]:  5500.0
+
+xsel:  xc|1500
+xc[xsel]:  2000.0
+
+xsel:  xc|1500i
+xc[xsel]:  1500.0
+
+xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
+   9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
+  18000.  19000.  20000.]
+pt.shape:  (10, 12, 21, 21)
+
+xsel:  2000:4000
+xc[xsel]:  [ 2000.  3000.  4000.]
+
+xsel:  1410:3900
+xc[xsel]:  [ 2000.  3000.]
+
+xsel:  1500:3500:1000i
+xc[xsel]:  [ 1500.  2500.  3500.]
+
+xsel:  xc|1500:3500:1000
+xc[xsel]:  [ 2000.  3000.]
+
+xsel:  xc|i5:9
+xc[xsel]:  [ 5000.  6000.  7000.  8000.  9000.]
+
+xsel:  xc|i5.2:7.9
+xc[xsel]:  [ 6000.  7000.]
+
+xsel:  xc|i3:9:1.5i
+xc[xsel]:  [ 3000.  4500.  6000.  7500.  9000.]
+
+xsel:  xc|i3:9:1.5
+xc[xsel]:  [ 3000.  5000.  7000.  9000.]
+
+xsel:  9k::4k
+xc[xsel]:  [  9000.  13000.  17000.]
+
+xsel:  :6k:3k
+xc[xsel]:  [    0.  3000.  6000.]
+
+xsel:  ::10k
+xc[xsel]:  [     0.  10000.  20000.]
+
+time|i0 zc|ZP|2500 yc|i5 xc|:
+in test_topo
+(21,)
+[ 2861.25        2835.00312384  2753.78974933  2616.59967472  2423.26476192
+  2177.1875      1889.73851658  1585.70091958  1306.68955386  1106.49167032
+  1033.75        1108.49167032  1310.68955386  1591.70091958  1897.73851658
+  2187.1875      2435.26476192  2630.59967472  2769.78974933  2853.00312384
+  2881.25      ]
+time|i0 zc|ZP|2500m yc|i5 xc|:
+in test_topo
+(21,)
+[ 2861.25        2835.00312384  2753.78974933  2616.59967472  2423.26476192
+  2177.1875      1889.73851658  1585.70091958  1306.68955386  1106.49167032
+  1033.75        1108.49167032  1310.68955386  1591.70091958  1897.73851658
+  2187.1875      2435.26476192  2630.59967472  2769.78974933  2853.00312384
+  2881.25      ]
+time|i0 zc|ZP|1500m yc|i5 xc|:
+in test_topo
+(21,)
+[1758.75 1721.60435612 1607.50553712 1415.03942727 1143.97066668 799.0625
+ 396.233987605 -29.8186491634 -- -- -- -- -- -23.8186491634 404.233987605
+ 809.0625 1155.97066668 1429.03942727 1623.50553712 1739.60435612 1778.75]
+time|i0 zc|ZP|1000,1500m yc|i5.5 xc|:
+in test_topo
+(2, 21)
+[[1228.5 1185.90506618 1055.36344541 835.25921532 525.323643327
+  131.000084114 -- -- -- -- -- -- -- -- -- 141.000084114 537.323643327
+  849.25921532 1071.36344541 1203.90506618 1248.5]
+ [1779.75 1742.60435612 1628.50553712 1436.03942727 1164.97066668 820.0625
+  417.233987605 -8.81864916339 -- -- -- -- -- -2.81864916339 425.233987605
+  830.0625 1176.97066668 1450.03942727 1644.50553712 1760.60435612 1799.75]]
+xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
+   9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
+  18000.  19000.  20000.]
+pt.shape:  (10, 12, 21, 21)
+
+xsel:  2000,4000
+xc[xsel]:  [ 2000.  4000.]
+
+xsel:  1410,3900
+xc[xsel]:  [ 1000.  4000.]
+
+xsel:  1500,3500i
+xc[xsel]:  [ 1500.  3500.]
+
+xsel:  xc|1500,i
+xc[xsel]:  [ 1500.]
+
+xsel:  xc|i5,9
+xc[xsel]:  [ 5000.  9000.]
+
+xsel:  xc|i5.2,7.9
+xc[xsel]:  [ 5000.  8000.]
+
+xsel:  xc|i3,9.2i
+xc[xsel]:  [ 3000.  9200.]
+
+Creating temporary file:  /var/tmp/test_ZsvEe8.nc
+Creating temporary file:  /var/tmp/test_ZsvEe8.nc
+testing sub 1 assign
+Creating temporary file:  /var/tmp/test_ZsvEe8.nc
+testing sub 2 assign
+Creating temporary file:  /var/tmp/test_ZsvEe8.nc
+testing sub 3 assign
+Creating temporary file:  /var/tmp/test_ZsvEe8.nc
+testing sub 4 assign
