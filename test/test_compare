@@ -1,6 +1,6 @@
 test-version.py
 Nio version = '1.3.0b4'
-Nio path = '/contrib/ncl-5.2.0/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
+Nio path = '/Users/haley/dev/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
 ma_test.py
 Creating temporary file:  /var/tmp/test_1DepcJ.nc
 Creating temporary file:  /var/tmp/test_1DepcJ.nc
@@ -106,7 +106,7 @@ Nio file:	test.nc
          units :	arbitrary
       integer bar [ t, n ]
 
-{'xyz': 3, 't': 10, 'n': 20}
+{'xyz': 3, 't': None, 'n': 20}
 {'foo': <Nio.NioVariable object at 0x14a4050>, 'bar': <Nio.NioVariable object at 0x14a4370>}
 Variable: foo
 Type: integer

@@ -1,6 +1,6 @@
 from numpy import *
 import Nio
-import time
+import time, os
 
 
 def getUserName():
@@ -17,7 +17,10 @@ def getUserName():
 #
 # Creating a file
 #
-file = Nio.open_file('test.nc', 'w', None, 'Created ' + time.ctime(time.time())
+ncfile = 'test.nc'
+if (os.path.exists(ncfile)):
+  os.system("/bin/rm -f " + ncfile)
+file = Nio.open_file(ncfile, 'w', None, 'Created ' + time.ctime(time.time())
 		  + ' by ' + getUserName())
 
 file.title = "Just some useless junk"
@@ -54,7 +57,7 @@ file.close()
 #
 # Reading a file
 #
-file = Nio.open_file('test.nc', 'r')
+file = Nio.open_file(ncfile, 'r')
 
 print file.dimensions
 print file.variables

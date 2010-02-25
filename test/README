@@ -4,3 +4,31 @@ To run the tests in this directory using python 2.6.x or python2.5.x:
 ./test2.6.sh
 
 Compare results to the "test_compare" file.
+
+You will get some differences:
+
+     - The pynio version and path may be different:
+
+< Nio path = '/Users/haley/dev/external/lib/python2.6/site-packages/PyNIO/Nio.pyc'
+---
+> Nio path = '/Users/haley/dev/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
+
+     - "history" attributes will have different time stamps
+       and/or authors
+
+<       history : Created Thu Feb 25 09:46:29 2010 by Mary Haley
+---
+>       history : Created Fri Jan  9 12:44:02 2009 by David Brown
+
+     - temporary variable names will be different
+
+< Creating temporary file:  /var/tmp/test_tJF5Uj.nc
+---
+> Creating temporary file:  /var/tmp/test_HrDVgy.nc
+
+
+     - pointer addresses will be different
+
+< {'foo': <Nio.NioVariable object at 0x15b8970>, 'bar': <Nio.NioVariable object at 0x15b89b0>}
+---
+> {'foo': <Nio.NioVariable object at 0x14a4430>, 'bar': <Nio.NioVariable object at 0x14a4490>}
