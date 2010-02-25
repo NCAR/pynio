@@ -1,6 +1,7 @@
 test-version.py
 Nio version = '1.3.0b4'
 Nio path = '/Users/haley/dev/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
+-rw-rw-r--   1 haley  CIT\doma  21397 Feb 23 08:37 /Users/haley/dev/external/lib/python2.6/site-packages/PyNIO/Nio.pyc
 ma_test.py
 Creating temporary file:  /var/tmp/test_1DepcJ.nc
 Creating temporary file:  /var/tmp/test_1DepcJ.nc
