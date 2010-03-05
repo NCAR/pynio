@@ -25,6 +25,7 @@ file.title = "Unlimited dimension test file"
 file.create_dimension("time", None)     # unlimited dimension
 
 print file
+print file.dimensions
 
 #
 #  Create a variable of type float with three dimemsions.
@@ -36,9 +37,16 @@ data = numpy.arange(10,dtype='f')
 # assign 5 elements of the unlimited dimension
 var[:] = data[0:4]
 print len(var[:]),var[:]
+print "testing assign_value with unlimited dimension -- bug fixed on 2010-03-05"
+var.assign_value(data[5:])
+# make sure this was actually written to the file
+file.close()
+file       = Nio.open_file(filename, "w")
+var = file.variables['var']
+print len(var[:]),var[:]
 # this does not work with NIO 5.0.0
-#var[::-1] = data
-#print len(var[:]),var[:]
+var[::-1] = data
+print len(var[:]),var[:]
 # add 10 elements starting at element 3 - total 13
 var[3:] = data
 print len(var[:]),var[:]
@@ -59,7 +67,8 @@ print len(var[:]),var[:]
 
 print "After assigning elements of unlimited dimension:"
 print file
+print file.dimensions
 
 print "Closing '" + filename + "' file...\n"
 file.close()
-
+#os.system('ncdump %s' % filename)
