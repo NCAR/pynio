@@ -1666,10 +1666,16 @@ static PyObject *
 NioVariableObject_value(NioVariableObject *self, PyObject *args)
 {
   NioIndex *indices;
+  int i;
+
   if (self->nd == 0)
     indices = NULL;
   else
     indices = NioVariable_Indices(self);
+  for (i = 0; i < self->nd; i++) {
+	  indices[i].no_stop = 1;
+	  indices[i].no_start = 1;
+  }
   return PyArray_Return(NioVariable_ReadAsArray(self, indices));
 }
 
@@ -1680,12 +1686,18 @@ NioVariableObject_assign(NioVariableObject *self, PyObject *args)
 {
   PyObject *value;
   NioIndex *indices;
+  int i;
+
   if (!PyArg_ParseTuple(args, "O", &value))
     return NULL;
   if (self->nd == 0)
     indices = NULL;
   else
     indices = NioVariable_Indices(self);
+  for (i = 0; i < self->nd; i++) {
+	  indices[i].no_stop = 1;
+	  indices[i].no_start = 1;
+  }
   NioVariable_WriteArray(self, indices, value);
   Py_INCREF(Py_None);
   return Py_None;
