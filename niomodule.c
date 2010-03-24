@@ -1870,7 +1870,7 @@ NioVariable_Indices(NioVariableObject *var)
 PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
-  int is_own;
+  int is_own,writeable;
   npy_intp *dims;
   PyArrayObject *array = NULL;
   int i, d;
@@ -1950,10 +1950,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   if (nitems == 0) {
 	  array =(PyArrayObject *)  PyArray_New(&PyArray_Type,d,
 						dims,self->type,NULL,NULL,0,0,NULL);
-	  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
-	  if (!is_own) {
-		  array->flags |= NPY_OWNDATA;
-	  }
 				  
   }
   if (nitems > 0 && self->type == PyArray_STRING) {
@@ -2001,8 +1997,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 				  array->descr->f->setitem(pystr,array->data + i * array->descr->elsize,array);
 			  }
 		  }
-		  _NclDestroyObj((NclObj)md);
-
 	  }		  
 	  if (sel_ptr)
 		  free(sel_ptr);
@@ -2022,11 +2016,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  PyArray_New(&PyArray_Type,d,
 				      dims,self->type,NULL,md->multidval.val,
 				      0,0,NULL);
-		  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
-		  if (!is_own) {
-			  array->flags |= NPY_OWNDATA;
-		  }
-				  
 		  md->multidval.val = NULL;
 		  _NclDestroyObj((NclObj)md);
 	  }
@@ -2058,12 +2047,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 				  PyArray_New(&PyArray_Type,d,
 					      dims,self->type,NULL,md->multidval.val,
 					      0,0,NULL);
-			  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
-			  if (!is_own) {
-				  array->flags |= NPY_OWNDATA;
-			  }
-				  
-			  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
 
 			  md->multidval.val = NULL;
 			  _NclDestroyObj((NclObj)md);
@@ -2071,6 +2054,11 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 		  }
 	  }
   }
+  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+  if (!is_own) {
+	  array->flags |= NPY_OWNDATA;
+  }
+  array->flags |= NPY_CARRAY;
   free(dims);
   free(indices);
   return array;
