@@ -67,7 +67,7 @@ except:
   sys.exit()
 
 # These are the required NCL, HDF4, and NetCDF libraries.
-LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
+LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf', 'curl']
 # Check for XXXX_PREFIX environment variables.
 try:
   LIB_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"lib"))
