@@ -49,7 +49,7 @@ print bar.shape
 
 print file
 print file.dimensions
-print file.variables
+print file.variables.keys()
 print foo, bar
 
 file.close()
@@ -60,7 +60,7 @@ file.close()
 file = Nio.open_file(ncfile, 'r')
 
 print file.dimensions
-print file.variables
+print file.variables.keys()
 print file
 
 foo = file.variables['foo']
