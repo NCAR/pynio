@@ -179,7 +179,7 @@ print file
 print "\nOn read, file dimensions:"
 print "  " + str(file.dimensions)
 print "On read, file variables:"
-print "  " + str(file.variables)
+print "  " + str(file.variables.keys())
 
 vars = file.variables.keys()
 print "printing PyNIO var summaries"
