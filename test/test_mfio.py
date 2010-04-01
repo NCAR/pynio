@@ -10,7 +10,7 @@ N.set_printoptions(precision=4)
 verbose = True
 filename = os.tempnam(None, 'test_')
 filename += '.nc'
-print 'Creating temporary file: ', filename
+#print 'Creating temporary file: ', filename
 
 def do_setup(filename):
     if os.path.exists(filename): os.remove(filename)
@@ -99,7 +99,7 @@ def do_setup_nocrd(filename):
 
 class test_basic(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename)
 

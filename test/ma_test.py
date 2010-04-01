@@ -10,7 +10,7 @@ from xarray import xArray
 verbose = True
 filename = os.tempnam(None, 'test_')
 filename += '.nc'
-print 'Creating temporary file: ', filename
+#print 'Creating temporary file: ', filename
 
 def do_setup(filename):
     if os.path.exists(filename): os.remove(filename)
@@ -72,7 +72,7 @@ def do_setup(filename):
 
 class test_masked_default(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file'
+        #print 'Creating temporary file'
         do_setup(filename)
         self.f = Nio.open_file(filename)
 
@@ -90,7 +90,7 @@ class test_masked_default(ut.TestCase):
 
 class test_masked_if_fill_att(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file'
+        #print 'Creating temporary file'
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedIfFillAtt'
@@ -117,7 +117,7 @@ class test_masked_if_fill_att(ut.TestCase):
 
 class test_masked_always(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
 	opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedAlways'

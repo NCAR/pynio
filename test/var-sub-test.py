@@ -10,7 +10,7 @@ from xarray import xArray
 verbose = True
 filename = os.tempnam(None, 'test_')
 filename += '.nc'
-print 'Creating temporary file: ', filename
+#print 'Creating temporary file: ', filename
 
 def do_setup(filename):
     if os.path.exists(filename): os.remove(filename)
@@ -75,7 +75,7 @@ def do_setup(filename):
 
 class test_sub_1_assign(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
@@ -92,7 +92,7 @@ class test_sub_1_assign(ut.TestCase):
 
 class test_sub_2_assign(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
@@ -108,7 +108,7 @@ class test_sub_2_assign(ut.TestCase):
 
 class test_sub_3_assign(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 
@@ -125,7 +125,7 @@ class test_sub_3_assign(ut.TestCase):
 
 class test_sub_4_assign(ut.TestCase):
     def setUp(self):
-        print 'Creating temporary file: ', filename
+        #print 'Creating temporary file: ', filename
         do_setup(filename)
         self.f = Nio.open_file(filename,mode='w')
 

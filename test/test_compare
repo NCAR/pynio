@@ -1,10 +1,12 @@
 test-version.py
+-rw-r--r--  1 dbrown  wheel  21007 Mar 12 11:29 /usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc
+/usr/local/lib/python2.6/site-packages/PyNIO/nio.so:
+	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.3)
+	/usr/local/lib/libsz.2.dylib (compatibility version 3.0.0, current version 3.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 111.1.5)
 Nio version = '1.3.0b4'
-Nio path = '/Users/haley/dev/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
--rw-rw-r--   1 haley  CIT\doma  21397 Feb 23 08:37 /Users/haley/dev/external/lib/python2.6/site-packages/PyNIO/Nio.pyc
+Nio path = '/usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc'
 ma_test.py
-Creating temporary file:  /var/tmp/test_1DepcJ.nc
-Creating temporary file:  /var/tmp/test_1DepcJ.nc
 (10, 12, 21, 21)
 testing MaskedArrayMode MaskedAlways
 <bound method MaskedArray.__repr__ of masked_array(data = [995.004150391 1094.83752441 1194.67102051 1294.50439453 1394.33776855
@@ -16,7 +18,6 @@ testing MaskedArrayMode MaskedAlways
  False False False False False False False False False],
        fill_value = 1e+20)
 >
-Creating temporary file
 (10, 12, 21, 21)
 testing MaskedArrayMode default
 [  0.   1.   2.   3.   4.   5.   6.   7.   8.   9.  10.  11.  12.  13.  14.
@@ -60,7 +61,6 @@ testing MaskedArrayMode MaskedIfFillAttAndValue
  [ 2205.  2206.  2207.  2208.  2209.  2210.  2211.  2212.  2213.  2214.
    2215.  2216.  2217.  2218.  2219.  2220.  2221.  2222.  2223.  2224.
    2225.]]
-Creating temporary file
 (10, 12, 21, 21)
 testing MaskedArrayMode MaskedIfFillAtt
 <type 'numpy.ndarray'> array([    0.        ,    99.83341217,   199.66682434,   299.50024414,
@@ -94,7 +94,7 @@ nio_demo.py
 (10, 20)
 Nio file:	test.nc
    global attributes:
-      history : Created Fri Jan  9 12:44:02 2009 by David Brown
+      history : Created Thu Apr  1 16:35:21 2010 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -108,7 +108,7 @@ Nio file:	test.nc
       integer bar [ t, n ]
 
 {'xyz': 3, 't': None, 'n': 20}
-{'foo': <Nio.NioVariable object at 0x14a4050>, 'bar': <Nio.NioVariable object at 0x14a4370>}
+['foo', 'bar']
 Variable: foo
 Type: integer
 Total Size: 240 bytes
@@ -132,10 +132,10 @@ Coordinates:
 Number of Attributes: 0
 
 {'xyz': 3, 't': 10, 'n': 20}
-{'foo': <Nio.NioVariable object at 0x14a4430>, 'bar': <Nio.NioVariable object at 0x14a4490>}
+['foo', 'bar']
 Nio file:	test.nc
    global attributes:
-      history : Created Fri Jan  9 12:44:02 2009 by David Brown
+      history : Created Thu Apr  1 16:35:21 2010 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -437,7 +437,7 @@ printing var info derived from PyNIO calls
 On read, a summary of the file contents:
 Nio file:	test-types.nc
    global attributes:
-      history : Created Thu Jul 16 13:18:03 2009 by David Brown
+      history : Created Thu Apr  1 16:35:22 2010 by David Brown
       title : Nio test NetCDF file
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -468,7 +468,7 @@ Nio file:	test-types.nc
 On read, file dimensions:
   {'dim2': 1, 'dim3': 4, 'array': 3, 'dim1': 2, 'strlen': 1}
 On read, file variables:
-  {'v22': <Nio.NioVariable object at 0x14a6ef0>, 'v33': <Nio.NioVariable object at 0x14a6e30>, 'v66': <Nio.NioVariable object at 0x14a6f50>, 'v11': <Nio.NioVariable object at 0x14a6f90>, 'v_single': <Nio.NioVariable object at 0x14a6fd0>, 'v3': <Nio.NioVariable object at 0x156d0d0>, 'v1': <Nio.NioVariable object at 0x156d090>, 'v2': <Nio.NioVariable object at 0x156d0b0>, 'v55': <Nio.NioVariable object at 0x14a6f10>, 'v77': <Nio.NioVariable object at 0x14a6ed0>, 'v5': <Nio.NioVariable object at 0x156d110>, 'v6': <Nio.NioVariable object at 0x156d130>, 'v7': <Nio.NioVariable object at 0x156d150>, 'v4': <Nio.NioVariable object at 0x156d0f0>, 'v44': <Nio.NioVariable object at 0x156d170>}
+  ['v22', 'v33', 'v66', 'v11', 'v_single', 'v3', 'v1', 'v2', 'v55', 'v77', 'v5', 'v6', 'v7', 'v4', 'v44']
 printing PyNIO var summaries
 Variable: v22
 Type: float
@@ -705,11 +705,15 @@ Nio file:	test-unlim.nc
       time = 0 // unlimited
    variables:
 
+{'time': None}
 4 [ 0.  1.  2.  3.]
-13 [ 0.  1.  2.  0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
-20 [ 0.  1.  2.  0.  1.  2.  3.  4.  5.  6.  0.  1.  2.  3.  4.  5.  6.  7.
+testing assign_value with unlimited dimension -- bug fixed on 2010-03-05
+5 [ 5.  6.  7.  8.  9.]
+10 [ 9.  8.  7.  6.  5.  4.  3.  2.  1.  0.]
+13 [ 9.  8.  7.  0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+20 [ 9.  8.  7.  0.  1.  2.  3.  4.  5.  6.  0.  1.  2.  3.  4.  5.  6.  7.
   8.  9.]
-39 [0.0 1.0 2.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0
+39 [9.0 8.0 7.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0
  8.0 9.0 0.0 -- 1.0 -- 2.0 -- 3.0 -- 4.0 -- 5.0 -- 6.0 -- 7.0 -- 8.0 -- 9.0]
 After assigning elements of unlimited dimension:
 Nio file:	test-unlim.nc
@@ -721,11 +725,10 @@ Nio file:	test-unlim.nc
       float var [ time ]
          _FillValue :	-999
 
+{'time': 5}
 Closing 'test-unlim.nc' file...
 
 test_mfio.py
-Creating temporary file:  /var/tmp/test_HrDVgy.nc
-Creating temporary file:  /var/tmp/test_HrDVgy.nc
 xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
    9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
   18000.  19000.  20000.]
@@ -896,34 +899,38 @@ xc[xsel]:  [     0.  10000.  20000.]
 time|i0 zc|ZP|2500 yc|i5 xc|:
 in test_topo
 (21,)
-[ 2861.25        2835.00312384  2753.78974933  2616.59967472  2423.26476192
-  2177.1875      1889.73851658  1585.70091958  1306.68955386  1106.49167032
-  1033.75        1108.49167032  1310.68955386  1591.70091958  1897.73851658
-  2187.1875      2435.26476192  2630.59967472  2769.78974933  2853.00312384
-  2881.25      ]
+[ 2861.25    2835.0031  2753.7897  2616.5995  2423.2648  2177.1875
+  1889.7385  1585.7009  1306.69    1106.4917  1033.75    1108.4917  1310.69
+  1591.7009  1897.7385  2187.1875  2435.2648  2630.5995  2769.7897
+  2853.0031  2881.25  ]
 time|i0 zc|ZP|2500m yc|i5 xc|:
 in test_topo
 (21,)
-[ 2861.25        2835.00312384  2753.78974933  2616.59967472  2423.26476192
-  2177.1875      1889.73851658  1585.70091958  1306.68955386  1106.49167032
-  1033.75        1108.49167032  1310.68955386  1591.70091958  1897.73851658
-  2187.1875      2435.26476192  2630.59967472  2769.78974933  2853.00312384
-  2881.25      ]
+[ 2861.25    2835.0031  2753.7897  2616.5995  2423.2648  2177.1875
+  1889.7385  1585.7009  1306.69    1106.4917  1033.75    1108.4917  1310.69
+  1591.7009  1897.7385  2187.1875  2435.2648  2630.5995  2769.7897
+  2853.0031  2881.25  ]
 time|i0 zc|ZP|1500m yc|i5 xc|:
 in test_topo
 (21,)
-[1758.75 1721.60435612 1607.50553712 1415.03942727 1143.97066668 799.0625
- 396.233987605 -29.8186491634 -- -- -- -- -- -23.8186491634 404.233987605
- 809.0625 1155.97066668 1429.03942727 1623.50553712 1739.60435612 1778.75]
+[  1.7588e+03   1.7216e+03   1.6075e+03   1.4150e+03   1.1440e+03
+   7.9906e+02   3.9623e+02  -2.9819e+01   1.0000e+20   1.0000e+20
+   1.0000e+20   1.0000e+20   1.0000e+20  -2.3819e+01   4.0423e+02
+   8.0906e+02   1.1560e+03   1.4290e+03   1.6235e+03   1.7396e+03
+   1.7788e+03]
 time|i0 zc|ZP|1000,1500m yc|i5.5 xc|:
 in test_topo
 (2, 21)
-[[1228.5 1185.90506618 1055.36344541 835.25921532 525.323643327
-  131.000084114 -- -- -- -- -- -- -- -- -- 141.000084114 537.323643327
-  849.25921532 1071.36344541 1203.90506618 1248.5]
- [1779.75 1742.60435612 1628.50553712 1436.03942727 1164.97066668 820.0625
-  417.233987605 -8.81864916339 -- -- -- -- -- -2.81864916339 425.233987605
-  830.0625 1176.97066668 1450.03942727 1644.50553712 1760.60435612 1799.75]]
+[[  1.2285e+03   1.1859e+03   1.0554e+03   8.3526e+02   5.2532e+02
+    1.3100e+02   1.0000e+20   1.0000e+20   1.0000e+20   1.0000e+20
+    1.0000e+20   1.0000e+20   1.0000e+20   1.0000e+20   1.0000e+20
+    1.4100e+02   5.3732e+02   8.4926e+02   1.0714e+03   1.2039e+03
+    1.2485e+03]
+ [  1.7798e+03   1.7426e+03   1.6285e+03   1.4360e+03   1.1650e+03
+    8.2006e+02   4.1723e+02  -8.8186e+00   1.0000e+20   1.0000e+20
+    1.0000e+20   1.0000e+20   1.0000e+20  -2.8186e+00   4.2523e+02
+    8.3006e+02   1.1770e+03   1.4500e+03   1.6445e+03   1.7606e+03
+    1.7998e+03]]
 xc:  [     0.   1000.   2000.   3000.   4000.   5000.   6000.   7000.   8000.
    9000.  10000.  11000.  12000.  13000.  14000.  15000.  16000.  17000.
   18000.  19000.  20000.]
@@ -951,12 +958,7 @@ xsel:  xc|i3,9.2i
 xc[xsel]:  [ 3000.  9200.]
 
 var-sub-test.py
-Creating temporary file:  /var/tmp/test_ZsvEe8.nc
-Creating temporary file:  /var/tmp/test_ZsvEe8.nc
 testing sub 1 assign
-Creating temporary file:  /var/tmp/test_ZsvEe8.nc
 testing sub 2 assign
-Creating temporary file:  /var/tmp/test_ZsvEe8.nc
 testing sub 3 assign
-Creating temporary file:  /var/tmp/test_ZsvEe8.nc
 testing sub 4 assign
