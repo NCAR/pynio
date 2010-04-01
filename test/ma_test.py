@@ -131,7 +131,7 @@ class test_masked_always(ut.TestCase):
 	v = file.variables['lat']
 	assert_equal(hasattr(v,'_FillValue'),False)
 	vm = v[:]
-	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
+	assert_equal(N.array([vm.get_fill_value()],dtype='f'),N.array([1e20],dtype='f'))
 	if verbose: print vm[1].__repr__
         file.close()
 
