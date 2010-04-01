@@ -3,9 +3,10 @@ from numpy.testing import assert_equal
 
 import Nio
 import numpy as N
+from numpy import ma
 import os
 from xarray import xArray
-
+N.set_printoptions(precision=4)
 verbose = True
 filename = os.tempnam(None, 'test_')
 filename += '.nc'
@@ -412,7 +413,11 @@ class test_topo(ut.TestCase):
             #pt = file.variables['ZP'][:]
             #pt = xArray(pt)[xsel]
             if verbose: print pt.shape
-            if verbose: print pt
+            if verbose: 
+                if ma.isMA(pt):
+                    print N.asarray(pt.filled())
+                else:
+                    print pt
             assert_equal(pt.shape, res)
 
         # ERROR:
