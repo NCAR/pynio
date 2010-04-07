@@ -5,3 +5,5 @@ test-types.py
 test-unlim.py
 test_mfio.py
 var-sub-test.py
+test-opendap1.py
+test-opendap2.py

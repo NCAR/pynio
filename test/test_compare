@@ -4,7 +4,7 @@ test-version.py
 	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.3)
 	/usr/local/lib/libsz.2.dylib (compatibility version 3.0.0, current version 3.0.0)
 	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 111.1.5)
-Nio version = '1.3.0b4'
+Nio version = '1.3.0b5'
 Nio path = '/usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc'
 ma_test.py
 (10, 12, 21, 21)
@@ -962,3 +962,32 @@ testing sub 1 assign
 testing sub 2 assign
 testing sub 3 assign
 testing sub 4 assign
+test-opendap1.py
+variables ['lat', 'lon', 'param01', 'param02', 'param03', 'param04', 'param05', 'param06', 'param07', 'param08', 'param09', 'param10', 'param11', 'param12', 'param13', 'param14', 'param15', 'param16', 'param17', 'param18', 'param19', 'param20', 'param21', 'param22', 'param23', 'param24', 'param25', 'param26', 'param27', 'param28', 'param29', 'param30', 'param31', 'param32', 'param33', 'param34', 'param35', 'param36', 'param37', 'param38', 'param39', 'param40', 'param41', 'time']
+test-opendap2.py
+Nio file:	http://test.opendap.org/opendap/data/nc/123.nc
+   global attributes:
+      history : This is an example of a multi-line global
+attribute.  It could be used for representing the
+processing history of the data, for example.
+   dimensions:
+      i = 2
+      j = 3
+      l = 3
+      maxStrlen64 = 64
+   variables:
+      short l [ l ]
+      character bears [ i, j, maxStrlen64 ]
+         act :	text string
+	123
+         acs :	-40
+         acl :	17000
+         acf :	[-2, 1, 0]
+         acd :	[-1, 0.75]
+         string_length :	3
+      short order [ i, j ]
+      integer shot [ i, j ]
+      float aloan [ i, j ]
+      double cross [ i, j ]
+
+variables ['aloan', 'bears', 'cross', 'l', 'order', 'shot']
