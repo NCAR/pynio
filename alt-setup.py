@@ -32,12 +32,14 @@ except ImportError:
 #
 #    HAS_NETCDF4
 #    HAS_HDFEOS
+#    HAS_HDFEOS5
 #    HAS_GRIB2
 #
 # must be set to 1. In addition, the corresponding environment variables:
 #
 #    NETCDF4_PREFIX
 #    HDFEOS_PREFIX
+#    HDFEOS5_PREFIX
 #    GRIB2_PREFIX 
 #
 # must be set to the root location of that software, unless they are
@@ -67,7 +69,7 @@ except:
   sys.exit()
 
 # These are the required NCL, HDF4, and NetCDF libraries.
-LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf', 'curl']
+LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
 # Check for XXXX_PREFIX environment variables.
 try:
   LIB_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"lib"))
@@ -99,6 +101,7 @@ try:
   if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
+    LIBRARIES.append('curl')
     LIBRARIES.append('sz')
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))

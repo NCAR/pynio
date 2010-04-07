@@ -26,18 +26,20 @@ except ImportError:
 # software is installed in this same root directory, then you don't
 # need to set any of the previous or following XXXX_PREFIX variables.
 #
-# You can optionally build PyNIO with NetCDF-4, HDF-EOS 2,
+# You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5
 # and/or GRIB 2 support.  To do this, the corresponding environment
 # variables:
 #
 #    HAS_NETCDF4
 #    HAS_HDFEOS
+#    HAS_HDFEOS5
 #    HAS_GRIB2
 #
 # must be set to 1. In addition, the corresponding environment variables:
 #
 #    NETCDF4_PREFIX
 #    HDFEOS_PREFIX
+#    HDFEOS5_PREFIX
 #    GRIB2_PREFIX 
 #
 # must be set to the root location of that software, unless they are
@@ -67,7 +69,7 @@ except:
   sys.exit()
 
 # These are the required NCL, HDF4, and NetCDF libraries.
-LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf', 'curl']
+LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
 # Check for XXXX_PREFIX environment variables.
 try:
   LIB_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"lib"))
@@ -99,6 +101,7 @@ try:
   if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
+    LIBRARIES.append('curl')
     LIBRARIES.append('sz')
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
@@ -285,7 +288,7 @@ setup (name         = 'PyNIO',
        author_email = 'dbrown@ucar.edu',
        url          = 'http://www.pyngl.ucar.edu/Nio.shtml',
        long_description = '''
-       Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDFEOS (r), GRIB (r), and CCM (r) data files
+       Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDF-EOS2 (r), HDF-EOS5, GRIB (r), and CCM (r) data files
        ''',
        package_dir  = { pynio_pkg_name : '.' },
        packages     = [ pynio_pkg_name ],
