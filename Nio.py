@@ -1,6 +1,8 @@
 '''
 PyNIO enables NetCDF-like access for
-NetCDF (rw), HDF (rw), HDFEOS (r)(optional), GRIB (r), and CCM (r) data files.
+    NetCDF 3 (rw), HDF 4 (rw), GRIB 1 (r), CCM (r), and optionally
+    NetCDF 4 (rw), HDFEOS 2/4 (r), GRIB 2 (r), HDFEOS 5 (r), shapefiles
+    and other GDAL OGR-supported (r) data formats.
 
 import Nio
 
@@ -566,10 +568,12 @@ filepath -- path of file with data in a supported format. Either the path must
 end with an extension indicating the expected format of the file (it need not
 be part of the actual file name), or it must be specified using the optional 
 'format' argument. Valid extensions include:
-    .nc, .cdf, .netcdf, .nc3, .nc4 -- NetCDF
-    .grb, .grib, .grb1, .grib1, .grb2, .grib2 -- GRIB
+    .nc, .cdf, .netcdf, .nc3, .nc4,  -- NetCDF
+    .gr, .grb, .grib, .gr1, .grb1, .grib1, .gr2, .grb2, .grib2, -- GRIB
     .hd, .hdf -- HDF
     .he2, .he4, .hdfeos -- HDFEOS
+    .he5, .hdfeos4 -- HDFEOS5
+    .shp, .mif, .gmt, .rt1 -- shapefiles, other formats supported by GDAL OGR
     .ccm -- CCM history files
 Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all
 indicate a GRIB file.

@@ -44,10 +44,12 @@ f = Nio.open_file(filepath, mode='r',options=None, history='')\n\n\
 filepath -- path of file with data in a supported format. The path  must end\n\
 with an extension indicating the expected format of the file, whether or not\n\
 it is part of the actual file name. Valid extensions include:\n\
-    .nc, .cdf, .netcdf -- NetCDF\n\
-    .grb, .grib -- GRIB\n\
+    .nc, .cdf, .netcdf, .nc3, .nc4,  -- NetCDF\n\
+    .gr, .grb, .grib, .gr1, .grb1, .grib1, .gr2, .grb2, .grib2, -- GRIB\n\
     .hd, .hdf -- HDF\n\
     .he2, .he4, .hdfeos -- HDFEOS\n\
+    .he5, .hdfeos4 -- HDFEOS5\n\
+    .shp, .mif, .gmt, .rt1 -- shapefiles, other formats supported by GDAL OGR\n\
     .ccm -- CCM history files\n\
 Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all\n\
 indicate a GRIB file.\n\
@@ -1870,7 +1872,7 @@ NioVariable_Indices(NioVariableObject *var)
 PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
-  int is_own,writeable;
+  int is_own;
   npy_intp *dims;
   PyArrayObject *array = NULL;
   int i, d;

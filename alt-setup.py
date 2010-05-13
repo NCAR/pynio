@@ -26,14 +26,15 @@ except ImportError:
 # software is installed in this same root directory, then you don't
 # need to set any of the previous or following XXXX_PREFIX variables.
 #
-# You can optionally build PyNIO with NetCDF-4, HDF-EOS 2,
-# and/or GRIB 2 support.  To do this, the corresponding environment
-# variables:
+# You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5,
+# GRIB2 and/or shapefile (using the GDAL library) support.  To do this, 
+# the corresponding environment variables:
 #
 #    HAS_NETCDF4
 #    HAS_HDFEOS
 #    HAS_HDFEOS5
 #    HAS_GRIB2
+#    HAS_GDAL
 #
 # must be set to 1. In addition, the corresponding environment variables:
 #
@@ -41,6 +42,7 @@ except ImportError:
 #    HDFEOS_PREFIX
 #    HDFEOS5_PREFIX
 #    GRIB2_PREFIX 
+#    GDAL_PREFIX
 #
 # must be set to the root location of that software, unless they are
 # all the same as a previous setting, like NCARG_ROOT.
@@ -137,6 +139,19 @@ try:
       pass
 except:
   HAS_GRIB2 = 0
+
+try:
+  HAS_GDAL = int(os.environ["HAS_GDAL"])
+  if HAS_GRIB2 > 0:
+    LIBRARIES.append('gdal')
+    LIBRARIES.append('proj') 
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_GDAL = 0
 
 # Depending on what Fortran compiler was used to build, we may need
 # additional library paths or libraries.
