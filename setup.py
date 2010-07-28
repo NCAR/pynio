@@ -58,19 +58,19 @@ except ImportError:
 #
 
 import os, sys
+from os.path import join
 
-try:
-  ncarg_root = os.environ["NCARG_ROOT"]
-#  LIB_DIRS   = [os.path.join(ncarg_root,'lib') ]
-#  INC_DIRS   = [os.path.join(ncarg_root,'include'),'include']
-  LIB_DIRS   = ['libsrc']
-  INC_DIRS   = ['libsrc']
+LIB_MACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY' , None) ]
 
-except:
-  print "NCARG_ROOT is not set; can't continue!"
-  sys.exit()
+if sys.byteorder == 'little':
+  LIB_MACROS.append(('ByteSwapped', None))
 
-# These are the required NCL, HDF4, and NetCDF libraries.
+LIB_EXCLUDE_SOURCES = []
+LIB_DIRS   = ['libsrc']
+INC_DIRS   = ['libsrc']
+
+
+# These are the required NIO, HDF4, and NetCDF libraries.
 LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
 # Check for XXXX_PREFIX environment variables.
 try:
@@ -90,6 +90,7 @@ try:
   if HAS_HDFEOS5 > 0:
     LIBRARIES.append('he5_hdfeos')
     LIBRARIES.append('Gctp')
+    LIB_MACROS.append(('BuildHDFEOS5', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
@@ -97,6 +98,8 @@ try:
       pass
 except:
   HAS_HDFEOS5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
+
 
 try:
   HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
@@ -105,6 +108,7 @@ try:
     LIBRARIES.append('hdf5')
     LIBRARIES.append('curl')
     LIBRARIES.append('sz')
+    LIB_MACROS.append(('USE_NETCDF4', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"include"))
@@ -118,6 +122,7 @@ try:
   if HAS_HDFEOS > 0:
     LIBRARIES.append('hdfeos')
     LIBRARIES.append('Gctp')
+    LIB_MACROS.append(('BuildHDFEOS', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"include"))
@@ -125,6 +130,7 @@ try:
       pass
 except:
   HAS_HDFEOS = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
 
 try:
   HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
@@ -132,6 +138,7 @@ try:
     LIBRARIES.append('grib2c')
     LIBRARIES.append('jasper')   # png is needed again, b/c it 
     LIBRARIES.append('png')      # must come after jasper
+    LIB_MACROS.append(('BuildGRIB2', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
@@ -139,12 +146,14 @@ try:
       pass
 except:
   HAS_GRIB2 = 0
+  LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
 
 try:
   HAS_GDAL = int(os.environ["HAS_GDAL"])
   if HAS_GRIB2 > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
+    LIB_MACROS.append(('BuildOGR', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"include"))
@@ -152,6 +161,7 @@ try:
       pass
 except:
   HAS_GDAL = 0
+  LIB_EXCLUDE_SOURCES.append('NclOGR.c')
 
 # Depending on what Fortran compiler was used to build, we may need
 # additional library paths or libraries.
@@ -181,39 +191,25 @@ except:
 # copying them over for the PyNIO installation.
 #
 def get_grib2_codetables():
+  data_files = []
   plat_dir = os.path.join("build","lib."+get_platform()+"-"+sys.version[:3], \
                           "PyNIO")
 
-  ncl_lib       = os.path.join(ncarg_root,'lib')
-  ncl_ncarg_dir = os.path.join(ncl_lib,'ncarg')
-  ncarg_dirs    = ["grib2_codetables"]
+  ncarg_dirs    = os.path.join("ncarg","grib2_codetables")
 
-  cwd = os.getcwd()          # Retain current directory.
-  if not os.path.exists('ncarg'):
-    os.mkdir('ncarg')          # make a directory to copy files to
-  os.chdir(ncl_ncarg_dir)    # cd to $NCARG_ROOT/lib/ncarg
 
 # Walk through each directory and copy some data files.
-  for ncarg_dir in ncarg_dirs:
-    for root, dirs, files in os.walk(ncarg_dir):
-      dir_to_copy_to = os.path.join(cwd,'ncarg',root)
-      if not os.path.exists(dir_to_copy_to):
-        os.mkdir(dir_to_copy_to)
+  for root, dirs, files in os.walk(ncarg_dirs):
       for name in files:
-        file_to_copy = os.path.join(ncl_ncarg_dir,root,name)
-        cmd = "cp " + file_to_copy + " " + dir_to_copy_to
-        os.system(cmd)
-        data_files.append(os.path.join('ncarg',root,name))
+          data_files.append(os.path.join(root,name))
 
-  os.chdir(cwd)    # cd back to original directory
-
-  return
+  return data_files
 
 
 # Main code.
 
 import platform
-from distutils.core import setup, Extension
+from numpy.distutils.core import setup
 from distutils.util import get_platform
 from distutils.sysconfig import get_python_lib
 
@@ -254,7 +250,7 @@ if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
 pynio_pkg_name = 'PyNIO'
 pynio_pth_file = ['Nio.pth']
-DMACROS        =  [ ('NeedFuncProto','1'), ('NIO_LIB_ONLY', '1') ]
+DMACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY', None) ]
 
 INC_DIRS.insert(0,numpy.get_include())
 
@@ -283,21 +279,46 @@ vfile.close()
 #----------------------------------------------------------------------
 print '====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.'
 
-module1 = [Extension('nio',
-                    define_macros = DMACROS,
-                    include_dirs  = INC_DIRS,
-                    libraries     = LIBRARIES,
-                    library_dirs  = LIB_DIRS,
-                    extra_objects = EXTRA_OBJECTS,
-                    sources       = ['niomodule.c']
-                    )]
 
-data_files = []
+
+def configuration(parent_package='',top_path=None):
+    from numpy.distutils.misc_util import Configuration
+
+    config = Configuration(pynio_pkg_name,parent_package, top_path)
+
+    files  = os.listdir('libsrc')
+    sources = [ file for file in files if file.endswith('.c') or file.endswith('.f') ]
+
+    for file in LIB_EXCLUDE_SOURCES: 
+      print file
+      sources.remove(file)
+    sources = [ join('libsrc', file) for file in sources ]
+
+    config.add_library('nio',sources,
+                       include_dirs=INC_DIRS,
+                       macros=LIB_MACROS,
+#                       extra_compiler_args = [ '-O2', '-w' ]
+                       )
+    
+    sources = ['niomodule.c']
+
+    config.add_extension('nio',
+                         sources=sources,
+                         libraries=LIBRARIES,
+                         include_dirs=INC_DIRS,
+                         define_macros = DMACROS,
+                         library_dirs  = LIB_DIRS,
+                         extra_objects = EXTRA_OBJECTS,
+                         language = 'C'
+                         )
+    return config
+
+
 if HAS_GRIB2 > 0:
-  get_grib2_codetables()
-
-setup (name         = 'PyNIO',
-       version      = pynio_version,
+  data_files = get_grib2_codetables()
+ 
+#print data_files
+setup (version      = pynio_version,
        description  = 'Multi-format data I/O package',
        author       = 'David I. Brown',
        author_email = 'dbrown@ucar.edu',
@@ -305,13 +326,9 @@ setup (name         = 'PyNIO',
        long_description = '''
        Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDF-EOS2 (r), HDF-EOS5, GRIB (r), and CCM (r) data files
        ''',
-       package_dir  = { pynio_pkg_name : '.' },
-       packages     = [ pynio_pkg_name ],
-       ext_modules  = module1,
-       ext_package  = pynio_pkg_name,
        package_data = { pynio_pkg_name : data_files },
-       data_files   = [(pkgs_pth, pynio_pth_file)])
-
+       data_files   = [(pkgs_pth, pynio_pth_file)],
+       **configuration().todict())
 #
 # Cleanup: remove the pynio_version.py file.
 #
