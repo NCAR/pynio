@@ -18,8 +18,7 @@ from source code <build_pyngl_from_src.shtml>" document.
 
     * Download and build non-optional external software
       <#BuildNonOptionalSoftware>
-          o NCL <#NCL>
-          o NetCDF-3 <#NetCDF3> (don't build if using NetCDF-4)
+          o NetCDF-3 <#NetCDF3> (only if not building NetCDF-4)
           o JPEG <#JPEG>
           o ZLIB <#ZLIB>
           o PNG <#PNG>
@@ -28,6 +27,8 @@ from source code <build_pyngl_from_src.shtml>" document.
           o GRIB2 <#GRIB2>
           o HDF-EOS 2 <#HDFEOS2>
           o NetCDF-4 <#NetCDF4> (don't build if using NetCDF-3) 
+	  o HDF-EOS 5 <#HDFEOS5>
+          o shapefile support <#GDAL>
     * Download the source code for PyNIO <#GetPyNIOSourceCode>
     * Set environment variables if necessary <#SetEnvVars>
     * Execute the 'setup.py' script <#RunSetup> 
@@ -43,21 +44,6 @@ of PyNIO's source code license
 <http://www.pyngl.ucar.edu/Licenses/PyNIO_source_license.shtml>./
 
 List of external software to install:
-
-# NCL <http://www.ncl.ucar.edu>
-
-See the full instructions <http://www.ncl.ucar.edu/Download/> for
-building NCL from source code. NCL is a difficult package to build, so
-we recommend going the binary distribution route if possible.
-
-Note that many of the instructions for building external software for
-NCL will also apply for PyNIO, so you don't need to follow these
-instructions twice. Don't fret if you can't get the "ncl" executable in
-$NCARG/ni/src/ncl to build; it is not needed by PyNIO. You basically
-need "libnio.a" and some include files from that directory.
-
-Make sure the NCARG_ROOT environment variable is set to the root
-directory of where this software was installed.
 
 # NetCDF-3 <http://www.unidata.ucar.edu/software/netcdf/> - do not install
 if you plan to build NetCDF-4 <#NetCDF4> instead.

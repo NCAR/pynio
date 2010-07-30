@@ -16,7 +16,8 @@ You can import this package with:
 PyNIO is available with NumPy support only. (Numeric support was
 dropped October 2007.)
 
-PyNIO been tested against Python 2.[4-6].x, NumPy (up to version 1.3.0).
+PyNIO been tested against Python 2.[4-6].x, NumPy (up to version 1.3.x and 1.4.1).
+NumPy 1.4.0 is not recommended due to some serious bugs.
 
 For documentation, see:
 
@@ -35,7 +36,7 @@ Installation:
 -------------
 
 Required: Python 2.4 or higher and NumPy version 1.0 or higher.  For
-this version, we used Python 2.6.2 and NumPy 1.3.0.  Earlier or later
+this version, we used Python 2.6.x and NumPy 1.4.1.  Earlier or later
 versions of these packages may work, but we haven't tested all of
 them.
 
@@ -48,10 +49,10 @@ This command may require root privileges on some systems.
 Source code installation is not trivial. See the INSTALL file
 in this directory.
 
-Examples:
+Examples and tests:
 ---------
 
-There are some PyNIO examples in the "test" directory.
+There are some PyNIO examples and tests in the "test" directory.
 
 If you also have PyNGL installed, then you can type:
 

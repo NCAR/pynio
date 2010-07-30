@@ -16,15 +16,14 @@ except ImportError:
 #
 # You must set the environment variables:
 #
-#    NCARG_ROOT
 #    NETCDF_PREFIX
 #    HDF_PREFIX
 #
-# to the parent locations of the NCL, NetCDF-3, and HDF-4 installations.
+# to the parent locations of the NetCDF-3, and HDF-4 installations.
 #
-# Note: at a minimum, you must have NCARG_ROOT set. If all the other
-# software is installed in this same root directory, then you don't
-# need to set any of the previous or following XXXX_PREFIX variables.
+# Note: at a minimum, you must set one XXXX_PREFIX environment variable. 
+# If all the other software is installed in this same root directory, 
+# then you don't need to set any of the other XXXX_PREFIX variables.
 #
 # You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5,
 # GRIB2 and/or shapefile (using the GDAL library) support.  To do this, 
@@ -45,7 +44,18 @@ except ImportError:
 #    GDAL_PREFIX
 #
 # must be set to the root location of that software, unless they are
-# all the same as a previous setting, like NCARG_ROOT.
+# the same as a previous setting, such as HDF_PREFIX.
+#
+# If your HDF4 library was built with support for SZIP compression or
+# if you want to include NETCDF4 and/or HDFEOS5 support and the HDF5 
+# libraries on which they depend have SZIP support included, then you
+# additionally need to set environment variables for SZIP in a similar
+# fashion:
+#    HAS_SZIP
+# (set to 1)
+#    SZIP_PREFIX
+# (if it resides in a location of its own)
+#      
 #
 # Finally, you may need to include Fortran system libraries
 # (like "-lgfortran" or "-lf95") to resolve undefined symbols.
@@ -107,7 +117,6 @@ try:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
     LIBRARIES.append('curl')
-    LIBRARIES.append('sz')
     LIB_MACROS.append(('USE_NETCDF4', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
@@ -162,6 +171,18 @@ try:
 except:
   HAS_GDAL = 0
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
+
+try:
+  HAS_SZIP = int(os.environ["HAS_SZIP"])
+  if HAS_SZIP > 0:
+    LIBRARIES.append('sz')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["SZIP_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["SZIP_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_SZIP = 0
 
 # Depending on what Fortran compiler was used to build, we may need
 # additional library paths or libraries.
