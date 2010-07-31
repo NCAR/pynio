@@ -9,9 +9,9 @@ You will get some differences:
 
      - The pynio version and path may be different:
 
-< Nio path = '/Users/haley/dev/external/lib/python2.6/site-packages/PyNIO/Nio.pyc'
+< Nio path = '/usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc'
 ---
-> Nio path = '/Users/haley/dev/external/lib/python2.5/site-packages/PyNIO/Nio.pyc'
+> Nio path = '/usr/local/lib/python2.5/site-packages/PyNIO/Nio.pyc'
 
      - "history" attributes will have different time stamps
        and/or authors
