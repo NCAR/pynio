@@ -46,6 +46,12 @@ except ImportError:
 # must be set to the root location of that software, unless they are
 # the same as a previous setting, such as HDF_PREFIX.
 #
+# If you are linking against NetCDF version 4, this script assumes
+# that OPeNDAP support has been included since NetCDF 4.1.1 turns
+# this on by default. If you built NetCDF-4 with OPeNDAP support
+# turned off (--disable-dap), then set the environment variable
+# HAS_OPENDAP to 0.
+#
 # If your HDF4 library was built with support for SZIP compression or
 # if you want to include NETCDF4 and/or HDFEOS5 support and the HDF5 
 # libraries on which they depend have SZIP support included, then you
@@ -116,8 +122,20 @@ try:
   if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
-    LIBRARIES.append('curl')
     LIB_MACROS.append(('USE_NETCDF4', None))
+    try:
+      HAS_OPENDAP = int(os.environ["HAS_OPENDAP"])
+    except:    
+      HAS_OPENDAP = 1
+    if HAS_OPENDAP > 0:
+      LIBRARIES.append('curl')
+#
+# These might be needed on some Linux systems.
+#
+#      LIBRARIES.append('ssl')
+#      LIBRARIES.append('ldap')
+#      LIBRARIES.append('idn')
+#      LIBRARIES.append('rt')
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"include"))
