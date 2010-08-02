@@ -73,8 +73,37 @@ except ImportError:
 #  F2CLIBS_PREFIX /sw/lib
 #
 
-import os, sys
+import os, sys, commands
 from os.path import join
+
+#
+# This proceure tries to figure out which extra libraries are
+# needed with curl.
+#
+def set_curl_libs():
+  curl_libs = commands.getstatusoutput('curl-config --libs')
+  if curl_libs[0] == 0:
+#
+# Split into individual lines so we can loop through each one.
+#
+    clibs = curl_libs[1].split()
+#
+# Check if this is a -L or -l string and do the appropriate thing.
+#
+    for clibstr in clibs:
+      if clibstr[0:2] == "-L":
+        LIB_DIRS.append(clibstr.split("-L")[1])
+      elif clibstr[0:2] == "-l":
+        LIBRARIES.append(clibstr.split("-l")[1])
+  else:
+#
+# If curl-config doesn't produce valid output, then try -lcurl.
+#
+    LIBRARIES.append('curl')
+
+  return
+
+# End of set_curl_libs
 
 LIB_MACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY' , None) ]
 
@@ -88,6 +117,7 @@ INC_DIRS   = ['libsrc']
 
 # These are the required NIO, HDF4, and NetCDF libraries.
 LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
+
 # Check for XXXX_PREFIX environment variables.
 try:
   LIB_DIRS.append(os.path.join(os.environ["NETCDF_PREFIX"],"lib"))
@@ -128,14 +158,7 @@ try:
     except:    
       HAS_OPENDAP = 1
     if HAS_OPENDAP > 0:
-      LIBRARIES.append('curl')
-#
-# These might be needed on some Linux systems.
-#
-#      LIBRARIES.append('ssl')
-#      LIBRARIES.append('ldap')
-#      LIBRARIES.append('idn')
-#      LIBRARIES.append('rt')
+      set_curl_libs()
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"include"))
