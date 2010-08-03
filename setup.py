@@ -214,7 +214,11 @@ except:
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
 
 try:
-  HAS_SZIP = int(os.environ["HAS_SZIP"])
+  try:
+    HAS_SZIP = int(os.environ["HAS_SZIP"])
+  except:
+    if HAS_NETCDF4 > 0:
+      HAS_SZIP = 1
   if HAS_SZIP > 0:
     LIBRARIES.append('sz')
     try:
@@ -378,6 +382,9 @@ def configuration(parent_package='',top_path=None):
 
 if HAS_GRIB2 > 0:
   data_files = get_grib2_codetables()
+else:
+  data_files = []
+
  
 #print data_files
 setup (version      = pynio_version,
