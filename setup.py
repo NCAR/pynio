@@ -217,7 +217,7 @@ try:
   try:
     HAS_SZIP = int(os.environ["HAS_SZIP"])
   except:
-    if HAS_NETCDF4 > 0:
+    if HAS_NETCDF4 > 0 or HAS_HDFEOS5 > 0:
       HAS_SZIP = 1
   if HAS_SZIP > 0:
     LIBRARIES.append('sz')
