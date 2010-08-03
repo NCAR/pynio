@@ -47,6 +47,23 @@ except ImportError:
 # must be set to the root location of that software, unless they are
 # all the same as a previous setting, like NCARG_ROOT.
 #
+#
+# If you are linking against NetCDF version 4, this script assumes
+# that OPeNDAP support has been included since NetCDF 4.1.1 turns
+# this on by default. If you built NetCDF-4 with OPeNDAP support
+# turned off (--disable-dap), then set the environment variable
+# HAS_OPENDAP to 0.
+#
+# If your HDF4 library was built with support for SZIP compression or
+# if you want to include NETCDF4 and/or HDFEOS5 support and the HDF5 
+# libraries on which they depend have SZIP support included, then you
+# additionally need to set environment variables for SZIP in a similar
+# fashion:
+#    HAS_SZIP
+# (set to 1)
+#    SZIP_PREFIX
+# (if it resides in a location of its own)
+#
 # Finally, you may need to include Fortran system libraries
 # (like "-lgfortran" or "-lf95") to resolve undefined symbols.
 #
@@ -57,7 +74,36 @@ except ImportError:
 #  F2CLIBS_PREFIX /sw/lib
 #
 
-import os, sys
+import os, sys, commands
+
+#
+# This proceure tries to figure out which extra libraries are
+# needed with curl.
+#
+def set_curl_libs():
+  curl_libs = commands.getstatusoutput('curl-config --libs')
+  if curl_libs[0] == 0:
+#
+# Split into individual lines so we can loop through each one.
+#
+    clibs = curl_libs[1].split()
+#
+# Check if this is a -L or -l string and do the appropriate thing.
+#
+    for clibstr in clibs:
+      if clibstr[0:2] == "-L":
+        LIB_DIRS.append(clibstr.split("-L")[1])
+      elif clibstr[0:2] == "-l":
+        LIBRARIES.append(clibstr.split("-l")[1])
+  else:
+#
+# If curl-config doesn't produce valid output, then try -lcurl.
+#
+    LIBRARIES.append('curl')
+
+  return
+
+# End of set_curl_libs
 
 try:
   ncarg_root = os.environ["NCARG_ROOT"]
@@ -103,8 +149,12 @@ try:
   if HAS_NETCDF4 > 0:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
-    LIBRARIES.append('curl')
-    LIBRARIES.append('sz')
+    try:
+      HAS_OPENDAP = int(os.environ["HAS_OPENDAP"])
+    except:    
+      HAS_OPENDAP = 1
+    if HAS_OPENDAP > 0:
+      set_curl_libs()
     try:
       LIB_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["NETCDF4_PREFIX"],"include"))
@@ -152,6 +202,18 @@ try:
       pass
 except:
   HAS_GDAL = 0
+
+try:
+  HAS_SZIP = int(os.environ["HAS_SZIP"])
+  if HAS_SZIP > 0:
+    LIBRARIES.append('sz')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["SZIP_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["SZIP_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_SZIP = 0
 
 # Depending on what Fortran compiler was used to build, we may need
 # additional library paths or libraries.
