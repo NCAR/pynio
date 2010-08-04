@@ -335,7 +335,7 @@ vfile = open(pynio_vfile,'w')
 vfile.write("version = '%s'\n" % pynio_version)
 vfile.write("array_module = 'numpy'\n")
 vfile.write("array_module_version = '%s'\n" % array_module_version)
-vfile.write("python_version = '%s'\n" % sys.version[:3])
+vfile.write("python_version = '%s'\n" % sys.version[:5])
 vfile.close()
 
 #----------------------------------------------------------------------
