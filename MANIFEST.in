@@ -11,6 +11,7 @@ include niomodule.h
 include version
 recursive-include libsrc *
 recursive-include ncarg *
+recursive-include examples *
 recursive-include test *
 
 
