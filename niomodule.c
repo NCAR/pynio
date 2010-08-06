@@ -48,7 +48,7 @@ it is part of the actual file name. Valid extensions include:\n\
     .gr, .grb, .grib, .gr1, .grb1, .grib1, .gr2, .grb2, .grib2, -- GRIB\n\
     .hd, .hdf -- HDF\n\
     .he2, .he4, .hdfeos -- HDFEOS\n\
-    .he5, .hdfeos4 -- HDFEOS5\n\
+    .he5, .hdfeos5 -- HDFEOS5\n\
     .shp, .mif, .gmt, .rt1 -- shapefiles, other formats supported by GDAL OGR\n\
     .ccm -- CCM history files\n\
 Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all\n\

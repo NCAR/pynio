@@ -572,7 +572,7 @@ be part of the actual file name), or it must be specified using the optional
     .gr, .grb, .grib, .gr1, .grb1, .grib1, .gr2, .grb2, .grib2, -- GRIB
     .hd, .hdf -- HDF
     .he2, .he4, .hdfeos -- HDFEOS
-    .he5, .hdfeos4 -- HDFEOS5
+    .he5, .hdfeos5 -- HDFEOS5
     .shp, .mif, .gmt, .rt1 -- shapefiles, other formats supported by GDAL OGR
     .ccm -- CCM history files
 Extensions are handled case-insensitvely, i.e.: .grib, .GRIB, and .Grib all
