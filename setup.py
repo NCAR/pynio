@@ -203,7 +203,7 @@ try:
   if HAS_GRIB2 > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
-    LIB_MACROS.append(('BuildOGR', None))
+    LIB_MACROS.append(('BuildGDAL', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"include"))

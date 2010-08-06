@@ -38,9 +38,9 @@ import time,os
 #
 #  Read a GRIB2 file from the example data directory
 #
-dirc = Ngl.pynglpath("data")
+dirc = '../ncarg/data/grib2/'
 fname = "wafsgfs_L_t06z_intdsk60.grib2"
-f = Nio.open_file(dirc + "/grb/" + fname + ".grb")
+f = Nio.open_file(dirc + fname)
 
 #
 # Print the input file contents

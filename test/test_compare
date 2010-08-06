@@ -1,10 +1,18 @@
 test-version.py
--rw-r--r--  1 dbrown  wheel  21007 Mar 12 11:29 /usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc
+-rw-r--r--  1 dbrown  wheel  21258 Aug  3 14:38 /usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc
 /usr/local/lib/python2.6/site-packages/PyNIO/nio.so:
 	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.3)
+	/usr/local/lib/libcurl.4.dylib (compatibility version 7.0.0, current version 7.0.0)
+	/usr/lib/libssl.0.9.7.dylib (compatibility version 0.9.7, current version 0.9.7)
+	/usr/lib/libcrypto.0.9.7.dylib (compatibility version 0.9.7, current version 0.9.7)
+	/System/Library/Frameworks/LDAP.framework/Versions/A/LDAP (compatibility version 1.0.0, current version 2.2.0)
+	/usr/local/lib/libgdal.1.dylib (compatibility version 16.0.0, current version 16.2.0)
+	/usr/local/lib/libproj.0.dylib (compatibility version 7.0.0, current version 7.6.0)
 	/usr/local/lib/libsz.2.dylib (compatibility version 3.0.0, current version 3.0.0)
+	/usr/local/gfortran/lib/libgfortran.3.dylib (compatibility version 4.0.0, current version 4.0.0)
+	/usr/local/gfortran/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 1.0.0)
 	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 111.1.5)
-Nio version = '1.3.0b5'
+Nio version = '1.4.0'
 Nio path = '/usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc'
 ma_test.py
 (10, 12, 21, 21)
@@ -94,7 +102,7 @@ nio_demo.py
 (10, 20)
 Nio file:	test.nc
    global attributes:
-      history : Created Thu Apr  1 16:35:21 2010 by David Brown
+      history : Created Fri Aug  6 00:05:31 2010 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -135,7 +143,7 @@ Number of Attributes: 0
 ['foo', 'bar']
 Nio file:	test.nc
    global attributes:
-      history : Created Thu Apr  1 16:35:21 2010 by David Brown
+      history : Created Fri Aug  6 00:05:31 2010 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -437,7 +445,7 @@ printing var info derived from PyNIO calls
 On read, a summary of the file contents:
 Nio file:	test-types.nc
    global attributes:
-      history : Created Thu Apr  1 16:35:22 2010 by David Brown
+      history : Created Fri Aug  6 00:05:31 2010 by David Brown
       title : Nio test NetCDF file
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -991,3 +999,1984 @@ processing history of the data, for example.
       double cross [ i, j ]
 
 variables ['aloan', 'bears', 'cross', 'l', 'order', 'shot']
+test-file-formats.py
+===========================
+Format HDFEOS5: opening and printing contents
+===========================
+Nio file:	../ncarg/data/hdfeos5/OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t014811.he5
+   global attributes:
+      Period_Aerosol_NearUV_Grid : Daily
+      EndUTC_Aerosol_NearUV_Grid : 2010-02-01T11:45:00.000000Z
+      StartUTC_Aerosol_NearUV_Grid : 2010-01-30T12:15:00.000000Z
+      PGEVersion_Aerosol_NearUV_Grid : "0.9.50"
+      TAI93At0zOfGranule_Aerosol_NearUV_Grid : 539049607
+      GranuleDayOfYear_Aerosol_NearUV_Grid : 31
+      GranuleYear_Aerosol_NearUV_Grid : 2010
+      GranuleDay_Aerosol_NearUV_Grid : 31
+      GranuleMonth_Aerosol_NearUV_Grid : 1
+      ProcessLevel_Aerosol_NearUV_Grid : 3
+      InstrumentName_Aerosol_NearUV_Grid : OMI
+      OrbitPeriod_Aerosol_NearUV_Grid : [5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934]
+      OrbitNumber_Aerosol_NearUV_Grid : [29485, 29486, 29487, 29488, 29489, 29490, 29491, 29492, 29493, 29494, 29495, 29496, 29497, 29498, 29499, 29500, 29501, 29502, 29503, 29504, 29505, 29506, 29507, 29508, 29509, 29510, 29511, 29512, 29513, 29514, 29515, 29516, 29517, 29518, 29519, 29520, 29521, 29522, 29523, 29524, 29525, 29526, 29527, 29528]
+      NumberOfLatitudesInGrid_Aerosol_NearUV_Grid : 180
+      NumberOfLongitudesInGrid_Aerosol_NearUV_Grid : 360
+      GridSpanUnit_Aerosol_NearUV_Grid : deg
+      GridSpan_Aerosol_NearUV_Grid : (-180,180,-90,90)
+      GridSpacingUnit_Aerosol_NearUV_Grid : deg
+      GridSpacing_Aerosol_NearUV_Grid : (1.0,1.0)
+      GridOrigin_Aerosol_NearUV_Grid : Center
+      Projection_Aerosol_NearUV_Grid : Geographic
+      GCTPProjectionCode_Aerosol_NearUV_Grid : 0
+   dimensions:
+      XDim_Aerosol_NearUV_Grid = 360
+      YDim_Aerosol_NearUV_Grid = 180
+   variables:
+      double YDim_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid ]
+         projection :	Geographic
+         Units :	deg
+         long_name :	latitude
+         units :	degrees_north
+      double XDim_Aerosol_NearUV_Grid [ XDim_Aerosol_NearUV_Grid ]
+         projection :	Geographic
+         Units :	deg
+         long_name :	longitude
+         units :	degrees_east
+      float FinalAerosolSingleScattAlb500_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Single Scattering Albedo at 500 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolSingleScattAlb500
+         projection :	Geographic
+      float FinalAerosolExtOpticalDepth500_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Extinction Optical Depth at 500 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolExtOpticalDepth500
+         projection :	Geographic
+      float FinalAerosolAbsOpticalDepth500_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Absorption Optical Depth at 500 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolAbsOpticalDepth500
+         projection :	Geographic
+      float FinalAerosolSingleScattAlb388_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Single Scattering Albedo at 388 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolSingleScattAlb388
+         projection :	Geographic
+      float FinalAerosolExtOpticalDepth388_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Extinction Optical Depth at 388 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolExtOpticalDepth388
+         projection :	Geographic
+      float FinalAerosolAbsOpticalDepth388_Aerosol_NearUV_Grid [ YDim_Aerosol_NearUV_Grid, XDim_Aerosol_NearUV_Grid ]
+         MissingValue :	-1.267651e+30
+         Offset :	0
+         ScaleFactor :	1
+         UniqueFieldDefinition :	OMI-Specific
+         Title :	Final Aerosol Absorption Optical Depth at 388 nm
+         Units :	NoUnits
+         _FillValue :	-1.267651e+30
+         long_name :	FinalAerosolAbsOpticalDepth388
+         projection :	Geographic
+
+===========================
+Format Shapefile: opening and printing contents
+===========================
+Nio file:	../ncarg/data/shapefile/states.shp
+   global attributes:
+      layer_name : states
+      geometry_type : polygon
+      geom_segIndex : 0
+      geom_numSegs : 1
+      segs_xyzIndex : 0
+      segs_numPnts : 1
+   dimensions:
+      geometry = 2
+      segments = 2
+      num_features = 49 // unlimited
+      num_segments = 95
+      num_points = 11481
+   variables:
+      integer geometry [ num_features, geometry ]
+      integer segments [ num_segments, segments ]
+      double x [ num_points ]
+      double y [ num_points ]
+      string STATE_NAME [ num_features ]
+      string STATE_FIPS [ num_features ]
+      string SUB_REGION [ num_features ]
+      string STATE_ABBR [ num_features ]
+      double LAND_KM [ num_features ]
+      double WATER_KM [ num_features ]
+      double PERSONS [ num_features ]
+      double FAMILIES [ num_features ]
+      double HOUSHOLD [ num_features ]
+      double MALE [ num_features ]
+      double FEMALE [ num_features ]
+      double WORKERS [ num_features ]
+      double DRVALONE [ num_features ]
+      double CARPOOL [ num_features ]
+      double PUBTRANS [ num_features ]
+      double EMPLOYED [ num_features ]
+      double UNEMPLOY [ num_features ]
+      double SERVICE [ num_features ]
+      double MANUAL [ num_features ]
+      double P_MALE [ num_features ]
+      double P_FEMALE [ num_features ]
+      double SAMP_POP [ num_features ]
+
+===========================
+Format HDF: opening and printing contents
+===========================
+Nio file:	../ncarg/data/hdf/avhrr.hdf
+   global attributes:
+   dimensions:
+      fakeDim0 = 180
+      fakeDim1 = 360
+   variables:
+      byte fakeDim0 [ fakeDim0 ]
+         hdf_name :	fakeDim0
+      byte fakeDim1 [ fakeDim1 ]
+         hdf_name :	fakeDim1
+      byte Data_Set_2 [ fakeDim0, fakeDim1 ]
+         coordsys :	Interrrupted Goode Homolosine
+         valid_max :	253
+         valid_min :	3
+         scale_factor :	0.008
+         scale_factor_err :	-9
+         add_offset :	128
+         add_offset_err :	-9
+         calibrated_nt :	21
+         long_name :	NDVI
+         units :	n/a
+         format :	 
+         hdf_name :	Data-Set-2
+
+===========================
+Format GRIB: opening and printing contents
+===========================
+Nio file:	../ncarg/data/grib/ced1.lf00.t00z.eta.grb
+   global attributes:
+   dimensions:
+      gridx_6 = 45
+      gridy_6 = 53
+      gridx_101 = 91
+      gridy_101 = 113
+      gridx_105 = 83
+      gridy_105 = 83
+      lv_ISBL6 = 11
+      lv_ISBL7 = 14
+      lv_GPML8 = 6
+      lv_SIGL9 = 3
+      lv_ISBL10 = 6
+      lv_ISBL11 = 5
+      lv_ISBL12 = 10
+      lv_SIGY13 = 8
+      lv_SIGY14 = 3
+      lv_SIGY15 = 2
+   variables:
+      float PRES_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_101_SFC [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	1
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_6_MSL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	102
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	2
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_101_MSL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	102
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	2
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_105_MSL [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	102
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	2
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_0DEG [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	4
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_ISBL [ lv_ISBL7, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_SIGL [ lv_SIGL9, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	11
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float POT_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Potential temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	13
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float DPT_6_ISBL [ lv_ISBL10, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Dew point temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	17
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float DPT_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Dew point temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	17
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_HTGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	105
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         level :	10
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	33
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_HTGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	105
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         level :	10
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	34
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float STRM_6_ISBL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Stream function
+         units :	m^2/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	35
+         level :	500
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	39
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	39
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_101_ISBL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	100
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	39
+         level :	700
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_105_ISBL [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	100
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	39
+         level :	700
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ABS_V_6_ISBL [ lv_ISBL11, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Absolute vorticity
+         units :	/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	41
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_ISBL [ lv_ISBL10, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_0DEG [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	4
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_ISBL [ lv_ISBL12, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_SIGY [ lv_SIGY13, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float P_WAT_6_SIGY [ lv_SIGY14, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Precipitable water
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	54
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	61
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	61
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_105_SFC_acc [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	1
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	61
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float NCPCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Large scale precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	62
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float NCPCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Large scale precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	62
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ACPCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	63
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ACPCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	63
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MSLET_6_MSL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Mean sea level pressure (ETA model)
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	102
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	130
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float LFT_X_6_ISBY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Surface lifted index
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	101
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	131
+         level :	[50, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float 4LFTX_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Best (4-layer) lifted index
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	132
+         level :	[84, 98]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_6_SIGY [ lv_SIGY15, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	135
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_101_SIGY [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	108
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	135
+         level :	[85, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_105_SIGY [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	108
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	135
+         level :	[85, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float VW_SH_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Vertical speed shear
+         units :	1/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	136
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float CAPE_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective available. potential energy
+         units :	J/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	157
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TKE_6_ISBL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Turbulent kinetic energy
+         units :	J/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	158
+         level :	250
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      integer lv_SIGY15_l1 [ lv_SIGY15 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY15_l0 [ lv_SIGY15 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY14_l1 [ lv_SIGY14 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY14_l0 [ lv_SIGY14 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY13_l1 [ lv_SIGY13 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY13_l0 [ lv_SIGY13 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_ISBL12 [ lv_ISBL12 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL11 [ lv_ISBL11 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL10 [ lv_ISBL10 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_SIGL9 [ lv_SIGL9 ]
+         long_name :	sigma level
+         units :	sigma
+      integer lv_GPML8 [ lv_GPML8 ]
+         long_name :	fixed height level
+         units :	m
+      integer lv_ISBL7 [ lv_ISBL7 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL6 [ lv_ISBL6 ]
+         long_name :	isobaric level
+         units :	hPa
+      float gridrot_105 [ gridx_105, gridy_105 ]
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_105 [ gridx_105, gridy_105 ]
+         corners :	[17.52879, 16.80779, 53.77076, 56.13577]
+         long_name :	latitude
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	90754.64
+         Dx :	90754.64
+         Lov :	255
+         Lo1 :	230.704
+         La1 :	17.529
+      float gridlon_105 [ gridx_105, gridy_105 ]
+         corners :	[-129.2958, -79.09349, -22.37377, 172.9269]
+         long_name :	longitude
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	90754.64
+         Dx :	90754.64
+         Lov :	255
+         Lo1 :	230.704
+         La1 :	17.529
+      float gridrot_101 [ gridx_101, gridy_101 ]
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_101 [ gridx_101, gridy_101 ]
+         corners :	[10.528, 11.34911, 44.49488, 42.26546]
+         long_name :	latitude
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	91452
+         Dx :	91452
+         Lov :	255
+         Lo1 :	222.854
+         La1 :	10.528
+      float gridlon_101 [ gridx_101, gridy_101 ]
+         corners :	[-137.146, -74.2207, -16.57593, 166.4939]
+         long_name :	longitude
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	91452
+         Dx :	91452
+         Lov :	255
+         Lo1 :	222.854
+         La1 :	10.528
+      float gridrot_6 [ gridx_6, gridy_6 ]
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_6 [ gridx_6, gridy_6 ]
+         corners :	[7.647004, 7.647045, 44.28813, 44.28801]
+         long_name :	latitude
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	190500
+         Dx :	190500
+         Lov :	255
+         Lo1 :	226.557
+         La1 :	7.647
+      float gridlon_6 [ gridx_6, gridy_6 ]
+         corners :	[-133.4429, -76.55713, -23.74609, 173.7461]
+         long_name :	longitude
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	190500
+         Dx :	190500
+         Lov :	255
+         Lo1 :	226.557
+         La1 :	7.647
+
+===========================
+Format NetCDF: opening and printing contents
+===========================
+Nio file:	../ncarg/data/netcdf/pop.nc
+   global attributes:
+   dimensions:
+      nlat = 384
+      nlon = 320
+   variables:
+      float urot [ nlat, nlon ]
+         missing_value :	9.96921e+36
+         _FillValue :	9.96921e+36
+         cell_methods :	time: mean
+         coordinates :	lat2d lon2d
+         units :	centimeter/s
+         long_name :	Zonal Velocity
+         time :	365031
+         z_t :	500.622
+      float vrot [ nlat, nlon ]
+         missing_value :	9.96921e+36
+         _FillValue :	9.96921e+36
+         cell_methods :	time: mean
+         coordinates :	lat2d lon2d
+         units :	centimeter/s
+         long_name :	Meridional Velocity
+         time :	365031
+         z_t :	500.622
+      float t [ nlat, nlon ]
+         z_t :	500.622
+         time :	365031
+         long_name :	Potential Temperature
+         units :	degC
+         coordinates :	lat2d lon2d
+         cell_methods :	time: mean
+         _FillValue :	9.96921e+36
+         missing_value :	9.96921e+36
+      float lat2d [ nlat, nlon ]
+         long_name :	array of u-grid latitudes
+         units :	degrees_north
+      float lon2d [ nlat, nlon ]
+         long_name :	array of u-grid longitudes
+         units :	degrees_east
+
+===========================
+Format GRIB2: opening and printing contents
+===========================
+Nio file:	../ncarg/data/grib2/wafsgfs_L_t06z_intdsk60.grib2
+   global attributes:
+   dimensions:
+      lat_0 = 73
+      lon_0 = 73
+      lv_ISBL0 = 12
+      lv_ISBL1 = 11
+      lv_ISBL2 = 10
+   variables:
+      float TMP_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Specified height level above ground (m)
+         level :	2
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_L100_GLL0 [ lv_ISBL1, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Specified height level above ground (m)
+         level :	2
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Specified height level above ground (m)
+         level :	10
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Specified height level above ground (m)
+         level :	10
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VVEL_P0_L100_GLL0 [ lv_ISBL2, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Vertical velocity (pressure)
+         units :	Pa s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 8]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float ABSV_P0_L100_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Absolute vorticity
+         units :	s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 10]
+         level_type :	Isobaric surface (Pa)
+         level :	50000
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L1_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Ground or water surface
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRMSL_P0_L101_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 1]
+         level_type :	Mean sea level (Pa)
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float APCP_P8_L1_GLL0_acc6h [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Total precipitation
+         units :	kg m-2
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[8, 0, 1, 8]
+         level_type :	Ground or water surface
+         level :	0
+         type_of_statistical_processing :	Accumulation
+         statistical_process_duration :	6 hours (ending at forecast time)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float ACPCP_P8_L1_GLL0_acc6h [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Convective precipitation
+         units :	kg m-2
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[8, 0, 1, 10]
+         level_type :	Ground or water surface
+         level :	0
+         type_of_statistical_processing :	Accumulation
+         statistical_process_duration :	6 hours (ending at forecast time)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float lv_ISBL2 [ lv_ISBL2 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lv_ISBL1 [ lv_ISBL1 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lv_ISBL0 [ lv_ISBL0 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lat_0 [ lat_0 ]
+         long_name :	latitude
+         grid_type :	Latitude/longitude Grid (Quasi-Regular)
+         units :	degrees_north
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	330
+         La2 :	90
+         Lo1 :	240
+         La1 :	0
+      float lon_0 [ lon_0 ]
+         long_name :	longitude
+         grid_type :	Latitude/longitude Grid (Quasi-Regular)
+         units :	degrees_east
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	330
+         La2 :	90
+         Lo1 :	240
+         La1 :	0
+
+===========================
+Format HDFEOS: opening and printing contents
+===========================
+Nio file:	../ncarg/data/hdfeos/MOD04_L2.A2001066.0000.004.2003078090622.hdfeos
+   global attributes:
+   dimensions:
+      Cell_Along_Swath_mod04 = 203
+      Cell_Across_Swath_mod04 = 135
+      Solution_1_Land_mod04 = 2
+      Solution_2_Land_mod04 = 3
+      Solution_3_Land_mod04 = 3
+      Solution_Ocean_mod04 = 2
+      Solution_Index_mod04 = 9
+      MODIS_Band_Land_mod04 = 5
+      MODIS_Band_Ocean_mod04 = 7
+      QA_Byte_Land_mod04 = 5
+      QA_Byte_Ocean_mod04 = 5
+   variables:
+      short MODIS_Band_Ocean_mod04 [ MODIS_Band_Ocean_mod04 ]
+         hdfeos_name :	MODIS_Band_Ocean
+      short MODIS_Band_Land_mod04 [ MODIS_Band_Land_mod04 ]
+         hdfeos_name :	MODIS_Band_Land
+      short Solution_Index_mod04 [ Solution_Index_mod04 ]
+         hdfeos_name :	Solution_Index
+      short Solution_Ocean_mod04 [ Solution_Ocean_mod04 ]
+         hdfeos_name :	Solution_Ocean
+      short Solution_3_Land_mod04 [ Solution_3_Land_mod04 ]
+         hdfeos_name :	Solution_3_Land
+      short Solution_2_Land_mod04 [ Solution_2_Land_mod04 ]
+         hdfeos_name :	Solution_2_Land
+      short Solution_1_Land_mod04 [ Solution_1_Land_mod04 ]
+         hdfeos_name :	Solution_1_Land
+      byte Quality_Assurance_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04, QA_Byte_Ocean_mod04 ]
+         hdfeos_name :	Quality_Assurance_Ocean
+         _FillValue :	0
+      short STD_Reflectance_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	STD_Reflectance_Ocean
+         _FillValue :	-9999
+      short Mean_Reflectance_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Mean_Reflectance_Ocean
+         _FillValue :	-9999
+      short Number_Pixels_Used_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Number_Pixels_Used_Ocean
+         _FillValue :	-9999
+      short Cloud_Fraction_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Cloud_Fraction_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_by_models_ocean_mod04 [ Solution_Index_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_by_models_ocean
+         _FillValue :	-9999
+      short Optical_Depth_Ratio_Small_Ocean_0_86micron_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Ratio_Small_Ocean_0.86micron
+         _FillValue :	-9999
+      short Least_Squares_Error_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Least_Squares_Error_Ocean
+         _FillValue :	-9999
+      short Transmitted_Flux_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Transmitted_Flux_Average_Ocean
+         _FillValue :	-9999
+      short Transmitted_Flux_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Transmitted_Flux_Best_Ocean
+         _FillValue :	-9999
+      short Reflected_Flux_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Reflected_Flux_Average_Ocean
+         _FillValue :	-9999
+      short Reflected_Flux_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Reflected_Flux_Best_Ocean
+         _FillValue :	-9999
+      short Angstrom_Exponent_2_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Angstrom_Exponent_2_Ocean
+         _FillValue :	-9999
+      short Angstrom_Exponent_1_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Angstrom_Exponent_1_Ocean
+         _FillValue :	-9999
+      short Backscattering_Ratio_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Backscattering_Ratio_Average_Ocean
+         _FillValue :	-9999
+      short Backscattering_Ratio_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Backscattering_Ratio_Best_Ocean
+         _FillValue :	-9999
+      short Asymmetry_Factor_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Asymmetry_Factor_Average_Ocean
+         _FillValue :	-9999
+      short Asymmetry_Factor_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Asymmetry_Factor_Best_Ocean
+         _FillValue :	-9999
+      float Cloud_Condensation_Nuclei_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Cloud_Condensation_Nuclei_Ocean
+         _FillValue :	-999
+      short Effective_Radius_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Effective_Radius_Ocean
+         _FillValue :	-9999
+      float Mass_Concentration_Ocean_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Mass_Concentration_Ocean
+         _FillValue :	-999
+      short Optical_Depth_Large_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Large_Average_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_Large_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Large_Best_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_Small_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Small_Average_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_Small_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Small_Best_Ocean
+         _FillValue :	-9999
+      short Effective_Optical_Depth_Average_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Effective_Optical_Depth_Average_Ocean
+         _FillValue :	-9999
+      short Effective_Optical_Depth_Best_Ocean_mod04 [ MODIS_Band_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Effective_Optical_Depth_Best_Ocean
+         _FillValue :	-9999
+      short Solution_Index_Ocean_Large_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Solution_Index_Ocean_Large
+         _FillValue :	-9999
+      short Solution_Index_Ocean_Small_mod04 [ Solution_Ocean_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Solution_Index_Ocean_Small
+         _FillValue :	-9999
+      byte Quality_Assurance_Crit_Ref_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04, QA_Byte_Land_mod04 ]
+         hdfeos_name :	Quality_Assurance_Crit_Ref_Land
+         _FillValue :	0
+      byte Quality_Assurance_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04, QA_Byte_Land_mod04 ]
+         hdfeos_name :	Quality_Assurance_Land
+         _FillValue :	0
+      short STD_Reflectance_Land_mod04 [ MODIS_Band_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	STD_Reflectance_Land
+         _FillValue :	-9999
+      short Mean_Reflectance_Land_mod04 [ MODIS_Band_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Mean_Reflectance_Land
+         _FillValue :	-9999
+      short Number_Pixels_Percentile_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Number_Pixels_Percentile_Land
+         _FillValue :	-9999
+      short Optical_Depth_Ratio_Small_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Ratio_Small_Land
+         _FillValue :	-9999
+      short Cloud_Fraction_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Cloud_Fraction_Land
+         _FillValue :	-9999
+      short Transmitted_Flux_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Transmitted_Flux_Land
+         _FillValue :	-9999
+      short Reflected_Flux_Land_mod04 [ Solution_2_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Reflected_Flux_Land
+         _FillValue :	-9999
+      short Angstrom_Exponent_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Angstrom_Exponent_Land
+         _FillValue :	-9999
+      float Mass_Concentration_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Mass_Concentration_Land
+         _FillValue :	-999
+      short Estimated_Uncertainty_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Estimated_Uncertainty_Land
+         _FillValue :	-9999
+      short Corrected_Optical_Depth_Land_mod04 [ Solution_2_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Corrected_Optical_Depth_Land
+         _FillValue :	-9999
+      short Continental_Optical_Depth_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Continental_Optical_Depth_Land
+         _FillValue :	-9999
+      short Aerosol_Type_Land_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Aerosol_Type_Land
+         _FillValue :	-9999
+      short QualityWeight_Critical_Reflectance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	QualityWeight_Critical_Reflectance_Land
+         _FillValue :	-9999
+      short QualityWeight_Path_Radiance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	QualityWeight_Path_Radiance_Land
+         _FillValue :	-9999
+      short Error_Critical_Reflectance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Error_Critical_Reflectance_Land
+         _FillValue :	-9999
+      short Critical_Reflectance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Critical_Reflectance_Land
+         _FillValue :	-9999
+      short Error_Path_Radiance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Error_Path_Radiance_Land
+         _FillValue :	-9999
+      short Path_Radiance_Land_mod04 [ Solution_1_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Path_Radiance_Land
+         _FillValue :	-9999
+      short Standard_Deviation_Reflectance_Land_All_mod04 [ Solution_3_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Standard_Deviation_Reflectance_Land_All
+         _FillValue :	-9999
+      short Mean_Reflectance_Land_All_mod04 [ Solution_3_Land_mod04, Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Mean_Reflectance_Land_All
+         _FillValue :	-9999
+      short Reflected_Flux_Land_And_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Reflected_Flux_Land_And_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_Ratio_Small_Land_And_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Ratio_Small_Land_And_Ocean
+         _FillValue :	-9999
+      short Optical_Depth_Land_And_Ocean_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Optical_Depth_Land_And_Ocean
+         _FillValue :	-9999
+      short Scattering_Angle_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Scattering_Angle
+         _FillValue :	-9999
+      byte Cloud_Mask_QA_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Cloud_Mask_QA
+         _FillValue :	0
+      short Sensor_Azimuth_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Sensor_Azimuth
+         _FillValue :	-9999
+      short Sensor_Zenith_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Sensor_Zenith
+         _FillValue :	-9999
+      short Solar_Azimuth_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Solar_Azimuth
+         _FillValue :	-9999
+      short Solar_Zenith_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Solar_Zenith
+         _FillValue :	-9999
+      double Scan_Start_Time_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         coordinates :	Latitude_mod04, Longitude_mod04
+         hdfeos_name :	Scan_Start_Time
+         _FillValue :	-999
+      float Latitude_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         long_name :	latitude
+         units :	degrees_north
+         hdfeos_name :	Latitude
+         _FillValue :	-999
+      float Longitude_mod04 [ Cell_Along_Swath_mod04, Cell_Across_Swath_mod04 ]
+         long_name :	longitude
+         units :	degrees_east
+         hdfeos_name :	Longitude
+         _FillValue :	-999
+

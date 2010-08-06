@@ -7,3 +7,4 @@ test_mfio.py
 var-sub-test.py
 test-opendap1.py
 test-opendap2.py
+test-file-formats.py

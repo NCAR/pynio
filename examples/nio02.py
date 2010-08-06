@@ -29,9 +29,7 @@
 #  Notes:
 #     
 
-import numpy 
 import Nio
-import Ngl
 
 print """
 This example prints all Nio docstrings. For clarity each docstring
@@ -75,8 +73,8 @@ print "======================================================================="
 #
 #  Read the file pop.nc
 #
-dirc = Ngl.pynglpath("data")
-f = Nio.open_file(dirc + "/cdf/pop.nc")
+dirc = '../ncarg/data/netcdf/'
+f = Nio.open_file(dirc + "pop.nc")
 
 print "The NioFile object docstring (f.__doc__):"
 print "======================================================================="
