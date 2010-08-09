@@ -189,6 +189,9 @@ try:
     LIBRARIES.append('jasper')   # png is needed again, b/c it 
     LIBRARIES.append('png')      # must come after jasper
     LIB_MACROS.append(('BuildGRIB2', None))
+    # This should test whether the system is 64 bits or not
+    if sys.maxint > 2**32:
+	LIB_MACROS.append(('__64BIT__',None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))

@@ -5,7 +5,6 @@ import Nio
 import numpy as N
 from numpy import ma
 import os
-from xarray import xArray
 
 verbose = True
 filename = os.tempnam(None, 'test_')

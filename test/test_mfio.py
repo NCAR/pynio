@@ -5,7 +5,6 @@ import Nio
 import numpy as N
 from numpy import ma
 import os
-from xarray import xArray
 N.set_printoptions(precision=4)
 verbose = True
 filename = os.tempnam(None, 'test_')
@@ -411,7 +410,6 @@ class test_topo(ut.TestCase):
             xsel = Nio.inp2xsel(file, 'PT', cstr)
             pt = file.variables['PT'][cstr]
             #pt = file.variables['ZP'][:]
-            #pt = xArray(pt)[xsel]
             if verbose: print pt.shape
             if verbose: 
                 if ma.isMA(pt):
