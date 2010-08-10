@@ -288,6 +288,15 @@ from distutils.sysconfig import get_python_lib
 pynio_vfile = "pynio_version.py"         # PyNIO version file.
 pkgs_pth    = get_python_lib()
 
+#
+# These variables are temporarily defined for readability.
+# The default FORTRAN_CALLING_METHOD is APPEND_UNDERSCORE.
+#
+
+APPEND_UNDERSCORE = 1
+NO_APPEND_UNDERSCORE = 2
+CAPS_NO_APPEND_UNDERSCORE = 3
+
 if sys.platform == "linux2" and os.uname()[-1] == "x86_64" and \
     platform.python_compiler()[:5] == "GCC 4":
     LIBRARIES.append('gfortran')
@@ -304,6 +313,11 @@ elif sys.platform == "sunos5":
 elif sys.platform == "aix5":
     os.putenv('OBJECT_MODE',"64")
     LIBRARIES.append('xlf90')
+    LIB_MACROS.append(('FORTRAN_CALLING_METHOD', NO_APPEND_UNDERSCORE))
+
+del(APPEND_UNDERSCORE)
+del(NO_APPEND_UNDERSCORE)
+del(CAPS_NO_APPEND_UNDERSCORE)
     
 #----------------------------------------------------------------------
 #
