@@ -581,9 +581,14 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 		  att_list = att_list->next;
 	  }
 	  if (att->data_type == NCL_string) {
-		  PyObject *string;
+		  PyObject *string = NULL;
 		  char *satt = NrmQuarkToString(*((NrmQuark *)md->multidval.val));
-		  string = PyString_FromString(satt);
+                  if (satt != NULL) {
+		          string = PyString_FromString(satt);
+                  }
+                  else {
+		          string = PyString_FromString("");
+                  }
 		  if (string != NULL) {
 			  PyDict_SetItemString(attributes, name, string);
 			  Py_DECREF(string);
