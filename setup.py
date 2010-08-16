@@ -373,7 +373,6 @@ def configuration(parent_package='',top_path=None):
     sources = [ file for file in files if file.endswith('.c') or file.endswith('.f') ]
 
     for file in LIB_EXCLUDE_SOURCES: 
-      print file
       sources.remove(file)
     sources = [ join('libsrc', file) for file in sources ]
 
@@ -392,7 +391,7 @@ def configuration(parent_package='',top_path=None):
                          define_macros = DMACROS,
                          library_dirs  = LIB_DIRS,
                          extra_objects = EXTRA_OBJECTS,
-                         language = 'C'
+                         language = 'c++'
                          )
     return config
 
