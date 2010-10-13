@@ -25,7 +25,7 @@ except ImportError:
 # If all the other software is installed in this same root directory, 
 # then you don't need to set any of the other XXXX_PREFIX variables.
 #
-# You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5,
+# You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5, HDF5,
 # GRIB2 and/or shapefile (using the GDAL library) support.  To do this, 
 # the corresponding environment variables:
 #
@@ -34,10 +34,12 @@ except ImportError:
 #    HAS_HDFEOS5
 #    HAS_GRIB2
 #    HAS_GDAL
+#    HAS_HDF5
 #
 # must be set to 1. In addition, the corresponding environment variables:
 #
 #    NETCDF4_PREFIX
+#    HDF5_PREFIX
 #    HDFEOS_PREFIX
 #    HDFEOS5_PREFIX
 #    GRIB2_PREFIX 
@@ -142,6 +144,8 @@ try:
       INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
     except:
       pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
 except:
   HAS_HDFEOS5 = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
@@ -178,6 +182,8 @@ try:
       INC_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"include"))
     except:
       pass
+  else:
+      LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
 except:
   HAS_HDFEOS = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
@@ -197,9 +203,33 @@ try:
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
     except:
       pass
+  else:
+      LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
 except:
   HAS_GRIB2 = 0
   LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
+
+try:
+  HAS_HDF5 = int(os.environ["HAS_HDF5"])
+  if HAS_HDF5 > 0:
+    LIB_MACROS.append(('BuildHDF5', None))
+    if HAS_NETCDF4 == 0:
+      LIBRARIES.append('hdf5_hl')
+      LIBRARIES.append('hdf5')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"include"))
+    except:
+      pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
+    LIB_EXCLUDE_SOURCES.append('h5reader.c')
+    LIB_EXCLUDE_SOURCES.append('h5writer.c')
+except:
+  HAS_HDF5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
+  LIB_EXCLUDE_SOURCES.append('h5reader.c')
+  LIB_EXCLUDE_SOURCES.append('h5writer.c')
 
 try:
   HAS_GDAL = int(os.environ["HAS_GDAL"])
@@ -212,6 +242,8 @@ try:
       INC_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"include"))
     except:
       pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclOGR.c')
 except:
   HAS_GDAL = 0
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')

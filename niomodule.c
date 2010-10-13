@@ -636,7 +636,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 	  
 
   if (PyString_Check(value)) {
-	  int len_dims = 1;
+	  ng_size_t len_dims = 1;
 	  NrmQuark *qval = malloc(sizeof(NrmQuark));
 	  qval[0] = NrmStringToQuark(PyString_AsString(value));
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
@@ -644,7 +644,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 				   TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
   }
   else {
-	  int dim_sizes = 1;
+	  ng_size_t dim_sizes = 1;
 	  int n_dims;
 	  NrmQuark qtype;
 	  int pyarray_type = PyArray_NOTYPE;
@@ -664,21 +664,13 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 			   qtype = NrmStringToQuark("integer");
                   }
                   if (array) {
-			   int *dims;
+			   ng_size_t *dims;
 			   int malloced = 0;
-			   int i;
 			   if (array->nd == 0) {
 				   dims = &dim_sizes;
 			   }
-			   else if (sizeof(npy_intp) == sizeof(int)) {
-				   dims = (int *) array->dimensions;
-			   }
-			   else {
-				   malloced = 1;
-				   dims = malloc(sizeof(int) * array->nd);
-				   for (i = 0; i < array->nd; i++) {
-					   dims[i] = (int) array->dimensions[i];
-				   }
+			   else  {
+				   dims = (ng_size_t *) array->dimensions;
 			   }
 	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 		                                    (void*)array->data,NULL,n_dims,dims,
@@ -2101,7 +2093,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 static int
 NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *value)
 {
-  int *dims = NULL;
+  ng_size_t *dims = NULL;
   PyArrayObject *array;
   int i, n_dims;
   Py_ssize_t nitems,var_el_count;
@@ -2109,7 +2101,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   int ret = 0;
   int dir, *dirs;
   NrmQuark qtype;
-  int scalar_size = 1;
+  ng_size_t scalar_size = 1;
   NclFile nfile = (NclFile) self->file->id;
   NclMultiDValData md;
   NhlErrorTypes nret;
@@ -2117,6 +2109,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   Py_ssize_t array_el_count = 1;;
   int undefined_dim = -1, dim_undef = -1;
 
+  /* this code assumes ng_size_t and Py_ssize_t are basically equivalent */
   /* update shape */
   (void) NioVariable_GetShape(self);
   n_dims = 0;
@@ -2131,7 +2124,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
     dirs = NULL;
   }
   else {
-    dims = (int *)malloc(self->nd*sizeof(int));
+    dims = (ng_size_t *)malloc(self->nd*sizeof(ng_size_t));
     dirs = (int *)malloc(self->nd*sizeof(int));
     if (dims == NULL || dirs == NULL) {
       free(indices);
@@ -2184,7 +2177,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  indices[i].stop = self->dimensions[i] - 1;
 	  }
 	  if (indices[i].item == 0) {
-		  dims[n_dims] = (int)((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
+		  dims[n_dims] = (ng_size_t)((indices[i].stop-indices[i].start)/(indices[i].stride * dir))+1;
 		  dirs[n_dims] = dir;
 		  if (dims[n_dims] < 0) 
 			  dims[n_dims] = 0;
@@ -2274,7 +2267,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  }
 	  }
 	  if (fdim_count == adim_count) {
-		  int undef_size = 0;
+		  ng_size_t undef_size = 0;
 		  for (i = 0; i < fdim_count; i++) {
 			  if (dims[fdims[i]] == array->dimensions[adims[i]])
 				  continue;
@@ -2448,7 +2441,7 @@ NioVariable_WriteString(NioVariableObject *self, PyStringObject *value)
 	  NclFile nfile = (NclFile) self->file->id;
 	  NclMultiDValData md;
 	  NhlErrorTypes nret;
-	  int str_dim_size = 1;
+	  ng_size_t str_dim_size = 1;
 	  NrmQuark qstr = NrmStringToQuark(PyString_AsString((PyObject *)value));
 	  define_mode(self->file, 0);
 	  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
@@ -3068,7 +3061,7 @@ GetExtension ( char * filename)
 void InitializeNioOptions(NrmQuark extq, int mode)
 {
 	NclMultiDValData md;
-	int len_dims = 1;
+	ng_size_t len_dims = 1;
 	logical *lval;
 	NrmQuark *qval;
 	NrmQuark qnc = NrmStringToQuark("nc");
@@ -3113,7 +3106,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 {
 	NclMultiDValData md = NULL;
 	PyObject *keys = PyMapping_Keys(options);
-	int len_dims = 1;
+	ng_size_t len_dims = 1;
 	Py_ssize_t i;
 	NrmQuark qsafe_mode = NrmStringToQuark("safemode");
 
@@ -3325,11 +3318,11 @@ NioFile_Options(PyObject *self, PyObject *args)
 {
 	PyObject *class;
 	PyObject *dict = PyDict_New();
-	PyObject *pystr = PyString_FromFormat("NioOptions");
-	PyObject *modstr = PyString_FromFormat("__module__");
-	PyObject *modval = PyString_FromFormat("_Nio");
-	PyObject *docstr = PyString_FromFormat("__doc__");
-	PyObject *docval = PyString_FromFormat(option_class_doc);
+	PyObject *pystr = PyString_FromString("NioOptions");
+	PyObject *modstr = PyString_FromString("__module__");
+	PyObject *modval = PyString_FromString("_Nio");
+	PyObject *docstr = PyString_FromString("__doc__");
+	PyObject *docval = PyString_FromString(option_class_doc);
 
 	PyDict_SetItem(dict,modstr,modval);
 	PyDict_SetItem(dict,docstr,docval);
@@ -3343,37 +3336,37 @@ SetUpDefaultOptions( void )
 	PyObject *dict = PyDict_New();
 	PyObject *opt, *val;
 
-	opt = PyString_FromFormat("Format");
-	val = PyString_FromFormat("classic");
+	opt = PyString_FromString("Format");
+	val = PyString_FromString("classic");
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("HeaderReserveSpace");
+	opt = PyString_FromString("HeaderReserveSpace");
 	val = PyInt_FromLong(0);
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("MissingToFillValue");
+	opt = PyString_FromString("MissingToFillValue");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("PreFill");
+	opt = PyString_FromString("PreFill");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("SafeMode");
+	opt = PyString_FromString("SafeMode");
 	val = PyBool_FromLong(0);
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("CompressionLevel");
+	opt = PyString_FromString("CompressionLevel");
 	val = PyInt_FromLong(-1);
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("DefaultNCEPPtable");
-	val = PyString_FromFormat("operational");
+	opt = PyString_FromString("DefaultNCEPPtable");
+	val = PyString_FromString("operational");
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("InitialTimeCoordinateType");
-	val = PyString_FromFormat("numeric");
+	opt = PyString_FromString("InitialTimeCoordinateType");
+	val = PyString_FromString("numeric");
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("SingleElementDimensions");
-	val = PyString_FromFormat("none");
+	opt = PyString_FromString("SingleElementDimensions");
+	val = PyString_FromString("none");
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("ThinnedGridInterpolation");
-	val = PyString_FromFormat("cubic");
+	opt = PyString_FromString("ThinnedGridInterpolation");
+	val = PyString_FromString("cubic");
 	PyDict_SetItem(dict,opt,val);
-	opt = PyString_FromFormat("TimePeriodSuffix");
+	opt = PyString_FromString("TimePeriodSuffix");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict,opt,val);
 		
