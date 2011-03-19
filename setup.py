@@ -243,7 +243,6 @@ try:
       INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
     except:
       pass
-    print HAS_HDFEOS5, 2
   else:
     LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
 except:
