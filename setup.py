@@ -11,33 +11,35 @@ except ImportError:
   sys.exit()
 
 #
-# At a minimum, you must have NCL, NetCDF (3.6.0 or later), and 
-# HDF-4 (4.1 or later) installed.
+# At a minimum, you must NetCDF (3.6.0 or later) installed.
 #
 # You must set the environment variables:
 #
 #    NETCDF_PREFIX
-#    HDF_PREFIX
 #
-# to the parent locations of the NetCDF-3, and HDF-4 installations.
+# to the parent locations of the NetCDF-3 installations.
 #
-# Note: at a minimum, you must set one XXXX_PREFIX environment variable. 
+# Note: you must at least set one XXXX_PREFIX environment variable. 
 # If all the other software is installed in this same root directory, 
 # then you don't need to set any of the other XXXX_PREFIX variables.
 #
-# You can optionally build PyNIO with NetCDF-4, HDF-EOS2, HDF-EOS5,
+# You can optionally build PyNIO with NetCDF-4, HDF4, HDF-EOS2, HDF-EOS5, HDF5,
 # GRIB2 and/or shapefile (using the GDAL library) support.  To do this, 
 # the corresponding environment variables:
 #
 #    HAS_NETCDF4
+#    HAS_HDF4
 #    HAS_HDFEOS
 #    HAS_HDFEOS5
 #    HAS_GRIB2
 #    HAS_GDAL
+#    HAS_HDF5
 #
 # must be set to 1. In addition, the corresponding environment variables:
 #
 #    NETCDF4_PREFIX
+#    HDF4_PREFIX
+#    HDF5_PREFIX
 #    HDFEOS_PREFIX
 #    HDFEOS5_PREFIX
 #    GRIB2_PREFIX 
@@ -52,16 +54,16 @@ except ImportError:
 # turned off (--disable-dap), then set the environment variable
 # HAS_OPENDAP to 0.
 #
-# If your HDF4 library was built with support for SZIP compression or
-# if you want to include NETCDF4 and/or HDFEOS5 support and the HDF5 
-# libraries on which they depend have SZIP support included, then you
-# additionally need to set environment variables for SZIP in a similar
-# fashion:
+# If you want support for any file types that depend on the HDF4
+# or HDF5 libraries and either of them were built with support
+# for SZIP compression then additionally you need to set environment
+# variables for SZIP in a similar fashion:
 #    HAS_SZIP
 # (set to 1)
 #    SZIP_PREFIX
 # (if it resides in a location of its own)
-#      
+# Note: NetCDF4, HDFEOS5, and HDF5 depend on the HDF5 libraries.
+# HDFEOS and HDF4 depend on the HDF4 libraries.
 #
 # Finally, you may need to include Fortran system libraries
 # (like "-lgfortran" or "-lf95") to resolve undefined symbols.
@@ -116,7 +118,7 @@ INC_DIRS   = ['libsrc']
 
 
 # These are the required NIO, HDF4, and NetCDF libraries.
-LIBRARIES = ['nio', 'mfhdf', 'df', 'jpeg', 'png', 'z', 'netcdf']
+LIBRARIES = ['nio', 'jpeg', 'png', 'z', 'netcdf']
 
 # Check for XXXX_PREFIX environment variables.
 try:
@@ -126,25 +128,22 @@ except:
   pass
 
 try:
-  LIB_DIRS.append(os.path.join(os.environ["HDF_PREFIX"],"lib"))
-  INC_DIRS.append(os.path.join(os.environ["HDF_PREFIX"],"include"))
-except:
-  pass
-
-try:
-  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"])
-  if HAS_HDFEOS5 > 0:
-    LIBRARIES.append('he5_hdfeos')
-    LIBRARIES.append('Gctp')
-    LIB_MACROS.append(('BuildHDFEOS5', None))
+  HAS_HDF4 = int(os.environ["HAS_HDF4"])
+  if HAS_HDF4 > 0:
+    LIBRARIES.append('mfhdf')
+    LIBRARIES.append('df')
+    LIB_MACROS.append(('BuildHDF4', None))
     try:
-      LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
-      INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
+      LIB_DIRS.append(os.path.join(os.environ["HDF4_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDF4_PREFIX"],"include"))
     except:
       pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclHDF.c')
 except:
-  HAS_HDFEOS5 = 0
-  LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
+  HAS_HDF4 = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDF.c')
+
 
 
 try:
@@ -170,14 +169,19 @@ except:
 try:
   HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
   if HAS_HDFEOS > 0:
+    LIB_MACROS.append(('BuildHDFEOS', None))
     LIBRARIES.append('hdfeos')
     LIBRARIES.append('Gctp')
-    LIB_MACROS.append(('BuildHDFEOS', None))
+    if HAS_HDF4 == 0:
+      LIBRARIES.append('mfhdf')
+      LIBRARIES.append('df')
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDFEOS_PREFIX"],"include"))
     except:
       pass
+  else:
+      LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
 except:
   HAS_HDFEOS = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
@@ -197,9 +201,54 @@ try:
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
     except:
       pass
+  else:
+      LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
 except:
   HAS_GRIB2 = 0
   LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
+
+try:
+  HAS_HDF5 = int(os.environ["HAS_HDF5"])
+  if HAS_HDF5 > 0:
+    LIB_MACROS.append(('BuildHDF5', None))
+    if HAS_NETCDF4 == 0:
+      LIBRARIES.append('hdf5_hl')
+      LIBRARIES.append('hdf5')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"include"))
+    except:
+      pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
+    LIB_EXCLUDE_SOURCES.append('h5reader.c')
+    LIB_EXCLUDE_SOURCES.append('h5writer.c')
+except:
+  HAS_HDF5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
+  LIB_EXCLUDE_SOURCES.append('h5reader.c')
+  LIB_EXCLUDE_SOURCES.append('h5writer.c')
+
+try:
+  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"])
+  if HAS_HDFEOS5 > 0:
+    LIB_MACROS.append(('BuildHDFEOS5', None))
+    LIBRARIES.append('he5_hdfeos')
+    LIBRARIES.append('Gctp')
+    if HAS_NETCDF4 == 0 and HAS_HDF5 == 0:
+      LIBRARIES.append('hdf5_hl')
+      LIBRARIES.append('hdf5')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
+    except:
+      pass
+    print HAS_HDFEOS5, 2
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
+except:
+  HAS_HDFEOS5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
 
 try:
   HAS_GDAL = int(os.environ["HAS_GDAL"])
@@ -212,6 +261,8 @@ try:
       INC_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"include"))
     except:
       pass
+  else:
+    LIB_EXCLUDE_SOURCES.append('NclOGR.c')
 except:
   HAS_GDAL = 0
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
