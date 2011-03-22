@@ -183,12 +183,14 @@ class _Proxy(object):
             super(_Proxy,self).__setattr__(attrib,value)
         else:
             setattr(self._obj,attrib,value)
+            self.attributes[attrib] = self._obj.__dict__[attrib]
 
     def __delattr__(self, attrib):
         if attrib in _localatts or attrib in _builtins:
             raise AttributeError, "Attempt to delete read only attribute"
         else:
             delattr(self._obj,attrib)
+            del(self.attributes[attrib])
 
 def _make_binder(unbound_method):
     def f(self, *a, **k): return unbound_method(self._obj, *a, **k)
