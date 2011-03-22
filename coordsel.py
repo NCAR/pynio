@@ -139,7 +139,8 @@ class crdSelect(dict):
                             data[key] = axisSelect(value)
                             self.names.append(key)
                         else:
-                            raise ValueError, '"' + key + '" is not a valid axis name (UseAxisAttribute option setting?)'
+                            pass
+                            #raise ValueError, '"' + key + '" is not a valid axis name (UseAxisAttribute option setting?)'
                     else:
                         data[key] = axisSelect(value)
                         self.names.append(key)
