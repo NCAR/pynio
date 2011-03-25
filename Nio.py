@@ -20,7 +20,7 @@ attributes:
 methods:
    close(history='')
    create_dimension(name, length)
-   create_variable(name, type,dimensions)
+   create_variable(name, type, dimensions)
 For more detailed information:
     print f.__doc__
 

@@ -669,18 +669,20 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
                   }
                   if (array) {
 			   ng_size_t *dims;
-			   int malloced = 0;
+			   void *data;
 			   if (array->nd == 0) {
 				   dims = &dim_sizes;
 			   }
 			   else  {
 				   dims = (ng_size_t *) array->dimensions;
 			   }
+			   data = malloc(PyArray_NBYTES(array));
+			   memcpy(data,PyArray_DATA(array),PyArray_NBYTES(array));
+			   
 	                   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-		                                    (void*)array->data,NULL,n_dims,dims,
+		                                    (void*)data,NULL,n_dims,dims,
 				                    TEMPORARY,NULL,_NclNameToTypeClass(qtype));
-			   if (malloced)
-				   free(dims);
+			   
                   }
            }
   }
