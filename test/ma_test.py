@@ -83,7 +83,10 @@ class test_masked_default(ut.TestCase):
 	v = file.variables['PT']
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
-	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
+ 	try:
+	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        except:
+	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
 	if verbose: print vm[0]
         file.close()
 
@@ -109,7 +112,10 @@ class test_masked_if_fill_att(ut.TestCase):
 	assert_equal(v._FillValue,1e20)
 	vm = v[0,0]
 	assert_equal(ma.isMaskedArray(vm),True)
-	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
+ 	try:
+	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        except:
+	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
 	if verbose: print type(vm),vm[0].__repr__()
         file.close()
 
@@ -130,7 +136,10 @@ class test_masked_always(ut.TestCase):
 	v = file.variables['lat']
 	assert_equal(hasattr(v,'_FillValue'),False)
 	vm = v[:]
-	assert_equal(N.array([vm.get_fill_value()],dtype='f'),N.array([1e20],dtype='f'))
+ 	try:
+	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        except:
+	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
 	if verbose: print vm[1].__repr__
         file.close()
 
@@ -170,7 +179,10 @@ class test_masked_if_att_and_val(ut.TestCase):
 	vm = v[0,3:5,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),True)
-	assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f'))
+ 	try:
+	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        except:
+	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
 	vm = v[0,4:6,0]
 	if verbose: print type(vm),vm
 	assert_equal(ma.isMaskedArray(vm),False)

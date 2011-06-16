@@ -6,7 +6,13 @@
 #
 # http://test.opendap.org/opendap/data/nc/contents.html
 #
-import Nio
+import sys, Nio
+
+if not Nio.__formats__['opendap']:
+    print '==========================='
+    print 'Optional format OPeNDAP is not enabled in this version of PyNIO'
+    print '==========================='
+    sys.exit()
 
 url      = "http://test.opendap.org/opendap/data/nc/"
 filename = "123.nc"

@@ -3,6 +3,8 @@
 # may be required. See the following comments.
 #
 
+import os, sys, commands
+
 # Test to make sure we actually have NumPy.
 try:
   import numpy
@@ -75,7 +77,6 @@ except ImportError:
 #  F2CLIBS_PREFIX /sw/lib
 #
 
-import os, sys, commands
 from os.path import join
 
 #
@@ -107,6 +108,7 @@ def set_curl_libs():
 
 # End of set_curl_libs
 
+formats = {}
 LIB_MACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY' , None) ]
 
 if sys.byteorder == 'little':
@@ -144,8 +146,9 @@ except:
   HAS_HDF4 = 0
   LIB_EXCLUDE_SOURCES.append('NclHDF.c')
 
+formats['hdf4'] = HAS_HDF4
 
-
+HAS_OPENDAP = 0
 try:
   HAS_NETCDF4 = int(os.environ["HAS_NETCDF4"])
   if HAS_NETCDF4 > 0:
@@ -165,6 +168,10 @@ try:
       pass
 except:
   HAS_NETCDF4 = 0
+
+formats['netcdf4'] = HAS_NETCDF4
+if HAS_NETCDF4 > 0:
+    formats['opendap'] = HAS_OPENDAP
 
 try:
   HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
@@ -186,6 +193,8 @@ except:
   HAS_HDFEOS = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS.c')
 
+formats['hdfeos'] = HAS_HDFEOS
+
 try:
   HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
   if HAS_GRIB2 > 0:
@@ -206,6 +215,8 @@ try:
 except:
   HAS_GRIB2 = 0
   LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
+
+formats['grib2'] = HAS_GRIB2
 
 try:
   HAS_HDF5 = int(os.environ["HAS_HDF5"])
@@ -229,6 +240,8 @@ except:
   LIB_EXCLUDE_SOURCES.append('h5reader.c')
   LIB_EXCLUDE_SOURCES.append('h5writer.c')
 
+formats['hdf5'] = HAS_HDF5
+
 try:
   HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"])
   if HAS_HDFEOS5 > 0:
@@ -249,9 +262,11 @@ except:
   HAS_HDFEOS5 = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
 
+formats['hdfeos5'] = HAS_HDFEOS5
+
 try:
   HAS_GDAL = int(os.environ["HAS_GDAL"])
-  if HAS_GRIB2 > 0:
+  if HAS_GDAL > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
     LIB_MACROS.append(('BuildGDAL', None))
@@ -265,6 +280,8 @@ try:
 except:
   HAS_GDAL = 0
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
+
+formats['shapefile'] = HAS_GDAL
 
 try:
   try:
@@ -403,6 +420,9 @@ vfile.write("version = '%s'\n" % pynio_version)
 vfile.write("array_module = 'numpy'\n")
 vfile.write("array_module_version = '%s'\n" % array_module_version)
 vfile.write("python_version = '%s'\n" % sys.version[:5])
+vfile.write("formats = {}\n")
+for key in formats.keys():
+  vfile.write("formats['%s'] = %d\n" % (key, formats[key]))
 vfile.close()
 
 #----------------------------------------------------------------------
@@ -411,7 +431,6 @@ vfile.close()
 #
 #----------------------------------------------------------------------
 print '====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.'
-
 
 
 def configuration(parent_package='',top_path=None):

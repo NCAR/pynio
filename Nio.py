@@ -73,6 +73,7 @@ import pynio_version
 __version__              = pynio_version.version
 __array_module__         = pynio_version.array_module
 __array_module_version__ = pynio_version.array_module_version
+__formats__              = pynio_version.formats
 del pynio_version
 
 __all__ = [ 'open_file', 'option_defaults', 'options' ]
@@ -96,8 +97,11 @@ def pyniopath_ncarg():
         ncarg_dir = os.environ.get("NCARG_ROOT")
         if ncarg_dir == None or not os.path.exists(ncarg_dir) \
           or not os.path.exists(os.path.join(ncarg_dir,"lib","ncarg")):
-            print "No path found to PyNIO/ncarg data directory and no usable NCARG installation found"
-            sys.exit()
+            if not __formats__['grib2']:
+                return None
+            else:
+                print "No path found to PyNIO/ncarg data directory and no usable NCARG installation found"
+                sys.exit()
         else:
             pynio_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
 
@@ -137,7 +141,7 @@ def get_integer_version(strversion):
     ''' converts string version number into an integer '''
     d = strversion.split('.')
     if len(d) > 2:
-       v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2])
+       v = int(d[0]) * 10000 + int(d[1]) * 100 + int(d[2][0])
     elif len(d) is 2:
        v = int(d[0]) * 10000 + int(d[1]) * 100
     else:
