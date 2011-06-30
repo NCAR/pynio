@@ -52,6 +52,10 @@ print file.dimensions
 print file.variables.keys()
 print foo, bar
 
+# check unlimited status
+for dim in file.dimensions.keys():
+  print dim, " unlimited: ",file.unlimited(dim)
+
 file.close()
 
 #
@@ -68,5 +72,8 @@ print foo
 foo_array = foo[:]
 foo_units = foo.units
 print foo[0]
+# check unlimited status
+for dim in file.dimensions.keys():
+  print dim, " unlimited: ",file.unlimited(dim)
 
 file.close()

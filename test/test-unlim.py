@@ -4,7 +4,7 @@ import Nio
 import os
 
 #
-#  Creating a NetCDF file named "nio04.nc".  If there is already
+#  Creating a NetCDF file named "test-unlim.nc".  If there is already
 #  a file with that name, delete it first.
 #
 filename = "test-unlim.nc"
@@ -26,6 +26,9 @@ file.create_dimension("time", None)     # unlimited dimension
 
 print file
 print file.dimensions
+# check for unlimited status
+for dim in file.dimensions.keys():
+  print dim, " unlimited: ",file.unlimited(dim)
 
 #
 #  Create a variable of type float with three dimemsions.
@@ -39,9 +42,14 @@ var[:] = data[0:4]
 print len(var[:]),var[:]
 print "testing assign_value with unlimited dimension -- bug fixed on 2010-03-05"
 var.assign_value(data[5:])
+print file.dimensions
 # make sure this was actually written to the file
 file.close()
 file       = Nio.open_file(filename, "w")
+print file.dimensions
+# check for unlimited status
+for dim in file.dimensions.keys():
+  print dim, " unlimited: ",file.unlimited(dim)
 var = file.variables['var']
 print len(var[:]),var[:]
 # this does not work with NIO 5.0.0
@@ -50,12 +58,14 @@ print len(var[:]),var[:]
 # add 10 elements starting at element 3 - total 13
 var[3:] = data
 print len(var[:]),var[:]
+print file.dimensions
 # prepend single element dimensions to the data array
 # but it should still work
 data = data[numpy.newaxis,numpy.newaxis,:]
 # adding 10 from element 10 = 20
 var[10:] = data
 print len(var[:]),var[:]
+print file.dimensions
 
 # this does not work with NIO 5.0.0
 #var[25:15:-1] = data

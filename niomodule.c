@@ -852,13 +852,16 @@ nio_file_init(NioFileObject *self)
 	self->recdim = -1; /* for now */
 	for (i = 0; i < ndims; i++) {
 		char *name;
-		long size;
+		ng_size_t size;
 		PyObject *size_ob;
 		NclFDimRec *fdim = file->file.file_dim_info[i];
+		if (fdim->is_unlimited) {
+			self->recdim = i;
+		}
 		if (fdim->dim_name_quark != scalar_dim) {
 			name = NrmQuarkToString(fdim->dim_name_quark);
 			size = fdim->dim_size;
-			size_ob = PyInt_FromLong(size);
+			size_ob = PyInt_FromSize_t(size);
 			PyDict_SetItemString(self->dimensions, name, size_ob);
 			Py_DECREF(size_ob);
 		}
@@ -936,7 +939,7 @@ NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size)
 	  }
 	  define_mode(file, 1);
 	  qname = NrmStringToQuark(name);
-	  ret = _NclFileAddDim(nfile,qname,(int)size,(size == 0 ? 1 : 0));
+	  ret = _NclFileAddDim(nfile,qname,(ng_size_t)size,(size == 0 ? 1 : 0));
 	  if (ret > NhlWARNING) {
 		  if (size == 0) {
 			  NclFile nfile = (NclFile) file->id;
@@ -944,7 +947,7 @@ NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size)
 			  file->recdim = _NclFileIsDim(nfile,qname);
 		  }
 		  else {
-			  size_ob = PyInt_FromLong((long)size);
+			  size_ob = PyInt_FromSsize_t(size);
 			  PyDict_SetItemString(file->dimensions, name, size_ob);
 			  Py_DECREF(size_ob);
 		  }
@@ -966,12 +969,12 @@ NioFileObject_new_dimension(NioFileObject *self, PyObject *args)
   if (size_ob == Py_None)
     size = 0;
   else if (PyInt_Check(size_ob))
-    size = (Py_ssize_t)PyInt_AsLong(size_ob);
+    size = (Py_ssize_t)PyInt_AsSsize_t(size_ob);
   else {
     PyErr_SetString(PyExc_TypeError, "size must be None or integer");
     return NULL;
   }
-  if (NioFile_CreateDimension(self, name, size) == 0) {
+  if (NioFile_CreateDimension(self, name, (ng_size_t) size) == 0) {
     Py_INCREF(Py_None);
     return Py_None;
   }
@@ -1117,6 +1120,39 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   return (PyObject *)var;
 }
 
+
+static PyObject *
+NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
+{
+  PyObject *obj;
+  int i;
+  NrmQuark qstr;
+  char *str;
+  NclFile nfile = (NclFile) self->id;
+
+  if (!PyArg_ParseTuple(args, "O", &obj))
+    return NULL;
+
+  if (PyString_Check(obj)) {
+	  str = PyString_AsString(obj);
+	  if (! str) {
+	      PyErr_SetString(PyExc_MemoryError, "out of memory");
+	      return NULL;
+	  }
+	  qstr = NrmStringToQuark(str);
+	  for (i = 0; i < nfile->file.n_file_dims; i++) {
+		  if (nfile->file.file_dim_info[i]->dim_name_quark != qstr)
+			  continue;
+		  return (nfile->file.file_dim_info[i]->is_unlimited == 0 ? Py_False : Py_True);
+	  }
+	  PyErr_SetString(NIOError, "dimension name not found in file");
+	  return NULL;
+  }
+  PyErr_SetString(PyExc_TypeError, "Invalid type");
+  return NULL;
+}
+
+
 /* Return a variable object referring to an existing variable */
 
 static NioVariableObject *
@@ -1207,6 +1243,7 @@ static PyMethodDef NioFileObject_methods[] = {
 /* {"sync", (PyCFunction)NioFileObject_sync, 1}, */
   {"create_dimension", (PyCFunction)NioFileObject_new_dimension, METH_VARARGS},
   {"create_variable", (PyCFunction)NioFileObject_new_variable, METH_VARARGS},
+  {"unlimited", (PyCFunction) NioFileObject_Unlimited,METH_VARARGS},
   {NULL, NULL}		/* sentinel */
 };
 
@@ -1648,7 +1685,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
 				    PyErr_SetString(NIOError, err_buf);
 				    return NULL;
 			    }
-			    self->dimensions[i] = nfile->file.file_dim_info[dimid]->dim_size;
+			    self->dimensions[i] = (Py_ssize_t)nfile->file.file_dim_info[dimid]->dim_size;
 			    if (nfile->file.file_dim_info[dimid]->is_unlimited)
 				    self->unlimited = 1;
 		    }
@@ -1744,7 +1781,12 @@ NioVariable_GetShape(NioVariableObject *var)
 	  NclFile nfile = (NclFile) var->file->id;
 	  for (i = 0; i < var->nd; i++) {
 		  int dimid = _NclFileIsDim(nfile,var->qdims[i]);
-		  var->dimensions[i] = nfile->file.file_dim_info[dimid]->dim_size;
+		  var->dimensions[i] = (Py_ssize_t) nfile->file.file_dim_info[dimid]->dim_size;
+		  if (dimid == var->file->recdim) {
+			  PyObject *size_ob = PyInt_FromSsize_t(var->dimensions[i]);
+			  PyDict_SetItemString(var->file->dimensions,NrmQuarkToString(var->qdims[i]),size_ob);
+			  Py_DECREF(size_ob);
+		  }
 	  }
 	  return var->dimensions;
   }
@@ -1763,7 +1805,7 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
       NioVariable_GetShape(self);
       tuple = PyTuple_New(self->nd);
       for (i = 0; i < self->nd; i++)
-	PyTuple_SetItem(tuple, i, PyInt_FromLong(self->dimensions[i]));
+	PyTuple_SetItem(tuple, i, PyInt_FromSsize_t(self->dimensions[i]));
       return tuple;
     }
     else
@@ -2309,8 +2351,9 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 
 	  while (i < array->nd && array->dimensions[i] == 1)
 		  i++;
+#if 0
           if (indices[var_dim].unlimited && dims[var_dim] == 0)
-		  
+#endif		  
 	  while (var_dim < n_dims && dims[var_dim] == 1)
 		  var_dim++;
 	  for ( ; i < array->nd; ) {
@@ -3402,7 +3445,7 @@ SetUpDefaultOptions( void )
 
 static PyMethodDef nio_methods[] = {
 	{"open_file",	(PyCFunction) NioFile, METH_KEYWORDS,NULL},
-	{"options",   NioFile_Options,METH_NOARGS},
+	{"options",   (PyCFunction)NioFile_Options,METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
