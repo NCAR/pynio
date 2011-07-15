@@ -1921,7 +1921,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
   npy_intp *dims;
   PyArrayObject *array = NULL;
   int i, d;
-  int nitems;
+  ng_size_t nitems;
   int error = 0;
   d = 0;
   nitems = 1;
