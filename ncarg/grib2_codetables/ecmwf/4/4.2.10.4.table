@@ -1,0 +1,10 @@
+# GRIBv2 - Table 4.2-10-4 Oceanographic - Sub-Surface Properties
+
+0:0:Main thermocline depth:m:MTHD
+1:1:Main thermocline anomaly:m:MTHA
+2:2:Transient thermocline depth:m:TTHDP
+3:3:Salinity:kg kg-1:SALTY
+# 4-191:4-191:Reserved:-:
+
+# 192-254:192-254:Reserved for Local Use:-:
+

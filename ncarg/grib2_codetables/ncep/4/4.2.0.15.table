@@ -1,0 +1,13 @@
+# GRIBv2 - Table 4.2-0-15 Meteorological - Radar
+0:0:Base spectrum width:m s-1:BSWID
+1:1:Base reflectivity:dB:BREF
+2:2:Base radial velocity:m s-1:BRVEL
+3:3:Vertically integrated liquid:kg m-1:VERIL
+4:4:Layer maximum base reflectivity:dB:LMAXBR
+5:5:Precipitation:kg m-2:PREC
+6:6:Radar spectra (1):-:RDSP1
+7:7:Radar spectra (2):-:RDSP2
+8:8:Radar spectra (3):-:RDSP3
+# 9-191:9-191:Reserved:-:
+# 192-254:192-254:Reserved for Local Use:-:
+255:255:Missing:-:

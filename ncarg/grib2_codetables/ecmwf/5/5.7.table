@@ -1,0 +1,5 @@
+# CODE TABLE 5.7, Precision of floating-point numbers
+1:1:IEEE 32-bit
+2:2:IEEE 64-bit
+3:3:IEEE 128-bit
+255:255:Missing

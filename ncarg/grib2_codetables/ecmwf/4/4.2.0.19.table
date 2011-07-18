@@ -1,0 +1,32 @@
+# GRIBv2 - Table 4.2-0-19 Meteorological - Physical Atmospheric
+
+0:0:Visibility:m:VIS
+1:1:Albedo:%:ALBDO
+2:2:Thunderstorm probability:%:TSTM
+3:3:Mixed layer depth:m:MIXHT
+4:4:Volcanic ash:Code Table 4.206:VOLASH
+5:5:Icing top:m:ICIT
+6:6:Icing base:m:ICIB
+7:7:Icing:Code Table 4.207:ICI
+8:8:Turbulence top:m:TURBT
+9:9:Turbulence base:m:TURBB
+10:10:Turbulence:Code Table 4.208:TURB
+11:11:Turbulent kinetic energy:J kg-1:TKE
+12:12:Planetary boundary layer regime:Code Table 4.209:PBLREG
+13:13:Contrail intensity:Code Table 4.210:CONTI
+14:14:Contrail engine type:Code Table 4.211:CONTET
+15:15:Contrail top:m:CONTT
+16:16:Contrail base:m:CONTB
+17:17:Maximum snow albedo:%:MXSALB
+18:18:Snow-free albedo:%:SNFALB
+19:19:Snow albedo:%:SALBD
+20:20:Icing:%:ICIP
+21:21:In-cloud turbulence:%:CTP
+22:22:Clear air turbulence (CAT):%:CAT
+23:23:Supercooled large droplet (SLD) probability:%:SLDP
+# 24-191:24-191:Reserved:-:
+
+# 192-254:192-254:Reserved for Local Use:-:
+
+# 220-231:220-231:Reserved:-:
+

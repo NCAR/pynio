@@ -1,0 +1,13 @@
+# GRIBv2 - Table 4.2-1-0 Hydrological - Basic Hydrology
+
+0:0:Flash flood guidance (encoded as an accumulation over a floating subinterval of time between the reference time and valid time):kg m-2:FFLDG
+1:1:Flash flood runoff (encoded as an accumulation over a floating subinterval of time):kg m-2:FFLDRO
+2:2:Remotely sensed snow cover:Code Table 4.215:RSSC
+3:3:Elevation of snow covered terrain:Code Table 4.216:ESCT
+4:4:Snow water equivalent percent of normal:%:SWEPON
+5:5:Baseflow-groundwater runoff:kg m-2:BGRUN
+6:6:Storm surface runoff:kg m-2:SSRUN
+# 7-191:7-191:Reserved:-:
+
+# 192-254:192-254:Reserved for Local Use:-:
+
