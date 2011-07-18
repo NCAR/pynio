@@ -66,7 +66,7 @@ Once you have the jpeg source code, you can build and install it with:
 
 # zlib <http://www.zlib.net/>
 
-Download version 1.2.3 or later.
+Download version 1.2.5 or later.
 
 Once you have the zlib source code, you can build and install it with:
 
@@ -84,35 +84,11 @@ Once you have the libpng source code, build and install it with:
 
 # HDF-4 <http://hdf.ncsa.uiuc.edu/products/hdf4/>
 
-Download version 4.1 or later (do not download version 5./x.y/).
+Download version 4.2.5 or later (do not download version 5.x.y).
 *Important note:* Normally the HDF include files get installed to
 "$prefix/include". Since this will cause some netCDF include files to
 get overwritten, you /must/ use the *"--includedir"* option to install
 the HDF include files to "$prefix/include/hdf" instead.
-
-For versions older than 4.2r2, make sure the environment variable
-'CFLAGS' has -DHAVE_NETCDF included (you can remove it after you are
-done with this build, but it won't hurt the other builds). For example:
-
-  export CFLAGS="$CFLAGS -DHAVE_NETCDF"
-
-or
-
-  setenv CFLAGS "$CFLAGS -DHAVE_NETCDF"
-
-Then, build and install HDF-4 with:
-
- ./configure --prefix=/usr/local --with-zlib=/usr/local \
-       --with-jpeg=/usr/local --includedir=/usr/local/include/hdf 
-  make all install
-
-The paths used for the "--with-zlib" and "--with-jpeg" options must be
-set to whatever you used above for these two software packages.
-
-For versions 4.2r2 and higher:
-
-It's not necessary to alter the 'CFLAGS' environment variable to build
-this version. Instead, use the --disable-netcdf option:
 
  ./configure --prefix=/usr/local --with-zlib=/usr/local \
        --with-jpeg=/usr/local --includedir=/usr/local/include/hdf \
@@ -147,7 +123,7 @@ then you will need to download and install the following packages:
         make all install
 
     * g2clib <http://www.nco.ncep.noaa.gov/pmb/codes/GRIB2/> - Download
-      version 1.0.4 or later. There's a bug in version 1.0.4, so
+      version 1.2.1 or later. There's a bug in version 1.0.4, so
       additionally download a modified version of the file
       "g2_unpack2.c" and put it in the "g2clib-1.0.4" directory. If you
       download a different version of g2clib, be sure you incorporate
