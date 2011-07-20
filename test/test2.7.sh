@@ -10,6 +10,6 @@ touch $outfile
 for file in `cat testfiles`
 do
 echo $file >> $outfile
-/usr/local/bin/python $file 2>&1 >> $outfile
+python2.7 $file 2>&1 >> $outfile
 done
 
