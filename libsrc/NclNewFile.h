@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclNewFile.h 12483 2011-07-11 21:27:36Z huangwei $
+ *      $Id: NclNewFile.h 12527 2011-07-19 17:51:13Z dbrown $
  */
 #ifndef NclNewFile_h
 #define NclNewFile_h
@@ -68,7 +68,7 @@ typedef NhlErrorTypes (*NclAssignFileEnumFunc)(NclFile thefile, NclQuark vlen_na
 typedef NhlErrorTypes (*NclAssignFileOpaqueFunc)(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
                                                  int var_size, NclQuark dim_name);
 typedef NhlErrorTypes (*NclAssignFileCompoundFunc)(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
-                                                   NclQuark dim_name, ng_size_t n_mems,
+                                                   ng_size_t n_dims, NclQuark *dim_name, ng_size_t n_mems,
                                                    NclQuark *mem_name, NclQuark *mem_type);
 
 typedef struct _NclNewFileClassPart

@@ -1,5 +1,5 @@
 /*
- *      $Id: FileSupport.h 12483 2011-07-11 21:27:36Z huangwei $
+ *      $Id: FileSupport.h 12512 2011-07-15 22:26:46Z huangwei $
  */
 /************************************************************************
 *									*
@@ -289,9 +289,9 @@ extern NhlErrorTypes _NclFileAddEnum(NclFile thefile, NclQuark vlen_name, NclQua
                                      ng_size_t n_mems, NclBasicDataTypes val_type);
 extern NhlErrorTypes _NclFileAddOpaque(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
                                        int var_size, NclQuark dim_name);
-extern NhlErrorTypes _NclFileAddCompound(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
-                                         NclQuark dim_name, ng_size_t n_mems,
-                                         NclQuark *mem_name, NclQuark *mem_type);
+extern NhlErrorTypes _NclFileAddCompound(NclFile thefile, NclQuark compound_name, NclQuark var_name,
+                                         ng_size_t n_dims, NclQuark *dim_name, ng_size_t n_mems,
+                                         NclQuark *mem_name, NclQuark *mem_type, int *mem_size);
 
 extern NhlErrorTypes _NclFileAddGrp(NclFile thefile, NclQuark grpname);
 
