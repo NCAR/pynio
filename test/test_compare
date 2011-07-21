@@ -1,19 +1,21 @@
 test-version.py
--rw-r--r--  1 dbrown  wheel  21258 Aug  3 14:38 /usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc
-/usr/local/lib/python2.6/site-packages/PyNIO/nio.so:
-	/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.3)
+-rw-r--r--  1 dbrown  1578  21227 Jul 15 14:37 /usr/local/lib/python2.7/site-packages/PyNIO/Nio.pyc
+/usr/local/lib/python2.7/site-packages/PyNIO/nio.so:
+	/usr/local/lib/libpng14.14.dylib (compatibility version 16.0.0, current version 16.0.0)
+	/usr/local/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.5)
+	/usr/local/lib/libnetcdf.7.dylib (compatibility version 9.0.0, current version 9.1.0)
 	/usr/local/lib/libcurl.4.dylib (compatibility version 7.0.0, current version 7.0.0)
-	/usr/lib/libssl.0.9.7.dylib (compatibility version 0.9.7, current version 0.9.7)
-	/usr/lib/libcrypto.0.9.7.dylib (compatibility version 0.9.7, current version 0.9.7)
+	/usr/lib/libssl.0.9.8.dylib (compatibility version 0.9.8, current version 0.9.8)
+	/usr/lib/libcrypto.0.9.8.dylib (compatibility version 0.9.8, current version 0.9.8)
 	/System/Library/Frameworks/LDAP.framework/Versions/A/LDAP (compatibility version 1.0.0, current version 2.2.0)
 	/usr/local/lib/libgdal.1.dylib (compatibility version 16.0.0, current version 16.2.0)
-	/usr/local/lib/libproj.0.dylib (compatibility version 7.0.0, current version 7.6.0)
 	/usr/local/lib/libsz.2.dylib (compatibility version 3.0.0, current version 3.0.0)
-	/usr/local/gfortran/lib/libgfortran.3.dylib (compatibility version 4.0.0, current version 4.0.0)
-	/usr/local/gfortran/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 1.0.0)
-	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 111.1.5)
-Nio version = '1.4.0'
-Nio path = '/usr/local/lib/python2.6/site-packages/PyNIO/Nio.pyc'
+	/usr/local/lib/libgfortran.3.dylib (compatibility version 4.0.0, current version 4.0.0)
+	/usr/local/lib/libstdc++.6.dylib (compatibility version 7.0.0, current version 7.14.0)
+	/usr/local/lib/libgcc_s.1.dylib (compatibility version 1.0.0, current version 1.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 125.2.11)
+Nio version = '1.4.1'
+Nio path = '/usr/local/lib/python2.7/site-packages/PyNIO/Nio.pyc'
 ma_test.py
 (10, 12, 21, 21)
 testing MaskedArrayMode MaskedAlways
@@ -80,7 +82,7 @@ testing MaskedArrayMode MaskedIfFillAtt
 <class 'numpy.ma.core.MaskedArray'> masked_array(data = [  0.   1.   2.   3.   4.   5.   6.   7.   8.   9.  10.  11.  12.  13.  14.
   15.  16.  17.  18.  19.  20.],
              mask = False,
-       fill_value = 1.00000002004e+20)
+       fill_value = [  1.00000002e+20])
 
 (10, 12, 21, 21)
 testing MaskedArrayMode MaskedNever
@@ -102,7 +104,7 @@ nio_demo.py
 (10, 20)
 Nio file:	test.nc
    global attributes:
-      history : Created Fri Aug  6 00:05:31 2010 by David Brown
+      history : Created Thu Jul 21 11:00:06 2011 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -115,7 +117,7 @@ Nio file:	test.nc
          units :	arbitrary
       integer bar [ t, n ]
 
-{'xyz': 3, 't': None, 'n': 20}
+{'xyz': 3, 't': 10, 'n': 20}
 ['foo', 'bar']
 Variable: foo
 Type: integer
@@ -139,11 +141,14 @@ Coordinates:
             n: not a coordinate variable
 Number of Attributes: 0
 
+xyz  unlimited:  False
+t  unlimited:  True
+n  unlimited:  False
 {'xyz': 3, 't': 10, 'n': 20}
 ['foo', 'bar']
 Nio file:	test.nc
    global attributes:
-      history : Created Fri Aug  6 00:05:31 2010 by David Brown
+      history : Created Thu Jul 21 11:00:06 2011 by David Brown
       title : Just some useless junk
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -169,6 +174,9 @@ Number of Attributes: 1
          units :	arbitrary
 
 [42  1 42]
+xyz  unlimited:  False
+t  unlimited:  True
+n  unlimited:  False
 test-types.py
 creating and assigning scalar double
 creating and assigning scalar float
@@ -377,7 +385,7 @@ printing var info derived from PyNIO calls
   [42 43 44]
   dimensions: ('array',)
   rank: 1
-  typecode: B
+  typecode: b
 
   v11
   [ 42.  43.  44.]
@@ -427,7 +435,7 @@ printing var info derived from PyNIO calls
   42
   dimensions: ()
   rank: 0
-  typecode: B
+  typecode: b
 
   v7
   x
@@ -445,7 +453,7 @@ printing var info derived from PyNIO calls
 On read, a summary of the file contents:
 Nio file:	test-types.nc
    global attributes:
-      history : Created Fri Aug  6 00:05:31 2010 by David Brown
+      history : Created Thu Jul 21 11:00:06 2011 by David Brown
       title : Nio test NetCDF file
       series : [1, 2, 3, 4, 5, 6]
       version : 45
@@ -627,7 +635,7 @@ printing var info derived from PyNIO calls
   [42 43 44]
   dimensions: ('array',)
   rank: 1
-  typecode: B
+  typecode: b
 
   v11
   [ 42.  43.  44.]
@@ -685,7 +693,7 @@ printing var info derived from PyNIO calls
   42
   dimensions: ()
   rank: 0
-  typecode: B
+  typecode: b
 
   v7
   x
@@ -714,13 +722,19 @@ Nio file:	test-unlim.nc
    variables:
 
 {'time': None}
+time  unlimited:  True
 4 [ 0.  1.  2.  3.]
 testing assign_value with unlimited dimension -- bug fixed on 2010-03-05
+{'time': 5}
+{'time': 5}
+time  unlimited:  True
 5 [ 5.  6.  7.  8.  9.]
 10 [ 9.  8.  7.  6.  5.  4.  3.  2.  1.  0.]
 13 [ 9.  8.  7.  0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+{'time': 13}
 20 [ 9.  8.  7.  0.  1.  2.  3.  4.  5.  6.  0.  1.  2.  3.  4.  5.  6.  7.
   8.  9.]
+{'time': 20}
 39 [9.0 8.0 7.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0
  8.0 9.0 0.0 -- 1.0 -- 2.0 -- 3.0 -- 4.0 -- 5.0 -- 6.0 -- 7.0 -- 8.0 -- 9.0]
 After assigning elements of unlimited dimension:
@@ -733,7 +747,7 @@ Nio file:	test-unlim.nc
       float var [ time ]
          _FillValue :	-999
 
-{'time': 5}
+{'time': 39}
 Closing 'test-unlim.nc' file...
 
 test_mfio.py
@@ -984,6 +998,8 @@ processing history of the data, for example.
       l = 3
       maxStrlen64 = 64
    variables:
+      integer i [ i ]
+      float j [ j ]
       short l [ l ]
       character bears [ i, j, maxStrlen64 ]
          act :	text string
@@ -998,10 +1014,10 @@ processing history of the data, for example.
       float aloan [ i, j ]
       double cross [ i, j ]
 
-variables ['aloan', 'bears', 'cross', 'l', 'order', 'shot']
+variables ['aloan', 'bears', 'cross', 'i', 'j', 'l', 'order', 'shot']
 test-file-formats.py
 ===========================
-Format HDFEOS5: opening and printing contents
+Format hdfeos5: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/hdfeos5/OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t014811.he5
    global attributes:
@@ -1103,7 +1119,56 @@ Nio file:	../ncarg/data/hdfeos5/OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t01
          projection :	Geographic
 
 ===========================
-Format Shapefile: opening and printing contents
+Format hdf4: opening and printing contents
+===========================
+Nio file:	../ncarg/data/hdf/avhrr.hdf
+   global attributes:
+   dimensions:
+      fakeDim0 = 180
+      fakeDim1 = 360
+   variables:
+      ubyte fakeDim0 [ fakeDim0 ]
+         hdf_name :	fakeDim0
+      ubyte fakeDim1 [ fakeDim1 ]
+         hdf_name :	fakeDim1
+      ubyte Data_Set_2 [ fakeDim0, fakeDim1 ]
+         coordsys :	Interrrupted Goode Homolosine
+         valid_max :	253
+         valid_min :	3
+         scale_factor :	0.008
+         scale_factor_err :	-9
+         add_offset :	128
+         add_offset_err :	-9
+         calibrated_nt :	21
+         long_name :	NDVI
+         units :	n/a
+         format :	 
+         hdf_name :	Data-Set-2
+
+===========================
+Format hdf5: opening and printing contents
+===========================
+Nio file:	../ncarg/data/hdf5/num-types.h5
+   global attributes:
+   dimensions:
+      DIM_000 = 4
+      DIM_001 = 7
+   variables:
+      byte c_data [ DIM_000, DIM_001 ]
+      double double_data [ DIM_000, DIM_001 ]
+      float float_data [ DIM_000, DIM_001 ]
+      integer i_data [ DIM_000, DIM_001 ]
+      integer l_data [ DIM_000, DIM_001 ]
+      int64 ll_data [ DIM_000, DIM_001 ]
+      short s_data [ DIM_000, DIM_001 ]
+      ubyte uc_data [ DIM_000, DIM_001 ]
+      uint ui_data [ DIM_000, DIM_001 ]
+      uint ul_data [ DIM_000, DIM_001 ]
+      uint64 ull_data [ DIM_000, DIM_001 ]
+      ushort us_data [ DIM_000, DIM_001 ]
+
+===========================
+Format shapefile: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/shapefile/states.shp
    global attributes:
@@ -1148,34 +1213,7 @@ Nio file:	../ncarg/data/shapefile/states.shp
       double SAMP_POP [ num_features ]
 
 ===========================
-Format HDF: opening and printing contents
-===========================
-Nio file:	../ncarg/data/hdf/avhrr.hdf
-   global attributes:
-   dimensions:
-      fakeDim0 = 180
-      fakeDim1 = 360
-   variables:
-      byte fakeDim0 [ fakeDim0 ]
-         hdf_name :	fakeDim0
-      byte fakeDim1 [ fakeDim1 ]
-         hdf_name :	fakeDim1
-      byte Data_Set_2 [ fakeDim0, fakeDim1 ]
-         coordsys :	Interrrupted Goode Homolosine
-         valid_max :	253
-         valid_min :	3
-         scale_factor :	0.008
-         scale_factor_err :	-9
-         add_offset :	128
-         add_offset_err :	-9
-         calibrated_nt :	21
-         long_name :	NDVI
-         units :	n/a
-         format :	 
-         hdf_name :	Data-Set-2
-
-===========================
-Format GRIB: opening and printing contents
+Format grib: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/grib/ced1.lf00.t00z.eta.grb
    global attributes:
@@ -2204,7 +2242,7 @@ Nio file:	../ncarg/data/grib/ced1.lf00.t00z.eta.grb
          La1 :	7.647
 
 ===========================
-Format NetCDF: opening and printing contents
+Format netcdf: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/netcdf/pop.nc
    global attributes:
@@ -2247,7 +2285,7 @@ Nio file:	../ncarg/data/netcdf/pop.nc
          units :	degrees_east
 
 ===========================
-Format GRIB2: opening and printing contents
+Format grib2: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/grib2/wafsgfs_L_t06z_intdsk60.grib2
    global attributes:
@@ -2693,7 +2731,7 @@ Nio file:	../ncarg/data/grib2/wafsgfs_L_t06z_intdsk60.grib2
          La1 :	0
 
 ===========================
-Format HDFEOS: opening and printing contents
+Format hdfeos: opening and printing contents
 ===========================
 Nio file:	../ncarg/data/hdfeos/MOD04_L2.A2001066.0000.004.2003078090622.hdfeos
    global attributes:
