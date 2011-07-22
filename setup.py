@@ -109,7 +109,7 @@ def set_curl_libs():
 # End of set_curl_libs
 
 formats = {}
-LIB_MACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY' , None) ]
+LIB_MACROS        =  [ ('NeedFuncProto',None), ('NIO_LIB_ONLY' , None), ('_POSIX_SOURCE',None) ]
 
 if sys.byteorder == 'little':
   LIB_MACROS.append(('ByteSwapped', None))
