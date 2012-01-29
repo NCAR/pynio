@@ -1,5 +1,5 @@
 /*
- *      $Id: FileSupport.h 12512 2011-07-15 22:26:46Z huangwei $
+ *      $Id: FileSupport.h 12753 2011-12-20 21:43:15Z huangwei $
  */
 /************************************************************************
 *									*
@@ -22,6 +22,9 @@
 #ifndef _FileSupport_h
 #define _FileSupport_h
 
+#include "defs.h"
+#include "NclMultiDValData.h"
+#include "NclList.h"
 
 extern NhlErrorTypes  _NclBuildFileCoordRSelection(
 #if	NhlNeedProto
@@ -292,6 +295,8 @@ extern NhlErrorTypes _NclFileAddOpaque(NclFile thefile, NclQuark vlen_name, NclQ
 extern NhlErrorTypes _NclFileAddCompound(NclFile thefile, NclQuark compound_name, NclQuark var_name,
                                          ng_size_t n_dims, NclQuark *dim_name, ng_size_t n_mems,
                                          NclQuark *mem_name, NclQuark *mem_type, int *mem_size);
+extern NhlErrorTypes _NclFileWriteCompound(NclFile thefile, NclQuark compound_name, NclQuark var_name,
+                                           ng_size_t n_mems, NclQuark *mem_name, NclObj listobj);
 
 extern NhlErrorTypes _NclFileAddGrp(NclFile thefile, NclQuark grpname);
 
@@ -407,6 +412,9 @@ extern NclGroup *_NclCreateGroup(NclObj inst, NclObjClass theclass, NclObjTypes 
 extern NhlErrorTypes _NclPrintFileSummary(NclObj self, FILE *fp);
 extern NclQuark *_NclFileReadVarNames(NclFile thefile, int *num_vars);
 extern NclQuark *_NclFileReadGrpNames(NclFile thefile, int *num_grps);
+extern ng_size_t *_NclFileReadChunkSizes(NclFile thefile, int *nchunks);
+extern int _NclFileReadCompressionLevel(NclFile thefile);
+extern NclQuark _NclFileReadVersion(NclFile thefile);
 
 #endif /*_FileSupport_h */
 

@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclNewFile.c 12468 2011-07-06 20:59:05Z huangwei $
+ *      $Id: NclNewFile.c 12739 2011-11-28 23:16:40Z huangwei $
  */
 
 #include "NclNewFile.h"
@@ -4772,16 +4772,19 @@ static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
         if(NULL == tmp_md) 
             return(NULL);
 
-        if(varnode->att_rec->id < 0) 
-            NewLoadVarAtts(thefile, coord_name);
+        if(NULL != varnode->att_rec) 
+        {
+            if(varnode->att_rec->id < 0) 
+                NewLoadVarAtts(thefile, coord_name);
 
-        att_id = varnode->att_rec->id;
+            att_id = varnode->att_rec->id;
     
-        att_obj = (NclObj)_NclCopyAtt((NclAtt)_NclGetObj(att_id),NULL);
-        if(att_obj != NULL)
-            att_id = att_obj->obj.id;
-        else
-            att_id = -1;
+            att_obj = (NclObj)_NclCopyAtt((NclAtt)_NclGetObj(att_id),NULL);
+            if(att_obj != NULL)
+                att_id = att_obj->obj.id;
+            else
+                att_id = -1;
+        }
 
         if(NULL != sel_ptr)
             sel = sel_ptr->selection;
@@ -5433,13 +5436,15 @@ static NhlErrorTypes NewFileAddDim(NclFile infile, NclQuark dimname,
                 ret = NhlFATAL;
             }
         }
-        else
-        {
-            NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddDim: Dimension %s is already defined",
-                NrmQuarkToString(dimname)));
-            ret = NhlWARNING;
-        }
+      /*
+       *else
+       *{
+       *    NHLPERROR((NhlINFO,NhlEUNKNOWN,
+       *        "NewFileAddDim: Dimension %s is already defined",
+       *        NrmQuarkToString(dimname)));
+       *    ret = NhlINFO;
+       *}
+       */
     }
 
   /*
@@ -5663,9 +5668,9 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
 
     if((exists)&&(thefile->newfile.format_funcs->write_att != NULL))
     {
+        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "\texists = %d\n", exists);
       /*
-       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\texists = %d\n", exists);
        */
 
         /* get the last att val in case there's an error writing the att */
@@ -5701,11 +5706,11 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
     }
     else if((!exists)&&(thefile->newfile.format_funcs->add_att != NULL))
     {
-        /*
-        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        *fprintf(stderr, "\texists = %d\n", exists);
-        */
-         ret = _addNclAttNode(&(varnode->att_rec), attname, value->multidval.data_type,
+      /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\texists = %d\n", exists);
+       */
+        ret = _addNclAttNode(&(varnode->att_rec), attname, value->multidval.data_type,
                               value->multidval.totalelements, value->multidval.val);
 
         if(value->multidval.data_type == NCL_char)
@@ -5799,9 +5804,12 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                 tmp_md = value;
             }
 
-            if(varnode->att_rec->id < 0)
-                NewLoadVarAtts(thefile, var);
-            att_id = varnode->att_rec->id;
+            if(NULL != varnode->att_rec)
+            {
+                if(varnode->att_rec->id < 0)
+                    NewLoadVarAtts(thefile, var);
+                att_id = varnode->att_rec->id;
+            }
 
             ret = _NclAddAtt(att_id,NrmQuarkToString(attname),tmp_md,sel_ptr);
             if(ret < NhlWARNING)
@@ -7174,7 +7182,9 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
     NclFileVarNode *varnode;
     NclFileDimNode *dimnode;
 
-    fprintf(stderr, "\nHit NewFileWriteVarVar, file: %s, line: %d\n", __FILE__, __LINE__);
+  /*
+   *fprintf(stderr, "\nHit NewFileWriteVarVar, file: %s, line: %d\n", __FILE__, __LINE__);
+   */
 
     if(thefile->newfile.wr_status<=0)
     {
@@ -7413,7 +7423,7 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                      /*
                       * Dimnames are unequal give warning then overwrite
                       */
-                        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                        NHLPERROR((NhlINFO,NhlEUNKNOWN,
                             "Dimension names of left hand side and right hand side do not match, overwriting dimension (%s), use (/ .. /) if this is not the desired result",
                              NrmQuarkToString(dimnode->name)));
                         _NclFileWriteDim(infile,tmp_var->var.dim_info[j].dim_quark,dimnode->id);
@@ -8266,11 +8276,11 @@ NhlErrorTypes NewFileCreateEnumType(NclFile infile, NclQuark enum_name, NclQuark
     NclNewFile thefile = (NclNewFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
-    fprintf(stderr, "\nEnter NewFileCreateEnumType, file: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tenum_name: <%s>\n", NrmQuarkToString(enum_name));
-    fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
-    fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
   /*
+   *fprintf(stderr, "\nEnter NewFileCreateEnumType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tenum_name: <%s>\n", NrmQuarkToString(enum_name));
+   *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
+   *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
     if(thefile->newfile.wr_status > 0)
@@ -8278,7 +8288,6 @@ NhlErrorTypes NewFileCreateEnumType(NclFile infile, NclQuark enum_name, NclQuark
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
             "NewFileCreateEnumType: file (%s) was opened for reading only, can not write",
              NrmQuarkToString(thefile->newfile.fname)));
-        fprintf(stderr, "Leave NewFileCreateEnumType, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
@@ -8290,8 +8299,8 @@ NhlErrorTypes NewFileCreateEnumType(NclFile infile, NclQuark enum_name, NclQuark
     }
     
   /*
+   *fprintf(stderr, "Leave NewFileCreateEnumType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
-    fprintf(stderr, "Leave NewFileCreateEnumType, file: %s, line: %d\n\n", __FILE__, __LINE__);
     return ret;
 }
 
@@ -8301,12 +8310,12 @@ NhlErrorTypes NewFileCreateOpaqueType(NclFile infile, NclQuark opaque_name, NclQ
     NclNewFile thefile = (NclNewFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
-    fprintf(stderr, "\nEnter NewFileCreateOpaqueType, file: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\topaque_name: <%s>\n", NrmQuarkToString(opaque_name));
-    fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
-    fprintf(stderr, "\tvar_size: <%d>\n", var_size);
-    fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
   /*
+   *fprintf(stderr, "\nEnter NewFileCreateOpaqueType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\topaque_name: <%s>\n", NrmQuarkToString(opaque_name));
+   *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
+   *fprintf(stderr, "\tvar_size: <%d>\n", var_size);
+   *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
     if(thefile->newfile.wr_status > 0)
@@ -8325,8 +8334,86 @@ NhlErrorTypes NewFileCreateOpaqueType(NclFile infile, NclQuark opaque_name, NclQ
     }
     
   /*
+   *fprintf(stderr, "Leave NewFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
-    fprintf(stderr, "Leave NewFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+    return ret;
+}
+
+NhlErrorTypes NewFileCreateCompoundType(NclFile infile, NclQuark compound_name,
+                                        NclQuark var_name, 
+                                        ng_size_t n_dims, NclQuark *dim_name,
+                                        ng_size_t n_mems, NclQuark *mem_name,
+                                        NclQuark *mem_type, int *mem_size)
+{
+    NclNewFile thefile = (NclNewFile) infile;
+    NhlErrorTypes ret = NhlNOERROR;
+
+  /*
+   *fprintf(stderr, "\nEnter NewFileCreateCompoundType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tcompound_name: <%s>\n", NrmQuarkToString(compound_name));
+   *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
+   *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name[0]));
+   */
+
+    if(thefile->newfile.wr_status > 0)
+    {
+        NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+            "NewFileCreateCompoundType: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->newfile.fname)));
+      /*
+       *fprintf(stderr, "Leave NewFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+       */
+        return (NhlFATAL);
+    }
+
+    if(thefile->newfile.format_funcs->add_compound != NULL)
+    {
+        ret = (*thefile->newfile.format_funcs->add_compound)
+               ((void *)thefile->newfile.grpnode, compound_name, var_name,
+                n_dims, dim_name,
+                n_mems, mem_name, mem_type, mem_size);
+    }
+    
+  /*
+   *fprintf(stderr, "Leave NewFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   */
+    return ret;
+}
+
+NhlErrorTypes NewFileWriteCompound(NclFile infile, NclQuark compound_name, NclQuark var_name, 
+                                   ng_size_t n_mems, NclQuark *mem_name, NclList thelist)
+{
+    NclNewFile thefile = (NclNewFile) infile;
+    NhlErrorTypes ret = NhlNOERROR;
+
+  /*
+   *fprintf(stderr, "\nEnter NewFileWriteCompound, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tcompound_name: <%s>\n", NrmQuarkToString(compound_name));
+   *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
+   *fprintf(stderr, "\tmem_name: <%s>\n", NrmQuarkToString(mem_name[0]));
+   */
+
+    if(thefile->newfile.wr_status > 0)
+    {
+        NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+            "NewFileWriteCompound: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->newfile.fname)));
+      /*
+       *fprintf(stderr, "Leave NewFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
+       */
+        return (NhlFATAL);
+    }
+
+    if(thefile->newfile.format_funcs->write_compound != NULL)
+    {
+        ret = (*thefile->newfile.format_funcs->write_compound)
+               ((void *)thefile->newfile.grpnode, compound_name, var_name,
+                n_mems, mem_name, thelist);
+    }
+    
+  /*
+   *fprintf(stderr, "Leave NewFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   */
     return ret;
 }
 
@@ -8450,6 +8537,8 @@ NclNewFileClassRec nclNewFileClassRec =
        /*NclAssignFileVlenFunc          create_vlen_type*/             NewFileCreateVlenType,
        /*NclAssignFileEnumFunc          create_enum_type*/             NewFileCreateEnumType,
        /*NclAssignFileOpaqueFunc        create_opaque_type*/           NewFileCreateOpaqueType,
+       /*NclAssignFileCompoundFunc      create_compound_type*/         NewFileCreateCompoundType,
+       /*NclWriteFileCompoundFunc       write_compound*/               NewFileWriteCompound,
          0
     }
 };

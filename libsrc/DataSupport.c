@@ -1,5 +1,5 @@
 /*
- *      $Id: DataSupport.c 12468 2011-07-06 20:59:05Z huangwei $
+ *      $Id: DataSupport.c 12802 2012-01-20 00:08:22Z dbrown $
  */
 /************************************************************************
 *									*
@@ -313,12 +313,12 @@ NclMultiDValData str_md;
 {
 	char **buffer;
 	ng_size_t i;
-    int n_dims;
+	int n_dims;
 	string *value;
 	ng_size_t max_len,tmp_len,to;
 	char *val = NULL;
 	ng_size_t dim_sizes[NCL_MAX_DIMENSIONS];
-	string missingQ = NrmNULLQUARK;
+	string missingQ = ((NclTypeClass)nclTypestringClass)->type_class.default_mis.stringval;
 	NhlBoolean has_missing = False;
 	NclScalar tmp_missing;
 
@@ -334,6 +334,10 @@ NclMultiDValData str_md;
 	/* there has to at least be room for the end-of-string 0 byte */
 	max_len = 1;
 	for(i = 0; i < str_md->multidval.totalelements; i++) {
+		if (value[i] == NrmNULLQUARK) {
+			NhlPError(NhlWARNING,NhlEUNKNOWN,"_NclStringMdToCharMd: Null string encountered, substituting missing value");
+			value[i] = missingQ;
+		}
 		if (has_missing && value[i] == missingQ)
 			continue;
 		buffer[i] = NrmQuarkToString(value[i]);

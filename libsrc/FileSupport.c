@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 12512 2011-07-15 22:26:46Z huangwei $
+ *      $Id: FileSupport.c 12756 2011-12-21 17:04:31Z huangwei $
  */
 /************************************************************************
 *									*
@@ -30,9 +30,11 @@
 #include <ncarg/hlu/NresDB.h>
 #include "ncarg/hlu/Error.h"
 #endif
+
 #include "defs.h"
 #include "NclMultiDValData.h"
 #include "NclFile.h"
+#include "NclList.h"
 #include "NclNewFile.h"
 #include "NclGroup.h"
 #include "NclNewGroup.h"
@@ -1422,11 +1424,11 @@ extern NhlErrorTypes _NclFileAddEnum(NclFile infile, NclQuark enum_name, NclQuar
 	NclNewFile thefile = (NclNewFile) infile;
 	NclNewFileClass fc = NULL;
 
-        fprintf(stderr, "\nHit _NclFileAddEnum, file: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tenum name: <%s>, var name: <%s>, dim_name: <%s>\n",
-                         NrmQuarkToString(enum_name), NrmQuarkToString(var_name),
-                         NrmQuarkToString(dim_name));
       /*
+       *fprintf(stderr, "\nHit _NclFileAddEnum, file: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tenum name: <%s>, var name: <%s>, dim_name: <%s>\n",
+       *                 NrmQuarkToString(enum_name), NrmQuarkToString(var_name),
+       *                 NrmQuarkToString(dim_name));
        */
 
 	if(infile == NULL)
@@ -1468,11 +1470,11 @@ extern NhlErrorTypes _NclFileAddCompound(NclFile infile, NclQuark compound_name,
 	NclNewFile thefile = (NclNewFile) infile;
 	NclNewFileClass fc = NULL;
 
-        fprintf(stderr, "\nHit _NclFileAddCompound, file: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tcompound name: <%s>, var name: <%s>, dim_name: <%s>\n",
-                         NrmQuarkToString(compound_name), NrmQuarkToString(var_name),
-                         NrmQuarkToString(dim_name));
       /*
+       *fprintf(stderr, "\nHit _NclFileAddCompound, file: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tcompound name: <%s>, var name: <%s>, n_dims = %d, dim_name: <%s>\n",
+       *                 NrmQuarkToString(compound_name), NrmQuarkToString(var_name),
+       *                 n_dims, NrmQuarkToString(dim_name[0]));
        */
 
 	if(infile == NULL)
@@ -1497,7 +1499,53 @@ extern NhlErrorTypes _NclFileAddCompound(NclFile infile, NclQuark compound_name,
 			return((*fc->newfile_class.create_compound_type)
                                (infile, compound_name, var_name,
                                 n_dims, dim_name,
-                                n_mems, mem_name, mem_type));
+                                n_mems, mem_name, mem_type, mem_size));
+		}
+		else
+		{
+			fc = (NclNewFileClass)fc->obj_class.super_class;
+		}
+	}
+
+	return(NhlFATAL);
+}
+
+extern NhlErrorTypes _NclFileWriteCompound(NclFile infile, NclQuark compound_name, NclQuark var_name,
+                                           ng_size_t n_mems, NclQuark *mem_name, NclObj listobj)
+{
+	NclNewFile thefile = (NclNewFile) infile;
+	NclList thelist = (NclList) listobj;
+	NclNewFileClass fc = NULL;
+
+      /*
+       *fprintf(stderr, "\nHit _NclFileWriteCompound, file: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tcompound name: <%s>, var name: <%s>, n_mems = %d, mem_name: <%s>\n",
+       *                 NrmQuarkToString(compound_name), NrmQuarkToString(var_name),
+       *                 n_mems, NrmQuarkToString(mem_name[0]));
+       */
+
+	if(thefile == NULL)
+	{
+		NHLPERROR((NhlFATAL, NhlEUNKNOWN,
+			"_NclFileWriteCompound: CANNOT add compound to empty file.\n"));
+		return(NhlFATAL);
+	}
+
+	if(! thefile->use_new_hlfs)
+	{
+		NHLPERROR((NhlFATAL, NhlEUNKNOWN,
+			"_NclFileWriteCompound: Old File Structure DO NOT Support compound.\n"));
+		return(NhlFATAL);
+	}
+
+	fc = (NclNewFileClass)thefile->obj.class_ptr;
+	while((NclObjClass)fc != nclObjClass)
+	{
+		if(fc->newfile_class.create_compound_type != NULL)
+		{
+			return((*fc->newfile_class.write_compound)
+                               (infile, compound_name, var_name,
+                                n_mems, mem_name, thelist));
 		}
 		else
 		{
@@ -1515,11 +1563,11 @@ extern NhlErrorTypes _NclFileAddOpaque(NclFile infile, NclQuark opaque_name, Ncl
 	NclNewFileClass fc = NULL;
 
       /*
+       *fprintf(stderr, "\nHit _NclFileAddOpaque, file: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\topaque name: <%s>, var name: <%s>, size: %d, dim_name: <%s>\n",
+       *                 NrmQuarkToString(opaque_name), NrmQuarkToString(var_name),
+       *                 var_size, NrmQuarkToString(dim_name));
        */
-        fprintf(stderr, "\nHit _NclFileAddOpaque, file: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\topaque name: <%s>, var name: <%s>, size: %d, dim_name: <%s>\n",
-                         NrmQuarkToString(opaque_name), NrmQuarkToString(var_name),
-                         var_size, NrmQuarkToString(dim_name));
 
 	if(infile == NULL)
 	{
@@ -2672,5 +2720,115 @@ NclGroup *_NclCreateGroup(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
    *fprintf(stderr, "Leave _NclCreateGroup, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return group_out;
+}
+
+ng_size_t *_NclFileReadChunkSizes(NclFile thefile, int *nchunks)
+{
+	ng_size_t *chunksize = NULL;
+
+	char *class_name;
+
+	if(thefile == NULL)
+	{
+		return(NULL);
+	}
+
+	class_name = thefile->obj.class_ptr->obj_class.class_name;
+
+	if((0 == strcmp("NclFileClass", class_name)) ||
+	   (0 == strcmp("NclNewFileClass", class_name)))
+	{
+		NclNewFile newfile = (NclNewFile) thefile;
+		NclFileDimRecord *chunkdimrec = newfile->newfile.grpnode->chunk_dim_rec;
+		int n;
+		if(NULL != chunkdimrec)
+		{
+			*nchunks = chunkdimrec->n_dims;
+			chunksize = (ng_size_t *)NclMalloc(chunkdimrec->n_dims * sizeof(ng_size_t));
+			if(NULL == chunksize)
+			{
+				NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+					"_NclFileReadChunkSizes: Can not allocate memory for chunksize\n"));
+				return (NULL);
+			}
+			for(n = 0; n < chunkdimrec->n_dims; n++)
+				chunksize[n] = chunkdimrec->dim_node[n].size;
+
+			return chunksize;
+		}
+		else
+		{
+			*nchunks = 0;
+			return NULL;
+		}
+	}
+
+	*nchunks = 0;
+	NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+		"_NclFileReadChunkSizes: Unknown Class <%s>\n", class_name));
+	return (NULL);
+}
+
+int _NclFileReadCompressionLevel(NclFile thefile)
+{
+	int cl = 0;
+	char *class_name;
+
+	if(thefile == NULL)
+	{
+		return(0);
+	}
+
+	class_name = thefile->obj.class_ptr->obj_class.class_name;
+
+	if(0 == strcmp("NclNewFileClass", class_name))
+	{
+		NclNewFile newfile = (NclNewFile) thefile;
+		cl = newfile->newfile.grpnode->compress_level;
+		return cl;
+	}
+
+	NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+		"_NclFileReadCompressionLevel: Unknown Class <%s>\n", class_name));
+	return (0);
+}
+
+NclQuark _NclFileReadVersion(NclFile thefile)
+{
+	NclQuark version = NrmStringToQuark("unknown");
+	char *class_name;
+
+	if(thefile == NULL)
+	{
+		return version;
+	}
+
+	class_name = thefile->obj.class_ptr->obj_class.class_name;
+
+	if(0 == strcmp("NclNewFileClass", class_name))
+	{
+		NclNewFile newfile = (NclNewFile) thefile;
+		version = newfile->newfile.grpnode->kind;
+	}
+	else
+	{
+		if(thefile->file.file_ext_q == NrmStringToQuark("nc"))
+		{
+			NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+				"_NclFileReadVersion: \n%s%s%s%s%s\n",
+				"\t\t\t add line: <setfileoption(\"nc\", \"usenewhlfs\", True)>\n",
+				"\t\t\t before open a NetCDF file(in your script)\n",
+				"\t\t\t or add '-f' option to run ncl\n",
+				"\t\t\t to use the new-file-structure\n",
+				"\t\t\t to get the version/kind info.\n"));
+		}
+		else
+		{
+			NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+				"_NclFileReadVersion: Unknown Class <%s>\n", class_name));
+		}
+	}
+
+	return version;
 }
 
