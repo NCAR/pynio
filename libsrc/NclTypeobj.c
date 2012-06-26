@@ -274,7 +274,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -362,7 +362,7 @@ NclTypeClass Ncl_Type_obj_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*

@@ -24,7 +24,7 @@
 #include "NclTypeint.h"
 
 /*
- *      $Id: NclTypeint.c.specific 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: NclTypeint.c.specific 13245 2012-03-10 23:43:13Z haley $
  */
 /************************************************************************
 *									*
@@ -105,6 +105,25 @@ NclTypeClass fc;
 	}
 
 	switch(fc->type_class.type) {
+        case Ncl_Typeuint: {
+                unsigned int *fl = (unsigned int*)from;
+                if((from_m == NULL)||(to_m == NULL)) {
+                        for(i = 0; i < n;i++,res++,fl++)  {
+			        *res = (int)*fl;
+                        }
+                } else {
+                        for(i = 0; i < n;i++,res++,fl++)  {
+                                tmp = 0;
+                                (*eq)((void*)&tmp,(void*)fl,(void*)from_m,NULL,NULL,1,1);
+                                if(tmp) {
+                                        *res = tmp_mis.intval;
+                                } else {
+                                        *res = (int)*fl;
+                                }
+                        }
+                }
+                return(NhlNOERROR);
+        }
 	case Ncl_Typeint: {
 		int *fl = (int*)from;
 		if((from_m == NULL)||(to_m == NULL)) {
@@ -583,7 +602,7 @@ NclTypeClass Ncl_Type_int_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -671,7 +690,7 @@ NclTypeClass Ncl_Type_int_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -759,7 +778,7 @@ NclTypeClass Ncl_Type_int_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -847,7 +866,7 @@ NclTypeClass Ncl_Type_int_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -935,7 +954,7 @@ NclTypeClass Ncl_Type_int_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1023,7 +1042,7 @@ NclTypeClass Ncl_Type_int_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1111,7 +1130,7 @@ NclTypeClass Ncl_Type_int_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1199,7 +1218,7 @@ NclTypeClass Ncl_Type_int_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1287,7 +1306,7 @@ NclTypeClass Ncl_Type_int_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1375,7 +1394,7 @@ NclTypeClass Ncl_Type_int_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1476,7 +1495,7 @@ NclTypeClass Ncl_Type_int_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1577,7 +1596,7 @@ NclTypeClass Ncl_Type_int_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeIsMonoFunc.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1676,7 +1695,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeFunctionOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1764,7 +1783,7 @@ NclTypeClass Ncl_Type_int_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1845,7 +1864,7 @@ NclTypeClass Ncl_Type_int_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1926,7 +1945,7 @@ NclTypeClass Ncl_Type_int_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2016,7 +2035,7 @@ NclTypeClass Ncl_Type_int_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2106,7 +2125,7 @@ NclTypeClass Ncl_Type_int_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2194,7 +2213,7 @@ NclTypeClass Ncl_Type_int_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2289,7 +2308,7 @@ NclTypeClass Ncl_Type_int_divide_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*

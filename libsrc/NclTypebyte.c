@@ -24,7 +24,7 @@
 #include "NclTypebyte.h"
 
 /*
- *      $Id: NclTypebyte.c.specific 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: NclTypebyte.c.specific 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -520,7 +520,7 @@ NclTypeClass Ncl_Type_byte_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -608,7 +608,7 @@ NclTypeClass Ncl_Type_byte_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -696,7 +696,7 @@ NclTypeClass Ncl_Type_byte_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -784,7 +784,7 @@ NclTypeClass Ncl_Type_byte_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -872,7 +872,7 @@ NclTypeClass Ncl_Type_byte_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -960,7 +960,7 @@ NclTypeClass Ncl_Type_byte_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1048,7 +1048,7 @@ NclTypeClass Ncl_Type_byte_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1136,7 +1136,7 @@ NclTypeClass Ncl_Type_byte_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1224,7 +1224,7 @@ NclTypeClass Ncl_Type_byte_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1312,7 +1312,7 @@ NclTypeClass Ncl_Type_byte_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1413,7 +1413,7 @@ NclTypeClass Ncl_Type_byte_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1514,7 +1514,7 @@ NclTypeClass Ncl_Type_byte_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeIsMonoFunc.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1613,7 +1613,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeFunctionOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1701,7 +1701,7 @@ NclTypeClass Ncl_Type_byte_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1782,7 +1782,7 @@ NclTypeClass Ncl_Type_byte_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1863,7 +1863,7 @@ NclTypeClass Ncl_Type_byte_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1953,7 +1953,7 @@ NclTypeClass Ncl_Type_byte_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2043,7 +2043,7 @@ NclTypeClass Ncl_Type_byte_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2131,7 +2131,7 @@ NclTypeClass Ncl_Type_byte_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*

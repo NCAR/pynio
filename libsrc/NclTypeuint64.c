@@ -23,7 +23,7 @@
 
 #include "NclTypeuint64.h"
 /*
- *      $Id: NclTypeuint64.c.specific 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: NclTypeuint64.c.specific 12141 2011-03-01 22:06:46Z brownrig $
  */
 
 /************************************************************************
@@ -684,7 +684,7 @@ NclTypeClass Ncl_Type_uint64_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -772,7 +772,7 @@ NclTypeClass Ncl_Type_uint64_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -860,7 +860,7 @@ NclTypeClass Ncl_Type_uint64_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -948,7 +948,7 @@ NclTypeClass Ncl_Type_uint64_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1036,7 +1036,7 @@ NclTypeClass Ncl_Type_uint64_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1124,7 +1124,7 @@ NclTypeClass Ncl_Type_uint64_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1212,7 +1212,7 @@ NclTypeClass Ncl_Type_uint64_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1300,7 +1300,7 @@ NclTypeClass Ncl_Type_uint64_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1388,7 +1388,7 @@ NclTypeClass Ncl_Type_uint64_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1476,7 +1476,7 @@ NclTypeClass Ncl_Type_uint64_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1577,7 +1577,7 @@ NclTypeClass Ncl_Type_uint64_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1678,7 +1678,7 @@ NclTypeClass Ncl_Type_uint64_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeIsMonoFunc.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1777,7 +1777,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeFunctionOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1865,7 +1865,7 @@ NclTypeClass Ncl_Type_uint64_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -1946,7 +1946,7 @@ NclTypeClass Ncl_Type_uint64_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2027,7 +2027,7 @@ NclTypeClass Ncl_Type_uint64_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2117,7 +2117,7 @@ NclTypeClass Ncl_Type_uint64_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2207,7 +2207,7 @@ NclTypeClass Ncl_Type_uint64_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2295,7 +2295,7 @@ NclTypeClass Ncl_Type_uint64_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*
@@ -2390,7 +2390,7 @@ NclTypeClass Ncl_Type_uint64_divide_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
  */
 /************************************************************************
 *									*

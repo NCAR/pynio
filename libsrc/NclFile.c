@@ -2891,6 +2891,13 @@ int vtype;
 	if((vtype == FILE_VAR_ACCESS? thefile->file.format_funcs->read_var != NULL:thefile->file.format_funcs->read_coord != NULL)) {
 		if((!has_vectors)&&(!has_reverse)&&(!has_reorder)) {
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			if(vtype == FILE_VAR_ACCESS) {
 				(*thefile->file.format_funcs->read_var)(
 					thefile->file.private_rec,
@@ -2934,6 +2941,13 @@ int vtype;
 * dimensions with the exception of dimension 0.
 */
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			i = 0;
 			while((i<n_dims_input)&&(compare_sel[i] != NCLFILE_DEC)){
 				i++;
@@ -2943,6 +2957,13 @@ int vtype;
 				swap_size *= output_dim_sizes[j];
 			}
 			swap_space = (void*)NclMalloc(swap_size * _NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! swap_space) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to handle dimension reversal for variable <%s> from file <%s>",
+					  swap_size*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			for(i = 0;i < n_dims_input; i++) {
 				switch(compare_sel[i]) {
 				case NCLFILE_INC:
@@ -3005,6 +3026,13 @@ int vtype;
 			NclFree(swap_space);
 		} else {
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			to = 0;
 			block_read_limit = n_dims_input - 1 ;
 /*
@@ -3162,6 +3190,13 @@ int vtype;
 		if(!has_stride) {
 			if((!has_vectors)&&(!has_reverse)&&(!has_reorder)) {
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				if(vtype == FILE_VAR_ACCESS) {
 					(*thefile->file.format_funcs->read_var_ns)(
 						thefile->file.private_rec,
@@ -3203,6 +3238,13 @@ int vtype;
 	* dimensions with the exception of dimension 0.
 	*/
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				i = 0;
 				while((i<n_dims_input)&&(compare_sel[i] != NCLFILE_DEC)){
 					i++;
@@ -3212,6 +3254,13 @@ int vtype;
 					swap_size *= output_dim_sizes[j];
 				}
 				swap_space = (void*)NclMalloc(swap_size * _NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! swap_space) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to handle dimension reversal for variable <%s> from file <%s>",
+						  swap_size*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				for(i = 0;i < n_dims_input; i++) {
 					switch(compare_sel[i]) {
 					case NCLFILE_INC:
@@ -3266,6 +3315,13 @@ int vtype;
 				NclFree(swap_space);
 			} else {
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				to = 0;
 				block_read_limit = n_dims_input - 1 ;
 	/*
@@ -3434,6 +3490,13 @@ int vtype;
 					}
 				}
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				to = 0;
 				while(!done) {
 					if(vtype == FILE_VAR_ACCESS) {
@@ -3529,7 +3592,21 @@ int vtype;
 					}
 				}
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				swap_space = NclMalloc(n_elem_block * _NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! swap_space) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to handle dimension reversal for variable <%s> from file <%s>",
+						  n_elem_block * _NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				to = 0;
 				while(!done) {
 					if(vtype == FILE_VAR_ACCESS) {
@@ -3615,6 +3692,13 @@ int vtype;
 * has vectors or reorder or both
 */
 				val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+				if (! val) {
+					NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+						  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+						  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+						  NrmQuarkToString(thefile->file.fname));
+					return(NULL);
+				}
 				to = 0;
 				block_read_limit = n_dims_input - 1 ;
 /*
@@ -3875,6 +3959,13 @@ int vtype;
 	if((vtype == FILE_VAR_ACCESS? thefile->file.format_funcs->read_var != NULL:thefile->file.format_funcs->read_coord != NULL)) {
 		if((!has_vectors)&&(!has_reverse)&&(!has_reorder)) {
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			if(vtype == FILE_VAR_ACCESS) {
 				(*thefile->file.format_funcs->read_var)(
 					thefile->file.private_rec,
@@ -3894,6 +3985,13 @@ int vtype;
 			}
 		} else if((has_reverse)&&(!has_vectors)&&(!has_reorder)){
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			if(vtype == FILE_VAR_ACCESS) {
 				(*thefile->file.format_funcs->read_var)(
 					thefile->file.private_rec,
@@ -3913,6 +4011,13 @@ int vtype;
 			}
 		} else {
 			val = (void*)NclMalloc(total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type));
+			if (! val) {
+				NhlPError(NhlFATAL,ENOMEM,"Error allocating %lld bytes to read variable <%s> from file <%s>",
+					  total_elements*_NclSizeOf(thefile->file.var_info[index]->data_type),
+					  NrmQuarkToString(thefile->file.var_info[index]->var_name_quark),
+					  NrmQuarkToString(thefile->file.fname));
+				return(NULL);
+			}
 			while(!done) {
 				if(vtype == FILE_VAR_ACCESS) {
 					(*thefile->file.format_funcs->read_var)(
@@ -4560,44 +4665,26 @@ void _NclReallocFilePart(NclFilePart *file,
 	}
 }
 
-NclFile _NclFileCreate
-#if	NhlNeedProto
-(NclObj  inst, NclObjClass theclass, NclObjTypes obj_type, unsigned int obj_type_mask, NclStatus status, NclQuark path,int rw_status)
-#else
-(inst, theclass, obj_type, obj_type_mask, status, path, rw_status)
-NclObj  inst;
-NclObjClass theclass;
-NclObjTypes obj_type;
-unsigned int obj_type_mask;
-NclStatus status; 
-NclQuark path;
-int rw_status;
-#endif
+NclFile _NclFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
+			unsigned int obj_type_mask, NclStatus status,
+			NclQuark path, int rw_status, NclQuark file_ext_q,
+			NclQuark fname_q, NhlBoolean is_http,
+			char *end_of_name, int len_path)
 {
 	char *the_path = NrmQuarkToString(path);
 	NclQuark the_real_path = -1;
-	char *last_slash = NULL;
-	char *end_of_name = NULL;
 	char *tmp_path = NULL;
-	int len_path = 0;
-	char buffer[NCL_MAX_STRING];
-	NclQuark fname_q;
 	int i,j;
 	NclFile file_out = NULL;
 	int file_out_free = 0;
 	NhlErrorTypes ret= NhlNOERROR;
 	NclObjClass class_ptr;
-	NclQuark file_ext_q;
 	NclQuark *name_list;
 	int n_names;
 	NclQuark *name_list2;
 	int n_names2;
 	int index;
 	struct stat buf;
-	NhlBoolean is_http = False;
-
-	if (! strncmp(the_path,"http://",7))
-		is_http = True;
 
 	ret = _NclInitClass(nclFileClass);
 	if(ret < NhlWARNING) 
@@ -4606,68 +4693,6 @@ int rw_status;
 		class_ptr = nclFileClass;
 	} else {
 		class_ptr = theclass;
-	}
-	last_slash = strrchr(the_path,'/');
-	if(last_slash == NULL) {
-		last_slash = the_path;
-		len_path = 0;
-	}  else {
-/*
-* skip over '/'
-*/
-		last_slash++;
-	}
-	end_of_name = strrchr(last_slash,'.');
-	if (is_http) {
-		if (end_of_name == NULL) {
-			end_of_name = &last_slash[strlen(last_slash)];
-		}
-		len_path = end_of_name - the_path;
-		i = 0;
-		while(last_slash != end_of_name) {
-			buffer[i] = *last_slash;
-			i++;
-			last_slash++;
-		}
-		buffer[i] = '\0';
-		fname_q = NrmStringToQuark(buffer);
-#ifdef BuildOPENDAP
-                if(strcmp("nc", end_of_name+1) == 0)
-	        	file_ext_q = NrmStringToQuark("nc");
-	        else
-		{
-                        if(strcmp("he5", end_of_name+1) == 0)
-			{
-				file_ext_q = NrmStringToQuark("opendap");
-				fprintf(stderr, "file: <%s>, line: %d\n", __FILE__, __LINE__);
-				fprintf(stderr, "\topendap file_ext_q = <%s>\n", NrmQuarkToString(file_ext_q));
-	        		file_ext_q = NrmStringToQuark("nc");
-			}
-	                else
-	        		file_ext_q = NrmStringToQuark("nc");
-		}
-#else
-		file_ext_q = NrmStringToQuark("nc");
-#endif
-	}
-	else if(end_of_name == NULL) {
-		NhlPError(NhlFATAL,NhlEUNKNOWN,"(%s) has no file extension, can't determine type of file to open",NrmQuarkToString(path));
-		return(NULL);
-	} else {
-		len_path = end_of_name - the_path;
-		i = 0;
-		while(last_slash != end_of_name) {
-			buffer[i] = *last_slash;
-			i++;
-			last_slash++;
-		}
-		buffer[i] = '\0';
-		fname_q = NrmStringToQuark(buffer);
-/*
-* skip over '.'
-*/
-		end_of_name++;
-		file_ext_q = NrmStringToQuark(end_of_name);
 	}
 
  	/*
@@ -4702,6 +4727,7 @@ int rw_status;
 	} else {
 		file_out = (NclFile)inst;
 	}
+
 	file_out->file.fname = fname_q;
 	file_out->file.file_format = 0;
 	file_out->file.file_ext_q = file_ext_q;
@@ -4716,12 +4742,14 @@ int rw_status;
 		return(NULL);
 	}
 	file_out->file.private_rec = (*file_out->file.format_funcs->initialize_file_rec)(&file_out->file.file_format);
-	if(file_out->file.private_rec == NULL) {
+	if(file_out->file.private_rec == NULL)
+	{
 		NhlPError(NhlFATAL,ENOMEM,NULL);
 		if(file_out_free) 
 			NclFree((void*)file_out);
 		return(NULL);
 	}
+
 	if (file_out->file.format_funcs->set_option != NULL) {
 		NclFileClassPart *fcp = &(nclFileClassRec.file_class);
 		for (i = 0; i < fcp->num_options; i++) {
@@ -4789,7 +4817,8 @@ int rw_status;
 				file_out->file.private_rec = (*file_out->file.format_funcs->open_file)
 					(file_out->file.private_rec,
 					 NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))),rw_status);	
-				if(! file_out->file.private_rec) {
+				if(NULL == file_out->file.private_rec)
+				{
 					NhlPError(NhlFATAL,NhlEUNKNOWN,"Could not open (%s)",NrmQuarkToString(the_real_path));
 					if(file_out_free) 
 						NclFree((void*)file_out);
@@ -4798,14 +4827,13 @@ int rw_status;
 			}
 		} else  {
 			NhlPError(NhlFATAL,NhlEUNKNOWN,"An internal error in the extension code for the requested file format has occurred, could not open (%s)",NrmQuarkToString(the_real_path));
-		if(file_out_free) 
-			NclFree((void*)file_out);
+			if(file_out_free) 
+				NclFree((void*)file_out);
 			return(NULL);
 		}
 	}
 
-	if(file_out->file.format_funcs->get_grp_names != NULL)
-	{
+	if(file_out->file.format_funcs->get_grp_names != NULL) {
 		name_list = (*file_out->file.format_funcs->get_grp_names)(file_out->file.private_rec,&n_names);
 
 		_NclReallocFilePart(&(file_out->file), n_names, -1, -1, -1);
@@ -5877,6 +5905,7 @@ struct _NclSelectionRecord *rhs_sel_ptr;
         void *tmp_coord;
         char *tmp_ptr;
 	NclMultiDValData tmp_md;
+	NclMultiDValData coord_md;
 	struct _NclVarRec* cvar;
 	ng_size_t dimsize = -1;
 
@@ -5979,47 +6008,24 @@ struct _NclSelectionRecord *rhs_sel_ptr;
  * Need to create a temporary missing value filled array and write it then make and assigment using 
  * sel_ptr
  */
-								dimsize = (int)thefile->file.file_dim_info[thefile->file.var_info[index]->file_dim_num[lhs_sel_ptr->selection[i].dim_num]]->dim_size;
 								cvar = (NclVar)_NclGetObj(tmp_var->var.coord_vars[j]);
 								tmp_md = (NclMultiDValData)_NclGetObj(cvar->var.thevalue_id);
-								tmp_coord = NclMalloc(dimsize*tmp_md->multidval.type->type_class.size);
-                                                                tmp_ptr = (char*)tmp_coord;
-                                                                for(m = 0; m < dimsize; m++) {
-                                                                        memcpy((void*)tmp_ptr,(void*)&(tmp_md->multidval.type->type_class.default_mis),tmp_md->multidval.type->type_class.size);
-                                                                        tmp_ptr = tmp_ptr + tmp_md->multidval.type->type_class.size;
-
-                                                                }
-
-								ret = _NclFileWriteCoord(
-									thefile,	
-									tmp_var->var.dim_info[j].dim_quark,
-									_NclCreateMultiDVal( 
-										NULL, 
-										NULL, 
-										Ncl_MultiDValData, 
-										0, 
-										tmp_coord, 
-										&tmp_md->multidval.type->type_class.default_mis, 
-										1, 
-										&dimsize, 
-										TEMPORARY, 
-										NULL,
-										tmp_md->multidval.type),
-									NULL);
-
-								tmp_sel.selection[0] = lhs_sel_ptr->selection[i];
-								tmp_sel.selection[0].dim_num = 0;
-								ret = _NclFileWriteCoord(thefile,tmp_var->var.dim_info[j].dim_quark,tmp_md,&tmp_sel);
-							}
-							if(ret < NhlWARNING) {
-								NhlPError(NhlWARNING,NhlEUNKNOWN,"FileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",NrmQuarkToString(tmp_var->var.dim_info[i].dim_quark),NrmQuarkToString(thefile->file.fname));
-								ret = NhlWARNING;
-							} else {
+								cindex = FileIsVar(thefile,tmp_var->var.dim_info[j].dim_quark);
+								if (cindex < 0) {
+									NclQuark name = tmp_var->var.dim_info[j].dim_quark;
+									ret = FileAddVar(thefile,tmp_var->var.dim_info[j].dim_quark,
+											 NrmStringToQuark(_NclBasicDataTypeToName(tmp_md->multidval.type->type_class.data_type)),
+											 1,&name);
+									if(ret < NhlWARNING) {
+										return(ret);
+									}
+								}
+								dimsize = (int)thefile->file.file_dim_info[thefile->file.var_info[index]->file_dim_num[lhs_sel_ptr->selection[i].dim_num]]->dim_size;
 								if(cvar->var.att_id != -1) {
 									theatt = (NclAtt)_NclGetObj(cvar->var.att_id);
 									step = theatt->att.att_list;
 									while(step != NULL) {
-										ret = FileWriteVarAtt(thefile,tmp_var->var.dim_info[i].dim_quark,step->quark,step->attvalue,NULL);
+										ret = FileWriteVarAtt(thefile,tmp_var->var.dim_info[j].dim_quark,step->quark,step->attvalue,NULL);
 										if(ret < NhlWARNING){
 											NhlPError(NhlWARNING,NhlEUNKNOWN,
                                                 "FileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
@@ -6032,6 +6038,13 @@ struct _NclSelectionRecord *rhs_sel_ptr;
 				
 									}
 								}
+								tmp_sel.selection[0] = lhs_sel_ptr->selection[i];
+								tmp_sel.selection[0].dim_num = 0;
+								ret = _NclFileWriteCoord(thefile,tmp_var->var.dim_info[j].dim_quark,tmp_md,&tmp_sel);
+							}
+							if(ret < NhlWARNING) {
+								NhlPError(NhlWARNING,NhlEUNKNOWN,"FileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",NrmQuarkToString(tmp_var->var.dim_info[i].dim_quark),NrmQuarkToString(thefile->file.fname));
+								ret = NhlWARNING;
 							}
 						}
 				
@@ -6073,30 +6086,40 @@ struct _NclSelectionRecord *rhs_sel_ptr;
 							continue;
 						}
 						tmp_coord_var = (NclVar)_NclGetObj(tmp_var->var.coord_vars[j]);
-						ret = FileWriteCoord(thefile,tmp_var->var.dim_info[j].dim_quark,_NclVarValueRead(tmp_coord_var,NULL,NULL),NULL);
+						cindex = FileIsVar(thefile,tmp_var->var.dim_info[j].dim_quark);
+						coord_md = _NclVarValueRead(tmp_coord_var,NULL,NULL);
+						if (cindex < 0) {
+							NclQuark name = tmp_var->var.dim_info[j].dim_quark;
+							ret = FileAddVar(thefile,tmp_var->var.dim_info[j].dim_quark,
+									 NrmStringToQuark(_NclBasicDataTypeToName(coord_md->multidval.type->type_class.data_type)),
+									 1,&name);
+							if(ret < NhlWARNING) {
+								return(ret);
+							}
+						}
+						if(tmp_coord_var->var.att_id != -1) {
+							theatt = (NclAtt)_NclGetObj(tmp_coord_var->var.att_id);
+							step = theatt->att.att_list;
+							while(step != NULL) {
+								ret = FileWriteVarAtt(thefile,tmp_var->var.dim_info[j].dim_quark,step->quark,step->attvalue,NULL);
+								if(ret < NhlWARNING){
+									NhlPError(NhlWARNING,NhlEUNKNOWN,
+										  "FileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
+										  NrmQuarkToString(step->quark),
+										  NrmQuarkToString(tmp_var->var.dim_info[j].dim_quark),
+										  NrmQuarkToString(thefile->file.fname));
+									ret = NhlWARNING;
+								}
+								step = step->next;
+			
+							}
+						}
+						ret = FileWriteCoord(thefile,tmp_var->var.dim_info[j].dim_quark,coord_md,NULL);
 						if(ret < NhlWARNING) {
 							NhlPError(NhlWARNING,NhlEUNKNOWN,"FileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",
 								  NrmQuarkToString(tmp_var->var.dim_info[j].dim_quark),NrmQuarkToString(thefile->file.fname));
 							ret = NhlWARNING;
-						} else {
-							if(tmp_coord_var->var.att_id != -1) {
-								theatt = (NclAtt)_NclGetObj(tmp_coord_var->var.att_id);
-								step = theatt->att.att_list;
-								while(step != NULL) {
-									ret = FileWriteVarAtt(thefile,tmp_var->var.dim_info[j].dim_quark,step->quark,step->attvalue,NULL);
-									if(ret < NhlWARNING){
-										NhlPError(NhlWARNING,NhlEUNKNOWN,
-						   "FileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
-											  NrmQuarkToString(step->quark),
-											  NrmQuarkToString(tmp_var->var.dim_info[j].dim_quark),
-											  NrmQuarkToString(thefile->file.fname));
-										ret = NhlWARNING;
-									}
-									step = step->next;
-			
-								}
-							}
-						}
+						} 
 					} else if(thefile->file.coord_vars[file_dim_num] != NULL) {
 
 /*

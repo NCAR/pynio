@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 12756 2011-12-21 17:04:31Z huangwei $
+ *      $Id: FileSupport.c 13474 2012-05-17 21:56:15Z dbrown $
  */
 /************************************************************************
 *									*
@@ -31,6 +31,24 @@
 #include "ncarg/hlu/Error.h"
 #endif
 
+#include <netcdf.h>
+
+#ifdef BuildHDF5
+#include <hdf5.h>
+#endif
+
+#ifdef BuildHDF4
+#include <hdf/mfhdf.h>
+#endif
+
+#ifdef BuildHDFEOS5
+#include <HE5_HdfEosDef.h>
+#endif
+
+#ifdef BuildHDFEOS
+#include <HdfEosDef.h>
+#endif
+
 #include "defs.h"
 #include "NclMultiDValData.h"
 #include "NclFile.h"
@@ -47,6 +65,8 @@
 #include "VarSupport.h"
 #include "ApiRecords.h"
 #include "NclAtt.h"
+
+#include <sys/stat.h>
 
 int use_new_hlfs = 0;
 
@@ -2638,6 +2658,363 @@ NclQuark option;
 	return NhlNOERROR;
 }
 
+NclQuark _NclFindFileExt(NclQuark path, NclQuark *fname_q, NhlBoolean *is_http,
+			char **end_of_name, int *len_path, int rw_status)
+{
+	NclQuark file_ext_q = -1;
+
+	char *the_path = NrmQuarkToString(path);
+	char *last_slash = NULL;
+	char buffer[NCL_MAX_STRING];
+	struct stat buf;
+
+	int i;
+
+	if(strncmp(the_path,"http://",7))
+		*is_http = False;
+	else
+		*is_http = True;
+
+	last_slash = strrchr(the_path,'/');
+	if(last_slash == NULL) {
+		last_slash = the_path;
+		*len_path = 0;
+	} else {
+		last_slash++;
+	}
+
+	*end_of_name = strrchr(last_slash,'.');
+	if (*is_http) {
+		if (*end_of_name == NULL) {
+			*end_of_name = &last_slash[strlen(last_slash)];
+		}
+		*len_path = *end_of_name - the_path;
+		i = 0;
+		while(last_slash != *end_of_name) {
+			buffer[i] = *last_slash;
+			i++;
+			last_slash++;
+		}
+		buffer[i] = '\0';
+		*fname_q = NrmStringToQuark(buffer);
+#ifdef BuildOPENDAP
+                use_new_hlfs = 1;
+                if(strcmp("nc", *end_of_name+1) == 0)
+	        	file_ext_q = NrmStringToQuark("nc");
+	        else
+		{
+                        if(strcmp("he5", *end_of_name+1) == 0)
+			{
+				file_ext_q = NrmStringToQuark("opendap");
+				fprintf(stderr, "\tfile: <%s>, line: %d\n", __FILE__, __LINE__);
+				fprintf(stderr, "\topendap file_ext_q = <%s>\n", NrmQuarkToString(file_ext_q));
+			}
+	                else
+	        		file_ext_q = NrmStringToQuark("nc");
+		}
+#else
+		(*end_of_name)++;
+
+#if 0
+                if((0 == strcmp("h5", *end_of_name)) ||
+                   (0 == strcmp("he5", *end_of_name)) ||
+                   (0 == strcmp("grb", *end_of_name)) ||
+                   (0 == strcmp("grb1", *end_of_name)) ||
+                   (0 == strcmp("grb2", *end_of_name)) ||
+                   (0 == strcmp("hdf", *end_of_name)) ||
+                   (0 == strcmp("he2", *end_of_name)))
+	        	file_ext_q = NrmStringToQuark(*end_of_name);
+		else
+#endif
+	        	file_ext_q = NrmStringToQuark("nc");
+#endif
+		return file_ext_q;
+	}
+	else if(*end_of_name == NULL) {
+		file_ext_q = -1;
+	} else {
+		if (1 == rw_status)
+		{
+			if(stat(_NGResolvePath(the_path),&buf) == -1)
+			{
+				char tmp_path[NCL_MAX_STRING];
+				char tmp_name[NCL_MAX_STRING];
+				strcpy(tmp_path, the_path);
+				strcpy(tmp_name, *end_of_name);
+				tmp_path[strlen(the_path) - strlen(tmp_name)] = '\0';
+
+				if(stat(_NGResolvePath(tmp_path),&buf) == -1)
+				{
+					NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+						"_NclFindFileExt: Requested file <%s> or <%s> does not exist\n", the_path, tmp_path));
+                                		return(-1);
+				}
+			}
+		}
+
+		*len_path = *end_of_name - the_path;
+		i = 0;
+		while(last_slash != *end_of_name) {
+			buffer[i] = *last_slash;
+			i++;
+			last_slash++;
+		}
+		buffer[i] = '\0';
+		*fname_q = NrmStringToQuark(buffer);
+		(*end_of_name)++;
+
+		strcpy(buffer, *end_of_name);
+                for(i = 0; i < strlen(buffer); ++i)
+			buffer[i] = tolower(buffer[i]);
+
+		file_ext_q = NrmStringToQuark(buffer);
+	}
+
+	return file_ext_q;
+}
+
+NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, int *new_hlfs)
+{
+	NclQuark cur_ext_q;
+	NclQuark ori_file_ext_q = pre_file_ext_q;
+	NclQuark file_ext_q = pre_file_ext_q;
+
+	char *fext = NrmQuarkToString(pre_file_ext_q);
+
+	char *ext_list[] = {"nc"
+#ifdef BuildHDF5
+			   , "h5"
+#endif
+#ifdef BuildHDFEOS5
+			   , "he5"
+#endif
+#ifdef BuildHDFEOS
+			   , "he2"
+#endif
+#ifdef BuildHDF4
+			   , "hdf"
+#endif
+			   };
+
+	int found = 0;
+	int n = -1;
+	int sizeofextlist = sizeof(ext_list) / sizeof(ext_list[0]);
+
+	char filename[NCL_MAX_STRING];
+	struct stat buf;
+
+	for(n = 0; n < strlen(fext); ++n)
+ 		fext[n] = tolower(fext[n]);
+
+	if(0 == strncmp(fext, "gr", 2))
+		return file_ext_q;
+#ifdef BuildGDAL
+	else if(0 == strncmp(fext, "shp", 3))
+	{
+       		return file_ext_q;
+	}
+#endif
+	else if((0 == strcmp(fext, "cdf")) || (0 == strcmp(fext, "nc3")) ||
+           (0 == strcmp(fext, "nc4")) || (0 == strcmp(fext, "netcdf")))
+		ori_file_ext_q = NrmStringToQuark("nc");
+#ifdef BuildHDF4
+	else if((0 == strcmp(fext, "hd")) || (0 == strcmp(fext, "h4")))
+		ori_file_ext_q = NrmStringToQuark("hdf");
+#endif
+#ifdef BuildHDF5
+	else if(0 == strcmp(fext, "hdf5"))
+		ori_file_ext_q = NrmStringToQuark("h5");
+#endif
+#ifdef BuildHDFEOS
+	else if((0 == strcmp(fext, "hdfeos")) || (0 == strcmp(fext, "he")) || (0 == strcmp(fext, "he4")))
+		ori_file_ext_q = NrmStringToQuark("he2");
+#endif
+#ifdef BuildHDFEOS5
+	else if(0 == strcmp(fext, "hdfeos5"))
+		ori_file_ext_q = NrmStringToQuark("he5");
+#endif
+
+	strcpy(filename, NrmQuarkToString(the_path));
+
+	if(stat(_NGResolvePath(filename),&buf) == -1)
+	{
+		char tmp_path[NCL_MAX_STRING];
+		char tmp_name[NCL_MAX_STRING];
+		strcpy(tmp_path, filename);
+		strcpy(tmp_name, NrmQuarkToString(pre_file_ext_q));
+		tmp_path[strlen(filename) - strlen(tmp_name) - 1] = '\0';
+
+		if(stat(_NGResolvePath(tmp_path),&buf) == -1)
+		{
+			NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+				"_NclVerifyFile: Requested file <%s> or <%s> does not exist\n", filename, tmp_path));
+			return(-1);
+		}
+		strcpy(filename, tmp_path);
+	}
+
+
+	for(n = -1; n < sizeofextlist; n++)
+	{
+		if(0 > n)
+			cur_ext_q = ori_file_ext_q;
+		else
+		{
+			cur_ext_q = NrmStringToQuark(ext_list[n]);
+			if(ori_file_ext_q == cur_ext_q)
+				continue;
+		}
+
+		if(NrmStringToQuark("nc") == cur_ext_q)
+		{
+			int cdfid;
+			int format;
+			int nc_ret = NC_NOERR;
+			ng_usize_t ChunkSizeHint = 64 * getpagesize();
+			nc_ret = nc__open(filename,NC_NOWRITE,&ChunkSizeHint,&cdfid);
+
+			if(NC_NOERR != nc_ret)
+			{
+				continue;
+			}
+
+			nc_inq_format(cdfid, &format);
+
+        	       /**format
+         		*Pointer to location for returned format version, one of
+			*	NC_FORMAT_CLASSIC,
+         		*       NC_FORMAT_64BIT,
+         		*       NC_FORMAT_NETCDF4,
+         		*       NC_FORMAT_NETCDF4_CLASSIC.
+         		*/
+			switch(format)
+			{
+              			case NC_FORMAT_NETCDF4:
+					file_ext_q = cur_ext_q;
+					found = 1;
+                   			*new_hlfs = 1;
+                   			break;
+              			case NC_FORMAT_NETCDF4_CLASSIC:
+              			case NC_FORMAT_64BIT:
+              			case NC_FORMAT_CLASSIC:
+					file_ext_q = cur_ext_q;
+					found = 1;
+                   			break;
+              			default:
+					found = 0;
+                   			break;
+			}
+
+			ncclose(cdfid);
+
+			if(found)
+				break;
+		}
+#ifdef BuildHDF5
+		else if(NrmStringToQuark("h5") == cur_ext_q)
+		{
+			htri_t status = H5Fis_hdf5(filename);
+
+			if(status)
+			{
+        			file_ext_q = cur_ext_q;
+				found = 1;
+				break;
+			}
+			else
+				found = 0;
+		}
+#endif
+#ifdef BuildHDFEOS5
+		else if(NrmStringToQuark("he5") == cur_ext_q)
+		{
+			long str_buf_size = 0;
+			long nsw = 0;
+			long ngd = 0;
+			long npt = 0;
+			long nza = 0;
+
+			/*HDFEOS5 file should be first a HDF5 file.*/
+			htri_t status = H5Fis_hdf5(filename);
+
+			if(! status)
+			{
+				found = 0;
+				continue;
+			}
+
+			nsw = HE5_SWinqswath(filename, NULL, &str_buf_size);
+			ngd = HE5_GDinqgrid (filename, NULL, &str_buf_size);
+			npt = HE5_PTinqpoint(filename, NULL, &str_buf_size);
+			nza = HE5_ZAinqza   (filename, NULL, &str_buf_size);
+
+			if((npt <= 0) && (nsw <= 0) && (ngd <= 0) && (nza <= 0))
+				found = 0;
+			else
+			{
+        			file_ext_q = cur_ext_q;
+        			found = 1;
+				break;
+			}
+		}
+#endif
+#ifdef BuildHDFEOS
+		else if(NrmStringToQuark("he2") == cur_ext_q)
+		{
+			int32 nsw = 0;
+			int32 ngd = 0;
+			int32 npt = 0;
+			int32 bsize;
+
+			/*A HDFEOS(2) file must be a hdf(4) file first*/
+			intn status = Hishdf(filename);
+
+			if(! status)
+			{
+        			found = 0;
+				continue;
+			}
+
+			nsw = SWinqswath(filename, NULL, &bsize);
+			ngd = GDinqgrid (filename, NULL, &bsize);
+			npt = PTinqpoint(filename, NULL, &bsize);
+
+			if((npt <= 0) && (nsw <= 0) && (ngd <=0))
+				found = 0;
+			else
+			{
+        			file_ext_q = cur_ext_q;
+        			found = 1;
+				break;
+			}
+		}
+#endif
+#ifdef BuildHDF4
+		else if(NrmStringToQuark("hdf") == cur_ext_q)
+		{
+			intn status = Hishdf(filename);
+
+			if(status)
+			{
+        			file_ext_q = cur_ext_q;
+        			found = 1;
+				break;
+			}
+			else
+				found = 0;
+		}
+#endif
+		else
+		{
+        		fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+        		fprintf(stderr, "\tDONOT know anything about <%s>.\n", ext_list[n]);
+		}
+	}
+
+	return file_ext_q;
+}
+
+
 NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 			unsigned int obj_type_mask, NclStatus status,
 			NclQuark path, int rw_status)
@@ -2645,36 +3022,69 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 	NclFile file_out = NULL;
 	NclFileClassPart *fcp = &(nclFileClassRec.file_class);
 
+	NclQuark file_ext_q = -1;
+	NclQuark fname_q;
+	NhlBoolean is_http;
+	char *end_of_name = NULL;
+	int len_path;
+
 	static int first = 1;
 
-	if(first)
-	{
-		first = 0;
-		/* Check if new file-strucuture */
-		if(NULL != fcp->options[Ncl_USE_NEW_HLFS].value)
-			use_new_hlfs = *(int *)(fcp->options[Ncl_USE_NEW_HLFS].value->multidval.val);
-	}
+        struct stat file_stat;
 
-      /*
-       *fprintf(stderr, "\nEnter _NclCreateFile, file: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tNcl_USE_NEW_HLFS = %d\n", Ncl_USE_NEW_HLFS);
-       *fprintf(stderr, "\tuse_new_hlfs = %d\n", use_new_hlfs);
-       */
+	file_ext_q = _NclFindFileExt(path, &fname_q, &is_http, &end_of_name, &len_path, rw_status);
+
+	if(! is_http)
+	{
+		if(0 > file_ext_q)
+		{
+			NHLPERROR((NhlFATAL,NhlEUNKNOWN,"(%s) has no file extension, can't determine type of file to open",NrmQuarkToString(path)));
+			return(NULL);
+		}
+		else if (1 == rw_status)
+		{
+			NclQuark the_real_path = NrmStringToQuark(_NGResolvePath(NrmQuarkToString(path)));
+			NclQuark old_file_ext_q = file_ext_q;
+
+			stat(_NGResolvePath(NrmQuarkToString(path)), &file_stat);
+
+			if(file_stat.st_size)
+			    file_ext_q = _NclVerifyFile(the_real_path, old_file_ext_q, &use_new_hlfs);
+			else
+			    file_ext_q = -1;
+
+			if(0 > file_ext_q)
+			{
+				fprintf(stderr, "\tfile_ext_q: <%s>\n", "Undefined");
+				NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+					"_NclCreateFile: Can not open file: <%s> properly.\n",
+				 	NrmQuarkToString(the_real_path)));
+				return file_out;
+			}
+		}
+
+		if(first)
+		{
+			first = 0;
+			/* Check if new file-strucuture */
+			if(NULL != fcp->options[Ncl_USE_NEW_HLFS].value)
+				use_new_hlfs = *(int *)(fcp->options[Ncl_USE_NEW_HLFS].value->multidval.val);
+		}
+	}
 
 #ifdef USE_NETCDF4_FEATURES
 	if(use_new_hlfs)
 	{
-		file_out = _NclNewFileCreate(inst, theclass, obj_type, obj_type_mask, status, path, rw_status);
+		file_out = _NclNewFileCreate(inst, theclass, obj_type, obj_type_mask, status,
+				path, rw_status, file_ext_q, fname_q, is_http, end_of_name, len_path);
 	}					
 	else
 #endif
 	{
-		file_out = _NclFileCreate(inst, theclass, obj_type, obj_type_mask, status, path, rw_status);
+		file_out = _NclFileCreate(inst, theclass, obj_type, obj_type_mask, status,
+				path, rw_status, file_ext_q, fname_q, is_http, end_of_name, len_path);
 	}					
 
-	/*
-	*fprintf(stderr, "Leave _NclCreateFile, file: %s, line: %d\n\n", __FILE__, __LINE__);
-	*/
 	return file_out;
 }
 

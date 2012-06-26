@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclNewFile.h 12558 2011-08-09 17:35:00Z huangwei $
+ *      $Id: NclNewFile.h 13245 2012-03-10 23:43:13Z haley $
  */
 #ifndef NclNewFile_h
 #define NclNewFile_h
@@ -122,7 +122,12 @@ extern NclFile _NclNewFileCreate(NclObj       inst,
                                  unsigned int obj_type_mask,
                                  NclStatus    status,
                                  NclQuark     path,
-                                 int          rw_status);
+                                 int          rw_status,
+				 NclQuark     file_ext_q,
+				 NclQuark     fname_q,
+				 NhlBoolean   is_http, 
+				 char        *end_of_name,
+				 int          len_path);
 
 static NhlErrorTypes InitializeNewFileClass();
 
