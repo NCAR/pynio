@@ -98,7 +98,7 @@ def pyniopath_ncarg():
         if ncarg_dir == None or not os.path.exists(ncarg_dir) \
           or not os.path.exists(os.path.join(ncarg_dir,"lib","ncarg")):
             if not __formats__['grib2']:
-                return None
+                return ""
             else:
                 print "No path found to PyNIO/ncarg data directory and no usable NCARG installation found"
                 sys.exit()

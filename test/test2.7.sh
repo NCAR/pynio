@@ -9,7 +9,7 @@ touch $outfile
 
 for file in `cat testfiles`
 do
-echo $file >> $outfile
-python2.7 $file 2>&1 >> $outfile
-done
+echo $file 
+python2.7 $file 2>&1 
+done | tee $outfile
 
