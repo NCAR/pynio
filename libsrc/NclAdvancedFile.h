@@ -6,10 +6,10 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclNewFile.h 13245 2012-03-10 23:43:13Z haley $
+ *      $Id: NclAdvancedFile.h 14070 2013-01-15 19:25:13Z huangwei $
  */
-#ifndef NclNewFile_h
-#define NclNewFile_h
+#ifndef NclAdvancedFile_h
+#define NclAdvancedFile_h
 
 #ifdef NIO_LIB_ONLY
 #include "niohlu.h"
@@ -43,7 +43,7 @@
 #include "NclCoordVar.h"
 #include "NclCallBacksI.h"
 #include "NclData.h"
-#include "NclNewFileStructure.h"
+#include "NclAdvancedFileStructure.h"
 
 #define NCLFILE_INC -1
 #define NCLFILE_DEC -2
@@ -54,10 +54,10 @@ int indentation_level;
 int indentation_length;
 extern int grib_version;
 
-typedef struct _NclNewFileRec NclNewFileRec;
-typedef struct _NclNewFileClassRec NclNewFileClassRec;
-typedef NclNewFileRec *NclNewFile;
-typedef NclNewFileClassRec *NclNewFileClass;
+typedef struct _NclAdvancedFileRec NclAdvancedFileRec;
+typedef struct _NclAdvancedFileClassRec NclAdvancedFileClassRec;
+typedef NclAdvancedFileRec *NclAdvancedFile;
+typedef NclAdvancedFileClassRec *NclAdvancedFileClass;
 
 typedef NhlErrorTypes (*NclAssignFileGrpFunc)(NclFile thefile, NclQuark grp_name);
 typedef NhlErrorTypes (*NclAssignFileVlenFunc)(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
@@ -73,7 +73,7 @@ typedef NhlErrorTypes (*NclAssignFileCompoundFunc)(NclFile thefile, NclQuark vle
 typedef NhlErrorTypes (*NclWriteFileCompoundFunc)(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
                                                   ng_size_t n_mems, NclQuark *mem_name, NclList thelist);
 
-typedef struct _NclNewFileClassPart
+typedef struct _NclAdvancedFileClassPart
 {
     NclAssignFileGrpFunc    write_grp;
     NclAssignFileVlenFunc   create_vlen_type;
@@ -81,10 +81,10 @@ typedef struct _NclNewFileClassPart
     NclAssignFileOpaqueFunc   create_opaque_type;
     NclAssignFileCompoundFunc create_compound_type;
     NclWriteFileCompoundFunc  write_compound;
-    int new_stuff;	/* New part(s) beyond _NclFileClasspart */
-} NclNewFileClassPart;
+    int new_stuff;	/* Advanced part(s) beyond _NclFileClasspart */
+} NclAdvancedFileClassPart;
 
-typedef struct _NclNewFilePart
+typedef struct _NclAdvancedFilePart
 {
     NclQuark        fname;
     NclQuark        fpath;
@@ -94,29 +94,28 @@ typedef struct _NclNewFilePart
     NclFileGrpNode *grpnode;
 
     struct _NclFormatFunctionRecord *format_funcs;
-} NclNewFilePart;
+} NclAdvancedFilePart;
  
-struct _NclNewFileClassRec
+struct _NclAdvancedFileClassRec
 {
     NclObjClassPart     obj_class;
     NclFileClassPart    file_class;
-    NclNewFileClassPart newfile_class;
+    NclAdvancedFileClassPart advancedfile_class;
 };
 
-struct _NclNewFileRec
+struct _NclAdvancedFileRec
 {
     NclObjPart      obj;
     NclFilePart     file;
-    NclNewFilePart  newfile;
+    NclAdvancedFilePart  advancedfile;
 
-    int use_new_hlfs;
 };
 
-extern NclObjClass nclNewFileClass;
+extern NclObjClass nclAdvancedFileClass;
 
-extern NclNewFileClassRec nclNewFileClassRec;
+extern NclAdvancedFileClassRec nclAdvancedFileClassRec;
 
-extern NclFile _NclNewFileCreate(NclObj       inst,
+extern NclFile _NclAdvancedFileCreate(NclObj       inst,
                                  NclObjClass  theclass,
                                  NclObjTypes  obj_type,
                                  unsigned int obj_type_mask,
@@ -129,23 +128,21 @@ extern NclFile _NclNewFileCreate(NclObj       inst,
 				 char        *end_of_name,
 				 int          len_path);
 
-static NhlErrorTypes InitializeNewFileClass();
-
 void _clearNclPrintIndentation();
 void _increaseNclPrintIndentation();
 void _decreaseNclPrintIndentation();
 
-void _printNclFileUDTRecord(FILE *fp, NclNewFile thefile, NclFileUDTRecord *udt_rec);
-void _printNclFileAttRecord(FILE *fp, NclNewFile thefile, NclFileAttRecord *att_rec);
-void _printNclFileDimRecord(FILE *fp, NclNewFile thefile, NclFileDimRecord *dim_rec);
-void _printNclFileChunkDimRecord(FILE *fp, NclNewFile thefile, NclFileDimRecord *dim_rec);
+void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
+void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
+void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
+void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
 void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
-void _printNclFileVarRecord(FILE *fp, NclNewFile thefile, NclFileVarRecord *var_rec);
-void _printNclFileGrpRecord(FILE *fp, NclNewFile thefile, NclFileGrpRecord *grp_rec);
+void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
+void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
 
-void NewLoadVarAtts(NclNewFile thefile, NclQuark var);
+void AdvancedLoadVarAtts(NclAdvancedFile thefile, NclQuark var);
 
-NhlErrorTypes _NclNewFilePrintSummary(NclObj self, FILE *fp);
+NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp);
 
 extern char *_getComponentName(const char *fullname, char **structname);
 extern NclFileCompoundNode *_getComponentNodeFromVarNode(NclFileVarNode *varnode,
@@ -154,5 +151,5 @@ extern NclVar _NclCreateVlenVar(char *var_name, void *val,
                                 int ndims, NclQuark *dimnames,
                                 ng_size_t *dimsizes, NclBasicDataTypes type);
 extern NclQuark *_NclGetGrpNames(void *therec, int *num_grps);
-#endif /* NclNewFile_h */
+#endif /* NclAdvancedFile_h */
 

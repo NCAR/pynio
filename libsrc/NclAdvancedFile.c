@@ -6,91 +6,96 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclNewFile.c 13245 2012-03-10 23:43:13Z haley $
+ *      $Id: NclAdvancedFile.c 14070 2013-01-15 19:25:13Z huangwei $
  */
 
-#include "NclNewFile.h"
+#include "NclAdvancedFile.h"
 
-static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
+NhlErrorTypes InitializeFileOptions();
+
+static struct _NclMultiDValDataRec *AdvancedFileReadVarAtt(NclFile infile,
                                                       NclQuark var,
                                                       NclQuark attname,
                                                       struct _NclSelectionRecord *sel_ptr);
-static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
+static struct _NclVarRec* AdvancedFileReadCoord(NclFile infile, NclQuark coord_name,
                                            struct _NclSelectionRecord* sel_ptr);
-static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
+static NhlErrorTypes AdvancedFileWriteAtt(NclFile infile, NclQuark attname,
                                      struct _NclMultiDValDataRec* value,
                                      struct _NclSelectionRecord *sel_ptr);
-static NhlErrorTypes NewFileSetFileOption(NclFile  thefile,
+static NhlErrorTypes AdvancedFileSetFileOption(NclFile  thefile,
                                           NclQuark format,
                                           NclQuark option,
                                           NclMultiDValData value);
-static NhlErrorTypes NewFileAddDim(NclFile thefile, NclQuark dimname,
+static NhlErrorTypes AdvancedFileAddDim(NclFile thefile, NclQuark dimname,
                                    ng_size_t dimsize, int is_unlimited);
-static NhlErrorTypes NewFileAddChunkDim(NclFile infile, NclQuark dimname,
+static NhlErrorTypes AdvancedFileAddChunkDim(NclFile infile, NclQuark dimname,
                                         ng_size_t dimsize, int is_unlimited);
-static NhlErrorTypes NewFileAddVarChunk(NclFile infile, NclQuark varname,
+static NhlErrorTypes AdvancedFileAddVarChunk(NclFile infile, NclQuark varname,
                                         int n_dims, ng_size_t *dims);
-static NhlErrorTypes NewFileAddVarChunkCache(NclFile thefile, NclQuark varname,
+static NhlErrorTypes AdvancedFileAddVarChunkCache(NclFile thefile, NclQuark varname,
                                              ng_size_t cache_size, ng_size_t cache_nelems, 
                                              float cache_preemption);
-static NhlErrorTypes NewFileSetVarCompressLevel(NclFile infile, NclQuark varname,
+static NhlErrorTypes AdvancedFileSetVarCompressLevel(NclFile infile, NclQuark varname,
                                                 int compress_level);
-static NhlErrorTypes NewFileAddGrp(NclFile thefile, NclQuark grpname);
-static NhlErrorTypes NewFileAddVar(NclFile thefile, NclQuark varname,
+/*
+static NhlErrorTypes AdvancedFileAddGrp(NclFile thefile, NclQuark grpname);
+*/
+static NhlErrorTypes AdvancedFileAddVar(NclFile thefile, NclQuark varname,
                                    NclQuark type, int n_dims, NclQuark *dimnames);
-static NhlErrorTypes NewFileWriteVarAtt(NclFile thefile, NclQuark var, NclQuark attname,
+static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile thefile, NclQuark var, NclQuark attname,
                                         struct _NclMultiDValDataRec* value,
                                         struct _NclSelectionRecord * sel_ptr);
-static NhlErrorTypes MyNewFileWriteVar(NclFile thefile, NclQuark var,
+static NhlErrorTypes MyAdvancedFileWriteVar(NclFile thefile, NclQuark var,
                                        struct _NclMultiDValDataRec *value,
                                        struct _NclSelectionRecord * sel_ptr,
                                        NclQuark *dim_names, int type);
-static NhlErrorTypes NewFileWriteGrp(NclFile thefile, NclQuark grpname);
-static NhlErrorTypes NewFileCreateVlenType(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
+static NhlErrorTypes AdvancedFileWriteGrp(NclFile thefile, NclQuark grpname);
+static NhlErrorTypes AdvancedFileCreateVlenType(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
                                            NclQuark type, NclQuark dim_name);
-static NhlErrorTypes NewFileWriteVar(NclFile thefile, NclQuark var,
+static NhlErrorTypes AdvancedFileWriteVar(NclFile thefile, NclQuark var,
                                      struct _NclMultiDValDataRec *value,
                                      struct _NclSelectionRecord *sel_ptr);
-static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
+static NhlErrorTypes AdvancedFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                                         struct _NclSelectionRecord *lhs_sel_ptr,
                                         struct _NclVarRec *rhs_var,
                                         struct _NclSelectionRecord *rhs_sel_ptr);
-static NhlErrorTypes NewFileWriteCoord(NclFile infile, NclQuark coord_name,
+static NhlErrorTypes AdvancedFileWriteCoord(NclFile infile, NclQuark coord_name,
                                        struct _NclMultiDValDataRec *value,
                                        struct _NclSelectionRecord *sel_ptr);
-static NhlErrorTypes NewFileVarWriteDim(NclFile infile, NclQuark var,
+static NhlErrorTypes AdvancedFileVarWriteDim(NclFile infile, NclQuark var,
                                         NclQuark dim_name, long dim_num);
-static struct _NclMultiDValDataRec* NewFileReadVarValue(NclFile thefile, NclQuark var_name,
+static struct _NclMultiDValDataRec* AdvancedFileReadVarValue(NclFile thefile, NclQuark var_name,
                                                         struct _NclSelectionRecord* sel_ptr);
-static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile thefile, NclQuark var_name,
+static struct _NclMultiDValDataRec* MyAdvancedFileReadVarValue(NclFile thefile, NclQuark var_name,
                                                           struct _NclSelectionRecord *sel_ptr,
                                                           NclDimRec *dim_info, int vtype);
-static struct _NclMultiDValDataRec* NewFileReadVarValue(NclFile thefile, NclQuark var_name,
+static struct _NclMultiDValDataRec* AdvancedFileReadVarValue(NclFile thefile, NclQuark var_name,
                                                         struct _NclSelectionRecord* sel_ptr);
-static struct _NclMultiDValDataRec *NewFileReadAtt(NclFile infile, NclQuark attname,
+static struct _NclMultiDValDataRec *AdvancedFileReadAtt(NclFile infile, NclQuark attname,
                                                    struct _NclSelectionRecord *sel_ptr);
-static struct _NclMultiDValDataRec *NewFileVarReadDim(NclFile infile, NclQuark var,
+static struct _NclMultiDValDataRec *AdvancedFileVarReadDim(NclFile infile, NclQuark var,
                                                       NclQuark dim_name, long dim_num);
-static struct _NclMultiDValDataRec* NewFileReadDim(NclFile infile,
+static struct _NclMultiDValDataRec* AdvancedFileReadDim(NclFile infile,
                                                    NclQuark dim_name, 
                                                    long dim_num);
-static NclObjTypes NewFileVarRepValue(NclFile thefile, NclQuark var);
-static NhlErrorTypes NewUpdateCoordInfo(NclNewFile thefile, NrmQuark varname);
-static NhlErrorTypes NewFileWriteDim(NclFile infile, NclQuark dim_name, long dimid);
-static NhlErrorTypes NewFileDelAtt(NclFile infile, NclQuark attname);
-static NhlErrorTypes NewFileDelVarAtt(NclFile infile, NclQuark var, NclQuark attname);
-static void NewAdjustForScalarDim(NclNewFile thefile);
-static int NewFileIsCoord(NclFile infile, NclQuark coord_name);
-static int NewFileIsDim(NclFile infile, NclQuark dim_name);
-static int NewFileIsVarAtt(NclFile infile, NclQuark var, NclQuark theatt);
-static int NewVarAttIndex(NclFileVarNode *varnode, NclQuark theatt);
-static int NewFileIsAtt(NclFile infile,NclQuark theatt);
+static NclObjTypes AdvancedFileVarRepValue(NclFile thefile, NclQuark var);
+static NhlErrorTypes AdvancedUpdateCoordInfo(NclAdvancedFile thefile, NrmQuark varname);
+static NhlErrorTypes AdvancedFileWriteDim(NclFile infile, NclQuark dim_name, long dimid);
+static NhlErrorTypes AdvancedFileDelAtt(NclFile infile, NclQuark attname);
+static NhlErrorTypes AdvancedFileDelVarAtt(NclFile infile, NclQuark var, NclQuark attname);
+static void AdvancedAdjustForScalarDim(NclAdvancedFile thefile);
+static int AdvancedFileIsCoord(NclFile infile, NclQuark coord_name);
+static int AdvancedFileIsDim(NclFile infile, NclQuark dim_name);
+static int AdvancedFileIsVarAtt(NclFile infile, NclQuark var, NclQuark theatt);
+static int AdvancedVarAttIndex(NclFileVarNode *varnode, NclQuark theatt);
+static int AdvancedFileIsAtt(NclFile infile,NclQuark theatt);
 static int myVarIsDimInGrpNode(NclFileGrpNode *grpnode, NclQuark var, NclQuark dim_name);
-static int NewFileVarIsDim(NclFile infile, NclQuark var, NclQuark dim_name);
+static int AdvancedFileVarIsDim(NclFile infile, NclQuark var, NclQuark dim_name);
 static int _getGroupIdFromGrpNode(NclFileGrpNode *grpnode, NclQuark group);
-static int NewFileIsGroup(NclFile infile, NclQuark group);
+static int AdvancedFileIsGroup(NclFile infile, NclQuark group);
+static int isUnlimitedDimension(NclFileGrpNode *grpnode, NclQuark dimname);
 
-NclGroup *NewFileReadGroup(NclFile infile, NclQuark group_name);
+NclGroup *AdvancedFileReadGroup(NclFile infile, NclQuark group_name);
 
 NhlErrorTypes _addNclEnumNode(NclFileEnumRecord **enumrec,
                              NclQuark name, long long value)
@@ -243,53 +248,49 @@ NclFileCompoundNode *_getComponentNodeFromVarNode(NclFileVarNode *varnode,
 }
 
 
-NhlErrorTypes _NclNewFilePrintSummary(NclObj self, FILE *fp)
+NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp)
 {
-    NclNewFile thefile = (NclNewFile)self;
-    int i,j;
-    NclFileAttInfoList* step;
+    NclAdvancedFile thefile = (NclAdvancedFile)self;
     int ret = 0;
-    NclMultiDValData tmp_md;
-    NhlErrorTypes ret1 = NhlNOERROR;
 
-    ret = nclfprintf(fp,"File path\t:\t%s\n\n",NrmQuarkToString(thefile->newfile.fpath));
+    ret = nclfprintf(fp,"File path\t:\t%s\n\n",NrmQuarkToString(thefile->advancedfile.fpath));
     if(ret < 0)
         return(NhlWARNING);
     
-    if(NULL != thefile->newfile.grpnode->udt_rec)
+    if(NULL != thefile->advancedfile.grpnode->udt_rec)
     {
         nclfprintf(fp,"Number of user defined types\t:\t %d\n",
-                thefile->newfile.grpnode->udt_rec->n_udts);
+                thefile->advancedfile.grpnode->udt_rec->n_udts);
     }
     
-    if(NULL != thefile->newfile.grpnode->att_rec)
+    if(NULL != thefile->advancedfile.grpnode->att_rec)
     {
         nclfprintf(fp,"Number of global attributes\t:\t %d\n",
-                thefile->newfile.grpnode->att_rec->n_atts);
+                thefile->advancedfile.grpnode->att_rec->n_atts);
     }
 
-    if(NULL != thefile->newfile.grpnode->dim_rec)
+    if(NULL != thefile->advancedfile.grpnode->dim_rec)
     {
         nclfprintf(fp,"Number of dimensions\t:\t %d\n",
-                   thefile->newfile.grpnode->dim_rec->n_dims);
+                   thefile->advancedfile.grpnode->dim_rec->n_dims);
     }
 
-    if(NULL != thefile->newfile.grpnode->chunk_dim_rec)
+    if(NULL != thefile->advancedfile.grpnode->chunk_dim_rec)
     {
         nclfprintf(fp,"Number of chunk_dimensions\t:\t %d\n",
-                   thefile->newfile.grpnode->chunk_dim_rec->n_dims);
+                   thefile->advancedfile.grpnode->chunk_dim_rec->n_dims);
     }
 
-    if(NULL != thefile->newfile.grpnode->grp_rec)
+    if(NULL != thefile->advancedfile.grpnode->grp_rec)
     {
         nclfprintf(fp,"Number of groups\t:\t %d\n",
-                   thefile->newfile.grpnode->grp_rec->n_grps);
+                   thefile->advancedfile.grpnode->grp_rec->n_grps);
     }
 
-    if(NULL != thefile->newfile.grpnode->var_rec)
+    if(NULL != thefile->advancedfile.grpnode->var_rec)
     {
         nclfprintf(fp,"Number of variables\t:\t %d\n",
-                   thefile->newfile.grpnode->var_rec->n_vars);
+                   thefile->advancedfile.grpnode->var_rec->n_vars);
     }
 
     return ret;
@@ -385,17 +386,37 @@ void _justPrintTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline)
         case NCL_double:
             {
              double *v = (double *)val;
-             nclfprintf(fp, "%d", v[0]);
+             nclfprintf(fp, "%f", v[0]);
              break;
             }
         case NCL_byte:
         case NCL_ubyte:
+            {
+             char *v = (char *)val;
+             nclfprintf(fp, "%d", v[0]);
+             break;
+            }
         case NCL_short:
         case NCL_ushort:
+            {
+             short *v = (short *)val;
+             nclfprintf(fp, "%h", v[0]);
+             break;
+            }
         case NCL_int:
         case NCL_uint:
+            {
+             int *v = (int *)val;
+             nclfprintf(fp, "%d", v[0]);
+             break;
+            }
         case NCL_long:
         case NCL_ulong:
+            {
+             long *v = (long *)val;
+             nclfprintf(fp, "%ld", v[0]);
+             break;
+            }
         case NCL_int64:
         case NCL_uint64:
             {
@@ -492,7 +513,7 @@ void _justPrintTypeValAtPoint(FILE *fp, NclBasicDataTypes type, void *val, size_
         nclfprintf(fp, "\n");
 }
 
-void _printNclFileAttRecord(FILE *fp, NclNewFile thefile, NclFileAttRecord *attrec)
+void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *attrec)
 {
     NclFileAttNode   *attnode;
     NclMultiDValData tmp_md;
@@ -691,7 +712,7 @@ void _printNclFileAttRecord(FILE *fp, NclNewFile thefile, NclFileAttRecord *attr
     _decreaseNclPrintIndentation();
 }
 
-void _printNclFileUDTRecord(FILE *fp, NclNewFile thefile, NclFileUDTRecord *udtrec)
+void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udtrec)
 {
     NclFileUDTNode   *udtnode;
     int i, n;
@@ -754,7 +775,7 @@ void _printNclFileUDTRecord(FILE *fp, NclNewFile thefile, NclFileUDTRecord *udtr
    */
 }
 
-void _printNclFileDimRecord(FILE *fp, NclNewFile thefile, NclFileDimRecord *dimrec)
+void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dimrec)
 {
     NclFileDimNode   *dimnode;
     long long llv;
@@ -787,7 +808,7 @@ void _printNclFileDimRecord(FILE *fp, NclNewFile thefile, NclFileDimRecord *dimr
     _decreaseNclPrintIndentation();
 }
 
-void _printNclFileChunkDimRecord(FILE *fp, NclNewFile thefile, NclFileDimRecord *dimrec)
+void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dimrec)
 {
     NclFileDimNode   *dimnode;
     long long llv;
@@ -824,7 +845,7 @@ void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec)
 {
     NclFileDimNode   *dimnode;
     long long llv;
-    int i, n;
+    int i;
    
     _justPrintTypeVal(fp, NCL_char, "\t[ ", 0);
 
@@ -848,11 +869,10 @@ void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec)
     _justPrintTypeVal(fp, NCL_char, " ]", 1);
 }
 
-void _printNclFileVarRecord(FILE *fp, NclNewFile thefile, NclFileVarRecord *varrec)
+void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *varrec)
 {
     NclFileVarNode *varnode;
     char type_str[32];
-    long long llv;
     int i;
     
     if(NULL == varrec)
@@ -896,7 +916,7 @@ void _printNclFileVarRecord(FILE *fp, NclNewFile thefile, NclFileVarRecord *varr
         if(NULL != varnode->att_rec)
         {
             if(NULL == varnode->att_rec->att_node[0].value)
-                NewLoadVarAtts(thefile,varnode->name);
+                AdvancedLoadVarAtts(thefile,varnode->name);
         }
         _printNclFileAttRecord(fp, thefile, varnode->att_rec);
         _decreaseNclPrintIndentation();
@@ -907,11 +927,9 @@ void _printNclFileVarRecord(FILE *fp, NclNewFile thefile, NclFileVarRecord *varr
     _decreaseNclPrintIndentation();
 }
 
-void _printNclFileGrpRecord(FILE *fp, NclNewFile thefile, NclFileGrpRecord *grprec)
+void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grprec)
 {
     NclFileGrpNode *grpnode;
-    char type_str[32];
-    long long llv;
     int i;
 
     if(NULL == grprec)
@@ -952,15 +970,15 @@ void _printNclFileGrpRecord(FILE *fp, NclNewFile thefile, NclFileGrpRecord *grpr
 }
 
 
-NhlErrorTypes NewFilePrint(NclObj self, FILE *fp)
+NhlErrorTypes AdvancedFilePrint(NclObj self, FILE *fp)
 {
-    NclNewFile thefile = (NclNewFile)self;
+    NclAdvancedFile thefile = (NclAdvancedFile)self;
     NhlErrorTypes ret = NhlNOERROR;
 
-    nclfprintf(fp, "filename:\t%s\n",NrmQuarkToString(thefile->newfile.fname));
-    nclfprintf(fp, "path:\t%s\n",NrmQuarkToString(thefile->newfile.fpath));
+    nclfprintf(fp, "filename:\t%s\n",NrmQuarkToString(thefile->advancedfile.fname));
+    nclfprintf(fp, "path:\t%s\n",NrmQuarkToString(thefile->advancedfile.fpath));
 
-    if(NULL == thefile->newfile.grpnode)
+    if(NULL == thefile->advancedfile.grpnode)
     {
         nclfprintf(fp,"Empty file!\n");
         return (ret);
@@ -968,17 +986,17 @@ NhlErrorTypes NewFilePrint(NclObj self, FILE *fp)
 
     _clearNclPrintIndentation();
 
-    _printNclFileUDTRecord(fp, thefile, thefile->newfile.grpnode->udt_rec);
+    _printNclFileUDTRecord(fp, thefile, thefile->advancedfile.grpnode->udt_rec);
 
-    _printNclFileAttRecord(fp, thefile, thefile->newfile.grpnode->att_rec);
+    _printNclFileAttRecord(fp, thefile, thefile->advancedfile.grpnode->att_rec);
 
-    _printNclFileDimRecord(fp, thefile, thefile->newfile.grpnode->dim_rec);
+    _printNclFileDimRecord(fp, thefile, thefile->advancedfile.grpnode->dim_rec);
 
-    _printNclFileChunkDimRecord(fp, thefile, thefile->newfile.grpnode->chunk_dim_rec);
+    _printNclFileChunkDimRecord(fp, thefile, thefile->advancedfile.grpnode->chunk_dim_rec);
 
-    _printNclFileVarRecord(fp, thefile, thefile->newfile.grpnode->var_rec);
+    _printNclFileVarRecord(fp, thefile, thefile->advancedfile.grpnode->var_rec);
 
-    _printNclFileGrpRecord(fp, thefile, thefile->newfile.grpnode->grp_rec);
+    _printNclFileGrpRecord(fp, thefile, thefile->advancedfile.grpnode->grp_rec);
 
     return ret;
 }
@@ -992,8 +1010,6 @@ NhlErrorTypes _delNclAttNode(NclFileAttRecord **theattrec, NclQuark name)
     NhlErrorTypes ret = NhlNOERROR;
     int i, size;
     int idx = -1;
-    int old_n_atts = attrec->n_atts;
-    int new_n_atts = attrec->n_atts - 1;
 
     for(i = 0; i < attrec->n_atts; i++)
     {
@@ -1032,39 +1048,49 @@ NhlErrorTypes _delNclAttNode(NclFileAttRecord **theattrec, NclQuark name)
     return (ret);
 }
 
-NhlErrorTypes _addNclAttNode(NclFileAttRecord **attrec,
+NhlErrorTypes _addNclAttNode(NclFileAttRecord **rootattrec,
                              NclQuark name, NclBasicDataTypes type,
                              int n_elem, void *value)
 {
+    NclFileAttRecord *attrec;
+    NclFileAttNode   *attnode;
     int i, n = 0;
 
-    if(NULL == *attrec)
+    if(NULL == *rootattrec)
     {
-        *attrec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
-        (*attrec)->n_atts = 0;
+        *rootattrec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
+        (*rootattrec)->n_atts = 0;
     }
-    else if((*attrec)->n_atts >= (*attrec)->max_atts)
+    else if((*rootattrec)->n_atts >= (*rootattrec)->max_atts)
     {
-        _NclFileAttRealloc(attrec);
+        _NclFileAttRealloc(rootattrec);
     }
 
-    n = (*attrec)->n_atts;
+    attrec = *rootattrec;
+
+    n = attrec->n_atts;
 
     for(i = 0; i < n; i++)
     {
-        if(name == (*attrec)->att_node[i].name)
+        if(name == attrec->att_node[i].name)
             return (NhlNOERROR);
     }
 
-    memset(&((*attrec)->att_node[n]), 0, sizeof(NclFileAttNode));
+    attnode = &(attrec->att_node[n]);
 
-    (*attrec)->att_node[n].name = name;
-    (*attrec)->att_node[n].type = type;
-    (*attrec)->att_node[n].n_elem = n_elem;
-    (*attrec)->att_node[n].value = (void *)NclCalloc(n_elem, _NclSizeOf(type));
-    assert((*attrec)->att_node[n].value);
-    memcpy((*attrec)->att_node[n].value, value, n_elem * _NclSizeOf(type));
-    (*attrec)->n_atts++;
+    attnode->name = name;
+    attnode->type = type;
+    attnode->n_elem = n_elem;
+    attnode->value = (void *)NclMalloc(n_elem * _NclSizeOf(type));
+    assert(attnode->value);
+    memcpy(attnode->value, value, n_elem * _NclSizeOf(type));
+    attnode->the_nc_type = -1;
+    attnode->is_virtual = 0;
+    attnode->is_compound = 0;
+    attnode->is_vlen = 0;
+    attnode->is_opaque = 0;
+    attnode->is_enum = 0;
+    attrec->n_atts++;
 
     return (NhlNOERROR);
 }
@@ -1283,10 +1309,22 @@ static void _NclInitNclFileGrpRecord(NclFileGrpRecord *grp_rec, int start)
             grpnode = (NclFileGrpNode *)NclCalloc(1, sizeof(NclFileGrpNode));
             assert(grpnode);
 
-            grpnode->name = -1;
             grpnode->pname = -1;
-            grpnode->id = -1;
-            grpnode->pid = -1;
+            grpnode->name  = -1;
+            grpnode->pid   = -1;
+            grpnode->id    = -1;
+
+            grpnode->unlimit_dim_rec = NULL;
+            grpnode->chunk_dim_rec   = NULL;
+            grpnode->coord_var_rec   = NULL;
+            grpnode->options         = NULL;
+            grpnode->dim_rec         = NULL;
+            grpnode->att_rec         = NULL;
+            grpnode->var_rec         = NULL;
+            grpnode->grp_rec         = NULL;
+            grpnode->udt_rec         = NULL;
+            grpnode->parent          = NULL;
+
             grp_rec->grp_node[i] = grpnode;
         }
     }
@@ -1305,13 +1343,11 @@ static void _NclInitNclFileVarRecord(NclFileVarRecord *var_rec, int start)
             varnode->name = -1;
             varnode->real_name = -1;
             varnode->type = NCL_none;
-          /*
-           *varnode->max_dims = 0;
-           *varnode->n_dims = 0;
-           *varnode->dimid = NULL;
-           */
             varnode->comprec = NULL;
             varnode->att_rec = NULL;
+            varnode->dim_rec = NULL;
+            varnode->chunk_dim_rec = NULL;
+            varnode->value = NULL;
         }
     }
 }
@@ -1328,13 +1364,13 @@ NclFileGrpRecord *_NclFileGrpAlloc(int n_grps)
     grp_rec = (NclFileGrpRecord *)NclCalloc(1, sizeof(NclFileGrpRecord));
     assert(grp_rec);
 
-    grp_rec->n_grps = n_grps;
     grp_rec->max_grps = n_grps;
 
     grp_rec->grp_node = (NclFileGrpNode **)NclCalloc(grp_rec->max_grps, sizeof(NclFileGrpNode *));
     assert(grp_rec->grp_node);
 
     _NclInitNclFileGrpRecord(grp_rec, 0);
+    grp_rec->n_grps = n_grps;
 
     return grp_rec;
 }
@@ -1384,7 +1420,7 @@ NclFileUDTRecord *_NclFileUDTAlloc(int n_udts)
 
 void _NclFileGrpRealloc(NclFileGrpRecord *grp_rec)
 {
-    /*
+   /*
     *fprintf(stderr, "\nEnter _NclFileGrpRealloc, file: %s, line: %d\n", __FILE__, __LINE__);
     *fprintf(stderr, "\tstart with grp_rec->n_grps = %d\n", grp_rec->n_grps);
     *fprintf(stderr, "\tstart with grp_rec->max_grps = %d\n", grp_rec->max_grps);
@@ -1401,7 +1437,7 @@ void _NclFileGrpRealloc(NclFileGrpRecord *grp_rec)
         _NclInitNclFileGrpRecord(grp_rec, grp_rec->n_grps);
     }
 
-    /*
+   /*
     *fprintf(stderr, "\tend with grp_rec->n_grps = %d\n", grp_rec->n_grps);
     *fprintf(stderr, "\tend with grp_rec->max_grps = %d\n", grp_rec->max_grps);
     *fprintf(stderr, "Leave _NclFileGrpRealloc, file: %s, line: %d\n\n", __FILE__, __LINE__);
@@ -1410,7 +1446,7 @@ void _NclFileGrpRealloc(NclFileGrpRecord *grp_rec)
 
 void _NclFileVarRealloc(NclFileVarRecord *var_rec)
 {
-    /*
+   /*
     *fprintf(stderr, "\nEnter _NclFileVarRealloc, file: %s, line: %d\n", __FILE__, __LINE__);
     *fprintf(stderr, "\tstart with var_rec->n_vars = %d\n", var_rec->n_vars);
     *fprintf(stderr, "\tstart with var_rec->max_vars = %d\n", var_rec->max_vars);
@@ -1577,13 +1613,11 @@ void _NclFileAttRealloc(NclFileAttRecord **att_rec)
 
     if((*att_rec)->n_atts >= (*att_rec)->max_atts)
     {
-        NclFileAttNode *attnodeptr;
         (*att_rec)->max_atts *= 2;
 
-        attnodeptr = (NclFileAttNode *)NclRealloc((*att_rec)->att_node,
+        (*att_rec)->att_node = (NclFileAttNode *)NclRealloc((*att_rec)->att_node,
                     (*att_rec)->max_atts * sizeof(NclFileAttNode));
-        assert(attnodeptr);
-        (*att_rec)->att_node = attnodeptr;
+        assert((*att_rec)->att_node);
     }
 
     /*
@@ -1664,12 +1698,10 @@ NclFileGrpNode *_getGrpNodeFromNclFileGrpNode(NclFileGrpNode *ingrpnode,
 {
     int n;
     NclFileGrpNode *outgrpnode = NULL;
-    NclQuark new_grpname;
-    NclQuark newroot_grpname;
+    NclQuark new_grpname = -1;
+    NclQuark newroot_grpname = -1;
 
     char *full_str;
-    char *root_str;
-    char *tmp_str;
     char buffer[NCL_MAX_STRING];
     char newroot[NCL_MAX_STRING];
     int  gl;
@@ -1695,11 +1727,9 @@ NclFileGrpNode *_getGrpNodeFromNclFileGrpNode(NclFileGrpNode *ingrpnode,
     }
 
     full_str = NrmQuarkToString(grpname);
-    root_str = NrmQuarkToString(ingrpnode->name);
 
   /*
    *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tfull_str: <%s>, root_str: <%s>\n", full_str, root_str);
    */
 
     if('/' == full_str[0])
@@ -1843,6 +1873,47 @@ NclFileVarNode *_getVarNodeFromNclFileVarRecord(NclFileVarRecord *var_rec,
     return NULL;
 }
 
+NclFileVarNode *_getVarNodeFromThisGrpNode(NclFileGrpNode *grpnode,
+                        NclQuark varname)
+{
+    int n;
+    NclFileVarNode *varnode = NULL;
+
+  /*
+   *fprintf(stderr, "\nEnter _getVarNodeFromThisGrpNode, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tgrpname: <%s>\n", NrmQuarkToString(grpnode->name));
+   *fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(varname));
+   */
+
+    if(NULL != grpnode->var_rec)
+    {
+        for(n = 0; n < grpnode->var_rec->n_vars; n++)
+        {
+            varnode = &(grpnode->var_rec->var_node[n]);
+          /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tvar no %d, name: <%s>, real_name: <%s>\n", n,
+           *        NrmQuarkToString(varnode->name), NrmQuarkToString(varnode->real_name));
+           */
+
+            if((varname == varnode->name) || (varname == varnode->real_name))
+            {
+                goto done_getVarNodeFromThisGrpNode;
+            }
+        }
+    }
+
+    varnode = NULL;
+
+done_getVarNodeFromThisGrpNode:
+
+  /*
+   *fprintf(stderr, "Leave _getVarNodeFromThisGrpNode, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   */
+
+    return varnode;
+}
+
 NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
                         NclQuark varname)
 {
@@ -1927,8 +1998,6 @@ NclFileVarNode *_getCoordVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
     int n;
     NclFileVarNode *varnode = NULL;
     NclQuark vn = varname;
-    char *struct_name = NULL;
-    char *component_name = NULL;
 
   /*
    *fprintf(stderr, "\nEnter _getCoordVarNodeFromNclFileGrpNode, file: %s, line: %d\n", __FILE__, __LINE__);
@@ -2089,22 +2158,32 @@ void FileDestroyAttRecord(NclFileAttRecord *att_rec)
 {
     int n;
     NclFileAttNode *attnode;
+    int has_att_obj = 0;
 
     if(NULL != att_rec)
     {
-        if(NULL != att_rec->att_node);
+        if (att_rec->id > -1) {
+	    NclObj att = _NclGetObj(att_rec->id);
+	    if (att) {
+		has_att_obj = 1;
+		_NclDestroyObj(att);
+	    }
+	}
+        if(NULL != att_rec->att_node)
         {
             for(n = 0; n < att_rec->n_atts; n++)
             {
                 attnode = &(att_rec->att_node[n]);
-                if(NULL != attnode->value)
+                if((! has_att_obj) && NULL != attnode->value)
+                {
                     NclFree(attnode->value);
+                    attnode->value = NULL;
+                }
             }
             NclFree(att_rec->att_node);
+            att_rec->att_node = NULL;
         }
-        if(NULL != att_rec->udata);
-            NclFree(att_rec->udata);
-        if(NULL != att_rec->cb);
+        if((! has_att_obj) && NULL != att_rec->cb)
         {
             /*
             *_NhlCB tmpcb = att_rec->cb;
@@ -2115,11 +2194,16 @@ void FileDestroyAttRecord(NclFileAttRecord *att_rec)
             *    _NhlCBDestroy(tmpcb->cblist);
             *    NclFree(tmpcb);
             *    tmpcb = att_rec->cb;
-            *}
-            */
+            *}            */
+
+	    if(NULL != att_rec->udata)
+		NclFree(att_rec->udata);
+	    att_rec->udata = NULL;
             NclFree(att_rec->cb);
+            att_rec->cb = NULL;
         }
         NclFree(att_rec);
+        att_rec = NULL;
     }
 }
 
@@ -2127,9 +2211,17 @@ void FileDestroyDimRecord(NclFileDimRecord *dim_rec)
 {
     if(NULL != dim_rec)
     {
-        if(NULL != dim_rec->dim_node);
-            NclFree(dim_rec->dim_node);
-        NclFree(dim_rec);
+        if(dim_rec->max_dims)
+        {
+            if(NULL != dim_rec->dim_node)
+            {
+                NclFree(dim_rec->dim_node);
+                dim_rec->dim_node = NULL;
+            }
+
+            NclFree(dim_rec);
+            dim_rec = NULL;
+        }
     }
 }
 
@@ -2137,9 +2229,13 @@ void FileDestroyCompoundRecord(NclFileCompoundRecord *comprec)
 {
     if(NULL != comprec)
     {
-        if(NULL != comprec->compnode);
+        if(NULL != comprec->compnode)
+        {
             NclFree(comprec->compnode);
+            comprec->compnode = NULL;
+        }
         NclFree(comprec);
+        comprec = NULL;
     }
 }
 
@@ -2147,9 +2243,13 @@ void FileDestroyCoordVarRecord(NclFileCoordVarRecord *coord_rec)
 {
     if(NULL != coord_rec)
     {
-        if(NULL != coord_rec->var_node);
+        if(NULL != coord_rec->var_node)
+        {
             NclFree(coord_rec->var_node);
+            coord_rec->var_node = NULL;
+        }
         NclFree(coord_rec);
+        coord_rec = NULL;
     }
 }
 
@@ -2160,27 +2260,28 @@ void FileDestroyVarRecord(NclFileVarRecord *var_rec)
 
     if(NULL != var_rec)
     {
-        if(NULL != var_rec->var_node);
+        if(NULL != var_rec->var_node)
         {
             for(n = 0; n < var_rec->n_vars; n++)
             {
                 varnode = &(var_rec->var_node[n]);
+
                 if(NULL != varnode->value)
+                {
                     NclFree(varnode->value);
-              /*
-               *if(NULL != varnode->dimid)
-               *    NclFree(varnode->dimid);
-               *if(NULL != varnode->chunk_dimid)
-               *    NclFree(varnode->chunk_dimid);
-               */
+                    varnode->value = NULL;
+                }
+
                 FileDestroyAttRecord(varnode->att_rec);
-                FileDestroyDimRecord(varnode->dim_rec);
                 FileDestroyDimRecord(varnode->chunk_dim_rec);
                 FileDestroyCompoundRecord(varnode->comprec);
+                FileDestroyDimRecord(varnode->dim_rec);
             }
             NclFree(var_rec->var_node);
+            var_rec->var_node = NULL;
         }
         NclFree(var_rec);
+        var_rec = NULL;
     }
 }
 
@@ -2192,42 +2293,59 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
     {
         if(NULL != grpnode->grp_rec)
         {
-            if(NULL != grpnode->grp_rec->grp_node)
-            {
-                for(n = 0; n < grpnode->grp_rec->n_grps; n++)
-                {
-                    FileDestroyGrpNode(grpnode->grp_rec->grp_node[n]);
-                }
-        
-                NclFree(grpnode->grp_rec->grp_node);
-            }
-
+            for(n = 0; n < grpnode->grp_rec->n_grps; n++)
+                FileDestroyGrpNode(grpnode->grp_rec->grp_node[n]);
+    
+            NclFree(grpnode->grp_rec->grp_node);
             NclFree(grpnode->grp_rec);
+            grpnode->grp_rec->grp_node = NULL;
+            grpnode->grp_rec = NULL;
         }
 
         if(NULL != grpnode->options)
             NclFree(grpnode->options);
 
-        FileDestroyAttRecord(grpnode->att_rec);
-        FileDestroyDimRecord(grpnode->dim_rec);
-        FileDestroyDimRecord(grpnode->chunk_dim_rec);
-        FileDestroyDimRecord(grpnode->unlimit_dim_rec);
-        FileDestroyCoordVarRecord(grpnode->coord_var_rec);
-        FileDestroyVarRecord(grpnode->var_rec);
+        grpnode->options = NULL;
 
-        NclFree(grpnode);
+        FileDestroyAttRecord(grpnode->att_rec);
+        grpnode->att_rec = NULL;
+        FileDestroyDimRecord(grpnode->dim_rec);
+        grpnode->dim_rec = NULL;
+        FileDestroyDimRecord(grpnode->chunk_dim_rec);
+        grpnode->chunk_dim_rec = NULL;
+        FileDestroyDimRecord(grpnode->unlimit_dim_rec);
+        grpnode->unlimit_dim_rec = NULL;
+        FileDestroyCoordVarRecord(grpnode->coord_var_rec);
+        grpnode->coord_var_rec = NULL;
+        FileDestroyVarRecord(grpnode->var_rec);
+        grpnode->var_rec = NULL;
+
+      /*
+       *NclFree(grpnode);
+       */
     }
+    grpnode = NULL;
 }
 
-void FileDestroyNewHLFS(NclObj self)
+void AdvancedFileDestroy(NclObj self)
 {
-    NclNewFile thefile = (NclNewFile) self;
+    NclAdvancedFile thefile = (NclAdvancedFile) self;
     NclRefList *p, *pt;
 
-    FileDestroyGrpNode(thefile->newfile.grpnode);
+    _NclUnRegisterObj((NclObj)self);
+    if(thefile->advancedfile.format_funcs->free_file_rec != NULL) {
+	    if(thefile->advancedfile.grpnode != NULL)
+		    (*thefile->advancedfile.format_funcs->free_file_rec)(thefile->advancedfile.grpnode);
+    }
+    FileDestroyGrpNode(thefile->advancedfile.grpnode);
+
+    thefile->advancedfile.grpnode = NULL;
 
     if(thefile->obj.cblist != NULL)
+    {
         _NhlCBDestroy(thefile->obj.cblist);
+        thefile->obj.cblist = NULL;
+    }
 
     p = thefile->obj.parents;
     while (p)
@@ -2235,12 +2353,14 @@ void FileDestroyNewHLFS(NclObj self)
         pt = p;
         p = p->next;
         NclFree(pt);
+        pt = NULL;
     }
         
     NclFree(thefile);
+    thefile = NULL;
 }
 
-static NhlErrorTypes InitializeNewFileClass
+static NhlErrorTypes InitializeAdvancedFileClass
 #if NhlNeedProto
 (void)
 #else
@@ -2250,34 +2370,20 @@ static NhlErrorTypes InitializeNewFileClass
     InitializeFileOptions();
 
   /*
-   *_NclRegisterClassPointer(Ncl_NewFile, (NclObjClass)&nclNewFileClassRec);
+   *_NclRegisterClassPointer(Ncl_AdvancedFile, (NclObjClass)&nclAdvancedFileClassRec);
    */
-    _NclRegisterClassPointer(Ncl_File, (NclObjClass)&nclNewFileClassRec);
+    _NclRegisterClassPointer(Ncl_File, (NclObjClass)&nclAdvancedFileClassRec);
     
     return(NhlNOERROR);
 }
 
 /* Fill the High_level-File-Structure */
-static int _NclFileFillHLFS(NclNewFile file_out, int is_http,
+static int _NclFileFillHLFS(NclAdvancedFile file_out, int is_http,
                             NclQuark path, int need_free_file,
                             int rw_status, int len_path)
 {
-    NclQuark *name_list;
-    NclQuark *att_name_list;
     NclQuark the_real_path = -1;
-    int i,j;
-    int n_names;
-    int n_atts;
     struct stat buf;
-
-    NclFileVarNode *var_node;
-    NclFVarRec     *var_info;
-
-    NclFileAttNode *att_node;
-    NclFAttRec     *att_info;
-
-    NclFileDimNode *dim_node;
-    NclFDimRec     *dim_info;
 
   /*
    *fprintf(stderr, "\nEnter _NclFileFillHLFS file: %s, line: %d\n", __FILE__, __LINE__);
@@ -2287,12 +2393,12 @@ static int _NclFileFillHLFS(NclNewFile file_out, int is_http,
     if(is_http)
     {
         the_real_path = path;
-        file_out->newfile.fpath = the_real_path;
-        file_out->newfile.wr_status = rw_status;
+        file_out->advancedfile.fpath = the_real_path;
+        file_out->advancedfile.wr_status = rw_status;
 
-        file_out->newfile.grpnode = (NclFileGrpNode *)(*file_out->newfile.format_funcs->open_file)
-                      (file_out->newfile.grpnode, the_real_path, rw_status);
-        if(NULL == file_out->newfile.grpnode)
+        file_out->advancedfile.grpnode = (NclFileGrpNode *)(*file_out->advancedfile.format_funcs->open_file)
+                      (file_out->advancedfile.grpnode, the_real_path, rw_status);
+        if(NULL == file_out->advancedfile.grpnode)
         {
             NHLPERROR((NhlFATAL,NhlEUNKNOWN,
                 "_NclFileFillHLFS: Could not open (%s)",
@@ -2304,19 +2410,19 @@ static int _NclFileFillHLFS(NclNewFile file_out, int is_http,
     }
     else
     {
-        if((file_out->newfile.format_funcs->open_file != NULL) && ((rw_status != -1) ||
-           (file_out->newfile.format_funcs->create_file != NULL)))
+        if((file_out->advancedfile.format_funcs->open_file != NULL) && ((rw_status != -1) ||
+           (file_out->advancedfile.format_funcs->create_file != NULL)))
         {
             if(rw_status == -1)
             {
                 the_real_path = path;
-                file_out->newfile.fpath = the_real_path;
-                file_out->newfile.wr_status = rw_status;
+                file_out->advancedfile.fpath = the_real_path;
+                file_out->advancedfile.wr_status = rw_status;
 
-                file_out->newfile.grpnode = (*file_out->newfile.format_funcs->create_file)
-                              (file_out->newfile.grpnode,
+                file_out->advancedfile.grpnode = (*file_out->advancedfile.format_funcs->create_file)
+                              (file_out->advancedfile.grpnode,
                                NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))));
-                if(! file_out->newfile.grpnode)
+                if(! file_out->advancedfile.grpnode)
                 {
                     NhlPError(NhlFATAL,NhlEUNKNOWN,"Could not create (%s)",
                         NrmQuarkToString(the_real_path));
@@ -2345,23 +2451,23 @@ static int _NclFileFillHLFS(NclNewFile file_out, int is_http,
                     else
                     {
                         the_real_path = NrmStringToQuark(tmp_path);
-                        file_out->newfile.fpath = the_real_path;
+                        file_out->advancedfile.fpath = the_real_path;
                         NclFree(tmp_path);
                     }
                 }
                 else
                 {
                     the_real_path = path;
-                    file_out->newfile.fpath = the_real_path;
+                    file_out->advancedfile.fpath = the_real_path;
                 }
 
-                file_out->newfile.wr_status = rw_status;
+                file_out->advancedfile.wr_status = rw_status;
 
-                file_out->newfile.grpnode = (*file_out->newfile.format_funcs->open_file)
-                               (file_out->newfile.grpnode,
+                file_out->advancedfile.grpnode = (*file_out->advancedfile.format_funcs->open_file)
+                               (file_out->advancedfile.grpnode,
                                 NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))),
                                 rw_status);
-                if(! file_out->newfile.grpnode)
+                if(! file_out->advancedfile.grpnode)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
                         "_NclFileFillHLFS: Could not open (%s)",
@@ -2393,7 +2499,7 @@ static int _NclFileFillHLFS(NclNewFile file_out, int is_http,
     return (0);
 }
 
-NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
+NclFile _NclAdvancedFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
                           unsigned int obj_type_mask, NclStatus status, NclQuark path,
                           int rw_status, NclQuark file_ext_q, NclQuark fname_q,
 			  NhlBoolean is_http, char *end_of_name, int len_path)
@@ -2401,36 +2507,37 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
     char *the_path = NrmQuarkToString(path);
     NclQuark the_real_path = -1;
     char *tmp_path = NULL;
-    char buffer[NCL_MAX_STRING];
-    int i,j;
-    NclNewFile file_out = NULL;
+    int i;
+    NclAdvancedFile file_out = NULL;
     int file_out_free = 0;
     NhlErrorTypes ret= NhlNOERROR;
     NclObjClass class_ptr;
-    NclQuark *name_list;
-    int n_names;
-    NclQuark *name_list2;
-    int n_names2;
     struct stat buf;
-    NclFileClassPart *fcp = &(nclFileClassRec.file_class);
+    NclFileClass fc = NULL;
+    NclFileClassPart *fcp = NULL;
     int ret_error = 0;
 
     NclFormatFunctionRecPtr topForFunRecPtr = NULL;
     NclFormatFunctionRecPtr locForFunRecPtr = NULL;
 
   /*
-   *fprintf(stderr, "\nEnter _NclNewFileCreate, file: %s, line: %d\n", __FILE__, __LINE__);
+    NclFileClassPart *fcp = &(nclFileClassRec.file_class);
+   *fprintf(stderr, "\nEnter _NclAdvancedFileCreate, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tpath: <%s>\n", NrmQuarkToString(path));
    */
 
-    ret = _NclInitClass(nclNewFileClass);
+    ret = _NclInitClass(nclAdvancedFileClass);
     if(ret < NhlWARNING) 
         return(NULL);
 
     if(theclass == NULL)
-        class_ptr = nclNewFileClass;
+        class_ptr = nclAdvancedFileClass;
     else
         class_ptr = theclass;
+
+    fc = (NclFileClass) &nclAdvancedFileClassRec;
+ 
+    fcp = &(fc->file_class);
 
   /*
    * If a GRIB file, check version.  First verify that the file exists
@@ -2441,6 +2548,8 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
 
     if(_NclFormatEqual(NrmStringToQuark("grb"),NrmStringToQuark(end_of_name)))
     {
+      if(! is_http)
+      {
         the_real_path = path;
         if(stat(_NGResolvePath(NrmQuarkToString(path)),&buf) == -1)
         {
@@ -2450,7 +2559,7 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
             if(stat(_NGResolvePath(tmp_path),&buf) == -1)
             {
                 NhlPError(NhlFATAL,NhlEUNKNOWN,
-                      "_NclNewFileCreate: Requested file does not exist as (%s) or as (%s)",
+                      "_NclAdvancedFileCreate: Requested file does not exist as (%s) or as (%s)",
                       the_path,tmp_path);
                 NclFree(tmp_path);
                 return(NULL);
@@ -2461,17 +2570,18 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
                 NclFree(tmp_path);
             }
         }
-            grib_version = _NclGribVersion(NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))));
-        }
+        grib_version = _NclGribVersion(NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))));
+      }
+    }
 
     if(inst == NULL)
     {
-        file_out = (NclNewFile)NclCalloc(1, sizeof(NclNewFileRec));
+        file_out = (NclAdvancedFile)NclCalloc(1, sizeof(NclAdvancedFileRec));
         file_out_free = 1;
     }
     else
     {
-        file_out = (NclNewFile)inst;
+        file_out = (NclAdvancedFile)inst;
     }
 
   /*
@@ -2480,28 +2590,28 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
    *fprintf(stderr, "\tfile_ext_q: <%s>\n", end_of_name);
    */
 
-    file_out->newfile.fname = fname_q;
-    file_out->newfile.file_format = 0;
-    file_out->newfile.file_ext_q = file_ext_q;
-    file_out->use_new_hlfs = 1;
+    file_out->advancedfile.fname = fname_q;
+    file_out->advancedfile.file_format = 0;
+    file_out->advancedfile.file_ext_q = file_ext_q;
+    file_out->file.advanced_file_structure = 1;
 
-    topForFunRecPtr = _NclGetFormatFuncsWithNewHLFS(file_ext_q);
-    file_out->newfile.format_funcs = topForFunRecPtr;
+    topForFunRecPtr = _NclGetFormatFuncsWithAdvancedFileStructure(file_ext_q);
+    file_out->advancedfile.format_funcs = topForFunRecPtr;
 
     if (! topForFunRecPtr)
     {
-        NhlPError(NhlFATAL,NhlEUNKNOWN,
+        NHLPERROR((NhlFATAL,NhlEUNKNOWN,
             "Requested file format is not supported, could not open (%s)",
-            NrmQuarkToString(path));
+            NrmQuarkToString(path)));
         if(file_out_free) 
             NclFree((void*)file_out);
         return(NULL);
     }
 
-    file_out->newfile.grpnode = (NclFileGrpNode *)
-                    (*file_out->newfile.format_funcs->initialize_file_rec)
-                    (&file_out->newfile.file_format);
-    if(NULL == file_out->newfile.grpnode)
+    file_out->advancedfile.grpnode = (NclFileGrpNode *)
+                    (*file_out->advancedfile.format_funcs->initialize_file_rec)
+                    (&file_out->advancedfile.file_format);
+    if(NULL == file_out->advancedfile.grpnode)
     {
         NhlPError(NhlFATAL,ENOMEM,NULL);
         if(file_out_free) 
@@ -2520,12 +2630,12 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
             else if (fcp->options[i].access == 3 && rw_status != -1)
                 continue;
 
-            locForFunRecPtr = _NclGetFormatFuncsWithNewHLFS(fcp->options[i].format);
+            locForFunRecPtr = _NclGetFormatFuncsWithAdvancedFileStructure(fcp->options[i].format);
 
             if (topForFunRecPtr != locForFunRecPtr)
                 continue;
 
-            topForFunRecPtr->set_option(file_out->newfile.grpnode,
+            topForFunRecPtr->set_option(file_out->advancedfile.grpnode,
                                         fcp->options[i].name,
                                         fcp->options[i].value->multidval.data_type,
                                         fcp->options[i].value->multidval.totalelements,
@@ -2533,63 +2643,62 @@ NclFile _NclNewFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
         }
     }                    
 
-    /* Fill New-High_level-File-Structure */
+    /* Fill AdvancedFileStructure */
     ret_error = _NclFileFillHLFS(file_out, is_http, path,
                                  file_out_free, rw_status, len_path);
 
     if(ret_error)
         return (NULL);
 
-    file_out->newfile.grpnode->path = fname_q;
-    file_out->newfile.grpnode->extension = file_ext_q;
+    file_out->advancedfile.grpnode->path = fname_q;
+    file_out->advancedfile.grpnode->extension = file_ext_q;
 
     (void)_NclObjCreate((NclObj)file_out,class_ptr,obj_type,(obj_type_mask | Ncl_File),status);
 
-    if(class_ptr == nclNewFileClass)
+    if(class_ptr == nclAdvancedFileClass)
     {
         _NclCallCallBacks((NclObj)file_out,CREATED);
     }
 
   /*
-   *fprintf(stderr, "Leave _NclNewFileCreate, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave _NclAdvancedFileCreate, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
 
     return((NclFile)file_out);
 }
 
-static int NewFileIsVar(NclFile thefile, NclQuark var)
+static int AdvancedFileIsVar(NclFile thefile, NclQuark var)
 {
-    NclNewFile newfile = (NclNewFile)thefile;
+    NclAdvancedFile advancedfile = (NclAdvancedFile)thefile;
     NclFileVarNode *varnode;
     int ret = 1;
   /*
-   *fprintf(stdout, "\nHit NewFileIsVar. file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stdout, "\nHit AdvancedFileIsVar. file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stdout, "\tvar: <%s>\n", NrmQuarkToString(var));
    */
 
-    varnode = _getVarNodeFromNclFileGrpNode(newfile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(advancedfile->advancedfile.grpnode, var);
 
     if(NULL == varnode)
         ret = -1;
   /*
    *fprintf(stdout, "\tCANNOT FIND var: <%s>\n", NrmQuarkToString(var));
    *fprintf(stdout, "\tindex: %d\n", ret);
-   *fprintf(stdout, "End NewFileIsVar. file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stdout, "End AdvancedFileIsVar. file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQuark var_name,
+static struct _NclMultiDValDataRec* MyAdvancedFileReadVarValue(NclFile infile, NclQuark var_name,
                                                           struct _NclSelectionRecord *sel_ptr,
                                                           NclDimRec *dim_info, int vtype)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclMultiDValData tmp_md = NULL;
     NclMultiDValData mis_md = NULL;
     NclScalar missing_value;
     int has_missing = 0;
     void *val = NULL;
-    int index;
     long start[NCL_MAX_DIMENSIONS];
     long finish[NCL_MAX_DIMENSIONS];
     long stride[NCL_MAX_DIMENSIONS];
@@ -2613,8 +2722,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
     ng_size_t output_dim_sizes[NCL_MAX_DIMENSIONS];
     int keeper[NCL_MAX_DIMENSIONS];
     NclSelection *sel;
-    float tmpf;
-    long tmpi;
+    long tmpi = 0;
     int swap_size;
     void *swap_space = NULL;
 
@@ -2630,7 +2738,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
   * are valid. However, the values have not been checked for out_of_ranges
   * subscripts
   */
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var_name);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var_name);
 
     n_dims_input = varnode->dim_rec->n_dims;
     if(sel_ptr != NULL)
@@ -2720,7 +2828,6 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                     NHLPERROR((NhlWARNING,NhlEUNKNOWN,"Invalid stride: stride must be positive non-zero integer"));
 
                     stride[sel->dim_num] = 1;
-                    tmpf = 1;
                 }
 
                 n_elem = labs((finish[sel->dim_num] - start[sel->dim_num]) /tmpi) + 1;
@@ -2798,19 +2905,22 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
     else
     {
       /*
-       *fprintf(stdout, "\n\n\nhit MyNewFileReadVarValue. file: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stdout, "\n\n\nhit MyAdvancedFileReadVarValue. file: %s, line: %d\n", __FILE__, __LINE__);
        *fprintf(stdout, "\tn_dims_input = %d\n", n_dims_input);
        */
 
         for(i = 0; i< n_dims_input; i++)
         {
-          /*
-           *fprintf(stdout, "\ti = %d\n", i);
-           */
-
             dimnode = &(varnode->dim_rec->dim_node[i]);
             start[i] = 0;
             finish[i] = dimnode->size - 1;
+
+            if(0 > finish[i])
+            {
+                finish[i] = 0;
+                dimnode->size = 1;
+            }
+
             stride[i] = 1;
             total_elements *= (finish[i] + 1);
             output_dim_sizes[i] = finish[i] + 1;
@@ -2834,7 +2944,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
      /* can't return any data because there is a 0-length dimension
       * but nevertheless return what is possible
       */
-        NHLPERROR((NhlWARNING,NhlEUNKNOWN,"MyNewFileReadVarValue: %s contains a 0 length dimension", 
+        NHLPERROR((NhlWARNING,NhlEUNKNOWN,"MyAdvancedFileReadVarValue: %s contains a 0 length dimension", 
             NrmQuarkToString(var_name)));
         n_dims_output = n_dims_input;
         val = NULL;
@@ -2862,19 +2972,19 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
         }
 
       /*
-       *if(NewFileIsVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
+       *if(AdvancedFileIsVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
        */
-        if(NewVarAttIndex(varnode, NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
+        if(AdvancedVarAttIndex(varnode, NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
         {
-            mis_md = NewFileReadVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
+            mis_md = AdvancedFileReadVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
             if(mis_md != NULL)
             {
                 has_missing = 1;
                 if (mis_md->multidval.val == NULL)
                 {
                     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                        "MyNewFileReadVarValue: _FillValue attribute for  variable (%s) in file (%s) has NULL value, %s\n",
-                         NrmQuarkToString(var_name),NrmQuarkToString(thefile->newfile.fname),
+                        "MyAdvancedFileReadVarValue: _FillValue attribute for  variable (%s) in file (%s) has NULL value, %s\n",
+                         NrmQuarkToString(var_name),NrmQuarkToString(thefile->advancedfile.fname),
                         "substituting default fill value of variable type"));
                     _NclGetDefaultFillValue(varnode->type, &missing_value);
                 }
@@ -2885,8 +2995,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 else
                 {
                     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                        "MyNewFileReadVarValue: _FillValue attribute type differs from variable (%s) type in file (%s), %s\n",
-                         NrmQuarkToString(var_name),NrmQuarkToString(thefile->newfile.fname),
+                        "MyAdvancedFileReadVarValue: _FillValue attribute type differs from variable (%s) type in file (%s), %s\n",
+                         NrmQuarkToString(var_name),NrmQuarkToString(thefile->advancedfile.fname),
                         "forcing type conversion; may result in overflow and/or loss of precision"));
 
                     _NclScalarForcedCoerce(mis_md->multidval.val,mis_md->multidval.data_type,
@@ -2945,7 +3055,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
   /* 
    * Take care of simplest case here
    */
-    if((vtype == FILE_VAR_ACCESS? thefile->newfile.format_funcs->read_var != NULL:thefile->newfile.format_funcs->read_coord != NULL))
+    if((vtype == FILE_VAR_ACCESS? thefile->advancedfile.format_funcs->read_var != NULL:thefile->advancedfile.format_funcs->read_coord != NULL))
     {
         if((!has_vectors)&&(!has_reverse)&&(!has_reorder))
         {
@@ -2978,8 +3088,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
 
                         val = (void*)NclMalloc(total_elements * compnode->nvals * _NclSizeOf(compnode->type));
 
-                        (*thefile->newfile.format_funcs->read_var)
-                         (thefile->newfile.grpnode,
+                        (*thefile->advancedfile.format_funcs->read_var)
+                         (thefile->advancedfile.grpnode,
                           var_name,
                           start, finish, stride, val);
 
@@ -2989,7 +3099,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                     else
                     {
                         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                            "MyNewFileReadVarValue: Invalid component in struct: <%s>",
+                            "MyAdvancedFileReadVarValue: Invalid component in struct: <%s>",
                              NrmQuarkToString(varnode->name)));
                     }
                 }
@@ -3000,8 +3110,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                    *fprintf(stderr, "\tvarnode->name: <%s>\n", NrmQuarkToString(varnode->name));
                    */
 
-                    val = (*thefile->newfile.format_funcs->read_var)
-                     (thefile->newfile.grpnode,
+                    val = (*thefile->advancedfile.format_funcs->read_var)
+                     (thefile->advancedfile.grpnode,
                       varnode->name,
                       start, finish, stride, val);
 
@@ -3015,8 +3125,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                    *fprintf(stderr, "\tvarnode->name: <%s>\n", NrmQuarkToString(varnode->name));
                    */
 
-                    val = (*thefile->newfile.format_funcs->read_var)
-                     (thefile->newfile.grpnode,
+                    val = (*thefile->advancedfile.format_funcs->read_var)
+                     (thefile->advancedfile.grpnode,
                       varnode->name,
                       start, finish, stride, val);
  
@@ -3029,8 +3139,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                    *fprintf(stderr, "\tvarnode->name: <%s>\n", NrmQuarkToString(varnode->name));
                    */
 
-                    val = (*thefile->newfile.format_funcs->read_var)
-                     (thefile->newfile.grpnode,
+                    val = (*thefile->advancedfile.format_funcs->read_var)
+                     (thefile->advancedfile.grpnode,
                       varnode->name,
                       start, finish, stride, val);
  
@@ -3039,8 +3149,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 else
                 {
                     val = (void*)NclMalloc(total_elements*_NclSizeOf(varnode->type));
-                    (*thefile->newfile.format_funcs->read_var)
-                     (thefile->newfile.grpnode,
+                    (*thefile->advancedfile.format_funcs->read_var)
+                     (thefile->advancedfile.grpnode,
                       varnode->name,
                       start, finish, stride, val);
                 }
@@ -3048,8 +3158,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             else
             {
                 val = (void*)NclMalloc(total_elements*_NclSizeOf(varnode->type));
-                (*thefile->newfile.format_funcs->read_coord)
-                 (thefile->newfile.grpnode,
+                (*thefile->advancedfile.format_funcs->read_coord)
+                 (thefile->advancedfile.grpnode,
                   varnode->name,
                   start, finish, stride, val);
             }
@@ -3134,15 +3244,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
 
             if(vtype == FILE_VAR_ACCESS)
             {
-                (*thefile->newfile.format_funcs->read_var)
-                 (thefile->newfile.grpnode,
+                (*thefile->advancedfile.format_funcs->read_var)
+                 (thefile->advancedfile.grpnode,
                   varnode->name,
                   current_index, current_finish, real_stride, (void*)val);
             }
             else
             {
-                (*thefile->newfile.format_funcs->read_coord)
-                 (thefile->newfile.grpnode,
+                (*thefile->advancedfile.format_funcs->read_coord)
+                 (thefile->advancedfile.grpnode,
                   varnode->name,
                   current_index, current_finish, real_stride, (void*)val);
             }
@@ -3231,15 +3341,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             {
                 if(vtype == FILE_VAR_ACCESS)
                 {
-                    (*thefile->newfile.format_funcs->read_var)
-                     (thefile->newfile.grpnode, varnode->name,
+                    (*thefile->advancedfile.format_funcs->read_var)
+                     (thefile->advancedfile.grpnode, varnode->name,
                       current_index, current_finish, real_stride,
                       (void*)&(((char*)val)[to]));
                 }
                 else
                 {
-                    (*thefile->newfile.format_funcs->read_coord)
-                     (thefile->newfile.grpnode, varnode->name,
+                    (*thefile->advancedfile.format_funcs->read_coord)
+                     (thefile->advancedfile.grpnode, varnode->name,
                       current_index, current_finish, real_stride,
                       (void*)&(((char*)val)[to]));
                 }
@@ -3377,7 +3487,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             }
         }
     }
-    else if((vtype == FILE_VAR_ACCESS ? thefile->newfile.format_funcs->read_var_ns != NULL : thefile->newfile.format_funcs->read_coord_ns!= NULL))
+    else if((vtype == FILE_VAR_ACCESS ? thefile->advancedfile.format_funcs->read_var_ns != NULL : thefile->advancedfile.format_funcs->read_coord_ns!= NULL))
     {
         if(!has_stride)
         {
@@ -3387,14 +3497,14 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 assert(val);
                 if(vtype == FILE_VAR_ACCESS)
                 {
-                    (*thefile->newfile.format_funcs->read_var_ns)
-                     (thefile->newfile.grpnode, varnode->name,
+                    (*thefile->advancedfile.format_funcs->read_var_ns)
+                     (thefile->advancedfile.grpnode, varnode->name,
                       start, finish, val);
                 }
                 else
                 {
                     (*thefile->file.format_funcs->read_coord_ns)
-                     (thefile->newfile.grpnode, varnode->name,
+                     (thefile->advancedfile.grpnode, varnode->name,
                       start, finish, val);
                 }
             
@@ -3469,14 +3579,14 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
 
                 if(vtype == FILE_VAR_ACCESS)
                 {
-                    (*thefile->newfile.format_funcs->read_var_ns)
-                     (thefile->newfile.grpnode, varnode->name,
+                    (*thefile->advancedfile.format_funcs->read_var_ns)
+                     (thefile->advancedfile.grpnode, varnode->name,
                       current_index, current_finish, (void*)val);
                 }
                 else
                 {
-                    (*thefile->newfile.format_funcs->read_coord_ns)
-                     (thefile->newfile.grpnode, varnode->name,
+                    (*thefile->advancedfile.format_funcs->read_coord_ns)
+                     (thefile->advancedfile.grpnode, varnode->name,
                       current_index, current_finish, (void*)val);
                 }
 
@@ -3559,15 +3669,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 {
                     if(vtype == FILE_VAR_ACCESS)
                     {
-                        (*thefile->newfile.format_funcs->read_var_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_var_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
                     else
                     {
-                        (*thefile->newfile.format_funcs->read_coord_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_coord_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
@@ -3740,15 +3850,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 {
                     if(vtype == FILE_VAR_ACCESS)
                     {
-                        (*thefile->newfile.format_funcs->read_var_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_var_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
                     else
                     {
-                        (*thefile->newfile.format_funcs->read_coord_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_coord_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish, val);
                     }
 
@@ -3864,15 +3974,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 {
                     if(vtype == FILE_VAR_ACCESS)
                     {
-                        (*thefile->newfile.format_funcs->read_var_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_var_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
                     else
                     {
-                        (*thefile->newfile.format_funcs->read_coord_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_coord_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish, val);
                     }
 
@@ -4029,15 +4139,15 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
                 {
                     if(vtype == FILE_VAR_ACCESS)
                     {
-                        (*thefile->newfile.format_funcs->read_var_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_var_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
                     else
                     {
-                        (*thefile->newfile.format_funcs->read_coord_ns)
-                         (thefile->newfile.grpnode, varnode->name,
+                        (*thefile->advancedfile.format_funcs->read_coord_ns)
+                         (thefile->advancedfile.grpnode, varnode->name,
                           current_index, current_finish,
                           (void*)&(((char*)val)[to]));
                     }
@@ -4174,19 +4284,19 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
     } 
 
   /*
-   *if(NewFileIsVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
+   *if(AdvancedFileIsVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
    */
-    if(NewVarAttIndex(varnode, NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
+    if(AdvancedVarAttIndex(varnode, NrmStringToQuark(NCL_MISSING_VALUE_ATT)) != -1)
     {
-        mis_md = NewFileReadVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
+        mis_md = AdvancedFileReadVarAtt(infile,var_name,NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
         if(mis_md != NULL)
         {
             has_missing = 1;
             if (mis_md->multidval.val == NULL)
             {
                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                      "MyNewFileReadVarValue: _FillValue attribute for  variable (%s) in file (%s) has NULL value, %s\n",
-                       NrmQuarkToString(var_name),NrmQuarkToString(thefile->newfile.fname),
+                      "MyAdvancedFileReadVarValue: _FillValue attribute for  variable (%s) in file (%s) has NULL value, %s\n",
+                       NrmQuarkToString(var_name),NrmQuarkToString(thefile->advancedfile.fname),
                       "substituting default fill value of variable type"));
                 _NclGetDefaultFillValue(varnode->type,&missing_value);
             }
@@ -4203,8 +4313,8 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             else
             {
                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                    "MyNewFileReadVarValue: _FillValue attribute type differs from variable (%s) type in file (%s), %s\n",
-                     NrmQuarkToString(var_name),NrmQuarkToString(thefile->newfile.fname),
+                    "MyAdvancedFileReadVarValue: _FillValue attribute type differs from variable (%s) type in file (%s), %s\n",
+                     NrmQuarkToString(var_name),NrmQuarkToString(thefile->advancedfile.fname),
                     "forcing type conversion; may result in overflow and/or loss of precision"));
 
                 _NclScalarForcedCoerce(mis_md->multidval.val, mis_md->multidval.data_type,
@@ -4253,7 +4363,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "NclNewFile: Could not get compound data type."));
+                    "NclAdvancedFile: Could not get compound data type."));
             }
 	}
         else if(NCL_opaque == varnode->type)
@@ -4288,7 +4398,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "NclNewFile: Could not get opaque data type."));
+                    "NclAdvancedFile: Could not get opaque data type."));
             }
 	}
         else if(NCL_enum == varnode->type)
@@ -4314,7 +4424,7 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "NclNewFile: Could not get opaque data type."));
+                    "NclAdvancedFile: Could not get opaque data type."));
             }
 	}
 
@@ -4335,18 +4445,18 @@ static struct _NclMultiDValDataRec* MyNewFileReadVarValue(NclFile infile, NclQua
     return(tmp_md);
 }
 
-static struct _NclMultiDValDataRec* NewFileReadVarValue(NclFile thefile, NclQuark var_name,
+static struct _NclMultiDValDataRec* AdvancedFileReadVarValue(NclFile thefile, NclQuark var_name,
                                                         struct _NclSelectionRecord* sel_ptr)
 {
     NclDimRec dim_info[NCL_MAX_DIMENSIONS];
 
-    return(MyNewFileReadVarValue(thefile, var_name, sel_ptr,dim_info,FILE_VAR_ACCESS));
+    return(MyAdvancedFileReadVarValue(thefile, var_name, sel_ptr,dim_info,FILE_VAR_ACCESS));
 }
 
-static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
+static struct _NclVarRec *AdvancedFileReadVar(NclFile infile, NclQuark var_name,
                                          struct _NclSelectionRecord* sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclMultiDValData tmp_md = NULL;
     NclMultiDValData tmp_att_md = NULL;
     NclVar tmp_var = NULL;
@@ -4362,9 +4472,7 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
 
     NclFileVarNode *varnode;
     NclFileVarNode *coordnode;
-    NclFileAttNode *attnode;
     NclFileDimNode *dimnode;
-    int n;
 
 /*
 * By the the time it gets here the file suport routines in that build the selection
@@ -4373,7 +4481,7 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
 * subscripts
 */
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var_name);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var_name);
 
     if(NULL != varnode)
     {
@@ -4385,14 +4493,14 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
             dim_info[i].dim_size = 0;
         }
 
-        tmp_md = MyNewFileReadVarValue(infile,var_name,sel_ptr,dim_info,FILE_VAR_ACCESS);
+        tmp_md = MyAdvancedFileReadVarValue(infile,var_name,sel_ptr,dim_info,FILE_VAR_ACCESS);
         if(tmp_md == NULL)
             return(NULL);
 
         if(NULL != varnode->att_rec)
         {
             if(varnode->att_rec->id < 0)
-                NewLoadVarAtts(thefile,var_name);
+                AdvancedLoadVarAtts(thefile,var_name);
 
             att_id = varnode->att_rec->id;
 
@@ -4435,7 +4543,7 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
 */
             for(i = 0 ; i < tmp_md->multidval.n_dims; i++)
             {
-                coordnode = _getCoordVarNodeFromNclFileGrpNode(thefile->newfile.grpnode,
+                coordnode = _getCoordVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode,
                                                                dim_info[i].dim_quark);
                 if(NULL != coordnode)
                 {
@@ -4462,7 +4570,6 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
             j = 0;
             for(i = 0 ; i < varnode->dim_rec->n_dims; i++)
             {
-                n = sel[i].dim_num;
                 dimnode = &(varnode->dim_rec->dim_node[i]);
                 index = _NclFileVarIsCoord((NclFile)thefile, dimnode->name);
 
@@ -4521,19 +4628,30 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
                 {
                     if(coords[j] != -1)
                     {
-                        if(att_id == -1)
-                        {
-                            att_id = _NclAttCreate(NULL,NULL,Ncl_Att,0,NULL);
-                        } 
+			    NclMultiDValData coord_md = _NclVarValueRead(tmp_var,NULL,NULL);
+			    if(att_id == -1)
+			    {
+				    att_id = _NclAttCreate(NULL,NULL,Ncl_Att,0,NULL);
+			    } 
+			    _NclAddAtt(att_id,NrmQuarkToString(tmp_var->var.var_quark),coord_md,&tmp_sel);
 
-                        attnode = _getAttNodeFromNclFileVarNode(varnode, NrmStringToQuark(NCL_MISSING_VALUE_ATT));
+			    coords[j] = -1;
+			    if(tmp_var->obj.status != PERMANENT) {
+				    _NclDestroyObj((NclObj)tmp_var);
+			    }
 
-                        _NclAddAtt(att_id,NrmQuarkToString(dimnode->name),
-					_NclVarValueRead(tmp_var,NULL,NULL),&tmp_sel);
+/*Wei's change
+			if(NULL != attnode)
+			{
+				NclMultiDValData coord_md = _NclVarValueRead(tmp_var,NULL,NULL);
+                        	_NclAddAtt(att_id,NrmQuarkToString(attnode->name),coord_md,&tmp_sel);
+			}
+
                         coords[j] = -1;
                         if(tmp_var->obj.status != PERMANENT) {
                             _NclDestroyObj((NclObj)tmp_var);
                         }
+*/
                     }
                     single = 0;
                 } else {
@@ -4571,7 +4689,7 @@ static struct _NclVarRec *NewFileReadVar(NclFile infile, NclQuark var_name,
     return(tmp_var);
 }
 
-void NewLoadVarAtts(NclNewFile thefile, NclQuark var)
+void AdvancedLoadVarAtts(NclAdvancedFile thefile, NclQuark var)
 {
     NclFileVarNode   *varnode;
     NclFileAttRecord *attrec;
@@ -4583,7 +4701,7 @@ void NewLoadVarAtts(NclNewFile thefile, NclQuark var)
     ng_size_t ne;    
     int n;
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
 
     if(NULL != varnode)
     {
@@ -4626,16 +4744,16 @@ void NewLoadVarAtts(NclNewFile thefile, NclQuark var)
     }
 }
 
-static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
+static struct _NclMultiDValDataRec *AdvancedFileReadVarAtt(NclFile infile,
                                                       NclQuark var,
                                                       NclQuark attname,
                                                       struct _NclSelectionRecord *sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileVarNode *varnode;
     NclMultiDValData tmp_md;
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
 
     if(NULL != varnode)
     {
@@ -4645,7 +4763,7 @@ static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
         NclTypeClass type_class;
 
         if(varnode->att_rec->id < 0)
-            NewLoadVarAtts(thefile, var);
+            AdvancedLoadVarAtts(thefile, var);
 
         tmp_md = _NclGetAtt(varnode->att_rec->id,NrmQuarkToString(attname),sel_ptr);
 
@@ -4654,8 +4772,8 @@ static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
         else if (tmp_md->multidval.val == NULL)
         {
             NhlPError(NhlWARNING,NhlEUNKNOWN,
-                  "NewFileReadVarAtt: _FillValue attribute for  variable (%s) in file (%s) has NULL value, substituting default fill value of variable type",
-                  NrmQuarkToString(var),NrmQuarkToString(thefile->newfile.fname));
+                  "AdvancedFileReadVarAtt: _FillValue attribute for  variable (%s) in file (%s) has NULL value, substituting default fill value of variable type",
+                  NrmQuarkToString(var),NrmQuarkToString(thefile->advancedfile.fname));
             _NclGetDefaultFillValue(varnode->type,&missing_value);
         }
         else if (tmp_md->multidval.data_type == varnode->type)
@@ -4666,7 +4784,7 @@ static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
         {
             NhlPError(NhlWARNING,NhlEUNKNOWN,
               "FileReadVarAtt: _FillValue attribute type differs from variable (%s) type in file (%s), forcing type conversion; may result in overflow and/or loss of precision",
-                  NrmQuarkToString(var),NrmQuarkToString(thefile->newfile.fname));
+                  NrmQuarkToString(var),NrmQuarkToString(thefile->advancedfile.fname));
             _NclScalarForcedCoerce(tmp_md->multidval.val,tmp_md->multidval.data_type,
                            (void*)&missing_value,varnode->type);
         }
@@ -4677,15 +4795,15 @@ static struct _NclMultiDValDataRec *NewFileReadVarAtt(NclFile infile,
     }
 
     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-        "NewFileReadVarAtt: (%s) is not an attribute of (%s)",
+        "AdvancedFileReadVarAtt: (%s) is not an attribute of (%s)",
          NrmQuarkToString(attname),NrmQuarkToString(var)));
     return(_NclCreateMissing());
 }
 
-static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
+static struct _NclVarRec* AdvancedFileReadCoord(NclFile infile, NclQuark coord_name,
                                            struct _NclSelectionRecord* sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclSelection *sel;
     NclMultiDValData tmp_md;
     NclDimRec dim_info[NCL_MAX_DIMENSIONS];
@@ -4696,15 +4814,15 @@ static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
     NclFileVarNode *varnode;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileReadCoord, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileReadCoord, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tcoord_name: <%s>\n", NrmQuarkToString(coord_name));
    */
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, coord_name);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coord_name);
 
     if(NULL != varnode)
     {
-        tmp_md = MyNewFileReadVarValue(infile,coord_name,sel_ptr,dim_info,
+        tmp_md = MyAdvancedFileReadVarValue(infile,coord_name,sel_ptr,dim_info,
                                        FILE_COORD_VAR_ACCESS);
         if(NULL == tmp_md) 
             return(NULL);
@@ -4712,7 +4830,7 @@ static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
         if(NULL != varnode->att_rec) 
         {
             if(varnode->att_rec->id < 0) 
-                NewLoadVarAtts(thefile, coord_name);
+                AdvancedLoadVarAtts(thefile, coord_name);
 
             att_id = varnode->att_rec->id;
     
@@ -4743,7 +4861,7 @@ static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
         }
 
       /*
-       *fprintf(stderr, "Leave NewFileReadCoord, file: %s, line: %d\n\n", __FILE__, __LINE__);
+       *fprintf(stderr, "Leave AdvancedFileReadCoord, file: %s, line: %d\n\n", __FILE__, __LINE__);
        */
         return(tmp_var);
     }
@@ -4751,38 +4869,38 @@ static struct _NclVarRec* NewFileReadCoord(NclFile infile, NclQuark coord_name,
     NhlPError(NhlFATAL,NhlEUNKNOWN,
         "(%s) is no  a coordinate variable for file (%s)",
         NrmQuarkToString(coord_name),
-        NrmQuarkToString(thefile->newfile.fname));
+        NrmQuarkToString(thefile->advancedfile.fname));
 
     return(NULL);
 }
 
 #if 1
-static int NewFileIsCoord(NclFile infile, NclQuark coord_name)
+static int AdvancedFileIsCoord(NclFile infile, NclQuark coord_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileVarNode *varnode;
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, coord_name);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coord_name);
     if(NULL != varnode)
         return (1);
     else
         return (-1);
 }
 #else
-static int NewFileIsCoord(NclFile infile, NclQuark coord_name)
+static int AdvancedFileIsCoord(NclFile infile, NclQuark coord_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileDimNode *dimnode;
     int n;
 
   /*
-   *fprintf(stderr, "\nHit NewFileIsCoord, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nHit AdvancedFileIsCoord, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tcoord_name: <%s>\n", NrmQuarkToString(coord_name));
    */
 
-    for(n = 0; n < thefile->newfile.grpnode->dim_rec->n_dims; n++)
+    for(n = 0; n < thefile->advancedfile.grpnode->dim_rec->n_dims; n++)
     {
-        dimnode = &(thefile->newfile.grpnode->dim_rec->dim_node[n]);
+        dimnode = &(thefile->advancedfile.grpnode->dim_rec->dim_node[n]);
         if(coord_name == dimnode->name)
             return (n);
     }
@@ -4791,12 +4909,12 @@ static int NewFileIsCoord(NclFile infile, NclQuark coord_name)
 }
 #endif
 
-static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
+static NhlErrorTypes AdvancedFileWriteAtt(NclFile infile, NclQuark attname,
                                      struct _NclMultiDValDataRec* value,
                                      struct _NclSelectionRecord *sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
-    int i,exists;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
+    int exists = 0;
     NclMultiDValData tmp_att_md,tmp_md;
     int att_id;
     NhlErrorTypes ret = NhlNOERROR;
@@ -4807,13 +4925,13 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
     NclFileAttRecord *attrec;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileWriteAtt, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileWriteAtt, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(attname));
    */
 
-    if(thefile->newfile.wr_status<=0)
+    if(thefile->advancedfile.wr_status<=0)
     {
-        if(NULL == thefile->newfile.grpnode->att_rec)
+        if(NULL == thefile->advancedfile.grpnode->att_rec)
         {
             att_id = _NclAttCreate(NULL,NULL,Ncl_Att,0,(NclObj)thefile);
           /*
@@ -4825,23 +4943,23 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
             ((FileCallBackRec*)udata.ptrval)->theattid = att_id;
             ((FileCallBackRec*)udata.ptrval)->thevar = -1;
 
-	    thefile->newfile.grpnode->att_rec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
-	    thefile->newfile.grpnode->att_rec->n_atts = 0;
-	    thefile->newfile.grpnode->att_rec->id = att_id;
-	    thefile->newfile.grpnode->att_rec->cb = _NclAddCallback((NclObj)_NclGetObj(att_id),NULL,
+	    thefile->advancedfile.grpnode->att_rec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
+	    thefile->advancedfile.grpnode->att_rec->n_atts = 0;
+	    thefile->advancedfile.grpnode->att_rec->id = att_id;
+	    thefile->advancedfile.grpnode->att_rec->cb = _NclAddCallback((NclObj)_NclGetObj(att_id),NULL,
 						 FileAttIsBeingDestroyedNotify,ATTDESTROYED,&udata);
-	    thefile->newfile.grpnode->att_rec->udata = (FileCallBackRec*)udata.ptrval;
+	    thefile->advancedfile.grpnode->att_rec->udata = (FileCallBackRec*)udata.ptrval;
         }
         else
         {
-            att_id = thefile->newfile.grpnode->att_rec->id;
+            att_id = thefile->advancedfile.grpnode->att_rec->id;
           /*
            *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
            *fprintf(stderr, "\tatt_id: %d\n", att_id);
            */
         }
 
-        ret = _addNclAttNode(&(thefile->newfile.grpnode->att_rec),
+        ret = _addNclAttNode(&(thefile->advancedfile.grpnode->att_rec),
                              attname, value->multidval.data_type,
                              value->multidval.totalelements, value->multidval.val);
       /*
@@ -4855,7 +4973,7 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
        *fprintf(stderr, "\texists = %d\n", exists);
        */
-        if((exists)&&(thefile->newfile.format_funcs->write_att != NULL))
+        if((exists)&&(thefile->advancedfile.format_funcs->write_att != NULL))
         {
 /*
  * Hereis the trick. It is easier to let the _NclAddAtt... functions deal
@@ -4872,24 +4990,24 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                     "Could not write attribute (%s) to attribute list",
                     NrmQuarkToString(attname)));
                 ret = NhlFATAL;
-                goto done_NewFileWriteAtt;
+                goto done_AdvancedFileWriteAtt;
             }
 
             tmp_att_md = _NclGetAtt(att_id,NrmQuarkToString(attname),NULL);
-            ret = (*thefile->newfile.format_funcs->write_att)(
-                thefile->newfile.grpnode,
+            ret = (*thefile->advancedfile.format_funcs->write_att)(
+                thefile->advancedfile.grpnode,
                 attname,
                 tmp_att_md->multidval.val
                 );
-            goto done_NewFileWriteAtt;
+            goto done_AdvancedFileWriteAtt;
         }
-        else if((!exists)&&(thefile->newfile.format_funcs->add_att != NULL))
+        else if((!exists)&&(thefile->advancedfile.format_funcs->add_att != NULL))
         {
           /*
            *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
            *fprintf(stderr, "\texists = %d\n", exists);
            */
-            attrec = thefile->newfile.grpnode->att_rec;
+            attrec = thefile->advancedfile.grpnode->att_rec;
 
             if(value->multidval.data_type == NCL_char)
             {
@@ -4901,10 +5019,10 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                         "Could not write attribute (%s) to attribute list",
                         NrmQuarkToString(attname)));
                     ret = NhlFATAL;
-                    goto done_NewFileWriteAtt;
+                    goto done_AdvancedFileWriteAtt;
                 }
-                ret = (*thefile->newfile.format_funcs->add_att)(
-                    thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_att)(
+                    thefile->advancedfile.grpnode,
                     attname,
                     value->multidval.data_type,
                     value->multidval.totalelements,
@@ -4912,7 +5030,7 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                     );
                 if(ret > NhlFATAL)
                 {
-                    thefile->newfile.grpnode->att_rec = attrec;
+                    thefile->advancedfile.grpnode->att_rec = attrec;
                 }
                 if (ret < NhlNOERROR)
                 {
@@ -4921,18 +5039,18 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
             }
             else
             {
-                if((data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)(value->multidval.data_type)) == NULL)
+                if((data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(value->multidval.data_type)) == NULL)
                 {
                     if(value->multidval.data_type == NCL_string)
                     {
-                        goto done_NewFileWriteAtt;
+                        goto done_AdvancedFileWriteAtt;
                     }
                     else
                     {
                         from_type = value->multidval.data_type;
                         to_type = _NclPromoteType(from_type);
                         while((from_type != to_type )&&
-                             ((data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
+                             ((data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
                         {
                             from_type = to_type;
                             to_type = _NclPromoteType(from_type);
@@ -4943,13 +5061,13 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                             NclFree(data_type);
                         }
 
-                        if((data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL)
+                        if((data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL)
                         {
                             NhlPError(NhlFATAL,NhlEUNKNOWN,
                                 "The type (%s) is not representable as an attribute in the file (%s)",
-                                _NclBasicDataTypeToName(to_type),NrmQuarkToString(thefile->newfile.fpath));
+                                _NclBasicDataTypeToName(to_type),NrmQuarkToString(thefile->advancedfile.fpath));
                             ret = NhlFATAL;
-                            goto done_NewFileWriteAtt;
+                            goto done_AdvancedFileWriteAtt;
                         }
                         else
                         {
@@ -4965,18 +5083,20 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                     tmp_md= value;
                 }
 
-                ret = _NclAddAtt(att_id,NrmQuarkToString(attname),tmp_md,sel_ptr);
-                if(ret < NhlWARNING)
-                {
-                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "Could not write attribute (%s) to attribute list",
-                        NrmQuarkToString(attname)));
-                    ret = NhlFATAL;
-                    goto done_NewFileWriteAtt;
-                }
+              /*
+               *ret = _NclAddAtt(att_id,NrmQuarkToString(attname),tmp_md,sel_ptr);
+               *if(ret < NhlWARNING)
+               *{
+               *    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+               *        "Could not write attribute (%s) to attribute list",
+               *        NrmQuarkToString(attname)));
+               *    ret = NhlFATAL;
+               *    goto done_AdvancedFileWriteAtt;
+               *}
+               */
 
-                ret = (*thefile->newfile.format_funcs->add_att)(
-                    thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_att)(
+                    thefile->advancedfile.grpnode,
                     attname,
                     tmp_md->multidval.data_type,
                     tmp_md->multidval.totalelements,
@@ -4988,10 +5108,7 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
                     _NclDestroyObj((NclObj)tmp_md);
                 }
 
-                if(ret > NhlWARNING)
-                {
-                }
-                else
+                if(NhlWARNING >= ret)
                 {
                     _NclDeleteAtt(att_id,NrmQuarkToString(attname));
                 }
@@ -5002,24 +5119,24 @@ static NhlErrorTypes NewFileWriteAtt(NclFile infile, NclQuark attname,
     {
         NhlPError(NhlFATAL,NhlEUNKNOWN,
             "FileWriteAtt: file (%s) was opened for reading only, can not write",
-            NrmQuarkToString(thefile->newfile.fname));
+            NrmQuarkToString(thefile->advancedfile.fname));
         ret = NhlFATAL;
     }
 
-done_NewFileWriteAtt:
+done_AdvancedFileWriteAtt:
   /*
-   *fprintf(stderr, "Leave NewFileWriteAtt, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileWriteAtt, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
 
     return(ret);
 }
 
-static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
+static NhlErrorTypes AdvancedFileSetFileOption(NclFile  infile,
                                           NclQuark format,
                                           NclQuark option,
                                           NclMultiDValData value)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     int i, found, idx;
     NclMultiDValData tmp_md;
     NclQuark loption;
@@ -5030,10 +5147,10 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
     loption = _NclGetLower(option);
     if (thefile)
     {
-        if (thefile->newfile.format_funcs->set_option == NULL)
+        if (thefile->advancedfile.format_funcs->set_option == NULL)
         {
-            NhlPError(NhlWARNING,NhlEUNKNOWN,
-                  "NewFileSetFileOption: newfile does not support any options");
+            NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                  "%s: advancedfile does not support any options", __PRETTY_FUNCTION__));
             return(NhlWARNING);
         }
 
@@ -5043,8 +5160,8 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             if (fcp->options[i].name != loption)
                 continue;
 
-            ffrp = _NclGetFormatFuncsWithNewHLFS(fcp->options[i].format);
-            if (thefile->newfile.format_funcs == ffrp)
+            ffrp = _NclGetFormatFuncsWithAdvancedFileStructure(fcp->options[i].format);
+            if (thefile->advancedfile.format_funcs == ffrp)
             {
                 found = 1;
                 idx = i;
@@ -5056,25 +5173,25 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
         {
             i = idx;
 
-            if (fcp->options[i].access == 1 && thefile->newfile.wr_status != 1)
+            if (fcp->options[i].access == 1 && thefile->advancedfile.wr_status != 1)
             {
-                NhlPError(NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetFileOption: option %s is invalid unless file is opened for reading only",
-                      NrmQuarkToString(option));
+                NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                    "%s: option %s is invalid unless file is opened for reading only",
+                      __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                 return(NhlWARNING);
             }
-            else if (fcp->options[i].access == 2 && thefile->newfile.wr_status > 0)
+            else if (fcp->options[i].access == 2 && thefile->advancedfile.wr_status > 0)
             {
-                NhlPError(NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetFileOption: option %s is invalid unless file is open for writing",
-                      NrmQuarkToString(option));
+                NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                    "AdvancedFileSetFileOption: option %s is invalid unless file is open for writing",
+                      __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                 return(NhlWARNING);
             }
-            else if (fcp->options[i].access == 3 && thefile->newfile.wr_status != -1)
+            else if (fcp->options[i].access == 3 && thefile->advancedfile.wr_status != -1)
             {
-                NhlPError(NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetFileOption: option %s is can only be set prior to file creation",
-                      NrmQuarkToString(option));
+                NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                    "%s: option %s is can only be set prior to file creation",
+                      __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                 return(NhlWARNING);
             }
 
@@ -5082,7 +5199,7 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             {
                 /* if no value specified restore default for this file only - it's not an error */
                 tmp_md = fcp->options[i].def_value;
-                thefile->newfile.format_funcs->set_option(thefile->newfile.grpnode,
+                thefile->advancedfile.format_funcs->set_option(thefile->advancedfile.grpnode,
                                  loption,
                                  tmp_md->multidval.data_type,
                                  tmp_md->multidval.totalelements,
@@ -5093,10 +5210,10 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             tmp_md = _NclCoerceData(value,fcp->options[i].value->multidval.type->type_class.type,NULL);
             if(tmp_md == NULL)
             {
-                NhlPError(NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetFileOption: invalid type for %s option value; value must be coercible to %s",
-                      NrmQuarkToString(option), 
-                      NrmQuarkToString(_NclObjTypeToName(fcp->options[i].value->multidval.type->type_class.type)));
+                NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                    "%s: invalid type for %s option value; value must be coercible to %s",
+                      __PRETTY_FUNCTION__, NrmQuarkToString(option),
+                      NrmQuarkToString(_NclObjTypeToName(fcp->options[i].value->multidval.type->type_class.type))));
                 return(NhlWARNING);
             }
 
@@ -5124,9 +5241,9 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
                     if(! ok)
                     {
                         NclFree(lvalue);
-                        NhlPError(NhlWARNING,NhlEUNKNOWN,
-                              "NewFileSetFileOption: invalid value supplied for option %s",
-                              NrmQuarkToString(option));
+                        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                              "%s: invalid value supplied for option %s",
+                              __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                         return(NhlWARNING);
                     }
                 }
@@ -5149,16 +5266,16 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
 
                 if(! ok)
                 {
-                    NhlPError(NhlWARNING,NhlEUNKNOWN,
-                          "NewFileSetFileOption: invalid value supplied for option %s",
-                              NrmQuarkToString(option));
+                    NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                          "%s: invalid value supplied for option %s",
+                              __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                     return(NhlWARNING);
                 }
             }
 
             if(lvalue)
             {
-                thefile->newfile.format_funcs->set_option(thefile->newfile.grpnode,
+                thefile->advancedfile.format_funcs->set_option(thefile->advancedfile.grpnode,
                                  loption,
                                  tmp_md->multidval.data_type,
                                  tmp_md->multidval.totalelements,
@@ -5167,7 +5284,7 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             }
             else
             {
-                thefile->newfile.format_funcs->set_option(thefile->newfile.grpnode,
+                thefile->advancedfile.format_funcs->set_option(thefile->advancedfile.grpnode,
                                  loption,
                                  tmp_md->multidval.data_type,
                                  tmp_md->multidval.totalelements,
@@ -5184,9 +5301,9 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             return NhlNOERROR;
         }
 
-        NhlPError(NhlWARNING,NhlEUNKNOWN,
-              "NewFileSetFileOption: %s is not a recognized file option for format %s",
-              NrmQuarkToString(option),NrmQuarkToString(format));
+        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+              "%s: %s is not a recognized file option for format %s",
+              __PRETTY_FUNCTION__, NrmQuarkToString(option),NrmQuarkToString(format)));
         return(NhlWARNING);
     }
     else if (format != NrmNULLQUARK)
@@ -5202,23 +5319,29 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
                 if(! (_NclGetLower(format) == NrmStringToQuark("bin") &&
                        fcp->options[i].format == _NclGetLower(format)) )
                 {
-                    NhlPError(NhlWARNING,NhlEUNKNOWN,
-                          "NewFileSetFileOption: %s is not a recognized option for format %s",
-                          NrmQuarkToString(option),NrmQuarkToString(format));
-                    return(NhlWARNING);
+                    if(_NclGetLower(fcp->options[i].format) != NrmStringToQuark("all"))
+                    {
+                        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                                   "%s: %s is not a recognized option for format %s",
+                                   __PRETTY_FUNCTION__, NrmQuarkToString(option),NrmQuarkToString(format)));
+                        return(NhlWARNING);
+                    }
                 }
             }
 
-            if(! (_NclGetFormatFuncsWithNewHLFS(format) &&
-                  _NclGetFormatFuncsWithNewHLFS(format) == _NclGetFormatFuncsWithNewHLFS(fcp->options[i].format)) )
+            if(! (_NclGetFormatFuncsWithAdvancedFileStructure(format) &&
+                  _NclGetFormatFuncsWithAdvancedFileStructure(format) == _NclGetFormatFuncsWithAdvancedFileStructure(fcp->options[i].format)) )
             {
                 if(! (_NclGetLower(format) == NrmStringToQuark("bin") &&
                        fcp->options[i].format == _NclGetLower(format)) )
                 {
-                    NhlPError(NhlWARNING,NhlEUNKNOWN,
-                          "NewFileSetFileOption: %s is not a recognized option for format %s",
-                          NrmQuarkToString(option),NrmQuarkToString(format));
-                    return(NhlWARNING);
+                    if(_NclGetLower(fcp->options[i].format) != NrmStringToQuark("all"))
+                    {
+                        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                                   "%s: %s is not a recognized option for format %s",
+                                   __PRETTY_FUNCTION__, NrmQuarkToString(option),NrmQuarkToString(format)));
+                             return(NhlWARNING);
+                    }
                 }
             }
 
@@ -5234,10 +5357,10 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
             tmp_md = _NclCoerceData(value,fcp->options[i].value->multidval.type->type_class.type,NULL);
             if (tmp_md == NULL)
             {
-                NhlPError(NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetFileOption: invalid type for %s option value; value must be coercible to %s",
-                      NrmQuarkToString(option), 
-                      NrmQuarkToString(_NclObjTypeToName(fcp->options[i].value->multidval.type->type_class.type)));
+                NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                    "%s: invalid type for %s option value; value must be coercible to %s",
+                      __PRETTY_FUNCTION__, NrmQuarkToString(option), 
+                      NrmQuarkToString(_NclObjTypeToName(fcp->options[i].value->multidval.type->type_class.type))));
                 return(NhlWARNING);
             }
 
@@ -5265,9 +5388,9 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
                     if(! ok)
                     {
                         NclFree(lvalue);
-                        NhlPError(NhlWARNING,NhlEUNKNOWN,
-                              "NewFileSetFileOption: invalid value supplied for option %s",
-                              NrmQuarkToString(option));
+                        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                              "%s: invalid value supplied for option %s",
+                              __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                         return(NhlWARNING);
                     }
                 }
@@ -5290,9 +5413,9 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
 
                 if(! ok)
                 {
-                    NhlPError(NhlWARNING,NhlEUNKNOWN,
-                          "NewFileSetFileOption: invalid value supplied for option %s",
-                              NrmQuarkToString(option));
+                    NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+                          "%s: invalid value supplied for option %s",
+                              __PRETTY_FUNCTION__, NrmQuarkToString(option)));
                     return(NhlWARNING);
                 }
             }
@@ -5315,61 +5438,62 @@ static NhlErrorTypes NewFileSetFileOption(NclFile  infile,
                 _NclDestroyObj((NclObj)tmp_md);
             return NhlNOERROR;
         }
-        NhlPError(NhlWARNING,NhlEUNKNOWN,
-              "NewFileSetFileOption: %s is not a recognized file option for format %s",
-              NrmQuarkToString(option),NrmQuarkToString(format));
+        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+              "%s: %s is not a recognized file option for format %s",
+              __PRETTY_FUNCTION__, NrmQuarkToString(option),NrmQuarkToString(format)));
         return(NhlWARNING);
     }
     else
     {
-        NhlPError(NhlWARNING,NhlEUNKNOWN,
-              "NewFileSetFileOption: invalid file or format");
+        NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+              "%s: invalid file or format", __PRETTY_FUNCTION__));
         return(NhlWARNING);
     }                        
         
     return NhlNOERROR;
 }
 
-static NhlErrorTypes NewFileAddDim(NclFile infile, NclQuark dimname,
+static NhlErrorTypes AdvancedFileAddDim(NclFile infile, NclQuark dimname,
                                    ng_size_t dimsize, int is_unlimited)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileDimNode   *dimnode = NULL;
-    NclFileDimRecord *dimrec = thefile->newfile.grpnode->dim_rec;
     ng_size_t ds = dimsize;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileAddDim, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileAddDim, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tdimname: <%s>, dimsize: %d\n", NrmQuarkToString(dimname), dimsize);
    */
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        if (dimname == NrmStringToQuark("ncl_scalar"))
-        {
-            NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddDim: <ncl_scalar> is a reserved file dimension name in NCL\n\t\t%s\n",
-                "it cannot be defined by the user"));
-            return (NhlWARNING);
-        }
+      /*
+       *if (dimname == NrmStringToQuark("ncl_scalar"))
+       *{
+       *    NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+       *        "AdvancedFileAddDim: <ncl_scalar> is a reserved file dimension name in NCL\n\t\t%s\n",
+       *        "it cannot be defined by the user"));
+       *    return (NhlWARNING);
+       *}
+       */
 
-        dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, dimname);
+        dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dimname);
 
         if(NULL == dimnode)
         {
-            if(NULL != thefile->newfile.format_funcs->add_dim)
+            if(NULL != thefile->advancedfile.format_funcs->add_dim)
             {
                 if(ds < 1)
                     ds = 1;
-                ret = (*thefile->newfile.format_funcs->add_dim)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_dim)
+                       (thefile->advancedfile.grpnode,
                         dimname, ds, is_unlimited);
             }
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "FATAL:NewFileAddDim: function add_dim undefined.\n"));
+                    "FATAL:AdvancedFileAddDim: function add_dim undefined.\n"));
                 ret = NhlFATAL;
             }
         }
@@ -5377,7 +5501,7 @@ static NhlErrorTypes NewFileAddDim(NclFile infile, NclQuark dimname,
        *else
        *{
        *    NHLPERROR((NhlINFO,NhlEUNKNOWN,
-       *        "NewFileAddDim: Dimension %s is already defined",
+       *        "AdvancedFileAddDim: Dimension %s is already defined",
        *        NrmQuarkToString(dimname)));
        *    ret = NhlINFO;
        *}
@@ -5385,7 +5509,7 @@ static NhlErrorTypes NewFileAddDim(NclFile infile, NclQuark dimname,
     }
 
   /*
-   *fprintf(stderr, "Leave NewFileAddDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileAddDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
@@ -5394,24 +5518,24 @@ static NhlErrorTypes NewFileAddDim(NclFile infile, NclQuark dimname,
  * Updates the coord info
  */
 
-static NhlErrorTypes NewUpdateCoordInfo(NclNewFile thefile, NrmQuark varname)
+static NhlErrorTypes AdvancedUpdateCoordInfo(NclAdvancedFile thefile, NrmQuark varname)
 {
     NhlErrorTypes ret = NhlNOERROR;
 
     NclFileVarNode *varnode;
     NclFileDimNode *dimnode;
 
-    dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+    dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
 
     if(NULL != dimnode)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
 
         if(NULL != varnode)
         {
             if(varnode->dim_rec->n_dims == 1)
             {
-                ret = _addNclCoordVarNode(&(thefile->newfile.grpnode->coord_var_rec),
+                ret = _addNclCoordVarNode(&(thefile->advancedfile.grpnode->coord_var_rec),
                           varnode);
             }
         }
@@ -5420,26 +5544,24 @@ static NhlErrorTypes NewUpdateCoordInfo(NclNewFile thefile, NrmQuark varname)
     return ret;
 }
 
-static void NewAdjustForScalarDim(NclNewFile thefile)
+static void AdvancedAdjustForScalarDim(NclAdvancedFile thefile)
 {
-    ng_size_t ds = 1;
-    int i, j;
     NclQuark nsn = NrmStringToQuark("ncl_scalar");
 
- /* since the scalar dim is always first,
-  * all the other dims and coord vars need to shift down one element
-  */
+  /*
+   *since the scalar dim is always first,
+   *all the other dims and coord vars need to shift down one element
 
-    fprintf(stderr, "\nHit NewAdjustForScalarDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
-    fprintf(stderr, "\nHit NewAdjustForScalarDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nHit AdvancedAdjustForScalarDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   */
 
-    NewFileAddDim((NclFile) thefile, nsn, 1, 1);
+    AdvancedFileAddDim((NclFile) thefile, nsn, 1, 1);
 }
 
-static NhlErrorTypes NewFileAddVar(NclFile infile, NclQuark varname,
+static NhlErrorTypes AdvancedFileAddVar(NclFile infile, NclQuark varname,
                                    NclQuark type, int n_dims, NclQuark *dimnames)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     ng_size_t dim_sizes[NCL_MAX_DIMENSIONS];
     int i;
@@ -5449,21 +5571,21 @@ static NhlErrorTypes NewFileAddVar(NclFile infile, NclQuark varname,
     NclFileDimNode *dimnode;
     
   /*
-   *fprintf(stderr, "\nEnter NewFileAddVar, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileAddVar, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tVarname: <%s>, type: <%s>, n_dims: %d, dimname[0]: <%s>\n", 
    *                NrmQuarkToString(varname), NrmQuarkToString(type),
    *                n_dims, NrmQuarkToString(dimnames[0]));
    */
 
-    if((thefile->newfile.wr_status <= 0)&&(thefile->newfile.format_funcs->add_var != NULL))
+    if((thefile->advancedfile.wr_status <= 0)&&(thefile->advancedfile.format_funcs->add_var != NULL))
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
 
         if(NULL == varnode)
         {
             for(i = 0; i < n_dims; i++)
             {
-                dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, dimnames[i]);
+                dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dimnames[i]);
                 if(NULL == dimnode)
                 {
                     if (n_dims == 1 && dimnames[0] == NrmStringToQuark("ncl_scalar"))
@@ -5474,10 +5596,10 @@ static NhlErrorTypes NewFileAddVar(NclFile infile, NclQuark varname,
                     else
                     {
                         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                            "NewFileAddVar: Dimension (%s) is not currently defined, can't add variable",
+                            "AdvancedFileAddVar: Dimension (%s) is not currently defined, can't add variable",
                             NrmQuarkToString(dimnames[i])));
                         ret = NhlFATAL;
-                        goto done_NewFileAddVar;
+                        goto done_AdvancedFileAddVar;
                     }
                 }
 		else
@@ -5489,67 +5611,67 @@ static NhlErrorTypes NewFileAddVar(NclFile infile, NclQuark varname,
             typec = _NclNameToTypeClass(type); 
             if(typec != NULL)
             {
-                ret = (*thefile->newfile.format_funcs->add_var)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_var)
+                       (thefile->advancedfile.grpnode,
                         varname, typec->type_class.data_type,    
                         n_dims, dimnames, dim_sizes);
 
                 if(ret == NhlFATAL)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "NewFileAddVar: Error adding variable <%s> as type: <%s>",
+                        "AdvancedFileAddVar: Error adding variable <%s> as type: <%s>",
                          NrmQuarkToString(varname), _NclBasicDataTypeToName(type)));
                 }
             }
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "NewFileAddVar Incorrect type specified, can't add variable (%s)",
+                    "AdvancedFileAddVar Incorrect type specified, can't add variable (%s)",
                     NrmQuarkToString(varname)));
                 ret = NhlFATAL;
             }
 
             if(ret < NhlWARNING) 
-                goto done_NewFileAddVar;
+                goto done_AdvancedFileAddVar;
 
             if(add_scalar_dim)
             {
-                NewAdjustForScalarDim(thefile);
+                AdvancedAdjustForScalarDim(thefile);
             }
             
-            NewUpdateCoordInfo(thefile,varname); 
-            goto done_NewFileAddVar;
+            AdvancedUpdateCoordInfo(thefile,varname); 
+            goto done_AdvancedFileAddVar;
         }
         else
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddVar: Variable %s is already defined, can not redefine",
+                "AdvancedFileAddVar: Variable %s is already defined, can not redefine",
                 NrmQuarkToString(varname)));
             ret = NhlWARNING;
-            goto done_NewFileAddVar;
+            goto done_AdvancedFileAddVar;
         }
     }
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileAddVar: file (%s) was opened for reading only, can not write",
-            NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileAddVar: file (%s) was opened for reading only, can not write",
+            NrmQuarkToString(thefile->advancedfile.fname)));
         ret = NhlFATAL;
-        goto done_NewFileAddVar;
+        goto done_AdvancedFileAddVar;
     }
 
-done_NewFileAddVar:
+done_AdvancedFileAddVar:
   /*
-   *fprintf(stderr, "Leave NewFileAddVar, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileAddVar, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return(ret);
 }
 
-static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark attname,
+static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark attname,
                                         struct _NclMultiDValDataRec* value,
                                         struct _NclSelectionRecord * sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     int exists;
     NclMultiDValData tmp_att_md,tmp_md,last_att_val_md;
     int att_id;
@@ -5557,44 +5679,64 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
     NclBasicDataTypes from_type,to_type;
     NclObjTypes obj_type;
     void *data_type;
+    NhlArgVal udata;
+    int i;
     
     NclFileVarNode *varnode;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileWriteVarAtt, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileWriteVarAtt, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tvarname: <%s>, attname: <%s>\n",
    *        NrmQuarkToString(var), NrmQuarkToString(attname));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NhlPError(NhlFATAL,NhlEUNKNOWN,
             "FileWriteVarAtt: file (%s) was opened for reading only, can not write",
-            NrmQuarkToString(thefile->newfile.fname));
+            NrmQuarkToString(thefile->advancedfile.fname));
         ret = NhlFATAL;
-        goto done_NewFileWriteVarAtt;
+        goto done_AdvancedFileWriteVarAtt;
     }
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
 
     if(NULL == varnode)
     {
         NhlPError(NhlFATAL,NhlEUNKNOWN,
             "(%s) is not a variable in file (%s)",
-            NrmQuarkToString(var),NrmQuarkToString(thefile->newfile.fname));
+            NrmQuarkToString(var),NrmQuarkToString(thefile->advancedfile.fname));
         ret = NhlFATAL;
-        goto done_NewFileWriteVarAtt;
+        goto done_AdvancedFileWriteVarAtt;
     }
 
     if(NULL != varnode->att_rec)
     {
         if(varnode->att_rec->id < 0)
-            NewLoadVarAtts(thefile, var);
+            AdvancedLoadVarAtts(thefile, var);
+
         att_id = varnode->att_rec->id;
     }
     else
     {
-        att_id = -1;
+        att_id = _NclAttCreate(NULL,NULL,Ncl_Att,0,NULL);
+
+      /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tatt_id: %d\n", att_id);
+       */
+
+        udata.ptrval = (void*)NclMalloc(sizeof(FileCallBackRec));
+        ((FileCallBackRec*)udata.ptrval)->thefileid = -1;
+        ((FileCallBackRec*)udata.ptrval)->theattid = att_id;
+        ((FileCallBackRec*)udata.ptrval)->thevar = -1;
+
+        varnode->att_rec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
+        varnode->att_rec->n_atts = 0;
+        varnode->att_rec->id = att_id;
+        varnode->att_rec->cb = _NclAddCallback((NclObj)_NclGetObj(att_id),NULL,
+                                               FileAttIsBeingDestroyedNotify,ATTDESTROYED,&udata);
+        varnode->att_rec->udata = (FileCallBackRec*)udata.ptrval;
     }
 
 /*
@@ -5603,11 +5745,11 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
  */
     exists = _NclIsAtt(att_id,NrmQuarkToString(attname));
 
-    if((exists)&&(thefile->newfile.format_funcs->write_att != NULL))
+    if((exists)&&(thefile->advancedfile.format_funcs->write_att != NULL))
     {
-        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\texists = %d\n", exists);
       /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\texists = %d\n", exists);
        */
 
         /* get the last att val in case there's an error writing the att */
@@ -5619,16 +5761,22 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                 "Could not write attribute (%s) to attribute list",
                 NrmQuarkToString( attname)));
             ret = NhlFATAL;
-            goto done_NewFileWriteVarAtt;
+            goto done_AdvancedFileWriteVarAtt;
         }
 
         tmp_att_md = _NclGetAtt(att_id,NrmQuarkToString(attname),NULL);
-        ret = (*thefile->newfile.format_funcs->write_var_att)(
-                thefile->newfile.grpnode,
+        ret = (*thefile->advancedfile.format_funcs->write_var_att)(
+                thefile->advancedfile.grpnode,
                 var,
                 attname,
                 tmp_att_md->multidval.val
                 );
+	/* the value is stored in the att_rec as well (not a copy - it's a pointer to the value */
+	for (i = 0; i < varnode->att_rec->n_atts; i++) {
+		if (varnode->att_rec->att_node[i].name == attname) {
+			varnode->att_rec->att_node[i].value = tmp_att_md->multidval.val;
+		}
+	}
 
         if (ret < NhlNOERROR)
         {
@@ -5639,9 +5787,9 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
         {
             _NclDestroyObj((NclObj)last_att_val_md);
         }
-        goto done_NewFileWriteVarAtt;
+        goto done_AdvancedFileWriteVarAtt;
     }
-    else if((!exists)&&(thefile->newfile.format_funcs->add_att != NULL))
+    else if((!exists)&&(thefile->advancedfile.format_funcs->add_att != NULL))
     {
       /*
        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -5664,11 +5812,11 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                     "Could not write attribute (%s) to attribute list",
                     NrmQuarkToString(attname)));
                 ret = NhlFATAL;
-                goto done_NewFileWriteVarAtt;
+                goto done_AdvancedFileWriteVarAtt;
             }
 
-            ret = (*thefile->newfile.format_funcs->add_var_att)(
-                thefile->newfile.grpnode,
+            ret = (*thefile->advancedfile.format_funcs->add_var_att)(
+                thefile->advancedfile.grpnode,
                 var,
                 attname,
                 value->multidval.data_type,
@@ -5683,7 +5831,7 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
         }
         else
         {
-            data_type = (void *)(*thefile->newfile.format_funcs->map_ncl_type_to_format)
+            data_type = (void *)(*thefile->advancedfile.format_funcs->map_ncl_type_to_format)
                         (value->multidval.data_type);
             if(data_type == NULL)
             {
@@ -5701,14 +5849,14 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                      */
                     ret = _NclFileWriteVarAtt(infile,var,attname,tmp_md,sel_ptr);
                     _NclDestroyObj((NclObj)tmp_md);
-                    goto done_NewFileWriteVarAtt;
+                    goto done_AdvancedFileWriteVarAtt;
                 }
                 else
                 {
                     from_type = value->multidval.data_type;
                     to_type = _NclPromoteType(from_type);
                     while((from_type != to_type) &&
-                        ((data_type =(*thefile->newfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
+                        ((data_type =(*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
                     {
                         from_type = to_type;
                         to_type = _NclPromoteType(from_type);
@@ -5716,14 +5864,14 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                     if(data_type != NULL)
                         NclFree(data_type);
 
-                    if((data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL)
+                    if((data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL)
                     {
                         NhlPError(NhlFATAL,NhlEUNKNOWN,
                             "The type (%s) is not representable as an attribute in the file (%s)",
                             _NclBasicDataTypeToName(to_type),
-                            NrmQuarkToString(thefile->newfile.fpath));
+                            NrmQuarkToString(thefile->advancedfile.fpath));
                         ret = NhlFATAL;
-                        goto done_NewFileWriteVarAtt;
+                        goto done_AdvancedFileWriteVarAtt;
                     }
                     else
                     {
@@ -5744,7 +5892,7 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
             if(NULL != varnode->att_rec)
             {
                 if(varnode->att_rec->id < 0)
-                    NewLoadVarAtts(thefile, var);
+                    AdvancedLoadVarAtts(thefile, var);
                 att_id = varnode->att_rec->id;
             }
 
@@ -5755,11 +5903,11 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
                     "Could not write attribute (%s) to attribute list",
                     NrmQuarkToString(attname)));
                 ret = NhlFATAL;
-                goto done_NewFileWriteVarAtt;
+                goto done_AdvancedFileWriteVarAtt;
             }
 
-            ret = (*thefile->newfile.format_funcs->add_var_att)(
-                thefile->newfile.grpnode,
+            ret = (*thefile->advancedfile.format_funcs->add_var_att)(
+                thefile->advancedfile.grpnode,
                 var,
                 attname,
                 tmp_md->multidval.data_type,
@@ -5774,108 +5922,108 @@ static NhlErrorTypes NewFileWriteVarAtt(NclFile infile, NclQuark var, NclQuark a
         }
     }
 
-done_NewFileWriteVarAtt:
+done_AdvancedFileWriteVarAtt:
 
   /*
-   *fprintf(stderr, "Leave NewFileWriteVarAtt, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileWriteVarAtt, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return (ret);
 }
 
-static NhlErrorTypes NewFileAddChunkDim(NclFile infile, NclQuark chunkdimname,
+static NhlErrorTypes AdvancedFileAddChunkDim(NclFile infile, NclQuark chunkdimname,
                                         ng_size_t chunkdimsize, int is_unlimited)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileDimNode   *chunkdimnode = NULL;
     ng_size_t ds = chunkdimsize;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileAddChunkDim, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileAddChunkDim, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tchunkdimname: <%s>, chunkdimsize: %d\n", NrmQuarkToString(chunkdimname), chunkdimsize);
    */
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
         if (chunkdimname == NrmStringToQuark("ncl_scalar"))
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddChunkDim: <ncl_scalar> is a reserved file chunkdimension name in NCL\n\t\t%s\n",
+                "AdvancedFileAddChunkDim: <ncl_scalar> is a reserved file chunkdimension name in NCL\n\t\t%s\n",
                 "it cannot be defined by the user"));
             return (NhlWARNING);
         }
 
-        chunkdimnode = _getChunkDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, chunkdimname);
+        chunkdimnode = _getChunkDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, chunkdimname);
 
         if(NULL == chunkdimnode)
         {
-            thefile->newfile.grpnode->is_chunked = 1;
-            if(NULL != thefile->newfile.format_funcs->add_chunk_dim)
+            thefile->advancedfile.grpnode->is_chunked = 1;
+            if(NULL != thefile->advancedfile.format_funcs->add_chunk_dim)
             {
                 if(ds < 1)
                     ds = 1;
-                ret = (*thefile->newfile.format_funcs->add_chunk_dim)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_chunk_dim)
+                       (thefile->advancedfile.grpnode,
                         chunkdimname, ds, is_unlimited);
             }
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                    "FATAL:NewFileAddChunkDim: function add_chunk_dim undefined.\n"));
+                    "FATAL:AdvancedFileAddChunkDim: function add_chunk_dim undefined.\n"));
                 ret = NhlFATAL;
             }
         }
         else
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddChunkDim: ChunkDimension %s is already defined",
+                "AdvancedFileAddChunkDim: ChunkDimension %s is already defined",
                 NrmQuarkToString(chunkdimname)));
             ret = NhlWARNING;
         }
     }
 
   /*
-   *fprintf(stderr, "Leave NewFileAddChunkDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileAddChunkDim, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-static NhlErrorTypes NewFileAddVarChunk(NclFile infile, NclQuark varname,
+static NhlErrorTypes AdvancedFileAddVarChunk(NclFile infile, NclQuark varname,
                                         int n_dims, ng_size_t *dims)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileVarNode *varnode;
     
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
         if(NULL != varnode)
         {
             varnode->is_chunked = 1;
-            if(thefile->newfile.format_funcs->add_var_chunk != NULL)
+            if(thefile->advancedfile.format_funcs->add_var_chunk != NULL)
             {
-                ret = (*thefile->newfile.format_funcs->add_var_chunk)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_var_chunk)
+                       (thefile->advancedfile.grpnode,
                         varname, n_dims, dims);
                 if(ret == NhlFATAL)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                           "NewFileAddVarChunk: an error occurred while adding chunk to variable"));
+                           "AdvancedFileAddVarChunk: an error occurred while adding chunk to variable"));
                 }
             }
             else
             {
                 ret = NhlWARNING;
                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                       "NewFileAddVarChunk: add_var_chunk is not defined."));
+                       "AdvancedFileAddVarChunk: add_var_chunk is not defined."));
             }
             return(ret);
         }
         else
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddVarChunk: Variable %s is not defined, can not define chunk",
+                "AdvancedFileAddVarChunk: Variable %s is not defined, can not define chunk",
                  NrmQuarkToString(varname)));
             return(NhlWARNING);
         }
@@ -5883,41 +6031,41 @@ static NhlErrorTypes NewFileAddVarChunk(NclFile infile, NclQuark varname,
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileAddVarChunk: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileAddVarChunk: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
     }
     return(NhlFATAL);
 }
 
-static NhlErrorTypes NewFileAddVarChunkCache(NclFile infile, NclQuark varname,
+static NhlErrorTypes AdvancedFileAddVarChunkCache(NclFile infile, NclQuark varname,
                                              ng_size_t cache_size, ng_size_t cache_nelems,
                                              float cache_preemption)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileVarNode *varnode;
     
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
         if(NULL != varnode)
         {
-            if(thefile->newfile.format_funcs->add_var_chunk_cache != NULL)
+            if(thefile->advancedfile.format_funcs->add_var_chunk_cache != NULL)
             {
-                ret = (*thefile->newfile.format_funcs->add_var_chunk_cache)(
-                    thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_var_chunk_cache)(
+                    thefile->advancedfile.grpnode,
                     varname, cache_size, cache_nelems, cache_preemption);
                 if(ret == NhlFATAL)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "NewFileAddVarChunkCache: error adding chunk cache to variable: <%s>",
+                        "AdvancedFileAddVarChunkCache: error adding chunk cache to variable: <%s>",
                          NrmQuarkToString(varname)));
                 }
             }
             else
             {
                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                    "NewFileAddVarChunkCache: add_var_chunk_cache is not defined."));
+                    "AdvancedFileAddVarChunkCache: add_var_chunk_cache is not defined."));
                 ret = NhlWARNING;
             }
             return(ret);
@@ -5925,7 +6073,7 @@ static NhlErrorTypes NewFileAddVarChunkCache(NclFile infile, NclQuark varname,
         else
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileAddVarChunkCache: Variable %s is not defined, can not define chunk",
+                "AdvancedFileAddVarChunkCache: Variable %s is not defined, can not define chunk",
                  NrmQuarkToString(varname)));
             return(NhlWARNING);
         }
@@ -5933,46 +6081,46 @@ static NhlErrorTypes NewFileAddVarChunkCache(NclFile infile, NclQuark varname,
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileAddVarChunkCache: file (%s) was opened for reading only, can not write",
-            NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileAddVarChunkCache: file (%s) was opened for reading only, can not write",
+            NrmQuarkToString(thefile->advancedfile.fname)));
     }
     return(NhlFATAL);
 }
 
-static NhlErrorTypes NewFileSetVarCompressLevel(NclFile infile, NclQuark varname, int compress_level)
+static NhlErrorTypes AdvancedFileSetVarCompressLevel(NclFile infile, NclQuark varname, int compress_level)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileVarNode *varnode;
     
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, varname);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, varname);
         if(NULL != varnode)
         {
-            if(thefile->newfile.format_funcs->set_var_compress_level != NULL)
+            if(thefile->advancedfile.format_funcs->set_var_compress_level != NULL)
             {
-                ret = (*thefile->newfile.format_funcs->set_var_compress_level)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->set_var_compress_level)
+                       (thefile->advancedfile.grpnode,
                         varname, compress_level);
                 if(ret == NhlFATAL)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "NewFileSetVarCompressLevel: an error occurred while adding chunk to variable"));
+                        "AdvancedFileSetVarCompressLevel: an error occurred while adding chunk to variable"));
                 }
             }
             else
             {
                 ret = NhlWARNING;
                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                    "NewFileSetVarCompressLevel: set_var_compress_level is not defined."));
+                    "AdvancedFileSetVarCompressLevel: set_var_compress_level is not defined."));
             }
             return(ret);
         }
         else
         {
             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                "NewFileSetVarCompressLevel: Variable %s is not defined, can not define chunk",
+                "AdvancedFileSetVarCompressLevel: Variable %s is not defined, can not define chunk",
                  NrmQuarkToString(varname)));
             return(NhlWARNING);
         }
@@ -5980,18 +6128,36 @@ static NhlErrorTypes NewFileSetVarCompressLevel(NclFile infile, NclQuark varname
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileSetVarCompressLevel: file (%s) was opened for reading only, can not write",
-            NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileSetVarCompressLevel: file (%s) was opened for reading only, can not write",
+            NrmQuarkToString(thefile->advancedfile.fname)));
     }
     return(NhlFATAL);
 }
 
-static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
+static int isUnlimitedDimension(NclFileGrpNode *grpnode, NclQuark dimname)
+{
+    int k;
+
+    if(NULL == grpnode->dim_rec)
+        return 0;
+
+    for(k = 0; k < grpnode->dim_rec->n_dims; ++k)
+    {
+        if(dimname == grpnode->dim_rec->dim_node[k].name)
+        {
+            return grpnode->dim_rec->dim_node[k].is_unlimited;
+        }
+    }
+
+    return 0;
+}
+
+static NhlErrorTypes MyAdvancedFileWriteVar(NclFile infile, NclQuark var,
                                        struct _NclMultiDValDataRec *value,
-                                       struct _NclSelectionRecord * sel_ptr,
+                                       struct _NclSelectionRecord *sel_ptr,
                                        NclQuark *dim_names, int type)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclObjTypes lhs_type,rhs_type;
     NclMultiDValData tmp_md = NULL;
     NclMultiDValData mis_md = NULL;
@@ -5999,7 +6165,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
     ng_size_t     new_dim_sizes[NCL_MAX_DIMENSIONS];
     
     int has_missing = 0;
-    char buffer[8];
+    char buffer[NCL_MAX_STRING];
     void *val;
     NhlErrorTypes ret = NhlNOERROR;
     long start[NCL_MAX_DIMENSIONS];
@@ -6015,7 +6181,6 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
     int has_reverse = 0;
     int has_reorder = 0;
     int from = 0,block_write_limit,n_elem_block;
-    NclFDimRec *tmpfdim = NULL;
     
     int multiplier_target[NCL_MAX_DIMENSIONS];
     int compare_sel[NCL_MAX_DIMENSIONS];
@@ -6025,11 +6190,10 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
     int index_map[NCL_MAX_DIMENSIONS];
     ng_size_t selection_dim_sizes[NCL_MAX_DIMENSIONS];
     NclSelection *sel;
-    float tmpf;
     NclScalar *tmp_mis;
     NclScalar tmp_scalar;
     ng_size_t tmp_size = 1;
-    long tmpi;
+    long tmpi = 0;
     void *data_type;
     NclBasicDataTypes from_type,to_type;
     NclObjTypes obj_type;
@@ -6037,13 +6201,11 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
     int free_tmp_md = 0;
 
     NclFileVarNode   *varnode;
-    NclFileDimRecord *dimrec;
     NclFileDimNode   *dimnode;
     NclFileAttNode   *attnode;
-    int n = -1;
 
   /*
-   *fprintf(stderr, "\nEnter MyNewFileWriteVar, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter MyAdvancedFileWriteVar, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(var));
 
    *if(NULL != dim_names)
@@ -6052,10 +6214,13 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
    *    fprintf(stderr, "\tdim_names is NULL.\n");
    */
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        dimrec = thefile->newfile.grpnode->dim_rec;
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+        strcpy(buffer, NrmQuarkToString(var));
+        if(NULL == strchr(buffer, '/'))
+            varnode = _getVarNodeFromThisGrpNode(thefile->advancedfile.grpnode, var);
+        else
+            varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
         if(NULL != varnode)
         {
             /*
@@ -6075,11 +6240,14 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                 sel = sel_ptr->selection;
                 for(i = 0; i < n_dims_target; i++)
                 {
-                    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                    fprintf(stderr, "\tsel->dim_num = %d\n", sel->dim_num);
-                    fprintf(stderr, "\tdimnode[%d].name = %s, size=%d\n",
-                        sel->dim_num, NrmQuarkToString(dimnode[sel->dim_num].name),
-                        dimnode[sel->dim_num].size);
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\tsel->dim_num = %ld\n", sel->dim_num);
+                   *fprintf(stderr, "\tdimnode[%d].name = %s, size=%ld\n",
+                   *    sel->dim_num, NrmQuarkToString(dimnode[sel->dim_num].name),
+                   *    dimnode[sel->dim_num].size);
+                   */
+
                     switch(sel->sel_type)
                     {
                     case Ncl_SUB_ALL:
@@ -6157,10 +6325,9 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         else
                         {
                             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                "MyNewFileWriteVar:Invalid stride: %s\n",
+                                "MyAdvancedFileWriteVar:Invalid stride: %s\n",
                                 "stride must be positive non-zero integer"));
                             stride[sel->dim_num] = 1;
-                            tmpf = 1;
                         }
                         n_elem = labs((finish[sel->dim_num] -start[sel->dim_num]) / tmpi) + 1;
 
@@ -6168,10 +6335,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         {
                             if(!( dimnode[sel->dim_num].is_unlimited)||(sel->u.sub.start < 0))
                             {
-                                NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                                    "MyNewFileWriteVar: Subscript out of range in subscript #%d",i));
-                                ret = NhlFATAL;
-                                goto done_MyNewFileWriteVar;
+                                dimnode[sel->dim_num].is_unlimited = isUnlimitedDimension(thefile->advancedfile.grpnode,
+                                                                                          dimnode[sel->dim_num].name);
+
+                                if(! dimnode[sel->dim_num].is_unlimited)
+                                {
+                                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+                                        "MyAdvancedFileWriteVar: Subscript out of range in subscript #%d",i));
+                                    ret = NhlFATAL;
+                                    goto done_MyAdvancedFileWriteVar;
+                                }
                             }
                             else if(sel->u.sub.start >= dimnode[sel->dim_num].size)
                             {
@@ -6183,10 +6356,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         {
                             if(!( dimnode[sel->dim_num].is_unlimited)||(sel->u.sub.finish < 0))
                             {
-                                NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                                    "MyNewFileWriteVar: Subscript out of range, in subscript #%d",i));
-                                ret = NhlFATAL;
-                                goto done_MyNewFileWriteVar;
+                                dimnode[sel->dim_num].is_unlimited = isUnlimitedDimension(thefile->advancedfile.grpnode,
+                                                                                          dimnode[sel->dim_num].name);
+
+                                if(! dimnode[sel->dim_num].is_unlimited)
+                                {
+                                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+                                        "MyAdvancedFileWriteVar: Subscript out of range, in subscript #%d",i));
+                                    ret = NhlFATAL;
+                                    goto done_MyAdvancedFileWriteVar;
+                                }
                             }
                             else if(sel->u.sub.finish >= dimnode[sel->dim_num].size)
                             {
@@ -6205,10 +6384,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         {
                             if(!( dimnode[sel->dim_num].is_unlimited)||(sel->u.vec.min < 0))
                             {
-                                NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                                    "MyNewFileWriteVar: Vector subscript out of range in subscript #%d",i));
-                                ret = NhlFATAL;
-                                goto done_MyNewFileWriteVar;
+                                dimnode[sel->dim_num].is_unlimited = isUnlimitedDimension(thefile->advancedfile.grpnode,
+                                                                                          dimnode[sel->dim_num].name);
+
+                                if(! dimnode[sel->dim_num].is_unlimited)
+                                {
+                                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+                                        "MyAdvancedFileWriteVar: Vector subscript out of range in subscript #%d",i));
+                                    ret = NhlFATAL;
+                                    goto done_MyAdvancedFileWriteVar;
+                                }
                             }
                             else if(sel->u.vec.min >= dimnode[sel->dim_num].size)
                             {
@@ -6219,10 +6404,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         {
                             if(!( dimnode[sel->dim_num].is_unlimited)||(sel->u.vec.max < 0))
                             {
-                                NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                                    "MyNewFileWriteVar: Vector subscript out of range in subscript #%d",i));
-                                ret = NhlFATAL;
-                                goto done_MyNewFileWriteVar;
+                                dimnode[sel->dim_num].is_unlimited = isUnlimitedDimension(thefile->advancedfile.grpnode,
+                                                                                          dimnode[sel->dim_num].name);
+
+                                if(! dimnode[sel->dim_num].is_unlimited)
+                                {
+                                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+                                        "MyAdvancedFileWriteVar: Vector subscript out of range in subscript #%d",i));
+                                    ret = NhlFATAL;
+                                    goto done_MyAdvancedFileWriteVar;
+                                }
                             }
                             else if(sel->u.vec.max >= dimnode[sel->dim_num].size)
                             {
@@ -6338,12 +6529,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         while (value->multidval.dim_sizes[j] == 1) 
                             j++;
                     }
-                    if(selection_dim_sizes[i] != value->multidval.dim_sizes[j])
-                    {
-                        NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Dimension sizes of left hand side do not match right hand side"));
-                                           ret = NhlFATAL;
-                                           goto done_MyNewFileWriteVar;
-                    }
+
+                  /*Comment out this paragraph to allow extend unlimited dimension record.
+                   *Wei, 01/10/2013
+                   *if(selection_dim_sizes[i] != value->multidval.dim_sizes[j])
+                   *{
+                   *    NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Dimension sizes of left hand side do not match right hand side"));
+                   *                       ret = NhlFATAL;
+                   *                       goto done_MyAdvancedFileWriteVar;
+                   *}
+                   */
                     j++;
                 }
             } 
@@ -6365,7 +6560,11 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
             else
                 has_missing = 1;
 
-            if(lhs_type != rhs_type)
+            if((Ncl_Typecompound == lhs_type) && ( Ncl_Typelist == rhs_type))
+            {
+                tmp_md = value;
+            }
+            else if(lhs_type != rhs_type)
             {
               /*
                *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -6374,7 +6573,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                */
                 if(has_missing)
                 {
-                    mis_md = NewFileReadVarAtt((NclFile)thefile,var,
+                    mis_md = AdvancedFileReadVarAtt((NclFile)thefile,var,
                                 NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
                     tmp_md = _NclCoerceData(value,lhs_type,(NclScalar*)mis_md->multidval.val);
                 }
@@ -6382,10 +6581,13 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                 {
                     tmp_md = _NclCoerceData(value,lhs_type,NULL);
                 }
-                if(tmp_md == NULL)
+
+                if(NULL == tmp_md)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "MyNewFileWriteVar: Type mismatch, can't perform assignment"));
+                              "%s: Type mismatch, can't perform assignment", __PRETTY_FUNCTION__));
+                    ret = NhlFATAL;
+                    goto done_MyAdvancedFileWriteVar;
                 }
             }
             else
@@ -6398,7 +6600,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
 
                 if((has_missing)&&(value->multidval.missing_value.has_missing))
                 {
-                    mis_md = NewFileReadVarAtt((NclFile)thefile,var,
+                    mis_md = AdvancedFileReadVarAtt((NclFile)thefile,var,
                                 NrmStringToQuark(NCL_MISSING_VALUE_ATT),NULL);
                     _Ncleq(value->multidval.type,(void*)&(result),
                           (void*)&(value->multidval.missing_value.value),
@@ -6441,7 +6643,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         TEMPORARY,
                         NULL,
                         _NclTypeEnumToTypeClass(lhs_type));
-                    NewFileWriteVarAtt((NclFile)thefile,var,
+                    AdvancedFileWriteVarAtt((NclFile)thefile,var,
                         NrmStringToQuark(NCL_MISSING_VALUE_ATT),mis_md,NULL);
                     tmp_md = value;
                 }
@@ -6450,23 +6652,24 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     tmp_md = value;
                 }
             }
-            if(tmp_md == NULL)
+
+            if(NULL == tmp_md)
             {
-                fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                fprintf(stderr, "\tlhs_type = %d, rhs_type = %d\n",
-                        lhs_type, rhs_type);
+                NHLPERROR((NhlFATAL,NhlEUNKNOWN,
+                        "%s: lhs_type = %d, rhs_type = %d, Type mismatch, can't perform assignment",
+			lhs_type, rhs_type, __PRETTY_FUNCTION__));
                 ret = NhlFATAL;
-                goto done_MyNewFileWriteVar;
+                goto done_MyAdvancedFileWriteVar;
             }
 
-            if((type == FILE_VAR_ACCESS) ? thefile->newfile.format_funcs->write_var != NULL:thefile->newfile.format_funcs->write_coord != NULL )
+            if((type == FILE_VAR_ACCESS) ? thefile->advancedfile.format_funcs->write_var != NULL:thefile->advancedfile.format_funcs->write_coord != NULL )
             {
                 if((!has_vectors)&&(!has_reverse)&&(!has_reorder)&&(value->multidval.kind != SCALAR))
                 {
                     if(type == FILE_VAR_ACCESS)
                     {
-                        ret = (*thefile->newfile.format_funcs->write_var)(
-                            thefile->newfile.grpnode,
+                        ret = (*thefile->advancedfile.format_funcs->write_var)(
+                            thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start,
@@ -6475,8 +6678,8 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     }
                     else
                     {
-                        ret = (*thefile->newfile.format_funcs->write_coord)(
-                            thefile->newfile.grpnode,
+                        ret = (*thefile->advancedfile.format_funcs->write_coord)(
+                            thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start,
@@ -6489,7 +6692,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         _NclDestroyObj((NclObj)tmp_md);
                     }
 
-                    goto done_MyNewFileWriteVar;
+                    goto done_MyAdvancedFileWriteVar;
                 }
                 else
                 {
@@ -6533,8 +6736,8 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     {
                         if(type == FILE_VAR_ACCESS)
                         {
-                            ret = (*thefile->newfile.format_funcs->write_var) (
-                                thefile->newfile.grpnode,
+                            ret = (*thefile->advancedfile.format_funcs->write_var) (
+                                thefile->advancedfile.grpnode,
                                 var,
                                 (void*)&(((char*)val)[from]),
                                 current_index,
@@ -6543,8 +6746,8 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         }
                         else
                         {
-                            ret = (*thefile->newfile.format_funcs->write_coord) (
-                                thefile->newfile.grpnode,
+                            ret = (*thefile->advancedfile.format_funcs->write_coord) (
+                                thefile->advancedfile.grpnode,
                                 var,
                                 (void*)&(((char*)val)[from]),
                                 current_index,
@@ -6558,7 +6761,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                             {
                                 _NclDestroyObj((NclObj)tmp_md);
                             }
-                            goto done_MyNewFileWriteVar;
+                            goto done_MyAdvancedFileWriteVar;
                         }
                         else
                         {
@@ -6568,7 +6771,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                                 {
                                     _NclDestroyObj((NclObj)tmp_md);
                                 }
-                                goto done_MyNewFileWriteVar;
+                                goto done_MyAdvancedFileWriteVar;
                             }
                         }
 
@@ -6663,21 +6866,21 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     {
                         _NclDestroyObj((NclObj)tmp_md);
                     }
-                    goto done_MyNewFileWriteVar;
+                    goto done_MyAdvancedFileWriteVar;
                 }
-            } else if((type == FILE_VAR_ACCESS) ? thefile->newfile.format_funcs->write_var_ns != NULL : thefile->newfile.format_funcs->write_coord_ns != NULL) {
+            } else if((type == FILE_VAR_ACCESS) ? thefile->advancedfile.format_funcs->write_var_ns != NULL : thefile->advancedfile.format_funcs->write_coord_ns != NULL) {
                 if((!has_vectors)&&(!has_reverse)&&(!has_reorder)&&(!has_stride)) {    
                     if(type == FILE_VAR_ACCESS) {
-                        ret = (*thefile->newfile.format_funcs->write_var_ns)(
-                            thefile->newfile.grpnode,
+                        ret = (*thefile->advancedfile.format_funcs->write_var_ns)(
+                            thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start,
                             finish
                             );
                     } else {
-                        ret = (*thefile->newfile.format_funcs->write_coord_ns)(
-                            thefile->newfile.grpnode,
+                        ret = (*thefile->advancedfile.format_funcs->write_coord_ns)(
+                            thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start,
@@ -6689,7 +6892,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         _NclDestroyObj((NclObj)tmp_md);
                     }
 
-                           goto done_MyNewFileWriteVar;
+                           goto done_MyAdvancedFileWriteVar;
                 }else{
 /*
 * Need code here
@@ -6723,16 +6926,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     }
                     while(!done) {
                         if(type == FILE_VAR_ACCESS) {
-                            ret = (*thefile->newfile.format_funcs->write_var_ns) (
-                                thefile->newfile.grpnode,
+                            ret = (*thefile->advancedfile.format_funcs->write_var_ns) (
+                                thefile->advancedfile.grpnode,
                                 var,
                                 (void*)&(((char*)val)[from]),
                                 current_index,
                                 current_finish
                                 );
                         } else {
-                            ret = (*thefile->newfile.format_funcs->write_coord_ns) (
-                                thefile->newfile.grpnode,
+                            ret = (*thefile->advancedfile.format_funcs->write_coord_ns) (
+                                thefile->advancedfile.grpnode,
                                 var,
                                 (void*)&(((char*)val)[from]),
                                 current_index,
@@ -6743,7 +6946,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                             if(free_tmp_md) {
                                 _NclDestroyObj((NclObj)tmp_md);
                             }
-                                   goto done_MyNewFileWriteVar;
+                                   goto done_MyAdvancedFileWriteVar;
                         }
                         if(value->multidval.kind != SCALAR) {
                             from += n_elem_block * _NclSizeOf(varnode->type);
@@ -6827,29 +7030,29 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     if(free_tmp_md) {
                         _NclDestroyObj((NclObj)tmp_md);
                     }
-                           goto done_MyNewFileWriteVar;
+                           goto done_MyAdvancedFileWriteVar;
                 }
             }
         } else {
 /*
 * Need to add variable to file situation
 */
-            /*
-            */
-             fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-             fprintf(stderr, "\tCould not get varnode->name: <%s>\n", NrmQuarkToString(var));
+          /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tCould not get varnode->name: <%s>\n", NrmQuarkToString(var));
+           */
 
             if(type == FILE_COORD_VAR_ACCESS)
             {
-                dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+                dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
 
                 if(NULL == dimnode)
                 {
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,
                         "(%s) is not a dimension in file (%s), can not add coordinate variable",
-                        NrmQuarkToString(var),NrmQuarkToString(thefile->newfile.fpath)));
+                        NrmQuarkToString(var),NrmQuarkToString(thefile->advancedfile.fpath)));
                     ret = NhlFATAL;
-                    goto done_MyNewFileWriteVar;
+                    goto done_MyAdvancedFileWriteVar;
                 }
 
                 if((dimnode->size == value->multidval.dim_sizes[0]) ||
@@ -6863,7 +7066,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                             "Coordinate variables must be single dimension arrays, attempt to assign (%d) dimension value to coordinate variable",
                             value->multidval.n_dims));
                         ret = NhlFATAL;
-                        goto done_MyNewFileWriteVar;
+                        goto done_MyAdvancedFileWriteVar;
                     }
                     new_dim_quarks[0] = var;
                     new_dim_sizes[0] = value->multidval.dim_sizes[0];
@@ -6882,20 +7085,20 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                 {
                     for(i = 0; i < value->multidval.n_dims; i++)
                     {
-                        sprintf(buffer,"ncl%d",thefile->newfile.grpnode->dim_rec->n_dims);
+                        sprintf(buffer,"ncl_%3.3d",i);
                         new_dim_quarks[i] = NrmStringToQuark(buffer);
                         new_dim_sizes[i] = (long)value->multidval.dim_sizes[i];
                         start[i] = 0;
                         finish[i] = value->multidval.dim_sizes[i] -1;
                         stride[i] = 1;
 
-                        ret = (*thefile->newfile.format_funcs->add_dim)(
-                            thefile->newfile.grpnode,
+                        ret = (*thefile->advancedfile.format_funcs->add_dim)(
+                            thefile->advancedfile.grpnode,
                             new_dim_quarks[i],
                             new_dim_sizes[i],
                             0);
                         if(ret < NhlWARNING) {
-                                   goto done_MyNewFileWriteVar;
+                                   goto done_MyAdvancedFileWriteVar;
                         }
                     }
                 }
@@ -6906,26 +7109,26 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                         if(dim_names[i] != -1) {
                             new_dim_quarks[i] = dim_names[i];
                         } else {
-                            sprintf(buffer,"ncl%d",thefile->newfile.grpnode->dim_rec->n_dims);
+                            sprintf(buffer,"ncl%d",thefile->advancedfile.grpnode->dim_rec->n_dims);
                             new_dim_quarks[i] = NrmStringToQuark(buffer);
                         }
                         new_dim_sizes[i] = value->multidval.dim_sizes[i];
                         start[i] = 0;
                         finish[i] = value->multidval.dim_sizes[i] - 1;
                         stride[i] = 1;
-                        dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, dim_names[i]);
+                        dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dim_names[i]);
                         if(NULL == dimnode)
                         {
-                            ret = (*thefile->newfile.format_funcs->add_dim)
-                                   (thefile->newfile.grpnode,
+                            ret = (*thefile->advancedfile.format_funcs->add_dim)
+                                   (thefile->advancedfile.grpnode,
                                 new_dim_quarks[i],
                                 new_dim_sizes[i],
                                 0);
                             if(ret < NhlWARNING)
-                                       goto done_MyNewFileWriteVar;
+                                       goto done_MyAdvancedFileWriteVar;
 
                             if (value->multidval.n_dims == 1 && new_dim_quarks[i] == NrmStringToQuark("ncl_scalar")) {
-                                NewAdjustForScalarDim(thefile);
+                                AdvancedAdjustForScalarDim(thefile);
                             }
                         }
                         else
@@ -6937,7 +7140,7 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                                     NrmQuarkToString(dim_names[i]),
                                     dimnode->size,value->multidval.dim_sizes[i]));
                                 ret = NhlFATAL;
-                                goto done_MyNewFileWriteVar;
+                                goto done_MyAdvancedFileWriteVar;
                             }
                         }
                     }
@@ -6946,14 +7149,14 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
          /*
           * Make sure data can be written
           */
-            data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)
+            data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)
                         (value->multidval.data_type);
             if(data_type == NULL)
             {
                 from_type = value->multidval.data_type;
                 to_type = _NclPromoteType(from_type);
                 while((from_type != to_type )&&
-                     ((data_type = (*thefile->newfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
+                     ((data_type = (*thefile->advancedfile.format_funcs->map_ncl_type_to_format)(to_type))==NULL))
                 {
                     from_type = to_type;
                     to_type = _NclPromoteType(from_type);
@@ -6970,15 +7173,15 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Attempting to write variable (%s) of type (%s) which is not representable in the format of file (%s)",
                         NrmQuarkToString(var),
                         _NclBasicDataTypeToName(value->multidval.data_type),
-                        NrmQuarkToString(thefile->newfile.fpath)));
+                        NrmQuarkToString(thefile->advancedfile.fpath)));
                     NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Trying using a type conversion function"));
                     ret = NhlFATAL;
-                    goto done_MyNewFileWriteVar;
+                    goto done_MyAdvancedFileWriteVar;
                 }
                 else
                 {
-                    ret = (*thefile->newfile.format_funcs->add_var)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->add_var)
+                           (thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.data_type,
                             tmp_md->multidval.n_dims,
@@ -6988,8 +7191,8 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
             }
             else
             {
-                ret = (*thefile->newfile.format_funcs->add_var)
-                       (thefile->newfile.grpnode,
+                ret = (*thefile->advancedfile.format_funcs->add_var)
+                       (thefile->advancedfile.grpnode,
                         var,
                         value->multidval.data_type,
                         value->multidval.n_dims,
@@ -7001,22 +7204,22 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
             }
 
             if(ret < NhlWARNING)
-                goto done_MyNewFileWriteVar;
+                goto done_MyAdvancedFileWriteVar;
 
-            if((type == FILE_VAR_ACCESS) ? thefile->newfile.format_funcs->write_var != NULL : thefile->newfile.format_funcs->write_coord != NULL)
+            if((type == FILE_VAR_ACCESS) ? thefile->advancedfile.format_funcs->write_var != NULL : thefile->advancedfile.format_funcs->write_coord != NULL)
             {
                 if(type == FILE_VAR_ACCESS)
                 {
-                    ret = (*thefile->newfile.format_funcs->write_var)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->write_var)
+                           (thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start, finish, stride);
                 }
                 else
                 {
-                    ret = (*thefile->newfile.format_funcs->write_coord)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->write_coord)
+                           (thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start, finish, stride);
@@ -7029,16 +7232,16 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
             {
                 if(type == FILE_VAR_ACCESS)
                 {
-                    ret = (*thefile->newfile.format_funcs->write_var_ns)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->write_var_ns)
+                           (thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start, finish);
                 }
                 else
                 {
-                    ret = (*thefile->newfile.format_funcs->write_coord_ns)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->write_coord_ns)
+                           (thefile->advancedfile.grpnode,
                             var,
                             tmp_md->multidval.val,
                             start, finish);
@@ -7049,38 +7252,38 @@ static NhlErrorTypes MyNewFileWriteVar(NclFile infile, NclQuark var,
             }
 
             ret = NhlNOERROR;
-            goto done_MyNewFileWriteVar;
+            goto done_MyAdvancedFileWriteVar;
         }
     }
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "MyNewFileWriteVar: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "MyAdvancedFileWriteVar: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         ret = NhlFATAL;
     }
 
-done_MyNewFileWriteVar:
+done_MyAdvancedFileWriteVar:
   /*
    *fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(var));
-   *fprintf(stderr, "Leave MyNewFileWriteVar, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave MyAdvancedFileWriteVar, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-static NhlErrorTypes NewFileWriteVar(NclFile thefile, NclQuark var,
+static NhlErrorTypes AdvancedFileWriteVar(NclFile thefile, NclQuark var,
                                      struct _NclMultiDValDataRec *value,
                                      struct _NclSelectionRecord *sel_ptr)
 {
-    return(MyNewFileWriteVar(thefile,var,value,sel_ptr,NULL,FILE_VAR_ACCESS));
+    return(MyAdvancedFileWriteVar(thefile,var,value,sel_ptr,NULL,FILE_VAR_ACCESS));
 }
 
-static NclObjTypes NewFileVarRepValue(NclFile infile, NclQuark var)
+static NclObjTypes AdvancedFileVarRepValue(NclFile infile, NclQuark var)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileVarNode *varnode;
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
 
     if(NULL != varnode)
     {
@@ -7090,12 +7293,12 @@ static NclObjTypes NewFileVarRepValue(NclFile infile, NclQuark var)
     return(Ncl_None);
 }
 
-static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
+static NhlErrorTypes AdvancedFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                                         struct _NclSelectionRecord *lhs_sel_ptr,
                                         struct _NclVarRec *rhs_var,
                                         struct _NclSelectionRecord *rhs_sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     struct _NclVarRec* tmp_var;
     struct _NclVarRec* tmp_coord_var;
@@ -7103,12 +7306,13 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
     NclQuark dim_names[NCL_MAX_DIMENSIONS];
     NclAtt theatt;
     NclAttList *step;
-    int index,cindex;
-    ng_size_t lhs_n_elem;    
+    int index = -1;
+    int cindex = -1;
     NclSelectionRecord tmp_sel;
     void *tmp_coord;
     char *tmp_ptr;
     NclMultiDValData tmp_md;
+    NclMultiDValData c_md;
     struct _NclVarRec* cvar;
     ng_size_t dimsize = -1;
 
@@ -7120,10 +7324,10 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
     NclFileDimNode *dimnode;
 
   /*
-   *fprintf(stderr, "\nHit NewFileWriteVarVar, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nHit AdvancedFileWriteVarVar, file: %s, line: %d\n", __FILE__, __LINE__);
    */
 
-    if(thefile->newfile.wr_status<=0)
+    if(thefile->advancedfile.wr_status<=0)
     {
         tmp_var = _NclVarRead(rhs_var, rhs_sel_ptr);
         if (! tmp_var)
@@ -7144,25 +7348,41 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                 continue;
             if(dim_names[i] > 0)
             {
-                varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, dim_names[i]);
+                varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dim_names[i]);
                 if(NULL == varnode)
                 {
-                    ret = NewFileAddDim(infile,dim_names[i],tmp_var->var.dim_info[i].dim_size,False);
+                    ret = AdvancedFileAddDim(infile,dim_names[i],tmp_var->var.dim_info[i].dim_size,False);
+
+                    if(0 < tmp_var->var.coord_vars[i])
+                    {
+                        cvar = (NclVar)_NclGetObj(tmp_var->var.coord_vars[i]);
+                        c_md = (NclMultiDValData)_NclGetObj(cvar->var.thevalue_id);
+                        ret = AdvancedFileAddVar(infile, dim_names[i],
+                                            NrmStringToQuark(_NclBasicDataTypeToName(c_md->multidval.data_type)),
+                                            1, &(dim_names[i]));
+                    }
                 }
             }
             else
             {
                 char buffer[32];
-                sprintf(buffer,"ncl%d",thefile->newfile.grpnode->dim_rec->n_dims);
-                ret = NewFileAddDim(infile,NrmStringToQuark(buffer),tmp_var->var.dim_info[i].dim_size,False);
+
+                if(1 == tmp_var->var.dim_info[i].dim_size)
+                {
+                    if(NrmStringToQuark("ncl_scalar") == thefile->advancedfile.grpnode->dim_rec->dim_node[0].name)
+                        continue;
+                }
+
+                sprintf(buffer,"ncl%d",thefile->advancedfile.grpnode->dim_rec->n_dims);
+                ret = AdvancedFileAddDim(infile,NrmStringToQuark(buffer),tmp_var->var.dim_info[i].dim_size,False);
                 dim_names[i] = NrmStringToQuark(buffer);
             }
         }
 
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, lhs_var);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, lhs_var);
         if(NULL == varnode)
         {
-            ret = NewFileAddVar(infile, lhs_var,
+            ret = AdvancedFileAddVar(infile, lhs_var,
                   NrmStringToQuark(_NclBasicDataTypeToName(tmp_md->multidval.type->type_class.data_type)),
                   tmp_var->var.n_dims, dim_names);
             if(ret < NhlWARNING)
@@ -7177,36 +7397,38 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
             step = theatt->att.att_list;
             while(step != NULL)
             {
-                ret = NewFileWriteVarAtt(infile,lhs_var,step->quark,step->attvalue,NULL);
+                ret = AdvancedFileWriteVarAtt(infile,lhs_var,step->quark,step->attvalue,NULL);
                 if(ret < NhlNOERROR)
                 {
                     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                        "NewFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
+                        "AdvancedFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
                          NrmQuarkToString(step->quark),
                          NrmQuarkToString(lhs_var),
-                         NrmQuarkToString(thefile->newfile.fname)));
+                         NrmQuarkToString(thefile->advancedfile.fname)));
                     ret = NhlWARNING;
                 }
                 step = step->next;
             }
         }
 
-        ret = MyNewFileWriteVar(infile,lhs_var,tmp_md,lhs_sel_ptr,dim_names,FILE_VAR_ACCESS);
+        ret = MyAdvancedFileWriteVar(infile,lhs_var,tmp_md,lhs_sel_ptr,dim_names,FILE_VAR_ACCESS);
         if(ret < NhlWARNING)
         {
             return(ret);
         }
 
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, lhs_var);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, lhs_var);
         if(NULL == varnode)
         {
             j = 0;
             for(i = 0; i < lhs_sel_ptr->n_entries; i++)
             {
-                dimnode = &(thefile->newfile.grpnode->dim_rec->dim_node[lhs_sel_ptr->selection[i].dim_num]);
+                dimnode = &(thefile->advancedfile.grpnode->dim_rec->dim_node[lhs_sel_ptr->selection[i].dim_num]);
 
                 if(!lhs_sel_ptr->selection[i].u.sub.is_single )
                 {
+#if 0
+		    ng_size_t lhs_n_elem;    
                     switch(lhs_sel_ptr->selection[i].sel_type)
                     {
                     case Ncl_VECSUBSCR:
@@ -7218,6 +7440,7 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                                                     / lhs_sel_ptr->selection[i].u.sub.stride) + 1;
                         break;
                     }
+#endif
 
                     if(tmp_var->var.dim_info[j].dim_quark > 0)
                     {
@@ -7239,7 +7462,7 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                        */
                         if(tmp_var->var.coord_vars[j] != -1)
                         {
-                            cindex = NewFileIsCoord(infile, tmp_var->var.dim_info[j].dim_quark);
+                            cindex = AdvancedFileIsCoord(infile, tmp_var->var.dim_info[j].dim_quark);
                             if(cindex != -1)
                             {
                              /*
@@ -7296,9 +7519,9 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                             if(ret < NhlWARNING)
                             {
                                 NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                    "NewFileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",
+                                    "AdvancedFileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",
                                       NrmQuarkToString(tmp_var->var.dim_info[i].dim_quark),
-                                      NrmQuarkToString(thefile->newfile.fname)));
+                                      NrmQuarkToString(thefile->advancedfile.fname)));
                                 ret = NhlWARNING;
                             }
                             else
@@ -7309,14 +7532,14 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                                     step = theatt->att.att_list;
                                     while(step != NULL)
                                     {
-                                        ret = NewFileWriteVarAtt(infile,tmp_var->var.dim_info[i].dim_quark,
+                                        ret = AdvancedFileWriteVarAtt(infile,tmp_var->var.dim_info[i].dim_quark,
                                                                  step->quark,step->attvalue,NULL);
                                         if(ret < NhlWARNING){
                                             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                                "NewFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
+                                                "AdvancedFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
                                                  NrmQuarkToString(step->quark),
                                                  NrmQuarkToString(tmp_var->var.dim_info[i].dim_quark),
-                                                 NrmQuarkToString(thefile->newfile.fname)));
+                                                 NrmQuarkToString(thefile->advancedfile.fname)));
                                             ret = NhlWARNING;
                                         }
                                         step = step->next;
@@ -7370,21 +7593,21 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                         if (tmp_var->var.dim_info[j].dim_quark == NrmStringToQuark("ncl_scalar"))
                         {
                             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                "NewFileWriteVarVar: Variable (%s) has coordinate variable named \"ncl_scalar\"; not writing coodinate variable to file (%s)",
+                                "AdvancedFileWriteVarVar: Variable (%s) has coordinate variable named \"ncl_scalar\"; not writing coodinate variable to file (%s)",
                                   NrmQuarkToString(tmp_var->var.var_quark),
-                                  NrmQuarkToString(thefile->newfile.fname)));
+                                  NrmQuarkToString(thefile->advancedfile.fname)));
                             ret = NhlWARNING;
                             continue;
                         }
                         tmp_coord_var = (NclVar)_NclGetObj(tmp_var->var.coord_vars[j]);
-                        ret = NewFileWriteCoord(infile,tmp_var->var.dim_info[j].dim_quark,
+                        ret = AdvancedFileWriteCoord(infile,tmp_var->var.dim_info[j].dim_quark,
                                                 _NclVarValueRead(tmp_coord_var,NULL,NULL),NULL);
                         if(ret < NhlWARNING)
                         {
                             NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                "NewFileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",
+                                "AdvancedFileWriteVarVar: Could not write coordinate variable (%s) to file (%s), continuing anyway",
                                  NrmQuarkToString(tmp_var->var.dim_info[j].dim_quark),
-                                 NrmQuarkToString(thefile->newfile.fname)));
+                                 NrmQuarkToString(thefile->advancedfile.fname)));
                             ret = NhlWARNING;
                         }
                         else
@@ -7395,15 +7618,15 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                                 step = theatt->att.att_list;
                                 while(step != NULL)
                                 {
-                                    ret = NewFileWriteVarAtt(infile,tmp_var->var.dim_info[j].dim_quark,
+                                    ret = AdvancedFileWriteVarAtt(infile,tmp_var->var.dim_info[j].dim_quark,
                                                              step->quark,step->attvalue,NULL);
                                     if(ret < NhlWARNING)
                                     {
                                         NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-                                            "NewFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
+                                            "AdvancedFileWriteVarVar: Could not write attribute (%s) to variable (%s) in file (%s), continuing anyway",
                                               NrmQuarkToString(step->quark),
                                               NrmQuarkToString(tmp_var->var.dim_info[j].dim_quark),
-                                              NrmQuarkToString(thefile->newfile.fname)));
+                                              NrmQuarkToString(thefile->advancedfile.fname)));
                                         ret = NhlWARNING;
                                     }
                                     step = step->next;
@@ -7412,7 +7635,7 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
                             }
                         }
                     }
-                    else if(thefile->newfile.grpnode->coord_var_rec != NULL)
+                    else if(thefile->advancedfile.grpnode->coord_var_rec != NULL)
                     {
                      /*
                       * right hand side has no dimension name
@@ -7431,36 +7654,36 @@ static NhlErrorTypes NewFileWriteVarVar(NclFile infile, NclQuark lhs_var,
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileWriteVarVar: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileWriteVarVar: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         return(NhlFATAL);
     }
 }
 
-static NhlErrorTypes NewFileWriteDim(NclFile infile, NclQuark dim_name, long dimid)
+static NhlErrorTypes AdvancedFileWriteDim(NclFile infile, NclQuark dim_name, long dimid)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileDimNode *dimnode = NULL;
 
-    if((thefile->newfile.wr_status <= 0) && (dimid > -1))
+    if((thefile->advancedfile.wr_status <= 0) && (dimid > -1))
     {
-        dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->newfile.grpnode, (int)dimid);
+        dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->advancedfile.grpnode, (int)dimid);
         if(NULL != dimnode)
         {
             if(dim_name != dimnode->name)
             {
-                if(thefile->newfile.format_funcs->rename_dim != NULL)
+                if(thefile->advancedfile.format_funcs->rename_dim != NULL)
                 {
-                    ret = (*thefile->newfile.format_funcs->rename_dim)
-                           (thefile->newfile.grpnode,
+                    ret = (*thefile->advancedfile.format_funcs->rename_dim)
+                           (thefile->advancedfile.grpnode,
                             dimnode->name, dim_name);
 
                     if(ret < NhlWARNING)
                     {
                         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                            "NewFileWriteDim: Could not change dimension (%d) to (%s) for file (%s)",
-                             dimid,NrmQuarkToString(dim_name),NrmQuarkToString(thefile->newfile.fname)));
+                            "AdvancedFileWriteDim: Could not change dimension (%d) to (%s) for file (%s)",
+                             dimid,NrmQuarkToString(dim_name),NrmQuarkToString(thefile->advancedfile.fname)));
                         ret = NhlFATAL;
                     }
                     else
@@ -7473,16 +7696,16 @@ static NhlErrorTypes NewFileWriteDim(NclFile infile, NclQuark dim_name, long dim
         else
         {
             NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                "NewFileWriteDim: Dimension ID (%d) is not in file (%s)",
-                 dimid, NrmQuarkToString(thefile->newfile.fname)));
+                "AdvancedFileWriteDim: Dimension ID (%d) is not in file (%s)",
+                 dimid, NrmQuarkToString(thefile->advancedfile.fname)));
             ret = NhlFATAL;
         }
     }
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileWriteDim: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileWriteDim: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
 
         ret = NhlFATAL;
     }
@@ -7490,12 +7713,12 @@ static NhlErrorTypes NewFileWriteDim(NclFile infile, NclQuark dim_name, long dim
     return (ret);
 }
 
-static int NewFileIsDim(NclFile infile, NclQuark dim_name)
+static int AdvancedFileIsDim(NclFile infile, NclQuark dim_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileDimNode *dimnode;
 
-    dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, dim_name);
+    dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dim_name);
 
     if(NULL != dimnode)
         return (1);
@@ -7503,47 +7726,57 @@ static int NewFileIsDim(NclFile infile, NclQuark dim_name)
         return (-1);
 }
 
-static NhlErrorTypes NewFileWriteCoord(NclFile infile, NclQuark coord_name,
+static NhlErrorTypes AdvancedFileWriteCoord(NclFile infile, NclQuark coord_name,
                                        struct _NclMultiDValDataRec *value,
                                        struct _NclSelectionRecord *sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileVarNode *varnode;
-    int dindex;
+    NclQuark dim_names[NCL_MAX_DIMENSIONS];
+    int dindex, n;
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        dindex = NewFileIsDim(infile, coord_name);
+        dindex = AdvancedFileIsDim(infile, coord_name);
         if(dindex > -1)
         {
-            ret = MyNewFileWriteVar(infile, coord_name, value, sel_ptr, NULL, FILE_COORD_VAR_ACCESS);
-            varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, coord_name);
-            if(NULL != varnode)
+            varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coord_name);
+            if((NULL == varnode) && (NULL != value))
             {
-                ret = _addNclCoordVarNode(&(thefile->newfile.grpnode->coord_var_rec), varnode);
-            }    
+                for(n = 0; n < NCL_MAX_DIMENSIONS; ++n)
+                    dim_names[n] = -1;
+
+                dim_names[0] = coord_name;
+                ret = _addNclVarNodeToGrpNode(thefile->advancedfile.grpnode, coord_name,
+                                              thefile->advancedfile.grpnode->var_rec->n_vars, value->multidval.data_type,
+                                              value->multidval.n_dims, dim_names, value->multidval.dim_sizes);
+                varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coord_name);
+            }
+            if(NULL != varnode)
+                ret = _addNclCoordVarNode(&(thefile->advancedfile.grpnode->coord_var_rec), varnode);
+            ret = MyAdvancedFileWriteVar(infile, coord_name, value, sel_ptr, NULL, FILE_COORD_VAR_ACCESS);
         }
         else
         {
             NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                "NewFileWriteCoord: Dimension (%s) is not a valid dimension in file (%s), can't write coord_var",
-                 NrmQuarkToString(coord_name),NrmQuarkToString(thefile->newfile.fname)));
+                "AdvancedFileWriteCoord: Dimension (%s) is not a valid dimension in file (%s), can't write coord_var",
+                 NrmQuarkToString(coord_name),NrmQuarkToString(thefile->advancedfile.fname)));
             ret = NhlFATAL;
         }
     }
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileWriteCoord: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileWriteCoord: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         ret = NhlFATAL;
     }
 
     return(ret);
 }
 
-static int NewVarAttIndex(NclFileVarNode *varnode, NclQuark theatt)
+static int AdvancedVarAttIndex(NclFileVarNode *varnode, NclQuark theatt)
 {
     int i;
     NclFileAttNode *attnode;
@@ -7564,26 +7797,26 @@ static int NewVarAttIndex(NclFileVarNode *varnode, NclQuark theatt)
     return(-1);
 }
 
-static int NewFileIsVarAtt(NclFile infile, NclQuark var, NclQuark theatt)
+static int AdvancedFileIsVarAtt(NclFile infile, NclQuark var, NclQuark theatt)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileVarNode *varnode;
 
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
-    return (NewVarAttIndex(varnode, theatt));
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
+    return (AdvancedVarAttIndex(varnode, theatt));
 }
 
-static int NewFileIsAtt(NclFile infile,NclQuark theatt)
+static int AdvancedFileIsAtt(NclFile infile,NclQuark theatt)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileAttNode *attnode;
     int i;
 
-    if(NULL != thefile->newfile.grpnode->att_rec)
+    if(NULL != thefile->advancedfile.grpnode->att_rec)
     {
-        for(i = 0; i < thefile->newfile.grpnode->att_rec->n_atts; i++)
+        for(i = 0; i < thefile->advancedfile.grpnode->att_rec->n_atts; i++)
         {
-            attnode = &(thefile->newfile.grpnode->att_rec->att_node[i]);
+            attnode = &(thefile->advancedfile.grpnode->att_rec->att_node[i]);
             if(attnode->name == theatt) 
                 return(i);
         }
@@ -7591,10 +7824,10 @@ static int NewFileIsAtt(NclFile infile,NclQuark theatt)
     return(-1);
 }
 
-static struct _NclMultiDValDataRec *NewFileReadAtt(NclFile infile, NclQuark attname,
+static struct _NclMultiDValDataRec *AdvancedFileReadAtt(NclFile infile, NclQuark attname,
                                                    struct _NclSelectionRecord *sel_ptr)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileAttRecord *attrec;
     NclFileAttNode   *attnode;
     int att_id = -1,i;
@@ -7602,10 +7835,10 @@ static struct _NclMultiDValDataRec *NewFileReadAtt(NclFile infile, NclQuark attn
     NhlArgVal udata;
     ng_size_t ne;
 
-    attnode = _getAttNodeFromNclFileGrpNode(thefile->newfile.grpnode, attname);
+    attnode = _getAttNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, attname);
     if(NULL != attnode)
     {
-        attrec = thefile->newfile.grpnode->att_rec;
+        attrec = thefile->advancedfile.grpnode->att_rec;
         if(attrec->id != -1)
         {
             return(_NclGetAtt(attrec->id, NrmQuarkToString(attname), sel_ptr));
@@ -7618,13 +7851,13 @@ static struct _NclMultiDValDataRec *NewFileReadAtt(NclFile infile, NclQuark attn
 
             if(NULL == attnode->value)
             {
-               if(thefile->newfile.format_funcs->read_att != NULL)
+               if(thefile->advancedfile.format_funcs->read_att != NULL)
                {
                     attnode->value = NclMalloc(_NclSizeOf(attnode->type) * attnode->n_elem);
                     assert(attnode->value);
 
-                    (void)(*thefile->newfile.format_funcs->read_att)
-                           (thefile->newfile.grpnode,
+                    (void)(*thefile->advancedfile.format_funcs->read_att)
+                           (thefile->advancedfile.grpnode,
                             attnode->name, attnode->value);
                 }
             }
@@ -7668,64 +7901,61 @@ static struct _NclMultiDValDataRec *NewFileReadAtt(NclFile infile, NclQuark attn
     }
 
     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
-        "NewFileReadVarAtt: (%s) is not an attribute of (%s)",
-         NrmQuarkToString(attname),NrmQuarkToString(thefile->newfile.fname)));
+        "AdvancedFileReadVarAtt: (%s) is not an attribute of (%s)",
+         NrmQuarkToString(attname),NrmQuarkToString(thefile->advancedfile.fname)));
 
     return(_NclCreateMissing());
 }
 
-static NhlErrorTypes NewFileDelAtt(NclFile infile, NclQuark attname)
+static NhlErrorTypes AdvancedFileDelAtt(NclFile infile, NclQuark attname)
 {
-    NclNewFile thefile = (NclNewFile) infile;
-    NhlErrorTypes ret = NhlNOERROR;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
+    NhlErrorTypes ret = NhlFATAL;
     NclFileAttRecord *attrec;
     NclFileAttNode   *attnode;
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        attnode = _getAttNodeFromNclFileGrpNode(thefile->newfile.grpnode, attname);
+        attnode = _getAttNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, attname);
         if(NULL != attnode)
         {
-            attrec = thefile->newfile.grpnode->att_rec;
-            if(thefile->newfile.format_funcs->del_att != NULL)
+            attrec = thefile->advancedfile.grpnode->att_rec;
+            if(thefile->advancedfile.format_funcs->del_att != NULL)
             {
-                ret = (*thefile->newfile.format_funcs->del_att)(thefile->newfile.grpnode, attname);
+                ret = (*thefile->advancedfile.format_funcs->del_att)(thefile->advancedfile.grpnode, attname);
 
                 ret = _delNclAttNode(&attrec, attname);
             }
             else
             {
                 NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Attribute deletion not supported by format"));
-                ret = NhlFATAL;
             }
         }
         else
         {
             NHLPERROR((NhlFATAL,NhlEUNKNOWN,"Attempt to delete undefined attribute from file"));
-            ret = NhlFATAL;
         }
     }
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-           "NewFileDelAtt: file (%s) is read only, can not delete attribute",
-            NrmQuarkToString(thefile->newfile.fname)));
-        ret = NhlFATAL;
+           "AdvancedFileDelAtt: file (%s) is read only, can not delete attribute",
+            NrmQuarkToString(thefile->advancedfile.fname)));
     }
-    ret = NhlFATAL;
+    return(ret);
 }
 
-static NhlErrorTypes NewFileDelVarAtt(NclFile infile, NclQuark var, NclQuark attname)
+static NhlErrorTypes AdvancedFileDelVarAtt(NclFile infile, NclQuark var, NclQuark attname)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileAttRecord *attrec;
     NclFileAttNode   *attnode;
     NclFileVarNode   *varnode;
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
         if(NULL != varnode)
         {
             attnode = _getAttNodeFromNclFileVarNode(varnode, attname);
@@ -7733,10 +7963,10 @@ static NhlErrorTypes NewFileDelVarAtt(NclFile infile, NclQuark var, NclQuark att
             if(NULL != attnode)
             {
                 attrec = varnode->att_rec;
-                if(thefile->newfile.format_funcs->del_var_att != NULL)
+                if(thefile->advancedfile.format_funcs->del_var_att != NULL)
                 {
-                    ret = (*thefile->newfile.format_funcs->del_var_att)
-                           (thefile->newfile.grpnode,var,attname);
+                    ret = (*thefile->advancedfile.format_funcs->del_var_att)
+                           (thefile->advancedfile.grpnode,var,attname);
                     ret = _delNclAttNode(&attrec, attname);
                 }
                 else
@@ -7760,8 +7990,8 @@ static NhlErrorTypes NewFileDelVarAtt(NclFile infile, NclQuark var, NclQuark att
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileDelVarAtt: file (%s) is read only, can not delete attribute",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileDelVarAtt: file (%s) is read only, can not delete attribute",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         ret = NhlFATAL;
     }
 
@@ -7798,18 +8028,17 @@ static int myVarIsDimInGrpNode(NclFileGrpNode *grpnode, NclQuark var, NclQuark d
     return(-1);
 }
 
-static int NewFileVarIsDim(NclFile infile, NclQuark var, NclQuark dim_name)
+static int AdvancedFileVarIsDim(NclFile infile, NclQuark var, NclQuark dim_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
 
-    return (myVarIsDimInGrpNode(thefile->newfile.grpnode, var, dim_name));
+    return (myVarIsDimInGrpNode(thefile->advancedfile.grpnode, var, dim_name));
 }
 
-static struct _NclMultiDValDataRec *NewFileVarReadDim(NclFile infile, NclQuark var,
+static struct _NclMultiDValDataRec *AdvancedFileVarReadDim(NclFile infile, NclQuark var,
                                                       NclQuark dim_name, long dim_num)
 {
-    NclNewFile thefile = (NclNewFile) infile;
-    NhlErrorTypes ret = NhlNOERROR;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclFileDimNode   *dimnode;
     NclFileVarNode   *varnode;
 
@@ -7818,7 +8047,7 @@ static struct _NclMultiDValDataRec *NewFileVarReadDim(NclFile infile, NclQuark v
     NclQuark *tmpq;
     ng_size_t output_dim_sizes = 1;
     
-    varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+    varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
     if(NULL != varnode)
     {
         if(dim_name > -1)
@@ -7847,7 +8076,7 @@ static struct _NclMultiDValDataRec *NewFileVarReadDim(NclFile infile, NclQuark v
         }
         else if ( dim_num > -1)
         {
-            dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->newfile.grpnode, (int)dim_num);
+            dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->advancedfile.grpnode, (int)dim_num);
             if(NULL != dimnode)
             {
                 tmpq = (NclQuark*)NclMalloc(sizeof(NclQuark));
@@ -7868,41 +8097,41 @@ static struct _NclMultiDValDataRec *NewFileVarReadDim(NclFile infile, NclQuark v
 
             NHLPERROR((NhlFATAL,NhlEUNKNOWN,
                 "Dimension number (%d) is out of range for variable (%s->%s)",
-                 dim_num,NrmQuarkToString(thefile->newfile.fname),NrmQuarkToString(var)));
+                 dim_num,NrmQuarkToString(thefile->advancedfile.fname),NrmQuarkToString(var)));
         } 
     }
 
     return(NULL);
 }
 
-static NhlErrorTypes NewFileVarWriteDim(NclFile infile, NclQuark var, NclQuark dim_name, long dim_num)
+static NhlErrorTypes AdvancedFileVarWriteDim(NclFile infile, NclQuark var, NclQuark dim_name, long dim_num)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
     NclFileDimNode   *dimnode;
     NclFileVarNode   *varnode;
     NclQuark old_name;
 
-    if(thefile->newfile.wr_status <= 0)
+    if(thefile->advancedfile.wr_status <= 0)
     {
-        varnode = _getVarNodeFromNclFileGrpNode(thefile->newfile.grpnode, var);
+        varnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, var);
         if(NULL != varnode)
         {
             if((dim_num > -1)&&(dim_num < varnode->dim_rec->n_dims))
             {
 
-                dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->newfile.grpnode, (int)dim_num);
+                dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->advancedfile.grpnode, (int)dim_num);
                 old_name = dimnode->name;
 
-                if(thefile->newfile.format_funcs->rename_dim != NULL)
+                if(thefile->advancedfile.format_funcs->rename_dim != NULL)
                 {
-                    if((*thefile->newfile.format_funcs->rename_dim)
-                        (thefile->newfile.grpnode,
+                    if((*thefile->advancedfile.format_funcs->rename_dim)
+                        (thefile->advancedfile.grpnode,
                         old_name, dim_name) < NhlWARNING)
                     {
                         
                         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                            "NewFileVarWriteDim: Cannot rename dimension (%ld) in variable (%s)",
+                            "AdvancedFileVarWriteDim: Cannot rename dimension (%ld) in variable (%s)",
                              dim_num, NrmQuarkToString(var)));
                         ret = NhlFATAL;
                     }
@@ -7918,19 +8147,18 @@ static NhlErrorTypes NewFileVarWriteDim(NclFile infile, NclQuark var, NclQuark d
     else
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileVarWriteDim: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileVarWriteDim: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         ret = NhlFATAL;
     }
     return (ret);
 }
 
-static struct _NclMultiDValDataRec* NewFileReadDim(NclFile infile,
+static struct _NclMultiDValDataRec* AdvancedFileReadDim(NclFile infile,
                                                    NclQuark dim_name,
                                                    long dim_num)
 {
-    NclNewFile thefile = (NclNewFile) infile;
-    int i = 0;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NclQuark *tmps;
     int *tmpl;
     ng_size_t output_dim_sizes = 1;
@@ -7938,7 +8166,7 @@ static struct _NclMultiDValDataRec* NewFileReadDim(NclFile infile,
 
     if(dim_name != -1)
     {
-        dimnode = _getDimNodeFromNclFileGrpNode(thefile->newfile.grpnode, dim_name);
+        dimnode = _getDimNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dim_name);
         if(NULL != dimnode)
         {
             tmpl = (int*)NclMalloc(sizeof(int));
@@ -7958,13 +8186,13 @@ static struct _NclMultiDValDataRec* NewFileReadDim(NclFile infile,
         }
 
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileReadDim: Dimension (%s) is not a defined dimension in file (%s)",
-             NrmQuarkToString(dim_name),NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileReadDim: Dimension (%s) is not a defined dimension in file (%s)",
+             NrmQuarkToString(dim_name),NrmQuarkToString(thefile->advancedfile.fname)));
         return(NULL);
     }
     else if(dim_num > -1)
     {
-        dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->newfile.grpnode, (int)dim_num);
+        dimnode = _getDimNodeFromNclFileGrpNodeWithID(thefile->advancedfile.grpnode, (int)dim_num);
         if(NULL != dimnode)
         {
             tmps = (NclQuark*)NclMalloc(sizeof(NclQuark));
@@ -8032,25 +8260,25 @@ static int _getGroupIdFromGrpNode(NclFileGrpNode *grpnode, NclQuark group)
   /*
    */
     fprintf(stderr, "\tCANNOT FIND group: <%s>\n", NrmQuarkToString(group));
-    fprintf(stderr, "Leave NewFileIsGroup. file: %s, line: %d\n\n", __FILE__, __LINE__);
+    fprintf(stderr, "Leave AdvancedFileIsGroup. file: %s, line: %d\n\n", __FILE__, __LINE__);
     return(-1);
 }
 
-static int NewFileIsGroup(NclFile infile, NclQuark group)
+static int AdvancedFileIsGroup(NclFile infile, NclQuark group)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
 
-    return (_getGroupIdFromGrpNode(thefile->newfile.grpnode, group));
+    return (_getGroupIdFromGrpNode(thefile->advancedfile.grpnode, group));
 }
 
-NclGroup *NewFileReadGroup(NclFile infile, NclQuark group_name)
+NclGroup *AdvancedFileReadGroup(NclFile infile, NclQuark group_name)
 {
     NclGroup *group_out = NULL;
     int index;
 
-    index = NewFileIsGroup(infile, group_name);
+    index = AdvancedFileIsGroup(infile, group_name);
 
-    fprintf(stderr, "\nEnter NewFileReadGroup, file: %s, line:%d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\nEnter AdvancedFileReadGroup, file: %s, line:%d\n", __FILE__, __LINE__);
     fprintf(stderr, "\tgroup_name: <%s>\n", NrmQuarkToString(group_name));
     fprintf(stderr, "\tindex = %d\n", index);
   /*
@@ -8068,72 +8296,72 @@ NclGroup *NewFileReadGroup(NclFile infile, NclQuark group_name)
     return (group_out);
 }
 
-static NhlErrorTypes NewFileWriteGrp(NclFile infile, NclQuark grpname)
+static NhlErrorTypes AdvancedFileWriteGrp(NclFile infile, NclQuark grpname)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileWriteGrp, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileWriteGrp, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tgrpname: <%s>\n", NrmQuarkToString(grpname));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileWriteGrp: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
-        fprintf(stderr, "Leave NewFileWriteGrp, file: %s, line: %d\n\n", __FILE__, __LINE__);
+            "AdvancedFileWriteGrp: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
+        fprintf(stderr, "Leave AdvancedFileWriteGrp, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->add_grp != NULL)
+    if(thefile->advancedfile.format_funcs->add_grp != NULL)
     {
       /*
        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
        *fprintf(stderr, "\tgrpname: <%s>\n", NrmQuarkToString(grpname));
        */
-        ret = (*thefile->newfile.format_funcs->add_grp)
-               ((void *)thefile->newfile.grpnode, grpname);
+        ret = (*thefile->advancedfile.format_funcs->add_grp)
+               ((void *)thefile->advancedfile.grpnode, grpname);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileWriteGrp, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileWriteGrp, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-NhlErrorTypes NewFileCreateVlenType(NclFile infile, NclQuark vlen_name, NclQuark var_name,
+NhlErrorTypes AdvancedFileCreateVlenType(NclFile infile, NclQuark vlen_name, NclQuark var_name,
                                     NclQuark type, NclQuark dim_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileCreateVlenType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileCreateVlenType, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tvlen_name: <%s>\n", NrmQuarkToString(vlen_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\ttype: <%s>\n", NrmQuarkToString(type));
    *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileCreateVlenType: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
-        fprintf(stderr, "Leave NewFileCreateVlenType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+            "AdvancedFileCreateVlenType: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
+        fprintf(stderr, "Leave AdvancedFileCreateVlenType, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->add_vlen != NULL)
+    if(thefile->advancedfile.format_funcs->add_vlen != NULL)
     {
-        ret = (*thefile->newfile.format_funcs->add_vlen)
-               ((void *)thefile->newfile.grpnode, vlen_name, var_name, type, dim_name);
+        ret = (*thefile->advancedfile.format_funcs->add_vlen)
+               ((void *)thefile->advancedfile.grpnode, vlen_name, var_name, type, dim_name);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileCreateVlenType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileCreateVlenType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
@@ -8178,7 +8406,7 @@ NclVar _NclCreateVlenVar(char *var_name, void *val,
              );
 
   /*
-   *tmp_md = MyNewFileReadVarValue(infile,NrmStrinToQuark(var_name),NULL,dim_info,FILE_VAR_ACCESS);
+   *tmp_md = MyAdvancedFileReadVarValue(infile,NrmStrinToQuark(var_name),NULL,dim_info,FILE_VAR_ACCESS);
    */
 
     if(tmp_md == NULL)
@@ -8206,150 +8434,150 @@ NclVar _NclCreateVlenVar(char *var_name, void *val,
     return(tmp_var);
 }
 
-NhlErrorTypes NewFileCreateEnumType(NclFile infile, NclQuark enum_name, NclQuark var_name,
+NhlErrorTypes AdvancedFileCreateEnumType(NclFile infile, NclQuark enum_name, NclQuark var_name,
                                     NclQuark dim_name, NclQuark *mem_name, void *mem_value,
                                     ng_size_t n_mems, NclBasicDataTypes val_type)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileCreateEnumType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileCreateEnumType, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tenum_name: <%s>\n", NrmQuarkToString(enum_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileCreateEnumType: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileCreateEnumType: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->add_enum != NULL)
+    if(thefile->advancedfile.format_funcs->add_enum != NULL)
     {
-        ret = (*thefile->newfile.format_funcs->add_enum)
-               ((void *)thefile->newfile.grpnode, enum_name, var_name, dim_name,
+        ret = (*thefile->advancedfile.format_funcs->add_enum)
+               ((void *)thefile->advancedfile.grpnode, enum_name, var_name, dim_name,
                 mem_name, mem_value, n_mems, val_type);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileCreateEnumType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileCreateEnumType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-NhlErrorTypes NewFileCreateOpaqueType(NclFile infile, NclQuark opaque_name, NclQuark var_name,
+NhlErrorTypes AdvancedFileCreateOpaqueType(NclFile infile, NclQuark opaque_name, NclQuark var_name,
                                       int var_size, NclQuark dim_name)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileCreateOpaqueType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileCreateOpaqueType, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\topaque_name: <%s>\n", NrmQuarkToString(opaque_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\tvar_size: <%d>\n", var_size);
    *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileCreateOpaqueType: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
-        fprintf(stderr, "Leave NewFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+            "AdvancedFileCreateOpaqueType: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
+        fprintf(stderr, "Leave AdvancedFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->add_opaque != NULL)
+    if(thefile->advancedfile.format_funcs->add_opaque != NULL)
     {
-        ret = (*thefile->newfile.format_funcs->add_opaque)
-               ((void *)thefile->newfile.grpnode, opaque_name, var_name, var_size, dim_name);
+        ret = (*thefile->advancedfile.format_funcs->add_opaque)
+               ((void *)thefile->advancedfile.grpnode, opaque_name, var_name, var_size, dim_name);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-NhlErrorTypes NewFileCreateCompoundType(NclFile infile, NclQuark compound_name,
+NhlErrorTypes AdvancedFileCreateCompoundType(NclFile infile, NclQuark compound_name,
                                         NclQuark var_name, 
                                         ng_size_t n_dims, NclQuark *dim_name,
                                         ng_size_t n_mems, NclQuark *mem_name,
                                         NclQuark *mem_type, int *mem_size)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileCreateCompoundType, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileCreateCompoundType, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tcompound_name: <%s>\n", NrmQuarkToString(compound_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name[0]));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileCreateCompoundType: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileCreateCompoundType: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
       /*
-       *fprintf(stderr, "Leave NewFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+       *fprintf(stderr, "Leave AdvancedFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
        */
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->add_compound != NULL)
+    if(thefile->advancedfile.format_funcs->add_compound != NULL)
     {
-        ret = (*thefile->newfile.format_funcs->add_compound)
-               ((void *)thefile->newfile.grpnode, compound_name, var_name,
+        ret = (*thefile->advancedfile.format_funcs->add_compound)
+               ((void *)thefile->advancedfile.grpnode, compound_name, var_name,
                 n_dims, dim_name,
                 n_mems, mem_name, mem_type, mem_size);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileCreateCompoundType, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
 
-NhlErrorTypes NewFileWriteCompound(NclFile infile, NclQuark compound_name, NclQuark var_name, 
+NhlErrorTypes AdvancedFileWriteCompound(NclFile infile, NclQuark compound_name, NclQuark var_name, 
                                    ng_size_t n_mems, NclQuark *mem_name, NclList thelist)
 {
-    NclNewFile thefile = (NclNewFile) infile;
+    NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
 
   /*
-   *fprintf(stderr, "\nEnter NewFileWriteCompound, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\nEnter AdvancedFileWriteCompound, file: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tcompound_name: <%s>\n", NrmQuarkToString(compound_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\tmem_name: <%s>\n", NrmQuarkToString(mem_name[0]));
    */
 
-    if(thefile->newfile.wr_status > 0)
+    if(thefile->advancedfile.wr_status > 0)
     {
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-            "NewFileWriteCompound: file (%s) was opened for reading only, can not write",
-             NrmQuarkToString(thefile->newfile.fname)));
+            "AdvancedFileWriteCompound: file (%s) was opened for reading only, can not write",
+             NrmQuarkToString(thefile->advancedfile.fname)));
       /*
-       *fprintf(stderr, "Leave NewFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
+       *fprintf(stderr, "Leave AdvancedFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
        */
         return (NhlFATAL);
     }
 
-    if(thefile->newfile.format_funcs->write_compound != NULL)
+    if(thefile->advancedfile.format_funcs->write_compound != NULL)
     {
-        ret = (*thefile->newfile.format_funcs->write_compound)
-               ((void *)thefile->newfile.grpnode, compound_name, var_name,
+        ret = (*thefile->advancedfile.format_funcs->write_compound)
+               ((void *)thefile->advancedfile.grpnode, compound_name, var_name,
                 n_mems, mem_name, thelist);
     }
     
   /*
-   *fprintf(stderr, "Leave NewFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   *fprintf(stderr, "Leave AdvancedFileWriteCompound, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
     return ret;
 }
@@ -8357,73 +8585,69 @@ NhlErrorTypes NewFileWriteCompound(NclFile infile, NclQuark compound_name, NclQu
 NclQuark *_NclGetGrpNames(void *therec, int *num_grps)
 {
     NclFileGrpNode *grpnode = (NclFileGrpNode *) therec;
+    NclFileGrpNode *tmpgrpnode = NULL;
     NclQuark *out_quarks = NULL;
     NclQuark *tmp_quarks = NULL;
-    int i, n, ng;
+    int n, ng;
+    int i;
 
     *num_grps = 0;
     if(NULL != grpnode->grp_rec)
     {
         if(grpnode->grp_rec->n_grps)
         {
-            out_quarks = (NclQuark*)NclCalloc(grpnode->grp_rec->n_grps,
-                                           sizeof(NclQuark));
+            *num_grps = grpnode->grp_rec->n_grps;
+
+            out_quarks = (NclQuark *)NclCalloc(*num_grps, sizeof(NclQuark));
             assert(out_quarks);
 
-            for(i = 0; i < grpnode->grp_rec->n_grps; i++)
+            for(i = 0; i < grpnode->grp_rec->n_grps; ++i)
             {
                 out_quarks[i] = grpnode->grp_rec->grp_node[i]->name;
             }
 
-            *num_grps = grpnode->grp_rec->n_grps;
-        }
-    }
-
-#if 0
-    if(NULL != grpnode->grp_rec)
-    {
-        if(grpnode->grp_rec->n_grps)
-        {
-            for(n = 0; n < grpnode->grp_rec->n_grps; n++)
+            for(n = 0; n < grpnode->grp_rec->n_grps; ++n)
             {
-                tmp_quarks = NC4GetGrpNames((void *)grpnode->grp_rec->grp_node[i], &ng);
+                tmpgrpnode = grpnode->grp_rec->grp_node[n];
+
+                tmp_quarks = _NclGetGrpNames((void *)tmpgrpnode, &ng);
 
                 if(ng)
                 {
-                    out_quarks = (NclQuark*)realloc(out_quarks,
+                    out_quarks = (NclQuark *)NclRealloc(out_quarks,
                                                 (*num_grps + ng) * sizeof(NclQuark));
                     assert(out_quarks);
 
-                    for(i = 0; i < ng; i++)
+                    for(i = 0; i < ng; ++i)
                     {
                         out_quarks[*num_grps + i] = tmp_quarks[i];
                     }
                     NclFree(tmp_quarks);
+
+                    *num_grps += ng;
                 }
- 
-                *num_grps += ng;
             }
         }
     }
-#endif
+
     return(out_quarks);
 }
 
-NclNewFileClassRec nclNewFileClassRec =
+NclAdvancedFileClassRec nclAdvancedFileClassRec =
 {
     {        
-        "NclNewFileClass",
-        sizeof(NclNewFileRec),
-        (NclObjClass)&nclObjClassRec,
+        "NclAdvancedFileClass",
+        sizeof(NclAdvancedFileRec),
+        (NclObjClass)&nclFileClassRec,
         0,
-        (NclGenericFunction)    NULL,
+        (NclGenericFunction)    AdvancedFileDestroy,
         (NclSetStatusFunction)  NULL,
         (NclInitPartFunction)   NULL,
-        (NclInitClassFunction)  InitializeNewFileClass,
+        (NclInitClassFunction)  InitializeAdvancedFileClass,
         (NclAddParentFunction)  NULL,
         (NclDelParentFunction)  NULL,
       /* NclPrintSummaryFunction print_summary */ NULL,
-        (NclPrintFunction)      NewFilePrint,
+        (NclPrintFunction)      AdvancedFilePrint,
       /* NclCallBackList* create_callback*/   NULL,
       /* NclCallBackList* delete_callback*/   NULL,
       /* NclCallBackList* modify_callback*/   NULL,
@@ -8431,54 +8655,54 @@ NclNewFileClassRec nclNewFileClassRec =
     },
 
     {
-       /*NclFileVarRepValueFunc         rep_val*/                      NewFileVarRepValue,
-       /*NclFileIsAFunc                 is_var*/                       NewFileIsVar,
-       /*NclAssignFileVarFunc           write_var*/                    NewFileWriteVar,
-       /*NclAssignFileVarVarFunc        write_var_var*/                NewFileWriteVarVar,
-       /*NclGetFileVarFunc              read_var_func*/                NewFileReadVar,
-       /*NclGetFileVarValFunc           read_var_val_func*/            NewFileReadVarValue,
-       /*NclFileIsAFunc                 is_att*/                       NewFileIsAtt,
-       /*NclReadAttributeFunc           read_att_func*/                NewFileReadAtt,
-       /*NclWriteAttributeFunc          write_att_func*/               NewFileWriteAtt,
-       /*NclDeleteAttributeFunc         del_att_func*/                 NewFileDelAtt,
-       /*NclFileVarIsAFunc              is_var_att*/                   NewFileIsVarAtt,
-       /*NclReadVarAttributeFunc        read_var_att_func*/            NewFileReadVarAtt,
-       /*NclWriteVarAttributeFunc       write_var_att_func*/           NewFileWriteVarAtt,
-       /*NclDeleteVarAttributeFunc      del_var_att_func*/             NewFileDelVarAtt,
-       /*NclFileIsAFunc                 is_dim*/                       NewFileIsDim,
-       /*NclFileVarIsAFunc              is_var_dim*/                   NewFileVarIsDim,
-       /*NclReadVarDimensionFunc        read_var_dim_func*/            NewFileVarReadDim,
-       /*NclWriteVarDimensionFunc       write_var_dim_func*/           NewFileVarWriteDim,
-       /*NclReadDimensionFunc           read_dim_func*/                NewFileReadDim,
-       /*NclWriteDimensionFunc          write_dim_func*/               NewFileWriteDim,
-       /*NclFileIsAFunc                 is_coord*/                     NewFileIsCoord,
-       /*NclReadFileCoordFunc           read_coord_func*/              NewFileReadCoord,
-       /*NclWriteFileCoordFunc          write_coord_func*/             NewFileWriteCoord,
-       /*NclAddFileDimFunc              add_dim_func*/                 NewFileAddDim,
-       /*NclAddFileChunkDimFunc         add_chunk_dim_func*/           NewFileAddChunkDim,
-       /*NclAddFileVarFunc              add_var_func*/                 NewFileAddVar,
-       /*NclAddFileVarChunkFunc         add_var_chunk_func*/           NewFileAddVarChunk,
-       /*NclAddFileVarChunkCacheFunc    add_var_chunk_cache_func*/     NewFileAddVarChunkCache,
-       /*NclSetFileVarCompressLevelFunc set_var_compress_level_func;*/ NewFileSetVarCompressLevel,
+       /*NclFileVarRepValueFunc         rep_val*/                      AdvancedFileVarRepValue,
+       /*NclFileIsAFunc                 is_var*/                       AdvancedFileIsVar,
+       /*NclAssignFileVarFunc           write_var*/                    AdvancedFileWriteVar,
+       /*NclAssignFileVarVarFunc        write_var_var*/                AdvancedFileWriteVarVar,
+       /*NclGetFileVarFunc              read_var_func*/                AdvancedFileReadVar,
+       /*NclGetFileVarValFunc           read_var_val_func*/            AdvancedFileReadVarValue,
+       /*NclFileIsAFunc                 is_att*/                       AdvancedFileIsAtt,
+       /*NclReadAttributeFunc           read_att_func*/                AdvancedFileReadAtt,
+       /*NclWriteAttributeFunc          write_att_func*/               AdvancedFileWriteAtt,
+       /*NclDeleteAttributeFunc         del_att_func*/                 AdvancedFileDelAtt,
+       /*NclFileVarIsAFunc              is_var_att*/                   AdvancedFileIsVarAtt,
+       /*NclReadVarAttributeFunc        read_var_att_func*/            AdvancedFileReadVarAtt,
+       /*NclWriteVarAttributeFunc       write_var_att_func*/           AdvancedFileWriteVarAtt,
+       /*NclDeleteVarAttributeFunc      del_var_att_func*/             AdvancedFileDelVarAtt,
+       /*NclFileIsAFunc                 is_dim*/                       AdvancedFileIsDim,
+       /*NclFileVarIsAFunc              is_var_dim*/                   AdvancedFileVarIsDim,
+       /*NclReadVarDimensionFunc        read_var_dim_func*/            AdvancedFileVarReadDim,
+       /*NclWriteVarDimensionFunc       write_var_dim_func*/           AdvancedFileVarWriteDim,
+       /*NclReadDimensionFunc           read_dim_func*/                AdvancedFileReadDim,
+       /*NclWriteDimensionFunc          write_dim_func*/               AdvancedFileWriteDim,
+       /*NclFileIsAFunc                 is_coord*/                     AdvancedFileIsCoord,
+       /*NclReadFileCoordFunc           read_coord_func*/              AdvancedFileReadCoord,
+       /*NclWriteFileCoordFunc          write_coord_func*/             AdvancedFileWriteCoord,
+       /*NclAddFileDimFunc              add_dim_func*/                 AdvancedFileAddDim,
+       /*NclAddFileChunkDimFunc         add_chunk_dim_func*/           AdvancedFileAddChunkDim,
+       /*NclAddFileVarFunc              add_var_func*/                 AdvancedFileAddVar,
+       /*NclAddFileVarChunkFunc         add_var_chunk_func*/           AdvancedFileAddVarChunk,
+       /*NclAddFileVarChunkCacheFunc    add_var_chunk_cache_func*/     AdvancedFileAddVarChunkCache,
+       /*NclSetFileVarCompressLevelFunc set_var_compress_level_func;*/ AdvancedFileSetVarCompressLevel,
        /*NclAddFileVarAttFunc           add_var_att_func*/             NULL,
        /*NclAddFileAttFunc              add_att_func*/                 NULL,
-       /*NclSetFileOptionFunc           set_file_option*/              NewFileSetFileOption,
+       /*NclSetFileOptionFunc           set_file_option*/              AdvancedFileSetFileOption,
        /*NclFileOption                 *options*/                      NULL,
-       /*NclFileIsAFunc                 is_group*/                     NewFileIsGroup,
-       /*NclGetFileGroupFunc            read_group_func*/              NewFileReadGroup,
+       /*NclFileIsAFunc                 is_group*/                     AdvancedFileIsGroup,
+       /*NclGetFileGroupFunc            read_group_func*/              AdvancedFileReadGroup,
          0
     },
 
     {
-       /*NclAssignFileGrpFunc           write_grp*/                    NewFileWriteGrp,
-       /*NclAssignFileVlenFunc          create_vlen_type*/             NewFileCreateVlenType,
-       /*NclAssignFileEnumFunc          create_enum_type*/             NewFileCreateEnumType,
-       /*NclAssignFileOpaqueFunc        create_opaque_type*/           NewFileCreateOpaqueType,
-       /*NclAssignFileCompoundFunc      create_compound_type*/         NewFileCreateCompoundType,
-       /*NclWriteFileCompoundFunc       write_compound*/               NewFileWriteCompound,
+       /*NclAssignFileGrpFunc           write_grp*/                    AdvancedFileWriteGrp,
+       /*NclAssignFileVlenFunc          create_vlen_type*/             AdvancedFileCreateVlenType,
+       /*NclAssignFileEnumFunc          create_enum_type*/             AdvancedFileCreateEnumType,
+       /*NclAssignFileOpaqueFunc        create_opaque_type*/           AdvancedFileCreateOpaqueType,
+       /*NclAssignFileCompoundFunc      create_compound_type*/         AdvancedFileCreateCompoundType,
+       /*NclWriteFileCompoundFunc       write_compound*/               AdvancedFileWriteCompound,
          0
     }
 };
 
-NclObjClass nclNewFileClass = (NclObjClass)&nclNewFileClassRec;
+NclObjClass nclAdvancedFileClass = (NclObjClass)&nclAdvancedFileClassRec;
 

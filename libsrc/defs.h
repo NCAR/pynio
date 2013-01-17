@@ -43,8 +43,6 @@ extern "C" {
 #define NclANY NULL
 #define NhlTNclData "nclData"
 
-extern int use_new_hlfs;
-
 typedef enum {	NORMAL = 0,
 		VARSUBSEL = 1,
 		COORD = 2,
@@ -55,7 +53,8 @@ typedef enum {	NORMAL = 0,
 		RETURNVAR = 7,
 		HLUOBJ = 8,
 		FILEGROUP = 9,
-		RETURNGROUP = 10
+		RETURNGROUP = 10,
+		ATTVALLINK = 11         /* this serves as a wrapper for an attribute put into a list */
 } NclVarTypes;
 
 typedef struct _NclDimRec {

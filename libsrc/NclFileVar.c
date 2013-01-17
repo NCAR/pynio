@@ -41,7 +41,7 @@
 #include "DataSupport.h"
 #include "AttSupport.h"
 #include "VarSupport.h"
-#include "NclCallBacksI.h"
+#include "NclAdvancedFile.h"
 
 static int FileVarIsACoord(
 #if NhlNeedProto
@@ -356,12 +356,10 @@ char *var_name,NclStatus status)
 #endif
 {
 	NclFileVar fvar = NULL;
-	NclFile thefile;
 	NclObjClass	cptr = (theclass ? theclass : nclFileVarClass);
 
 	_NclInitClass(cptr);
 
-	thefile = (NclFile)_NclGetObj(*(int*)value->multidval.val);
 	if(inst != NULL) {
 		fvar = (NclFileVar) inst;
 	} else {
@@ -393,8 +391,7 @@ struct _NclObjRec*	self;
 	} 
 
 	_NclUnRegisterObj((NclObj)self_var);
-	if(thefile != NULL)
-		_NclDelParent((NclObj)thefile,self);
+
 	for(i = 0; i< self_var->var.n_dims; i++ ) {
 		if(self_var->var.coord_vars[i] != -1) {
 			_NclDelParent(_NclGetObj(self_var->var.coord_vars[i]),self);
@@ -404,7 +401,6 @@ struct _NclObjRec*	self;
         if(self_var->var.att_id != -1)
         _NclDelParent(_NclGetObj(self_var->var.att_id),(NclObj)self_var);
 
-	
 	if((value != NULL)&&(value->obj.class_ptr->obj_class.destroy != NULL)) {
 		_NclDelParent((NclObj)value,self);
 	}

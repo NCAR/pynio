@@ -1,5 +1,5 @@
 /*
- *      $Id: NclNewGroup.h 12718 2011-11-11 17:23:51Z brownrig $
+ *      $Id: NclAdvancedGroup.h 14070 2013-01-15 19:25:13Z huangwei $
  */
 /************************************************************************
 *									*
@@ -17,23 +17,24 @@
  *
  *	Description:	
  */
-#ifndef NclNewGroup_h
-#define NclNewGroup_h
+#ifndef NclAdvancedGroup_h
+#define NclAdvancedGroup_h
 
 #include "NclData.h"
 #include "NclFile.h"
-#include "NclNewFile.h"
+#include "NclAdvancedFile.h"
 #include "NclFileInterfaces.h"
 
-extern NclGroup *_NclNewGroupCreate(NclObj       inst,
+extern NclGroup *_NclAdvancedGroupCreate(NclObj       inst,
                                     NclObjClass  theclass,
                                     NclObjTypes  obj_type,
                                     unsigned int obj_type_mask,
                                     NclStatus    status,
                                     NclFile      file_in,
                                     NclQuark     group_name);
+/*
+static void UpdateAdvancedGroupDims(NclAdvancedFile group_out, NclFileGrpNode *grpnode);
+*/
 
-static void UpdateNewGroupDims(NclNewFile group_out, NclFileGrpNode *grpnode);
-
-#endif /* NclNewGroup_h */
+#endif /* NclAdvancedGroup_h */
 
