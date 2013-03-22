@@ -619,7 +619,7 @@ NclTypeClass /*the_type*/
  *
  *	Description:	
  */
-extern NhlErrorTypes _Ncland(
+extern NhlErrorTypes _Nclncl_and(
 #if	NhlNeedProto
 NclTypeClass /* the_type */,
 void * /* result */,
@@ -660,7 +660,7 @@ NclTypeClass /*the_type*/
  *
  *	Description:	
  */
-extern NhlErrorTypes _Nclor(
+extern NhlErrorTypes _Nclncl_or(
 #if	NhlNeedProto
 NclTypeClass /* the_type */,
 void * /* result */,
@@ -701,7 +701,7 @@ NclTypeClass /*the_type*/
  *
  *	Description:	
  */
-extern NhlErrorTypes _Nclxor(
+extern NhlErrorTypes _Nclncl_xor(
 #if	NhlNeedProto
 NclTypeClass /* the_type */,
 void * /* result */,
@@ -748,7 +748,7 @@ NclTypeClass /*the_type*/
 
 
 
-extern NhlErrorTypes _Nclnot(
+extern NhlErrorTypes _Nclncl_not(
 #if	NhlNeedProto
 NclTypeClass /* the_type */,
 void * /* result */,

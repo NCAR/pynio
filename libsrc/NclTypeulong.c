@@ -24,7 +24,7 @@
 #include "NclTypeulong.h"
 
 /*
- *      $Id: NclTypeulong.c.specific 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: NclTypeulong.c.specific 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -643,7 +643,7 @@ NclTypeClass Ncl_Type_ulong_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -731,7 +731,7 @@ NclTypeClass Ncl_Type_ulong_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -819,7 +819,7 @@ NclTypeClass Ncl_Type_ulong_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -907,7 +907,7 @@ NclTypeClass Ncl_Type_ulong_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -995,7 +995,7 @@ NclTypeClass Ncl_Type_ulong_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1083,7 +1083,7 @@ NclTypeClass Ncl_Type_ulong_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1171,7 +1171,7 @@ NclTypeClass Ncl_Type_ulong_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1259,7 +1259,7 @@ NclTypeClass Ncl_Type_ulong_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1347,7 +1347,7 @@ NclTypeClass Ncl_Type_ulong_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1435,7 +1435,7 @@ NclTypeClass Ncl_Type_ulong_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1536,7 +1536,7 @@ NclTypeClass Ncl_Type_ulong_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1637,7 +1637,7 @@ NclTypeClass Ncl_Type_ulong_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1736,7 +1736,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1824,7 +1824,7 @@ NclTypeClass Ncl_Type_ulong_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1905,7 +1905,7 @@ NclTypeClass Ncl_Type_ulong_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1986,7 +1986,7 @@ NclTypeClass Ncl_Type_ulong_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2076,7 +2076,7 @@ NclTypeClass Ncl_Type_ulong_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2166,7 +2166,7 @@ NclTypeClass Ncl_Type_ulong_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2254,7 +2254,7 @@ NclTypeClass Ncl_Type_ulong_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2349,7 +2349,7 @@ NclTypeClass Ncl_Type_ulong_divide_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*

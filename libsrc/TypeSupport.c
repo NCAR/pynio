@@ -1251,7 +1251,7 @@ NclTypeClass the_type;
 
 
 
-NhlErrorTypes _Ncland
+NhlErrorTypes _Nclncl_and
 #if	NhlNeedProto
 (NclTypeClass the_type, void * result, void* lhs, void* rhs, NclScalar* lhs_m, NclScalar* rhs_m, ng_size_t nlhs, ng_size_t nrhs)
 #else
@@ -1268,13 +1268,13 @@ ng_size_t nrhs;
 {
 	NclTypeClass tmp;
 
-	if(the_type->type_class.and!= NULL) {
-		return((*(the_type->type_class.and))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+	if(the_type->type_class.ncl_and!= NULL) {
+		return((*(the_type->type_class.ncl_and))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 	} else {
 		tmp = (NclTypeClass)the_type->obj_class.super_class;
 		while(tmp != (NclTypeClass)nclTypeClass) {
-			if(tmp->type_class.and != NULL) {
-				return((*(tmp->type_class.and))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+			if(tmp->type_class.ncl_and != NULL) {
+				return((*(tmp->type_class.ncl_and))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 			} else {
 				tmp = (NclTypeClass)tmp->obj_class.super_class;
 			}
@@ -1336,7 +1336,7 @@ NclTypeClass the_type;
 
 
 
-NhlErrorTypes _Nclor
+NhlErrorTypes _Nclncl_or
 #if	NhlNeedProto
 (NclTypeClass the_type, void * result, void* lhs, void* rhs, NclScalar* lhs_m, NclScalar* rhs_m, ng_size_t nlhs, ng_size_t nrhs)
 #else
@@ -1353,13 +1353,13 @@ ng_size_t nrhs;
 {
 	NclTypeClass tmp;
 
-	if(the_type->type_class.or!= NULL) {
-		return((*(the_type->type_class.or))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+	if(the_type->type_class.ncl_or!= NULL) {
+		return((*(the_type->type_class.ncl_or))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 	} else {
 		tmp = (NclTypeClass)the_type->obj_class.super_class;
 		while(tmp != (NclTypeClass)nclTypeClass) {
-			if(tmp->type_class.or != NULL) {
-				return((*(tmp->type_class.or))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+			if(tmp->type_class.ncl_or != NULL) {
+				return((*(tmp->type_class.ncl_or))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 			} else {
 				tmp = (NclTypeClass)tmp->obj_class.super_class;
 			}
@@ -1421,7 +1421,7 @@ NclTypeClass the_type;
 
 
 
-NhlErrorTypes _Nclxor
+NhlErrorTypes _Nclncl_xor
 #if	NhlNeedProto
 (NclTypeClass the_type, void * result, void* lhs, void* rhs, NclScalar* lhs_m, NclScalar* rhs_m, ng_size_t nlhs, ng_size_t nrhs)
 #else
@@ -1438,13 +1438,13 @@ ng_size_t nrhs;
 {
 	NclTypeClass tmp;
 
-	if(the_type->type_class.xor!= NULL) {
-		return((*(the_type->type_class.xor))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+	if(the_type->type_class.ncl_xor!= NULL) {
+		return((*(the_type->type_class.ncl_xor))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 	} else {
 		tmp = (NclTypeClass)the_type->obj_class.super_class;
 		while(tmp != (NclTypeClass)nclTypeClass) {
-			if(tmp->type_class.xor != NULL) {
-				return((*(tmp->type_class.xor))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
+			if(tmp->type_class.ncl_xor != NULL) {
+				return((*(tmp->type_class.ncl_xor))(result, lhs, rhs, lhs_m, rhs_m, nlhs, nrhs));
 			} else {
 				tmp = (NclTypeClass)tmp->obj_class.super_class;
 			}
@@ -1507,7 +1507,7 @@ NclTypeClass the_type;
 
 
 
-NhlErrorTypes _Nclnot
+NhlErrorTypes _Nclncl_not
 #if	NhlNeedProto
 (NclTypeClass the_type, void * result, void* lhs, NclScalar* lhs_m, ng_size_t nlhs)
 #else
@@ -1521,13 +1521,13 @@ ng_size_t nlhs;
 {
 	NclTypeClass tmp;
 
-	if(the_type->type_class.not!= NULL) {
-		return((*(the_type->type_class.not))(result, lhs, NULL, lhs_m, NULL, nlhs, 0));
+	if(the_type->type_class.ncl_not!= NULL) {
+		return((*(the_type->type_class.ncl_not))(result, lhs, NULL, lhs_m, NULL, nlhs, 0));
 	} else {
 		tmp = (NclTypeClass)the_type->obj_class.super_class;
 		while(tmp != (NclTypeClass)nclTypeClass) {
-			if(tmp->type_class.not != NULL) {
-				return((*(tmp->type_class.not))(result, lhs, NULL, lhs_m, NULL, nlhs, 0));
+			if(tmp->type_class.ncl_not != NULL) {
+				return((*(tmp->type_class.ncl_not))(result, lhs, NULL, lhs_m, NULL, nlhs, 0));
 			} else {
 				tmp = (NclTypeClass)tmp->obj_class.super_class;
 			}

@@ -188,6 +188,24 @@ typedef struct _g2RotCETemplate {   /* template 1 : rotated lat/lon */
 	int rot_ang_proj;
 } g2RotCETemplate;
 
+typedef struct _g2ArakawaRotLLTemplate {   /* template 1 : rotated lat/lon */
+	g2EarthParams ep;
+	int npts_along_parallel;
+	int npts_along_meridian;
+	int angl_init_prod_domain;
+	int subdiv_basic_angle;
+	int lat_first_gridpt;   /* not scaled; factor == 1000000 */
+	int lon_first_gridpt;   /* not scaled; factor == 1000000 */
+	int res_comp_flags;
+	int center_lat;    /* not scaled; factor == 1000000 */
+	int center_lon;    /* not scaled; factor == 1000000 */
+	int idir_incr;          /* not scaled; factor == 1000000 */
+	int jdir_incr;          /* not scaled; factor == 1000000 */
+	int scan_mode_flags;
+	int lat_last_gridpt;
+	int lon_last_gridpt;
+} g2ArakawaRLLTemplate;
+
 typedef struct _g2METemplate {      /* template 10 : mercator */
 	g2EarthParams ep;
 	int npts_along_parallel;
@@ -542,7 +560,7 @@ typedef struct _Grib2VarTraits {
 	int center;
 	int subcenter;
 	int prod_status;
-	int proc_data_type;
+	int gen_process_type;
 	int sig_ref_time;
 	int pds_template;
 	int discipline;

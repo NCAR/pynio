@@ -24,7 +24,7 @@
 #include "NclTypelogical.h"
 
 /*
- *      $Id: NclTypelogical.c.specific 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: NclTypelogical.c.specific 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -573,7 +573,7 @@ static NhlErrorTypes Ncl_Type_logical_InitClass
 
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -674,7 +674,7 @@ NclTypeClass Ncl_Type_logical_and_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -755,7 +755,7 @@ NclTypeClass Ncl_Type_logical_not_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -856,7 +856,7 @@ NclTypeClass Ncl_Type_logical_or_type
 }
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -944,7 +944,7 @@ NclTypeClass Ncl_Type_logical_xor_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1032,7 +1032,7 @@ NclTypeClass Ncl_Type_logical_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*

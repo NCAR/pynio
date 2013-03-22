@@ -3946,10 +3946,10 @@ NclData result;
                 themissing.has_missing = 0;
         }
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.and != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_and != NULL)) {
 
 /*
-* the_type is not null since requirement if and != NULL and_type != NULL
+* the_type is not null since requirement if ncl_and != NULL and_type != NULL
 */
 
 		the_type = _Ncland_type(self_md->multidval.type);
@@ -3973,7 +3973,7 @@ NclData result;
 				return(NULL);
 			}
 		}
-		if(_Ncland(
+		if(_Nclncl_and(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -4062,7 +4062,7 @@ NclData result;
                 themissing.has_missing = 0;
         }
 	if(!((self_md->multidval.kind == SCALAR)||(other_md->multidval.kind == SCALAR))) {
-		NhlPError(NhlFATAL,NhlEUNKNOWN,"and for scalar values was called with non scalar value, this should not happen");
+		NhlPError(NhlFATAL,NhlEUNKNOWN,"ncl_and for scalar values was called with non scalar value, this should not happen");
 		return(NULL);
 	}
 
@@ -4075,10 +4075,10 @@ NclData result;
 		dim_sizes = other_md->multidval.dim_sizes;
 	}
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.and != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_and != NULL)) {
 
 /*
-* the_type is not null since requirement if and != NULL and_type != NULL
+* the_type is not null since requirement if ncl_and != NULL and_type != NULL
 */
 
 		the_type = _Ncland_type(self_md->multidval.type);
@@ -4109,7 +4109,7 @@ NclData result;
 			}
 		}
 
-		if(_Ncland(
+		if(_Nclncl_and(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -4220,10 +4220,10 @@ NclData result;
                 themissing.has_missing = 0;
         }
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.or != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_or != NULL)) {
 
 /*
-* the_type is not null since requirement if or != NULL or_type != NULL
+* the_type is not null since requirement if ncl_or != NULL or_type != NULL
 */
 
 		the_type = _Nclor_type(self_md->multidval.type);
@@ -4247,7 +4247,7 @@ NclData result;
 				return(NULL);
 			}
 		}
-		if(_Nclor(
+		if(_Nclncl_or(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -4336,7 +4336,7 @@ NclData result;
                 themissing.has_missing = 0;
         }
 	if(!((self_md->multidval.kind == SCALAR)||(other_md->multidval.kind == SCALAR))) {
-		NhlPError(NhlFATAL,NhlEUNKNOWN,"or for scalar values was called with non scalar value, this should not happen");
+		NhlPError(NhlFATAL,NhlEUNKNOWN,"ncl_or for scalar values was called with non scalar value, this should not happen");
 		return(NULL);
 	}
 
@@ -4349,10 +4349,10 @@ NclData result;
 		dim_sizes = other_md->multidval.dim_sizes;
 	}
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.or != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_or != NULL)) {
 
 /*
-* the_type is not null since requirement if or != NULL or_type != NULL
+* the_type is not null since requirement if ncl_or != NULL or_type != NULL
 */
 
 		the_type = _Nclor_type(self_md->multidval.type);
@@ -4383,7 +4383,7 @@ NclData result;
 			}
 		}
 
-		if(_Nclor(
+		if(_Nclncl_or(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -4494,10 +4494,10 @@ NclData result;
                 themissing.has_missing = 0;
         }
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.xor != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_xor != NULL)) {
 
 /*
-* the_type is not null since requirement if xor != NULL xor_type != NULL
+* the_type is not null since requirement if ncl_xor != NULL xor_type != NULL
 */
 
 		the_type = _Nclxor_type(self_md->multidval.type);
@@ -4521,7 +4521,7 @@ NclData result;
 				return(NULL);
 			}
 		}
-		if(_Nclxor(
+		if(_Nclncl_xor(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -4610,7 +4610,7 @@ NclData result;
                 themissing.has_missing = 0;
         }
 	if(!((self_md->multidval.kind == SCALAR)||(other_md->multidval.kind == SCALAR))) {
-		NhlPError(NhlFATAL,NhlEUNKNOWN,"xor for scalar values was called with non scalar value, this should not happen");
+		NhlPError(NhlFATAL,NhlEUNKNOWN,"ncl_xor for scalar values was called with non scalar value, this should not happen");
 		return(NULL);
 	}
 
@@ -4623,10 +4623,10 @@ NclData result;
 		dim_sizes = other_md->multidval.dim_sizes;
 	}
 
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.xor != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_xor != NULL)) {
 
 /*
-* the_type is not null since requirement if xor != NULL xor_type != NULL
+* the_type is not null since requirement if ncl_xor != NULL xor_type != NULL
 */
 
 		the_type = _Nclxor_type(self_md->multidval.type);
@@ -4657,7 +4657,7 @@ NclData result;
 			}
 		}
 
-		if(_Nclxor(
+		if(_Nclncl_xor(
 			operand_type,
 			result_val,
 			self_md->multidval.val,
@@ -6735,7 +6735,7 @@ NclData result;
         } else {
                 themissing.has_missing = 0;
         }	
-	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.not != NULL)) {
+	if((self_md->multidval.type != NULL)&&(((NclTypeClass)self_md->multidval.type)->type_class.ncl_not != NULL)) {
 
 /*
 * the_type is not null since requirement if not != NULL not_type != NULL
@@ -6750,7 +6750,7 @@ NclData result;
                         NhlPError(NhlFATAL,NhlEUNKNOWN,"Not: Could not allocate memory for result type, can't continue\n");
                         return(NULL);
                 }
-                if(_Nclnot(
+                if(_Nclncl_not(
                         self_md->multidval.type,
                         result_val,
                         self_md->multidval.val,

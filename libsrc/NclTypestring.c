@@ -1,5 +1,5 @@
 /*
- *      $Id: NclTypestring.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: NclTypestring.c.sed 14204 2013-03-14 14:18:36Z huangwei $
  */
 /************************************************************************
 *									*
@@ -90,7 +90,7 @@ int nargs;
                 }
         } else {
                 val = NclMalloc((unsigned)nclTypestringClassRec.type_class.size);
-                *(string*)(val) = nclTypestringClassRec.type_class.default_mis.stringval;
+                *(NclQuark *)(val) = nclTypestringClassRec.type_class.default_mis.stringval;
                 tmp_md = _NclCreateMultiDVal(
                         NULL,NULL, Ncl_MultiDValData,
                         0,val,&nclTypestringClassRec.type_class.default_mis,1,
@@ -155,11 +155,11 @@ static NhlErrorTypes Ncl_Type_string_InitClass
 /*
 static int my_strcmp
 #if	NhlNeedProto
-(string s1,string s2)
+(NclQuark s1,NclQuark s2)
 #else 
 (s1,s2)
-string s1;
-string s2;
+NclQuark s1;
+NclQuark s2;
 #endif
 {
 	if((s1 < 1)&&(s2 < 1)) {
@@ -172,22 +172,22 @@ string s2;
 }
 */
 
-static string combine_strings
+static NclQuark combine_strings
 #if	NhlNeedProto
-(string ls,string rs,string mis_ls, string mis_rs,string mis)
+(NclQuark ls,NclQuark rs,NclQuark mis_ls, NclQuark mis_rs,NclQuark mis)
 #else
 (ls,rs,mis_ls,mis_rs,mis)
-string ls;
-string rs;
-string mis_ls;
-string mis_rs;
-string mis;
+NclQuark ls;
+NclQuark rs;
+NclQuark mis_ls;
+NclQuark mis_rs;
+NclQuark mis;
 #endif
 {
 	char *tmp;
 	char * ls_ptr;
 	char * rs_ptr;
-	string ret_val;
+	NclQuark ret_val;
 
 #if 0
 	if(mis_ls == ls) {
@@ -211,16 +211,16 @@ string mis;
 	}
 }
 
-static string select_string_lt
+static NclQuark select_string_lt
 #if	NhlNeedProto
-(string ls,string rs,string mis_ls, string mis_rs,string mis)
+(NclQuark ls,NclQuark rs,NclQuark mis_ls, NclQuark mis_rs,NclQuark mis)
 #else
 (ls,rs,mis_ls,mis_rs,mis)
-string ls;
-string rs;
-string mis_ls;
-string mis_rs;
-string mis;
+NclQuark ls;
+NclQuark rs;
+NclQuark mis_ls;
+NclQuark mis_rs;
+NclQuark mis;
 #endif
 {
 	int len;
@@ -257,16 +257,16 @@ string mis;
 		return(rs);
 	}
 }
-static string select_string_gt
+static NclQuark select_string_gt
 #if	NhlNeedProto
-(string ls,string rs,string mis_ls, string mis_rs,string mis)
+(NclQuark ls,NclQuark rs,NclQuark mis_ls, NclQuark mis_rs,NclQuark mis)
 #else
 (ls,rs,mis_ls,mis_rs,mis)
-string ls;
-string rs;
-string mis_ls;
-string mis_rs;
-string mis;
+NclQuark ls;
+NclQuark rs;
+NclQuark mis_ls;
+NclQuark mis_rs;
+NclQuark mis;
 #endif
 {
 	int len;
@@ -303,11 +303,11 @@ string mis;
 }
 static int cmp_string_lt
 #if	NhlNeedProto
-(string ls,string rs)
+(NclQuark ls,NclQuark rs)
 #else
 (ls,rs)
-string ls;
-string rs;
+NclQuark ls;
+NclQuark rs;
 #endif
 {
 	int len;
@@ -345,11 +345,11 @@ string rs;
 
 static int cmp_string_gt
 #if	NhlNeedProto
-(string ls,string rs)
+(NclQuark ls,NclQuark rs)
 #else
 (ls,rs)
-string ls;
-string rs;
+NclQuark ls;
+NclQuark rs;
 #endif
 {
 	int len;
@@ -387,11 +387,11 @@ string rs;
 
 static int cmp_string_le
 #if	NhlNeedProto
-(string ls,string rs)
+(NclQuark ls,NclQuark rs)
 #else
 (ls,rs)
-string ls;
-string rs;
+NclQuark ls;
+NclQuark rs;
 #endif
 {
 	int len;
@@ -428,11 +428,11 @@ string rs;
 }
 static int cmp_string_ge
 #if	NhlNeedProto
-(string ls,string rs)
+(NclQuark ls,NclQuark rs)
 #else
 (ls,rs)
-string ls;
-string rs;
+NclQuark ls;
+NclQuark rs;
 #endif
 {
 	int len;
@@ -478,7 +478,7 @@ NclScalar* val_m;
 ng_size_t nval;
 #endif
 {
-	string *value = (string*)val;
+	NclQuark *value = (NclQuark*)val;
 	ng_size_t i = 0,j = 1;
 
 	if(nval == 1) 
@@ -612,7 +612,7 @@ NclScalar * new_m;
 ng_size_t nval;
 #endif
 {
-	string *value = (string*)val;
+	NclQuark *value = (NclQuark *)val;
 	ng_size_t i;
 
 	if((old_m == NULL)||(new_m == NULL))
@@ -632,7 +632,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypestringSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -666,16 +666,16 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
-	string *res;
+        NclQuark *ls,*rs;
+	NclQuark *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
-	res = (string*)result;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
+	res = (NclQuark *)result;
 
 	if(nlhs > nrhs) 
 		stopi = nlhs;
@@ -691,19 +691,19 @@ ng_size_t nrhs;
 
 	if((lhs_m == NULL)&&(rhs_m == NULL)) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_gt(*ls,*rs,-1,-1,-1);
+			*res = (NclQuark)select_string_gt(*ls,*rs,-1,-1,-1);
 		}
 	} else if(rhs_m == NULL) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res= (string)select_string_gt(*ls,*rs, lhs_m->stringval, -1, lhs_m->stringval);
+			*res= (NclQuark)select_string_gt(*ls,*rs, lhs_m->stringval, -1, lhs_m->stringval);
 		}
 	} else if(lhs_m == NULL ) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_gt(*ls,*rs,-1, rhs_m->stringval,rhs_m->stringval);
+			*res = (NclQuark)select_string_gt(*ls,*rs,-1, rhs_m->stringval,rhs_m->stringval);
 		}
 	} else {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_gt(*ls,*rs, lhs_m->stringval, rhs_m->stringval,lhs_m->stringval);
+			*res = (NclQuark)select_string_gt(*ls,*rs, lhs_m->stringval, rhs_m->stringval,lhs_m->stringval);
 		}
 	}
 	return(NhlNOERROR);
@@ -720,7 +720,7 @@ NclTypeClass Ncl_Type_string_sel_gt_type
 }
 
 /*
- *      $Id: TypestringSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -754,16 +754,16 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
-	string *res;
+        NclQuark *ls,*rs;
+	NclQuark *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
-	res = (string*)result;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
+	res = (NclQuark *)result;
 
 	if(nlhs > nrhs) 
 		stopi = nlhs;
@@ -779,19 +779,19 @@ ng_size_t nrhs;
 
 	if((lhs_m == NULL)&&(rhs_m == NULL)) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_lt(*ls,*rs,-1,-1,-1);
+			*res = (NclQuark)select_string_lt(*ls,*rs,-1,-1,-1);
 		}
 	} else if(rhs_m == NULL) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res= (string)select_string_lt(*ls,*rs, lhs_m->stringval, -1, lhs_m->stringval);
+			*res= (NclQuark)select_string_lt(*ls,*rs, lhs_m->stringval, -1, lhs_m->stringval);
 		}
 	} else if(lhs_m == NULL ) {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_lt(*ls,*rs,-1, rhs_m->stringval,rhs_m->stringval);
+			*res = (NclQuark)select_string_lt(*ls,*rs,-1, rhs_m->stringval,rhs_m->stringval);
 		}
 	} else {
 		for(i = 0; i < stopi; i++, res++, ls += linc, rs += rinc) {
-			*res = (string)select_string_lt(*ls,*rs, lhs_m->stringval, rhs_m->stringval,lhs_m->stringval);
+			*res = (NclQuark)select_string_lt(*ls,*rs, lhs_m->stringval, rhs_m->stringval,lhs_m->stringval);
 		}
 	}
 	return(NhlNOERROR);
@@ -808,7 +808,7 @@ NclTypeClass Ncl_Type_string_sel_lt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -842,15 +842,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -896,7 +896,7 @@ NclTypeClass Ncl_Type_string_lt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -930,15 +930,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -984,7 +984,7 @@ NclTypeClass Ncl_Type_string_gt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1018,15 +1018,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -1072,7 +1072,7 @@ NclTypeClass Ncl_Type_string_ge_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1106,15 +1106,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark *)lhs;
+	rs = (NclQuark *)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -1160,7 +1160,7 @@ NclTypeClass Ncl_Type_string_le_type
 }
 
 /*
- *      $Id: NclTypestring.c.specific 12205 2011-03-28 17:08:23Z brownrig $
+ *      $Id: NclTypestring.c.specific 14204 2013-03-14 14:18:36Z huangwei $
  */
 /************************************************************************
 *									*
@@ -1192,7 +1192,7 @@ FILE *fp;
 void *val;
 #endif
 {
-        string *sp = (string*)val;
+        NclQuark *sp = (NclQuark*)val;
 	int ret;
 
         ret = nclfprintf(fp,"%s",NrmQuarkToString(*sp));
@@ -1226,7 +1226,7 @@ NclTypeClass fc;
 #endif
 {
 	ng_size_t i;
-	string *res = (string*)result;
+	NclQuark *res = (NclQuark*)result;
 	int tmp;
 	NclTypeOp eq;
 	char buffer[NCL_MAX_STRING];
@@ -1248,9 +1248,9 @@ NclTypeClass fc;
 
 	switch(fc->type_class.type) {
 	case Ncl_Typelogical: {
-		string true = NrmStringToQuark("True");
-		string false = NrmStringToQuark("False");
-		string missing = NrmStringToQuark("Missing");
+		NclQuark true = NrmStringToQuark("True");
+		NclQuark false = NrmStringToQuark("False");
+		NclQuark missing = NrmStringToQuark("Missing");
 		logical *fl = (logical*)from;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
@@ -1270,7 +1270,7 @@ NclTypeClass fc;
 		return(NhlNOERROR);
 	}
 	case Ncl_Typestring: {
-		string *fl = (string*)from;
+		NclQuark *fl = (NclQuark*)from;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
 				*res = *fl;
@@ -1303,7 +1303,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"%g",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1324,7 +1324,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"%g",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1335,7 +1335,7 @@ NclTypeClass fc;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
 				sprintf(buffer,"%ld",*fl);
-				*res = (string)NrmStringToQuark(buffer);
+				*res = (NclQuark)NrmStringToQuark(buffer);
 			}
 		} else {
 			for(i = 0; i < n;i++,res++,fl++)  {
@@ -1345,7 +1345,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"%ld",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1356,7 +1356,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%lu",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1366,7 +1366,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%lu",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1377,7 +1377,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%lld",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1387,7 +1387,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%lld",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1398,7 +1398,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%llu",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1408,7 +1408,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%llu",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1419,7 +1419,7 @@ NclTypeClass fc;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
 				sprintf(buffer,"%d",*fl);
-				*res = (string)NrmStringToQuark(buffer);
+				*res = (NclQuark)NrmStringToQuark(buffer);
 			}
 		} else {
 			for(i = 0; i < n;i++,res++,fl++)  {
@@ -1429,7 +1429,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"%d",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1440,7 +1440,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%u",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1450,7 +1450,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%u",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1461,7 +1461,7 @@ NclTypeClass fc;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
 				sprintf(buffer,"%d",*fl);
-				*res = (string)NrmStringToQuark(buffer);
+				*res = (NclQuark)NrmStringToQuark(buffer);
 			}
 		} else {
 			for(i = 0; i < n;i++,res++,fl++)  {
@@ -1471,7 +1471,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"%d",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1482,7 +1482,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%u",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1492,7 +1492,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%u",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1503,7 +1503,7 @@ NclTypeClass fc;
                 if((from_m == NULL)||(to_m == NULL)) {
                         for(i = 0; i < n;i++,res++,fl++)  {
                                 sprintf(buffer,"%u",*fl);
-                                *res = (string)NrmStringToQuark(buffer);
+                                *res = (NclQuark)NrmStringToQuark(buffer);
                         }
                 } else {
                         for(i = 0; i < n;i++,res++,fl++)  {
@@ -1513,7 +1513,7 @@ NclTypeClass fc;
                                         *res = tmp_mis.stringval;
                                 } else {
                                         sprintf(buffer,"%u",*fl);
-                                        *res = (string)NrmStringToQuark(buffer);
+                                        *res = (NclQuark)NrmStringToQuark(buffer);
                                 }
                         }
                 }
@@ -1524,7 +1524,7 @@ NclTypeClass fc;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
 				sprintf(buffer,"0x%02x",*fl);
-				*res = (string)NrmStringToQuark(buffer);
+				*res = (NclQuark)NrmStringToQuark(buffer);
 			}
 		} else {
 			for(i = 0; i < n;i++,res++,fl++)  {
@@ -1534,7 +1534,7 @@ NclTypeClass fc;
 					*res = tmp_mis.stringval;
 				} else {
 					sprintf(buffer,"0x%02x",*fl);
-					*res = (string)NrmStringToQuark(buffer);
+					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
 		}
@@ -1561,7 +1561,7 @@ NclTypeClass fc;
 				lbuf[i] = *fl;
 			}
 			lbuf[n] = '\0';
-			*res = (string)NrmStringToQuark(lbuf);
+			*res = (NclQuark)NrmStringToQuark(lbuf);
 		} else {
 			for(i = 0; i < n;i++,fl++)  {
 				tmp = 0;
@@ -1602,16 +1602,16 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
-	string *res;
+        NclQuark *ls,*rs;
+	NclQuark *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
-	res = (string*)result;
+	ls = (NclQuark*)lhs;
+	rs = (NclQuark*)rhs;
+	res = (NclQuark*)result;
 
 	if(nlhs > nrhs) 
 		stopi = nlhs;
@@ -1669,15 +1669,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark*)lhs;
+	rs = (NclQuark*)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -1735,15 +1735,15 @@ ng_size_t nlhs;
 ng_size_t nrhs;
 #endif
 {
-        string *ls,*rs;
+        NclQuark *ls,*rs;
 	logical *res;
 	ng_size_t stopi = 1;
 	ng_size_t linc = 0;
 	ng_size_t rinc = 0;
 	ng_size_t i;
 
-	ls = (string*)lhs;
-	rs = (string*)rhs;
+	ls = (NclQuark*)lhs;
+	rs = (NclQuark*)rhs;
 	res = (logical*)result;
 
 	if(nlhs > nrhs) 
@@ -1808,9 +1808,9 @@ NclTypestringClassRec nclTypestringClassRec = {
 	{
 /* NclObjTypes type 			*/ Ncl_Typestring,
 /* NclBasicDataTypes data_type		*/ NCL_string,
-/* int size 				*/ sizeof(string),
+/* int size 				*/ sizeof(NclQuark),
 /* char *hlu_rep_type			*/ {NhlTQuark,NhlTQuarkGenArray},
-/* NclScalar 				*/ {(string)-1},
+/* NclScalar 				*/ {(NclQuark)-1},
 /* char *format ; 			*/ "%s",
 /* NclTypePrint print ; 		*/ Ncl_Type_string_print,
 /* NclTypeResetMissing reset_mis; 	*/ Ncl_Type_string_reset_mis,

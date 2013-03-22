@@ -1,5 +1,5 @@
 /*
- *      $Id: FileSupport.h 13131 2012-01-30 17:11:01Z brownrig $
+ *      $Id: FileSupport.h 14204 2013-03-14 14:18:36Z huangwei $
  */
 /************************************************************************
 *									*
@@ -415,6 +415,8 @@ extern NclQuark *_NclFileReadGrpNames(NclFile thefile, int *num_grps);
 extern ng_size_t *_NclFileReadChunkSizes(NclFile thefile, int *nchunks);
 extern int _NclFileReadCompressionLevel(NclFile thefile);
 extern NclQuark _NclFileReadVersion(NclFile thefile);
+
+extern int _isNewFileStructure(NclFile thefile);
 
 #endif /*_FileSupport_h */
 

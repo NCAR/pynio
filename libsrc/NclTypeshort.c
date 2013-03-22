@@ -24,7 +24,7 @@
 #include "NclTypeshort.h"
 
 /*
- *      $Id: NclTypeshort.c.specific 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: NclTypeshort.c.specific 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -565,7 +565,7 @@ NclTypeClass Ncl_Type_short_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -653,7 +653,7 @@ NclTypeClass Ncl_Type_short_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -741,7 +741,7 @@ NclTypeClass Ncl_Type_short_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -829,7 +829,7 @@ NclTypeClass Ncl_Type_short_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -917,7 +917,7 @@ NclTypeClass Ncl_Type_short_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1005,7 +1005,7 @@ NclTypeClass Ncl_Type_short_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1093,7 +1093,7 @@ NclTypeClass Ncl_Type_short_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1181,7 +1181,7 @@ NclTypeClass Ncl_Type_short_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1269,7 +1269,7 @@ NclTypeClass Ncl_Type_short_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1357,7 +1357,7 @@ NclTypeClass Ncl_Type_short_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1458,7 +1458,7 @@ NclTypeClass Ncl_Type_short_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1559,7 +1559,7 @@ NclTypeClass Ncl_Type_short_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1658,7 +1658,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1746,7 +1746,7 @@ NclTypeClass Ncl_Type_short_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1827,7 +1827,7 @@ NclTypeClass Ncl_Type_short_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1908,7 +1908,7 @@ NclTypeClass Ncl_Type_short_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -1998,7 +1998,7 @@ NclTypeClass Ncl_Type_short_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2088,7 +2088,7 @@ NclTypeClass Ncl_Type_short_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2176,7 +2176,7 @@ NclTypeClass Ncl_Type_short_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*
@@ -2271,7 +2271,7 @@ NclTypeClass Ncl_Type_short_divide_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12141 2011-03-01 22:06:46Z brownrig $
+ *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
  */
 /************************************************************************
 *									*

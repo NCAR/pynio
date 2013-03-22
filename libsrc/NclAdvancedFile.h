@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 14070 2013-01-15 19:25:13Z huangwei $
+ *      $Id: NclAdvancedFile.h 14204 2013-03-14 14:18:36Z huangwei $
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h
@@ -49,9 +49,6 @@
 #define NCLFILE_DEC -2
 #define NCLFILE_VEC 0
 
-char blank_space[MAX_BLANK_SPACE_LENGTH];
-int indentation_level;
-int indentation_length;
 extern int grib_version;
 
 typedef struct _NclAdvancedFileRec NclAdvancedFileRec;
@@ -137,6 +134,7 @@ void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord 
 void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
 void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
 void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
+void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *varnode);
 void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
 void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
 
