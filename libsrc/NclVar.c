@@ -175,6 +175,12 @@ char    *               /* coord_name */,
 struct  _NclSelectionRecord * /*sel_ptr*/
 #endif
 );
+static NhlErrorTypes VarReplaceCoord(
+struct  _NclVarRec      * /*self*/,
+struct  _NclMultiDValDataRec    * /*value*/,
+char    *               /* coord_name */,
+struct  _NclSelectionRecord * /*sel_ptr*/
+);
 
 static NhlErrorTypes VarDelParent(
 #if	NhlNeedProto
@@ -1440,7 +1446,7 @@ NclSelectionRecord *sel_ptr;
 						NULL,
 						1,
 						miss_dim_sizes,
-						PERMANENT,
+						TEMPORARY,
 						NULL,
 						thevalue->multidval.type);
 					if(self_var->var.att_id == -1) {
@@ -3003,5 +3009,46 @@ if(rhs_md->multidval.totalelements !=1) {
 		
 	}
 	return(ret);
+}
+
+static NhlErrorTypes VarReplaceCoord(struct _NclVarRec* self,
+				     struct _NclMultiDValDataRec* value,
+				     char* coord_name,
+				     struct _NclSelectionRecord *sel_ptr)
+{
+	int index;
+	NclDimRec tmp;
+	NclObj tmp_obj;
+
+	index = VarIsADim(self,coord_name);
+	if((index>=0)&&(index < self->var.n_dims))
+	{
+		VarDeleteCoord(self, coord_name);
+	}
+
+	return (VarWriteCoord(self, value, coord_name, sel_ptr));
+}
+
+NhlErrorTypes _NclReplaceCoordVar(struct _NclVarRec *self,
+				  struct _NclMultiDValDataRec *value,
+				  char *coord_name,
+				  struct _NclSelectionRecord *sel_ptr)
+{
+	NclVarClass vc;
+
+        if(self == NULL) {
+                return(NhlFATAL);
+        } else {
+                vc = (NclVarClass)self->obj.class_ptr;
+        }
+
+        while((NclObjClass)vc != nclObjClass) {
+		if(vc->var_class.write_coordinate != NULL) {
+			return VarReplaceCoord(self,value,coord_name,sel_ptr);
+		} else {
+			vc = (NclVarClass)vc->obj_class.super_class;
+		}
+	}
+	return(NhlFATAL);
 }
 
