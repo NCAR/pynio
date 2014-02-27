@@ -23,7 +23,10 @@ herr_t _NclHDF5check_obj(const char *filename, NclHDF5group_node_t **HDF5group)
     hid_t fid = FAILED;
     herr_t status = FAILED;
 
-    static char root_name[] = "/";
+  /*
+   *static char root_name[] = "/";
+   */
+    char root_name[4096] = "/";
 
     fid = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 
@@ -664,7 +667,7 @@ NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5
 
         strcpy(the_name, dataset_name);
         dot_ptr = strchr(the_name, '.');
-        if(dot_ptr)
+        if(dot_ptr && (NULL == strchr(dot_ptr, '/')))
         {
             strcpy(component, dot_ptr+1);
             dot_ptr[0] = '\0';
@@ -765,6 +768,7 @@ NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5
                                                       component,
                                                       &is_str);
                 NclHDF5data->value = (void *) uc_value;
+                NclHDF5data->is_str = is_str;
 
 #if 0
                 _NclHDF5Print_data_value(NclHDF5data->value, NclHDF5data->ndims,
@@ -3030,8 +3034,10 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
                 free(value);
                 H5Tclose(super);
 
-                if (0==nmembs) printf("\n%*s <empty>", ind+4, "");
-                printf("\n%*s}", ind, "");
+              /*
+               *if (0==nmembs) printf("\n%*s <empty>", ind+4, "");
+               *printf("\n%*s}", ind, "");
+               */
             }
             return NclHDF5datatype;
             break;
@@ -3135,15 +3141,21 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
             }
             else if (H5Tequal(type, H5T_STD_REF_DSETREG))
             {
-                fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
-                fprintf(stderr, "dataset region reference\n");
+              /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+               *fprintf(stderr, "dataset region reference\n");
+               */
                 strcpy(NclHDF5datatype->type_name, "dataset region reference");
             }
             else
             {
-                fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+              /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+               */
                 strcpy(NclHDF5datatype->type_name, "unknown reference");
-                fprintf(stderr, "%lu-byte unknown reference\n", (unsigned long)size);
+              /*
+               *fprintf(stderr, "%lu-byte unknown reference\n", (unsigned long)size);
+               */
                 NclHDF5datatype->bit = (unsigned) (8*size);
             }
 
@@ -3153,14 +3165,20 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
             {
                 char *tag;
 
-                fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+              /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+               */
                 strcpy(NclHDF5datatype->type_name, "opaque");
                 NclHDF5datatype->bit = (unsigned) (8*size);
-                fprintf(stderr, "%lu-byte opaque type\n", (unsigned long)size);
+              /*
+               *fprintf(stderr, "%lu-byte opaque type\n", (unsigned long)size);
+               */
                 if ((tag=H5Tget_tag(type)))
                 {
-                    printf("\n%*s(tag = \"", ind, "");
-                    printf("%s\")", tag);
+                  /*
+                   *printf("\n%*s(tag = \"", ind, "");
+                   *printf("%s\")", tag);
+                   */
                     strcpy(NclHDF5datatype->format, tag);
                     free(tag);
                 }
@@ -3171,10 +3189,14 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
             {
                 hid_t       super;
 
-                fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+              /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+               */
                 strcpy(NclHDF5datatype->type_name, "vlen");
 
-                fprintf(stderr, "variable length of\n%*s\n", ind+4, "");
+              /*
+               *fprintf(stderr, "variable length of\n%*s\n", ind+4, "");
+               */
                 super = H5Tget_super(type);
                 _NclHDF5get_typename(super, ind+4);
                 H5Tclose(super);
@@ -3199,10 +3221,8 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
                     /* Print dimensions */
                     for (i=0; i<ndims; i++)
                     {
-                        fprintf(stderr, "%s%ld" , i?",":"[", dims[i]);
                         NclHDF5datatype->dims[i] = dims[i];
                     }
-                    putchar(']');
 
                     free(dims);
                 }
@@ -3227,8 +3247,10 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
             strcpy(NclHDF5datatype->endian, NclHDF5datatype->endian);
             NclHDF5datatype->bit = (unsigned) (8*size);
         
-            printf("%lu-bit %s bitfield",
-                   (unsigned long)(8*H5Tget_size(type)), NclHDF5datatype->endian);
+          /*
+           *printf("%lu-bit %s bitfield",
+           *       (unsigned long)(8*H5Tget_size(type)), NclHDF5datatype->endian);
+           */
 #if 0
             display_precision(type, ind);
 #endif
@@ -3598,7 +3620,7 @@ herr_t _NclHDF5check_attr(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo
                 }
             }
 
-            new_str = NclMalloc(n*sizeof(char));
+            new_str = NclMalloc((n+1)*sizeof(char));
             j = 0;
             for(m = 0; m < attr_node->ndims; m++)
             {
@@ -3613,7 +3635,10 @@ herr_t _NclHDF5check_attr(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo
                     j++;
                 }
             }
-            new_str[n-1] = '\0';
+            if(j)
+                new_str[j-1] = '\0';
+            else
+                new_str[0] = '\0';
             free(attr_node->value);
             attr_node->value = new_str;
 
@@ -3953,21 +3978,31 @@ herr_t _NclHDF5search_obj(char *name, H5O_info_t *oinfo,
     /* Open the object.  Not all objects can be opened.  If this is the case
      * then return right away.
      */
+
+    if(0 == strcmp(name, "/U-MARF/MSG/Level1.5/METADATA/HEADER/CelestialEvents/EarthEphemeris_ARRAY"))
+    {
+        fprintf(stderr, "\nin file: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "\tSkip checking: <%s>\n", name);
+        return FAILED;
+    }
+
     obj_id = H5Oopen(id, name, H5P_DEFAULT);
 
     if((obj_type >= 0) && (obj_id < 0))
     {
         fprintf(stderr, "\n\n\n");
-        fprintf(stderr, "**************************************************************\n");
         fprintf(stderr, "FAILED in file: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "**************************************************************\n");
         fprintf(stderr, "\tname: <%s>\n", name);
         fprintf(stderr, "\tid: %d\n", id);
         fprintf(stderr, "\tobj_type: %d\n", obj_type);
         fprintf(stderr, "\tobj_id: %d\n", obj_id);
-        fprintf(stderr, "FAILED in file: %s, line: %d\n", __FILE__, __LINE__);
         fprintf(stderr, "**************************************************************\n");
         fprintf(stderr, "\n\n\n");
-        fprintf(stderr, "Leaving _NclHDF5search_obj, at file: %s, line: %d\n\n", __FILE__, __LINE__);
+
+      /*
+       *fprintf(stderr, "Leaving _NclHDF5search_obj, at file: %s, line: %d\n\n", __FILE__, __LINE__);
+       */
         return FAILED;
     }
 
@@ -4214,14 +4249,15 @@ herr_t _NclHDF5search_obj(char *name, H5O_info_t *oinfo,
             }
             break;
         case H5O_TYPE_NAMED_DATATYPE:
-#if 0
-            fprintf(stderr, "\nin file: %s, line: %d\n", __FILE__, __LINE__);
-            fprintf(stderr, "\tH5O_TYPE_NAMED_DATATYPE\n");
-            fprintf(stderr, "\ttype obj_id   = %d\n", obj_id);
-            fprintf(stderr, "\ttype obj_type = %d\n", obj_type);
-            strcpy(NclHDF5group_list->group_node->type_name, "Type");
+          /*
+           *fprintf(stderr, "\nin file: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tH5O_TYPE_NAMED_DATATYPE\n");
+           *fprintf(stderr, "\ttype obj_id   = %d\n", obj_id);
+           *fprintf(stderr, "\ttype obj_type = %d\n", obj_type);
+
+           *strcpy(NclHDF5group_list->group_node->type_name, "Type");
+           */
             H5Aiterate2(obj_id, H5_INDEX_NAME, H5_ITER_INC, NULL, _NclHDF5check_attr, &curAttrList);
-#endif
             break;
         default:
             strcpy(group_node->type_name, "unknown");
@@ -4274,8 +4310,8 @@ herr_t _NclHDF5search_obj(char *name, H5O_info_t *oinfo,
 herr_t _NclHDF5search_link(char *name, H5O_info_t *oinfo, void *_NclHDF5Rec)
 {
 #if DEBUG_NCL_HDF5
-#endif
     fprintf(stderr, "\nEntering _NclHDF5search_link, name = <%s>, at file: %s, line: %d\n", name, __FILE__, __LINE__);
+#endif
 
 #if 0
     NclHDF5FileRec_t *NclHDF5FileRec = (NclHDF5FileRec_t*)_NclHDF5Rec;
@@ -4365,8 +4401,8 @@ herr_t _NclHDF5search_link(char *name, H5O_info_t *oinfo, void *_NclHDF5Rec)
     }
 #endif
 #if DEBUG_NCL_HDF5
-#endif
     fprintf(stderr, "Leaving _NclHDF5search_link, at file: %s, line: %d\n\n", __FILE__, __LINE__);
+#endif
     return SUCCEED;
 }
 
@@ -4445,7 +4481,10 @@ herr_t _NclHDF5recursive_check(hid_t fid, char *grp_name,
             fprintf(stderr, "FAILED in file: %s, line: %d\n", __FILE__, __LINE__);
             fprintf(stderr, "**************************************************************\n");
             fprintf(stderr, "\n\n\n");
-            fprintf(stderr, "Leaving _NclHDF5recursive_check, at file: %s, line: %d\n\n", __FILE__, __LINE__);
+
+          /*
+           *fprintf(stderr, "Leaving _NclHDF5recursive_check, at file: %s, line: %d\n\n", __FILE__, __LINE__);
+           */
 
             return FAILED;
         }

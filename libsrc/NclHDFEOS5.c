@@ -40,20 +40,20 @@
 #define MAX_VAR_DIMS 32
 #endif
 
-#define HDFEOS5_BUF_SIZE 4096
-#define MAX_SW  4
-#define MAX_GD  4
-#define MAX_PT  4
-#define MAX_ZA  4
-#define MAX_DIM 16
-#define MAX_LOC 16
-#define MAX_ATT 32
-#define MAX_TMP 32
-#define MAX_FLD 32
-#define MAX_LVL 32
-#define MAX_VAR 128
-#define MAX_NDIMS       16
-#define MAX_FIELDS      1024;
+#define HDFEOS5_BUF_SIZE	32768
+#define MAX_SW	512
+#define MAX_GD	512
+#define MAX_PT	512
+#define MAX_ZA	512
+#define MAX_DIM	512
+#define MAX_LOC	512
+#define MAX_ATT	512
+#define MAX_TMP	512
+#define MAX_FLD	512
+#define MAX_LVL	512
+#define MAX_VAR 1024
+#define MAX_NDIMS       32
+#define MAX_FIELDS      1024
 
 typedef struct _HDFEOS5FileRecord HDFEOS5FileRecord;
 typedef struct _HDFEOS5VarInqRec HDFEOS5VarInqRec;
@@ -130,6 +130,10 @@ static void getHDFEOS5ZonalAverageData(HDFEOS5FileRecord *the_file, NclQuark pat
 
 static NrmQuark Qmissing_val;
 static NrmQuark Qfill_val;
+
+/*
+static short need_to_adjust_for_MOP01 = 0;
+*/
 
 static int MyHDFEOS5setOrigincode(double *upper_left, double *lower_right)
 {
@@ -496,26 +500,31 @@ NclQuark ncl_class_name;
 	{
 		if(step->dim_inq->name == NrmStringToQuark(buffer))
 		{
-		    if(step->dim_inq->size != size)
+                  /*
+		   *if(need_to_adjust_for_MOP01 && (step->dim_inq->size != size))
+		   *{
+                   */
+		    if((step->dim_inq->size != size) && (step->dim_inq->size < size))
 		    {
-			fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
-			fprintf(stderr, "\tstep->dim_inq->name: <%s>, buffer: <%s>, step->dim_inq->size = %d, size = %d\n",
-					NrmQuarkToString(step->dim_inq->name), buffer, step->dim_inq->size, size);
+                      /*
+                       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                       *fprintf(stderr, "\tBefore change dim: <%s>, old size: %d, new size: %d\n\n",
+                       *                   buffer, step->dim_inq->size, size);
+                       */
+                        fprintf(stderr, "\nWARNING: NCL has modified dimension <%s> from: %d to %d\n",
+                                            buffer, step->dim_inq->size, size);
 
+                        step->dim_inq->size = size;
+
+                      /*
+		       *need_to_adjust_for_MOP01 = 0;
+                       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                       *fprintf(stderr, "\tAfter change dim: <%s>, old size: %d, new size: %d\n\n",
+                       *                   buffer, step->dim_inq->size, size);
+                       */
 		    }
-#if 0
-		      /*Correct the dim size, if different from previous read.*/
-		        if(step->dim_inq->size < size)
-			{
-			      /*
-			       *fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
-			       *fprintf(stderr, "\tFind: <%s>, old size: %d, new size: %d\n",
-			       *	buffer, step->dim_inq->size, size);
-			       */
-				step->dim_inq->size = size;
-			}
-#endif
-			return;
+
+                    return;
 		}
 		else
 		{
@@ -527,6 +536,14 @@ NclQuark ncl_class_name;
 	tmp_node->dim_inq = (HDFEOS5DimInqRec*)NclMalloc(sizeof(HDFEOS5DimInqRec));
 	tmp_node->dim_inq->name = NrmStringToQuark(buffer);
 	tmp_node->dim_inq->hdf_name = hdf_name;
+	tmp_node->dim_inq->size = size;
+#if 1
+	if(1 > size)
+	{
+		tmp_node->dim_inq->is_unlimited = 1;
+		tmp_node->dim_inq->size = 0;
+	}
+#else
 	tmp_node->dim_inq->is_unlimited = size == 0 ? 1 : 0;
 	if (! tmp_node->dim_inq->is_unlimited)
 	{
@@ -537,6 +554,7 @@ NclQuark ncl_class_name;
 		/* set to 0 until we find a variable with this dimension  */
 		tmp_node->dim_inq->size = size;
 	}
+#endif
 	tmp_node->dim_inq->ncldim_id = *n_dims;
 	tmp_node->next = *dims;
 	*dims = tmp_node;
@@ -819,8 +837,10 @@ NclQuark path;
     boolean no_fill_value = TRUE;
     int need_check_units = 1;
 
-    fprintf(stderr, "\nEnter getHDFEOS5SwathData, file: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tpath: <%s>\n", NrmQuarkToString(path));
+  /*
+   *fprintf(stderr, "\nEnter getHDFEOS5SwathData, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tpath: <%s>\n", NrmQuarkToString(path));
+   */
 
     nsw = HE5_SWinqswath(NrmQuarkToString(path),NULL,&str_buf_size);
     if(nsw < 1)
@@ -834,8 +854,10 @@ NclQuark path;
             cur_buf_size *= 2;
     }
 
-    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tnsw = %d, str_buf_size = %d\n", nsw, str_buf_size);
+  /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tnsw = %d, str_buf_size = %d\n", nsw, str_buf_size);
+   */
 
     buffer = NclMalloc(cur_buf_size);
     field_ranks = NclMalloc(max_fields * sizeof(long));
@@ -863,8 +885,10 @@ NclQuark path;
 
     buffer[str_buf_size] = '\0';
 
-    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+  /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+   */
 
     HE5_SWfid = HE5_SWopen(NrmQuarkToString(path),H5F_ACC_RDONLY);
 
@@ -879,8 +903,10 @@ NclQuark path;
         if(HE5_SWid < 1)
             continue;
 
-        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tsw_hdf_names[%d]: <%s>\n", i, NrmQuarkToString(sw_hdf_names[i]));
+      /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tsw_hdf_names[%d]: <%s>\n", i, NrmQuarkToString(sw_hdf_names[i]));
+       */
 
         /* global attributes from file */
         natts = HE5_SWinqattrs(HE5_SWid,NULL,&str_buf_size);
@@ -905,19 +931,25 @@ NclQuark path;
             buffer[str_buf_size] = '\0';
             HDFEOS5ParseName(buffer, att_hdf_names, att_ncl_names, natts);
 
-            fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-            fprintf(stderr, "\tnatts = %d, str_buf_size = %d\n", natts, str_buf_size);
-            fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+          /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tnatts = %d, str_buf_size = %d\n", natts, str_buf_size);
+           *fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+           */
 
             for(k = 0; k < natts; k++)
             { 
-                fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                fprintf(stderr, "\tatt %d: name: <%s>\n", k, NrmQuarkToString(att_hdf_names[k]));
+              /*
+               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tatt %d: name: <%s>\n", k, NrmQuarkToString(att_hdf_names[k]));
+               */
 
                 if(HE5_SWattrinfo(HE5_SWid,NrmQuarkToString(att_hdf_names[k]),&att_type,&att_size)==0)
                 {
-                    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                    fprintf(stderr, "\tatt_type = %d, att_size = %d\n", att_type, att_size);
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\tatt_type = %d, att_size = %d\n", att_type, att_size);
+                   */
 
                     tmp_value = (void*)NclMalloc(att_size * _NclSizeOf(HDFEOS5MapTypeNumber(att_type)));
                     if(HE5_SWreadattr(HE5_SWid,NrmQuarkToString(att_hdf_names[k]),tmp_value)==0 )
@@ -951,8 +983,10 @@ NclQuark path;
         /* global attributes from file */
         ngrp_atts = HE5_EHinqglbattrs(HE5_SWfid,NULL,&str_buf_size);
 
-        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tngrp_atts = %d, str_buf_size = %d\n", natts, str_buf_size);
+      /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tngrp_atts = %d, str_buf_size = %d\n", natts, str_buf_size);
+       */
 
         if(ngrp_atts > 0 )
         {
@@ -974,19 +1008,25 @@ NclQuark path;
             buffer[str_buf_size] = '\0';
             HDFEOS5ParseName(buffer, att_hdf_names, att_ncl_names, ngrp_atts);
 
-            fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-            fprintf(stderr, "\tngrp_atts = %d, str_buf_size = %d\n", natts, str_buf_size);
-            fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+          /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tngrp_atts = %d, str_buf_size = %d\n", natts, str_buf_size);
+           *fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+           */
 
             for(k = 0; k < ngrp_atts; k++)
             { 
-                fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                fprintf(stderr, "\tatt %d: name: <%s>\n", k, NrmQuarkToString(att_hdf_names[k]));
+              /*
+               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tatt %d: name: <%s>\n", k, NrmQuarkToString(att_hdf_names[k]));
+               */
 
                 if(HE5_EHglbattrinfo(HE5_SWfid,NrmQuarkToString(att_hdf_names[k]),&att_type,&att_size)==0)
                 {
-                    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                    fprintf(stderr, "\tatt_type = %d, att_size = %d\n", att_type, att_size);
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\tatt_type = %d, att_size = %d\n", att_type, att_size);
+                   */
 
                     tmp_value = (void*)NclMalloc(att_size * _NclSizeOf(HDFEOS5MapTypeNumber(att_type)));
                     if(HE5_EHreadglbattr(HE5_SWfid,NrmQuarkToString(att_hdf_names[k]),tmp_value)==0 )
@@ -1037,25 +1077,31 @@ NclQuark path;
         buffer[str_buf_size] = '\0';
         HDFEOS5ParseName(buffer,dim_hdf_names,dim_ncl_names,ndims);
 
-        fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tndims = %d, str_buf_size = %d\n", ndims, str_buf_size);
-        fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+      /*
+       *fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tndims = %d, str_buf_size = %d\n", ndims, str_buf_size);
+       *fprintf(stderr, "\tbuffer: <%s>\n", buffer);
+       */
 
         for(j = 0; j < ndims; j++)
         {
-            fprintf(stderr, "\tdim %d: hdf name: <%s>, ncl name: <%s>, size = %d\n",
-                             j, NrmQuarkToString(dim_hdf_names[j]),
-                             NrmQuarkToString(dim_ncl_names[j]), dimsizes[j]);
+          /*
+           *fprintf(stderr, "\tdim %d: hdf name: <%s>, ncl name: <%s>, size = %d\n",
+           *                 j, NrmQuarkToString(dim_hdf_names[j]),
+           *                 NrmQuarkToString(dim_ncl_names[j]), dimsizes[j]);
+           */
 
             HDFEOS5IntAddDim(&(the_file->dims),&(the_file->n_dims),dim_hdf_names[j],dim_ncl_names[j],
-                    dimsizes[j],sw_hdf_names[i],sw_ncl_names[i]);
+                              dimsizes[j],sw_hdf_names[i],sw_ncl_names[i]);
         }
 
         /* Dimension mappings */
         nmaps = HE5_SWnentries(HE5_SWid, HE5_HDFE_NENTMAP, &str_buf_size);
 
-        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tnmaps = %d, str_buf_size = %d\n", nmaps, str_buf_size);
+      /*
+       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tnmaps = %d, str_buf_size = %d\n", nmaps, str_buf_size);
+       */
 
         if (nmaps > 0)
         {
@@ -1101,6 +1147,11 @@ NclQuark path;
 
         if (ngeofields > 0)
         {
+          /*A temporary solution to adjust MOP01 ntrack (dimension). Wei, 01/17/2014*/
+          /*
+           *need_to_adjust_for_MOP01 = 0;
+           */
+
             if(ngeofields > max_var)
             {
                 while(ngeofields > max_var)
@@ -1126,25 +1177,34 @@ NclQuark path;
                 no_fill_value = TRUE;
                 need_check_units = 1;
 
+              /*
+               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tCheck Geo Variable %d: <%s>\n", j, NrmQuarkToString(var_hdf_names[j]));
+               */
+
                 nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),NULL,&str_buf_size);
-                if (str_buf_size >= cur_buf_size)
-                {
-                    while(str_buf_size >= cur_buf_size)
-                    cur_buf_size *= 2;
-                    buffer = NclRealloc(buffer, cur_buf_size);
-                }
 
-                nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),buffer,&str_buf_size);
-
-                if(nlocatts > max_loc)
+                if(nlocatts)
                 {
-                    while(nlocatts > max_loc)
-                        max_loc *= 2;
-                    loc_hdf_names = (NclQuark *)NclRealloc(loc_hdf_names, sizeof(NclQuark)*max_loc);
-                    loc_ncl_names = (NclQuark *)NclRealloc(loc_ncl_names, sizeof(NclQuark)*max_loc);
+                    if (str_buf_size >= cur_buf_size)
+                    {
+                        while(str_buf_size >= cur_buf_size)
+                        cur_buf_size *= 2;
+                        buffer = NclRealloc(buffer, cur_buf_size);
+                    }
+
+                    nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),buffer,&str_buf_size);
+
+                    if(nlocatts > max_loc)
+                    {
+                        while(nlocatts > max_loc)
+                            max_loc *= 2;
+                        loc_hdf_names = (NclQuark *)NclRealloc(loc_hdf_names, sizeof(NclQuark)*max_loc);
+                        loc_ncl_names = (NclQuark *)NclRealloc(loc_ncl_names, sizeof(NclQuark)*max_loc);
+                    }
+                    buffer[str_buf_size] = '\0';
+                    HDFEOS5ParseName(buffer,loc_hdf_names,loc_ncl_names,nlocatts);
                 }
-                buffer[str_buf_size] = '\0';
-                HDFEOS5ParseName(buffer,loc_hdf_names,loc_ncl_names,nlocatts);
 
                 if (field_ranks[j] > max_ndims)
                 {
@@ -1155,10 +1215,24 @@ NclQuark path;
                 if(HE5_SWfieldinfo(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),
                            &tmp_rank,dimsizes,&tmp_type,buffer,maxdimlist) == 0)
                 {
-                    buffer[str_buf_size] = '\0';
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\t\tNumber of Dims = %d,  info: <%s>, maxdimlist: <%s>\n", tmp_rank, buffer, maxdimlist);
+                   */
+
+                  /*
+                   *if((0 == strcmp(buffer, "ntrack")) && (0 == strcmp(maxdimlist, "Unlim")))
+                   *    need_to_adjust_for_MOP01 = 1;
+                   */
+
                     HDFEOS5ParseName(buffer,tmp_hdf_names,tmp_ncl_names,tmp_rank);
                     for(k = 0; k < tmp_rank; k++)
                     {
+                      /*
+                       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                       *fprintf(stderr, "\t\tDim %d: name: <%s>, size = %d\n", k, NrmQuarkToString(tmp_hdf_names[k]), dimsizes[k]);
+                       */
+
                         HDFEOS5IntAddDim(&(the_file->dims),&(the_file->n_dims),
                                 tmp_hdf_names[k],tmp_ncl_names[k],dimsizes[k],sw_hdf_names[i],
                                 sw_ncl_names[i]);
@@ -1224,14 +1298,16 @@ NclQuark path;
                     {
                         need_check_units = 0;
                         NrmQuark *qval;
-                        qval = (NrmQuark *)NclMalloc(sizeof(NrmQuark));
-                        *qval = NrmStringToQuark("units value presumes use of TAI93 (International Atomic Time) format");
-                        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("Note"),
-                                (void*)qval,1,NCL_string);
-                        qval = (NrmQuark *)NclMalloc(sizeof(NrmQuark));
-                        *qval = NrmStringToQuark("seconds since 1993-1-1 00:00:00");
-                        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("units"),
-                                (void*)qval,1,NCL_string);
+                      /*
+                       *qval = (NrmQuark *)NclMalloc(sizeof(NrmQuark));
+                       **qval = NrmStringToQuark("units value presumes use of TAI93 (International Atomic Time) format");
+                       *HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("Note"),
+                       *        (void*)qval,1,NCL_string);
+                       *qval = (NrmQuark *)NclMalloc(sizeof(NrmQuark));
+                       **qval = NrmStringToQuark("seconds since 1993-1-1 00:00:00");
+                       *HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("units"),
+                       *        (void*)qval,1,NCL_string);
+                       */
                         qval = (NrmQuark *)NclMalloc(sizeof(NrmQuark));
                         *qval = NrmStringToQuark("time");
                         HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("long_name"),
@@ -1297,16 +1373,19 @@ NclQuark path;
                     }
                 }
 
-                if (no_fill_value)
-                {
-                    if(HE5_SWgetfillvalue(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
-                    {
-                        tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
-                        *tmp_missing = missing;
-                        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
-                                (void*)tmp_missing,1,NCL_string);
-                    }
-                }
+              /*Do not check the fillcalue, if it is not in the attributes, otherwise, it gives error message. Wei Huang, 01/17/2014
+               *
+               *if(no_fill_value)
+               *{
+               *    if(HE5_SWgetfillvalue(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
+               *    {
+               *        tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
+               *        *tmp_missing = missing;
+               *        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
+               *                (void*)tmp_missing,1,NCL_string);
+               *    }
+               *}
+               */
             }
         }
 
@@ -1342,24 +1421,32 @@ NclQuark path;
         {
             no_fill_value = TRUE;
 
-            nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),NULL,&str_buf_size);
-            if (str_buf_size >= cur_buf_size)
-            {
-                while(str_buf_size >= cur_buf_size)
-                    cur_buf_size *= 2;
-                buffer = NclRealloc(buffer, cur_buf_size);
-            }
+          /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tCheck Data %d: <%s>\n", j, NrmQuarkToString(var_hdf_names[j]));
+           */
 
-            nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),buffer,&str_buf_size);
-            if(nlocatts > max_loc)
+            nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),NULL,&str_buf_size);
+            if(0 < nlocatts)
             {
-                while(nlocatts > max_loc)
-                    max_loc *= 2;
-                loc_hdf_names = (NclQuark *)NclRealloc(loc_hdf_names, sizeof(NclQuark)*max_loc);
-                loc_ncl_names = (NclQuark *)NclRealloc(loc_ncl_names, sizeof(NclQuark)*max_loc);
+                if (str_buf_size >= cur_buf_size)
+                {
+                    while(str_buf_size >= cur_buf_size)
+                        cur_buf_size *= 2;
+                    buffer = NclRealloc(buffer, cur_buf_size);
+                }
+
+                nlocatts = HE5_SWinqlocattrs(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),buffer,&str_buf_size);
+                if(nlocatts > max_loc)
+                {
+                    while(nlocatts > max_loc)
+                        max_loc *= 2;
+                    loc_hdf_names = (NclQuark *)NclRealloc(loc_hdf_names, sizeof(NclQuark)*max_loc);
+                    loc_ncl_names = (NclQuark *)NclRealloc(loc_ncl_names, sizeof(NclQuark)*max_loc);
+                }
+                buffer[str_buf_size] = '\0';
+                HDFEOS5ParseName(buffer,loc_hdf_names,loc_ncl_names,nlocatts);
             }
-            buffer[str_buf_size] = '\0';
-            HDFEOS5ParseName(buffer,loc_hdf_names,loc_ncl_names,nlocatts);
 
             if (field_ranks[j] > max_ndims)
             {
@@ -1370,10 +1457,19 @@ NclQuark path;
             if(HE5_SWfieldinfo(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),
                        &tmp_rank,dimsizes,&tmp_type,buffer,maxdimlist) == 0)
             {
-                buffer[str_buf_size] = '\0';
+              /*
+               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\t\tNumber of Dims = %d,  info: <%s>\n", tmp_rank, buffer);
+               */
+
                 HDFEOS5ParseName(buffer,tmp_hdf_names,tmp_ncl_names,tmp_rank);
                 for(k = 0; k < tmp_rank; k++)
                 {
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\t\tDim %d: name: <%s>, size = %d\n", k, NrmQuarkToString(tmp_hdf_names[k]), dimsizes[k]);
+                   */
+
                     HDFEOS5IntAddDim(&(the_file->dims),&(the_file->n_dims),
                             tmp_hdf_names[k],tmp_ncl_names[k],dimsizes[k],sw_hdf_names[i],
                             sw_ncl_names[i]);
@@ -1447,18 +1543,19 @@ NclQuark path;
                 }
             }
 
-/*
-            if(no_fill_value)
-            {
-                if(HE5_SWgetfillvalue(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
-                {
-                    tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
-                    *tmp_missing = missing;
-                    HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
-                            (void*)tmp_missing,1,NCL_string);
-                }
-            }
-*/
+          /*Do not check the fillcalue, if it is not in the attributes, otherwise, it gives error message. Wei Huang, 01/17/2014
+           *
+           *if(no_fill_value)
+           *{
+           *    if(HE5_SWgetfillvalue(HE5_SWid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
+           *    {
+           *        tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
+           *        *tmp_missing = missing;
+           *        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
+           *                (void*)tmp_missing,1,NCL_string);
+           *    }
+           *}
+           */
         }
 
         if (! (lon_name == NrmNULLQUARK || lat_name == NrmNULLQUARK ||
@@ -1506,7 +1603,9 @@ NclQuark path;
     NclFree(field_ranks);
     NclFree(buffer);
 
-    fprintf(stderr, "\nLeave getHDFEOS5SwathData, file: %s, line: %d\n", __FILE__, __LINE__);
+  /*
+   *fprintf(stderr, "\nLeave getHDFEOS5SwathData, file: %s, line: %d\n", __FILE__, __LINE__);
+   */
 }
 
 static void getHDFEOS5GridData
@@ -2041,15 +2140,18 @@ NclQuark path;
                 }
             }
 
-            if(no_fill_value)
-            {
-                if(HE5_GDgetfillvalue(HE5_GDid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
-                {
-                    tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
-                    *tmp_missing = missing;
-                    HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),(void*)tmp_missing,1,NCL_string);
-                }
-            }
+          /*Do not check the fillcalue, if it is not in the attributes, otherwise, it gives error message. Wei Huang, 01/17/2014
+           *
+           *if(no_fill_value)
+           *{
+           *    if(HE5_GDgetfillvalue(HE5_GDid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1)
+           *    {
+           *        tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
+           *        *tmp_missing = missing;
+           *        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),(void*)tmp_missing,1,NCL_string);
+           *    }
+           *}
+           */
         }
 
       /*
@@ -2095,7 +2197,7 @@ NclQuark path;
                   "NclHDFEOS5: Invalid projection information for GRID (%s); no coordinates will be provided",
                   NrmQuarkToString(gd_hdf_names[i])));
         }
-      /*else*/
+
         {
             NrmQuark dim_names[2];
             hsize_t dim_sizes[2];
@@ -3101,16 +3203,19 @@ NclQuark path;
                 }
             }
 
-            if(no_fill_value)
-            {
-                if(HE5_ZAgetfillvalue(HE5_ZAid,NrmQuarkToString(var_hdf_names[nv]),&missing) != -1)
-                {
-                    tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
-                    *tmp_missing = missing;
-                    HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
-                            (void*)tmp_missing,1,NCL_string);
-                }
-            }
+          /*Do not check the fillcalue, if it is not in the attributes, otherwise, it gives error message. Wei Huang, 01/17/2014
+           *
+           *if(no_fill_value)
+           *{
+           *    if(HE5_ZAgetfillvalue(HE5_ZAid,NrmQuarkToString(var_hdf_names[nv]),&missing) != -1)
+           *    {
+           *        tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
+           *        *tmp_missing = missing;
+           *        HDFEOS5IntAddAtt(the_file->vars->var_inq,NrmStringToQuark("_FillValue"),
+           *                (void*)tmp_missing,1,NCL_string);
+           *    }
+           *}
+           */
         }
 
         HE5_ZAdetach(HE5_ZAid);    

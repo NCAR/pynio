@@ -28,13 +28,15 @@
 #endif
 #include "defs.h"
 #define HAVE_NETCDF
-#include <hdf/mfhdf.h>
+#include <mfhdf.h>
 #include "NclDataDefs.h"
 #include "NclFileInterfaces.h"
 #include "NclData.h"
 #include <math.h>
 #include <ctype.h>
 #include <HdfEosDef.h>
+
+#include "NclHDF.h"
 
 /*
  * With newer versions of HDF4 (like 4.2r3), some of macro names now 
@@ -113,7 +115,8 @@ struct _HDFEOSAttInqRec {
 	NclBasicDataTypes type;
 };
 
-
+static void HDFEOSIntAddAtt(HDFEOSVarInqRec* thevar, NclQuark ncl_name, void* value,
+				int n_elem, NclBasicDataTypes type);
 
 struct _HDFEOSFileRecord {
 NclQuark        file_path_q;
@@ -191,6 +194,204 @@ static NclBasicDataTypes HDFEOSMapTypeNumber(int32 typenumber){
 			NhlPError(NhlFATAL,NhlEUNKNOWN,"NclHDFEOS: Unsupported type encountered");
 			return(NCL_none);
 	
+	}
+}
+
+NclBasicDataTypes NcToNclType(nc_type the_type)
+{
+	switch(the_type)
+	{
+		case NC_BYTE:
+			return(NCL_byte);
+		case NC_CHAR:
+			return(NCL_char);
+		case NC_SHORT:
+			return(NCL_short);
+		case NC_LONG:
+			if(sizeof(nclong) == _NclSizeOf(NCL_int))
+				return(NCL_int);
+			else if(sizeof(nclong) == _NclSizeOf(NCL_long))
+				return(NCL_long);
+			else
+				return(NCL_none);
+		case NC_FLOAT:
+			return(NCL_float);
+		case NC_DOUBLE:
+			return(NCL_double);
+		default:
+			return(NCL_none);
+	}
+}
+
+int _varHasAtt(HDFEOSVarInqRec* thevar, NclQuark theatt)
+{
+	HDFEOSAttInqRecList * the_int_att_list;
+
+	the_int_att_list = thevar->att_int_list;
+	while(the_int_att_list != NULL)
+	{
+		if(theatt == the_int_att_list->att_inq->name)
+			return 1;
+
+		the_int_att_list = the_int_att_list->next;
+	}
+	return 0;
+}
+
+HDFAttInqRecList* _getHDFVarAttList(HDFFileRecord* hdfrec, NclQuark thevar)
+{
+	int n= 0;
+	HDFAttInqRecList *stepal;
+	HDFVarInqRecList *stepvl;
+
+	/*
+	*fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+	*fprintf(stderr, "\tthevar: <%s>\n", NrmQuarkToString(thevar));
+	*/
+
+	stepvl = hdfrec->vars;
+	while(stepvl != NULL)
+	{
+		/*
+		*fprintf(stderr, "\tthevar %d name: <%s>\n",
+		*		n, NrmQuarkToString(stepvl->var_inq->name));
+		*/
+
+		if(stepvl->var_inq->name == thevar)
+		{
+			stepal = stepvl->var_inq->att_list;
+			
+			return stepal;
+		}
+
+		stepvl = stepvl->next;
+		++n;
+	}
+
+	return(NULL);
+}
+
+void _additionalAttributes(HDFEOSFileRecord* thefile, HDFEOSVarInqRec* thevar,
+			   HDFFileRecord* hdfrec, NclQuark nclvarname, NclQuark suffix)
+{
+	int n = 0;
+	HDFAttInqRecList *stepal;
+	NclBasicDataTypes ncl_type;
+	NclQuark att_hdf_name = NrmStringToQuark("hdf_name");
+
+	/*
+	*fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+	*fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(nclvarname));
+	*/
+
+	stepal = _getHDFVarAttList(hdfrec, nclvarname);
+	n = 0;
+	while(stepal != NULL)
+	{
+		ncl_type = NcToNclType(stepal->att_inq->data_type);
+		/*
+		*fprintf(stderr, "\t\tatt %d: name <%s>\n", n, NrmQuarkToString(stepal->att_inq->name));
+		*fprintf(stderr, "\t\tatt %d: type %d, len = %d\n", n, ncl_type, stepal->att_inq->len);
+		*/
+
+		if(! _varHasAtt(thevar, stepal->att_inq->name))
+		{
+			int attsize = 0;
+			if(NCL_char == ncl_type)
+			{
+				NclQuark qv;
+				NclQuark* value = NULL;
+				ncl_type = NCL_string;
+				attsize = _NclSizeOf(ncl_type);
+				
+				value = (NclQuark *)NclMalloc(attsize);
+
+				if(NULL != stepal->att_inq->value)
+				{
+					memcpy(value, stepal->att_inq->value, attsize);
+				}
+				else
+				{
+					qv = NrmStringToQuark("Could not directly retrieve from HDF header");
+					memcpy(value, &qv, attsize);
+				}
+
+				/*
+				*fprintf(stderr, "\t\tvalue: <%s>\n", NrmQuarkToString(value[0]));
+				*/
+	
+				if(att_hdf_name == stepal->att_inq->name)
+					NclFree(value);
+				else
+					HDFEOSIntAddAtt(thevar, stepal->att_inq->name,
+							(void*)value, 1, ncl_type);
+			}
+			else
+			{
+				void* value = NULL;
+				attsize = stepal->att_inq->len * _NclSizeOf(ncl_type);
+				value = (void *)NclMalloc(attsize);
+
+				memcpy(value, stepal->att_inq->value, attsize);
+	
+				HDFEOSIntAddAtt(thevar, stepal->att_inq->name,
+						value, stepal->att_inq->len, ncl_type);
+			}
+		}
+
+		++n;
+
+		stepal = stepal->next;
+	}
+}
+
+void _checkGlobalAttributes(HDFEOSFileRecord* thefile, HDFEOSVarInqRec* thevar,
+			    NclQuark nclvarname, NclQuark suffix)
+{
+	int n = 0;
+	HDFEOSAttInqRecList *stepal = thefile->att_int_list;
+
+	char varname[1024];
+	char sufname[1024];
+	char attname[1024];
+	char* vstr;
+	char* astr;
+	NclQuark attquark;
+	int sl;
+
+	strcpy(varname, NrmQuarkToString(nclvarname));
+	strcpy(sufname, NrmQuarkToString(suffix));
+
+	n = 0;
+	while(stepal != NULL)
+	{
+		strcpy(attname,  NrmQuarkToString(stepal->att_inq->name));
+		vstr = strstr(attname, varname);
+
+		if(NULL != vstr)
+		{
+			sl = strlen(attname) - 1 - strlen(sufname);
+			attname[sl] = '\0';
+			astr = attname + strlen(varname) + 1;
+			attquark = NrmStringToQuark(astr);
+
+			if(! _varHasAtt(thevar, attquark))
+			{
+				int attsize = stepal->att_inq->n_elem * _NclSizeOf(stepal->att_inq->type);
+				void* value = NULL;
+				
+				value = (void *)NclMalloc(attsize);
+
+				memcpy(value, stepal->att_inq->value, attsize);
+
+				HDFEOSIntAddAtt(thevar, attquark,
+						(void*)value, 1, stepal->att_inq->type);
+			}
+
+			++n;
+		}
+
+		stepal = stepal->next;
 	}
 }
 
@@ -490,7 +691,7 @@ static void HDFEOSIntAddIndexedMapVars
 	int i;
 	char *tcp,*cp,*dim1, *dim2;
 	char name_buf[1024];
-	NrmQuark hdf_name1,ncl_name1,hdf_name2,ncl_name2;
+	NrmQuark hdf_name1,ncl_name1,hdf_name2;
 
 	cp = idxmaps;
 	for (i = 0; i < nmaps; i++) {
@@ -519,7 +720,6 @@ static void HDFEOSIntAddIndexedMapVars
 				*tcp = '_';
 			}
 		}
-		ncl_name2 = NrmStringToQuark(dim2);
 		HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),hdf_name1,ncl_name1,sizes[i],
 				swath_hdf_name,swath_ncl_name,the_file->file_path_q);
 		sprintf(name_buf,"%s_index_mapping",dim2);
@@ -609,7 +809,7 @@ int wr_status;
 	void *tmp_value;
 	int32 att_type;
 	int32 att_size;
-	intn nrc,nfd,nlv;
+	intn nfd,nlv;
 	int32 *fldorder = NULL;
 	int32 *fldtype = NULL;
 	float64 projparm[15];
@@ -624,6 +824,18 @@ int wr_status;
 	int max_fields = 1024;
 	HDFEOSVarInqRecList *vstep;
 
+	NrmQuark dim_names[6];
+	int32 dim_sizes[6];
+
+	int has_xdim = 0;
+	int has_ydim = 0;
+	int has_xdim_var = 0;
+	int has_ydim_var = 0;
+	NrmQuark xdim_name = NrmNULLQUARK;
+	NrmQuark ydim_name = NrmNULLQUARK;
+
+	HDFFileRecord* hdf_file = (HDFFileRecord *)NclMalloc(sizeof(HDFFileRecord));
+
 	if(the_file == NULL) {
 		return(NULL);
 	}
@@ -636,13 +848,14 @@ int wr_status;
 	the_file->vars = NULL;
 	the_file->dims= NULL;
 	the_file->att_int_list = NULL;
-	
-
 
 	if(wr_status <= 0) {
 		NhlPError(NhlFATAL,NhlEUNKNOWN,"NclHDFEOS: HDF-EOS are currently read only in NCL");
 		return(NULL);
 	}
+	
+	hdf_file = HDFOpenFile(hdf_file, path, wr_status);
+
 	buffer = NclMalloc(cur_buf_size);
 	field_ranks = NclMalloc(max_fields * sizeof(int32));
 
@@ -689,6 +902,7 @@ int wr_status;
 				NhlPError(NhlFATAL,NhlEUNKNOWN, 
 					  "NclHDFEOS: An internal HDF error occurred while reading (%s) can't continue",
 					  NrmQuarkToString(path));
+				HDFFreeFileRec(hdf_file);
 				return(NULL);
 			}
 			if (bsize + 1 > cur_buf_size) {
@@ -855,6 +1069,7 @@ int wr_status;
 			ndata = SWinqdatafields(SWid,buffer,field_ranks,NULL);
 			the_file->n_vars += ndata;
 			HDFEOSParseName(buffer,&var_hdf_names,&var_ncl_names,ndata);
+
 			for(j = 0; j < ndata; j++) {
 				if (field_ranks[j] > ndims) {
 					ndims = field_ranks[j];
@@ -868,9 +1083,17 @@ int wr_status;
 								tmp_names[k],tmp_ncl_names[k],dimsizes[k],sw_hdf_names[i],
 								sw_ncl_names[i],the_file->file_path_q);
 					}
+
 					HDFEOSIntAddVar(&(the_file->vars),var_hdf_names[j],var_ncl_names[j],
 							the_file->dims,tmp_rank,dimsizes,tmp_type,tmp_ncl_names,
 							SWATH,sw_hdf_names[i],sw_ncl_names[i]);
+
+					_additionalAttributes(the_file, the_file->vars->var_inq, hdf_file,
+								var_ncl_names[j], sw_ncl_names[i]);
+
+					_checkGlobalAttributes(the_file, the_file->vars->var_inq,
+								var_ncl_names[j], sw_ncl_names[i]);
+
 					if(SWgetfillvalue(SWid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1) {
 						tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
 						*tmp_missing = missing;
@@ -933,14 +1156,20 @@ int wr_status;
 			int k;
 			int32 pixregcode;
 			intn status;
-			int has_xdim_var = 0, has_ydim_var = 0;
-			NrmQuark xdim_name = NrmNULLQUARK, ydim_name = NrmNULLQUARK;
 			NrmQuark qproj_name = NrmNULLQUARK;
+
+			has_xdim = 0;
+			has_ydim = 0;
+			has_xdim_var = 0;
+			has_ydim_var = 0;
+			xdim_name = NrmNULLQUARK;
+			ydim_name = NrmNULLQUARK;
 
 			GDid = GDattach(GDfid,NrmQuarkToString(gd_hdf_names[i]));
 			if(! (GDid > 0) ) {
 				NhlPError(NhlFATAL,NhlEUNKNOWN, "NclHDFEOS: An internal HDF error occurred while reading (%s) can't continue",
 					  NrmQuarkToString(path));
+				HDFFreeFileRec(hdf_file);
 				return(NULL);
 			}
 			status = GDprojinfo(GDid,&projcode,&zonecode,&spherecode,projparm);
@@ -1090,6 +1319,12 @@ int wr_status;
 				for(j = 0; j < ndims; j++) {
 					HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),dim_hdf_names[j],dim_ncl_names[j],
 							dimsizes[j],gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
+					dim_names[j] = dim_hdf_names[j];
+					dim_sizes[j] = dimsizes[j];
+					if (dim_hdf_names[j] == NrmStringToQuark("XDim")) 
+						has_xdim = 1;
+					if (dim_hdf_names[j] == NrmStringToQuark("YDim")) 
+						has_ydim = 1;
 				}
 				NclFree(dim_hdf_names);
 				NclFree(dim_ncl_names);
@@ -1107,8 +1342,8 @@ int wr_status;
 			ndata = GDinqfields(GDid,buffer,field_ranks,NULL);
 			the_file->n_vars += ndata;
 			HDFEOSParseName(buffer,&var_hdf_names,&var_ncl_names,ndata);
+
 			for(j = 0; j < ndata; j++) {
-				int has_xdim = 0, has_ydim = 0;
 				HDFEOSVarInqRec *data_var = NULL;
 				if (field_ranks[j] > ndims) {
 					if (ndims == 0)
@@ -1125,17 +1360,23 @@ int wr_status;
 					HDFEOSParseName(buffer,&tmp_names,&tmp_ncl_names,tmp_rank);
 					for(k = 0; k < tmp_rank; k++) {
 						if (tmp_names[k] == NrmStringToQuark("XDim")) 
-							has_xdim = 1;
+							++has_xdim;
 						if (tmp_names[k] == NrmStringToQuark("YDim")) 
-							has_ydim = 1;
+							++has_ydim;
 						HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),tmp_names[k],tmp_ncl_names[k],
 								dimsizes[k],gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
 					}
-						
 
 					HDFEOSIntAddVar(&(the_file->vars),var_hdf_names[j],var_ncl_names[j],
 							the_file->dims,tmp_rank,dimsizes,tmp_type,tmp_ncl_names,GRID,gd_hdf_names[i],gd_ncl_names[i]);
 					data_var = the_file->vars->var_inq;
+						
+					_additionalAttributes(the_file, data_var, hdf_file,
+								 var_ncl_names[j], gd_ncl_names[i]);
+
+					_checkGlobalAttributes(the_file, the_file->vars->var_inq,
+								var_ncl_names[j], gd_ncl_names[i]);
+
 					if(GDgetfillvalue(GDid,NrmQuarkToString(var_hdf_names[j]),&missing) != -1) {
 						tmp_missing = (NclScalar*)NclMalloc(sizeof(NclScalar));
 						*tmp_missing = missing;
@@ -1174,28 +1415,23 @@ int wr_status;
 					  NrmQuarkToString(gd_hdf_names[i]));
 			}
 			else {
-				NrmQuark dim_names[2];
-				int32 dim_sizes[2];
-
-				dim_names[1] = NrmStringToQuark("XDim");
-				HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),dim_names[1],dim_names[1],
-						xdimsize,gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
-				dim_names[0] = NrmStringToQuark("YDim");
-				HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),dim_names[0],dim_names[0],
-						ydimsize,gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
+				if((!has_xdim_var) && (has_xdim))
+				{
+					dim_names[1] = NrmStringToQuark("XDim");
+					HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),dim_names[1],dim_names[1],
+							xdimsize,gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
+				}
+				if((!has_ydim_var) && (has_ydim))
+				{
+					dim_names[0] = NrmStringToQuark("YDim");
+					HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),dim_names[0],dim_names[0],
+							ydimsize,gd_hdf_names[i],gd_ncl_names[i],the_file->file_path_q);
+				}
 				dim_sizes[0] = ydimsize;
 				dim_sizes[1] = xdimsize;
 				if (projcode == GCTP_GEO) { /* 1D coordinate */
 					HDFEOSVarInqRec *var = NULL;
-					if (! has_xdim_var) {
-						the_file->n_vars++;
-						HDFEOSIntAddVar(&(the_file->vars),NrmStringToQuark("lon"),NrmStringToQuark("XDim"),
-								the_file->dims,1,&(dim_sizes[1]),DFNT_FLOAT64,&(dim_names[1]),
-								GRID,gd_hdf_names[i],gd_ncl_names[i]);
-						var = the_file->vars->var_inq;
-
-					}
-					else {
+					if (has_xdim_var) {
 						/* some files provide coordinate variables, we don't need to duplicate */
 						for (vstep = the_file->vars; vstep != NULL; vstep = vstep->next) {
 							if (vstep->var_inq->hdf_name == NrmStringToQuark("XDim")) {
@@ -1203,6 +1439,15 @@ int wr_status;
 								break;
 							}
 						}
+					}
+					else if(has_xdim)
+					{
+						the_file->n_vars++;
+						HDFEOSIntAddVar(&(the_file->vars),NrmStringToQuark("lon"),NrmStringToQuark("XDim"),
+								the_file->dims,1,&(dim_sizes[1]),DFNT_FLOAT64,&(dim_names[1]),
+								GRID,gd_hdf_names[i],gd_ncl_names[i]);
+						var = the_file->vars->var_inq;
+
 					}
 					if (var) {
 						tmp_value = (void*)NclMalloc(sizeof(NclQuark));
@@ -1217,14 +1462,7 @@ int wr_status;
 						HDFEOSIntAddAtt(var,NrmStringToQuark("projection"),(void*)tmp_value,1,NCL_string);
 					}
 					var = NULL;
-					if (! has_ydim_var) {
-						the_file->n_vars++;
-						HDFEOSIntAddVar(&(the_file->vars),NrmStringToQuark("lat"),NrmStringToQuark("YDim"),
-								the_file->dims,1,&(dim_sizes[0]),DFNT_FLOAT64,&(dim_names[0]),
-								GRID,gd_hdf_names[i],gd_ncl_names[i]);
-						var = the_file->vars->var_inq;
-					}
-					else {
+					if (has_ydim_var) {
 						/* some files provide coordinate variables, we don't need to duplicate */
 						for (vstep = the_file->vars; vstep != NULL; vstep = vstep->next) {
 							if (vstep->var_inq->hdf_name == NrmStringToQuark("YDim")) {
@@ -1232,6 +1470,15 @@ int wr_status;
 								break;
 							}
 						}
+					}
+					else if(has_ydim)
+					{
+						the_file->n_vars++;
+						HDFEOSIntAddVar(&(the_file->vars),NrmStringToQuark("lat"),NrmStringToQuark("YDim"),
+								the_file->dims,1,&(dim_sizes[0]),DFNT_FLOAT64,&(dim_names[0]),
+								GRID,gd_hdf_names[i],gd_ncl_names[i]);
+						var = the_file->vars->var_inq;
+
 					}
 					if (var) {
 						tmp_value = (void*)NclMalloc(sizeof(NclQuark));
@@ -1334,12 +1581,12 @@ int wr_status;
 			PTid = PTattach(PTfid,NrmQuarkToString(pt_hdf_names[i]));
 			if(! (PTid > 0) ) {
 				NhlPError(NhlFATAL,NhlEUNKNOWN, "NclHDFEOS: An internal HDF error occurred while reading (%s) can't continue",NrmQuarkToString(path));
+				HDFFreeFileRec(hdf_file);
 				return(NULL);
 			}
 			nlv = PTnlevels(PTid);
 			if(nlv > 0) {
 				for(j = 0; j < nlv; j++) {
-					nrc = PTnrecs(PTid,j);
 					nfd = PTnfields(PTid,j,&bsize);
 					if (bsize + 1 > cur_buf_size) {
 						buffer = NclRealloc(buffer,bsize + 1);
@@ -1386,10 +1633,16 @@ int wr_status;
 								HDFEOSIntAddDim(&(the_file->dims),&(the_file->n_dims),tmp_names[k],
 										tmp_ncl_names[k],dims[k],pt_hdf_names[i],pt_ncl_names[i],the_file->file_path_q);
 							}
-						
 
 							HDFEOSIntAddVar(&(the_file->vars),var_hdf_names[j],var_ncl_names[j],the_file->dims,
 									tmp_rank,dims,tmp_type,tmp_ncl_names,GRID,pt_hdf_names[i],pt_ncl_names[i]);
+						
+							_additionalAttributes(the_file, the_file->vars->var_inq,
+										hdf_file, var_ncl_names[j], pt_ncl_names[i]);
+
+							_checkGlobalAttributes(the_file, the_file->vars->var_inq,
+										var_ncl_names[j], pt_ncl_names[i]);
+
 							if(HDFEOSunsigned(tmp_type)) {
 								is_unsigned = (int*)NclMalloc(sizeof(int));
 								*is_unsigned = 1;
@@ -1429,12 +1682,15 @@ int wr_status;
 				}
 			} else {
 				NhlPError(NhlFATAL,NhlEUNKNOWN, "NclHDFEOS: An internal HDF error occurred while reading (%s) can't continue",NrmQuarkToString(path));
+				HDFFreeFileRec(hdf_file);
 				return(NULL);
 			}
 		}
 	}
 			
 #endif
+
+	HDFFreeFileRec(hdf_file);
 
 	NclFree(field_ranks);
 	NclFree(buffer);
@@ -1461,7 +1717,8 @@ void *therec;
 	while(thevars != NULL) {
 		theatts = thevars->var_inq->att_int_list;
 		while(theatts!= NULL) {
-			NclFree(theatts->att_inq->value);
+			if(NULL != theatts->att_inq->value)
+				NclFree(theatts->att_inq->value);
 			NclFree(theatts->att_inq);
 			tmpatt = theatts;
 			theatts=theatts->next;
@@ -1736,6 +1993,86 @@ NclQuark thevar;
 	return NULL;
 }
 
+void myGDij2ll(int32 xdimsize, int32 ydimsize,
+		float64 upleftpt[], float64 lowrightpt[],
+		int32 npnts, int32 row[], int32 col[],
+		float64 longitude[], float64 latitude[], int32 pixcen, int32 pixcnr)
+{
+	intn            i;		/* Loop index */
+
+	float64         pixadjX;	/* Pixel adjustment (x) */
+	float64         pixadjY;	/* Pixel adjustment (y) */
+	float64         lonrad0;	/* Longitude in radians of upleft point */
+	float64         latrad0;	/* Latitude in radians of upleft point */
+	float64         scaleX;	/* X scale factor */
+	float64         scaleY;	/* Y scale factor */
+	float64         lonrad;	/* Longitude in radians of point */
+	float64         latrad;	/* Latitude in radians of point */
+
+	/* Compute adjustment of position within pixel */
+	if (pixcen == HDFE_CENTER)
+	{
+		/* Pixel defined at center */
+		pixadjX = 0.5;
+		pixadjY = 0.5;
+	}
+	else
+	{
+		switch (pixcnr)
+		{
+			case HDFE_GD_UL:
+				/* Pixel defined at upper left corner */
+				pixadjX = 0.0;
+				pixadjY = 0.0;
+				break;
+			case HDFE_GD_UR:
+				/* Pixel defined at upper right corner */
+				pixadjX = 1.0;
+				pixadjY = 0.0;
+				break;
+			case HDFE_GD_LL:
+				/* Pixel defined at lower left corner */
+				pixadjX = 0.0;
+				pixadjY = 1.0;
+				break;
+			case HDFE_GD_LR:
+				/* Pixel defined at lower right corner */
+				pixadjX = 1.0;
+				pixadjY = 1.0;
+				break;
+		}
+	}
+
+	/* GEO projection */
+
+	/*
+	 * Note: lonrad, lonrad0, latrad, latrad0 are actually in degrees for
+	 * the GEO projection case.
+	 */
+
+	/* Convert upleft and lowright X coords from DMS to degrees */
+	lonrad0 = upleftpt[0];
+	lonrad = lowrightpt[0];
+
+	/* Compute x scale factor */
+	scaleX = (lonrad - lonrad0) / xdimsize;
+
+	/* Convert upleft and lowright Y coords from DMS to degrees */
+	latrad0 = upleftpt[1];
+	latrad = lowrightpt[1];
+
+	/* Compute y scale factor */
+	scaleY = (latrad - latrad0) / ydimsize;
+
+	/* For each point ... */
+	for (i = 0; i < npnts; i++)
+	{
+	    /* Convert to lon/lat (decimal degrees) */
+	    longitude[i] = (col[i] + pixadjX) * scaleX + lonrad0;
+	    latitude[i] = (row[i] + pixadjY) * scaleY + latrad0;
+	}
+}
+
 static int ReadCoordVar
 (int32 GDid, HDFEOSVarInqRec *var, int32 *start, int32 *stride, int32 *edge, void *storage)
 {
@@ -1817,6 +2154,35 @@ static int ReadCoordVar
 
 	GDij2ll(projcode,zonecode,projparm,spherecode,xdimsize,ydimsize,
 		upper_left,lower_right,total,rows,cols,longitude,latitude,pixregcode,origincode);
+
+	if((GCTP_GEO == projcode) &&
+           (1000.0 > fabs(upper_left[0])) && ( 1000.0 > fabs(lower_right[0])) &&
+           (1000.0 > fabs(upper_left[1])) && ( 1000.0 > fabs(lower_right[1])))
+	{
+		short recompute = 0;
+		float64 scale = 0.0;
+		float64 delt = 0.0;
+
+		if(islon)
+		{
+        		scale = (upper_left[0] - lower_right[0]) / xdimsize;
+			delt = longitude[1] - longitude[0];
+		}
+		else
+		{
+        		scale = (upper_left[1] - lower_right[1]) / ydimsize;
+			delt = latitude[1] - latitude[0];
+		}
+
+		if(0.5*fabs(delt) < fabs(fabs(scale) - fabs(delt)))
+			recompute = 1;
+
+		if(recompute)
+		{
+			myGDij2ll(xdimsize,ydimsize,upper_left,lower_right,
+				total,rows,cols,longitude,latitude,pixregcode,origincode);
+		}
+	}
 				
 	if (islon)
 		NclFree(latitude);
@@ -1829,7 +2195,6 @@ static int ReadCoordVar
 
 	return 0;
 }
-
 
 static void *HDFEOSReadVar
 #if	NhlNeedProto
@@ -1853,7 +2218,6 @@ void* storage;
 	int32 stridei[NCL_MAX_DIMENSIONS];
 	int32 edgei[NCL_MAX_DIMENSIONS];
 	float tmpf;
-	
 
 	thelist = thefile->vars;
 	for(i = 0; i < thefile->n_vars; i++) {
@@ -2056,6 +2420,6 @@ NclFormatFunctionRecPtr HDFEOSAddFileFormat
 ()
 #endif
 {
-	
 	return(&HDFEOSRec);
 }
+

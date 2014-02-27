@@ -1550,16 +1550,22 @@ NclMultiDValData value;
 		for (i = 0; i < fcp->num_options; i++) {
 			if (fcp->options[i].name != loption)
 				continue;
-			if ((_NclGetFormatFuncs(format) &&
-			     _NclGetFormatFuncs(format) == _NclGetFormatFuncs(fcp->options[i].format)) ) {
-				found = 1;
-				break;
+			if (_NclGetFormatFuncs(format)) {
+				if(_NclGetFormatFuncs(format) == _NclGetFormatFuncs(fcp->options[i].format)) {
+					found = 1;
+					break;
+				}
+				else if (_NclGetLower(fcp->options[i].format) == NrmStringToQuark("all")) {
+					found = 1;
+					break;
+				}
 			}
 			else if (_NclGetLower(format) == NrmStringToQuark("bin") &&
 				 fcp->options[i].format == _NclGetLower(format)) {
 				found = 1;
 				break;
 			}
+#if 0
 			else if (! (_NclGetFormatFuncs(format) &&
 			       _NclGetFormatFuncs(format) == _NclGetFormatFuncs(fcp->options[i].format)) ) {
 				if (_NclGetLower(format) == NrmStringToQuark("shp"))
@@ -1574,6 +1580,7 @@ NclMultiDValData value;
 					break;
 				}
 			}
+#endif
 		}
 		if (found) {
 			if (! value) {
@@ -1730,7 +1737,8 @@ NclFileOption file_options[] = {
 	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 0, NULL },  /* GRIB single element dimensions */
 	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 0, NULL },  /* GRIB time period suffix */
 	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 0, NULL },   /* advanced file-structure */
-	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 4, NULL }  /* Fortran binary file record marker size */
+	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 4, NULL },  /* Fortran binary file record marker size */
+	{ NrmNULLQUARK, NrmNULLQUARK, NULL, NULL, NULL, 0, NULL },   /* GRIB cache size */
 };
 
 NclFileClassRec nclFileClassRec = {
@@ -2229,6 +2237,21 @@ NhlErrorTypes InitializeFileOptions(NclFileClassPart *fcp)
 		_NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,(void *)ival,
 				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypeintClass);
 
+	/*cache size */
+	fcp->options[Ncl_GRIB_CACHE_SIZE].format = NrmStringToQuark("grb");
+	fcp->options[Ncl_GRIB_CACHE_SIZE].name = NrmStringToQuark("cachesize");
+	len_dims = 1;
+	ival = (int*) NclMalloc(sizeof(int));
+	*ival = 0;
+	fcp->options[Ncl_GRIB_CACHE_SIZE].value = 
+		_NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,(void *)ival,
+				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypeintClass);
+	ival = (int*) NclMalloc(sizeof(int));
+	*ival = 0;
+	fcp->options[Ncl_GRIB_CACHE_SIZE].def_value = 
+		_NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,(void *)ival,
+				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypeintClass);
+	fcp->options[Ncl_GRIB_CACHE_SIZE].valid_values = NULL;
 	/* End of options */
 
 	return ret;
@@ -2555,33 +2578,35 @@ int vtype;
 	NclScalar missing_value;
 	int has_missing = 0;
 	void *val = NULL;
-	int index;
-	long start[NCL_MAX_DIMENSIONS];
-	long finish[NCL_MAX_DIMENSIONS];
-	long stride[NCL_MAX_DIMENSIONS];
-	long real_stride[NCL_MAX_DIMENSIONS];
+	int index;   /* index of variable in file */
+	ng_size_t start[NCL_MAX_DIMENSIONS];
+	ng_size_t finish[NCL_MAX_DIMENSIONS];
+	ng_size_t stride[NCL_MAX_DIMENSIONS];
+	ng_size_t real_stride[NCL_MAX_DIMENSIONS];
 	int i,j,k,done = 0,inc_done = 0;
 	int n_dims_input;
-        long  n_elem = 1;
+        ng_size_t  n_elem = 1;
 	int n_dims_output = 1;
-	long total_elements = 1;
+	ng_size_t total_elements = 1;
 	int has_vectors = 0;
 	int has_stride = 0;
 	int has_reverse = 0;
 	int has_reorder = 0;
-	int to = 0,block_read_limit = 1,n_elem_block;
+	ng_size_t to = 0;
+	int block_read_limit = 1;
+	ng_size_t n_elem_block;
 	
-	long multiplier_input[NCL_MAX_DIMENSIONS];
+	ng_size_t multiplier_input[NCL_MAX_DIMENSIONS];
 	int compare_sel[NCL_MAX_DIMENSIONS];
-	long current_index[NCL_MAX_DIMENSIONS];
-	long current_finish[NCL_MAX_DIMENSIONS];
+	ng_size_t current_index[NCL_MAX_DIMENSIONS];
+	ng_size_t current_finish[NCL_MAX_DIMENSIONS];
 	int index_map[NCL_MAX_DIMENSIONS];
 	ng_size_t output_dim_sizes[NCL_MAX_DIMENSIONS];
 	int keeper[NCL_MAX_DIMENSIONS];
 	NclSelection *sel;
 	float tmpf;
-	long tmpi;
-	int swap_size;
+	ng_size_t tmpi;
+	ng_size_t swap_size;
 	void *swap_space = NULL;
 /*
 * By the the time it gets here the file suport routines in that build the selection

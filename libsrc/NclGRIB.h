@@ -181,6 +181,7 @@ struct _GribParamList {
 	NclOneDValCoordData levels;
 	NclMultiDValData levels0;
 	NclMultiDValData levels1;
+	GribRecordInqRec *ref_rec;   /* pointer to the first non-missing record in the list after the array sort is completed */
 	GribRecordInqRecList *thelist;
 	int n_atts;
 	GribAttInqRecList *theatts;
@@ -223,6 +224,7 @@ struct _GribRecordInqRec {
 	int level_indicator;
 	int level0;
 	int level1;
+	int level_index; /* index into the level string and units tables */
 	unsigned char *pds;
 	int pds_size;
 	char *var_name;
@@ -271,7 +273,8 @@ struct _GribAttInqRec {
 #define GRIB_PRINT_RECORD_INFO_OPT 3
 #define GRIB_SINGLE_ELEMENT_DIMENSIONS_OPT 4
 #define GRIB_TIME_PERIOD_SUFFIX_OPT 5
-#define GRIB_NUM_OPTIONS 6
+#define GRIB_CACHE_SIZE_OPT 6
+#define GRIB_NUM_OPTIONS 7
 
 #define GRIB_No_Dims 0
 #define GRIB_All_Dims  0xffffffff

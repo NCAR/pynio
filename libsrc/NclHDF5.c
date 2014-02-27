@@ -36,8 +36,6 @@
 #include <ctype.h>
 #include <string.h>
 
-extern char *strdup(const char *s);
-
 #ifndef MAX_HDF5_NAME_LENGTH
 #define MAX_HDF5_NAME_LENGTH    256
 #endif
@@ -1435,7 +1433,7 @@ void _setHDF5AttValue(HDF5AttInqRecList *new_att_list,
                  NclQuark *tmp_quark;
                  int latlon = 0;
 
-                 buffer = (char *)NclMalloc(attr_node->nbytes * sizeof(char));
+                 buffer = (char *)NclMalloc((1 + attr_node->nbytes) * sizeof(char));
                  if(!buffer)
                  {
                      NhlPError(NhlFATAL,NhlEUNKNOWN, "UNABLE TO ALLOCATE MEMORY for buffer, in file: %s, line: %d\n",
@@ -3444,7 +3442,7 @@ NclHDF5group_node_t *h5_group;
 
     strcpy(var_str, NrmQuarkToString(thevar));
     dot_ptr = strchr(var_str, '.');
-    if(dot_ptr)
+    if(dot_ptr && (NULL == strchr(dot_ptr, '/')))
     {
         is_compound = 1;
         strcpy(component, dot_ptr);
@@ -3648,7 +3646,7 @@ void* storage;
 
     strcpy(var_str, NrmQuarkToString(thevar));
     dot_ptr = strchr(var_str, '.');
-    if(dot_ptr)
+    if(dot_ptr && (NULL == strchr(dot_ptr, '/')))
     {
         is_compound = 1;
         strcpy(component, dot_ptr);
@@ -3903,7 +3901,7 @@ long *stride;
 
     strcpy(var_str, NrmQuarkToString(thevar));
     dot_ptr = strchr(var_str, '.');
-    if(dot_ptr)
+    if(dot_ptr && (NULL == strchr(dot_ptr, '/')))
     {
         is_compound = 1;
         strcpy(component, dot_ptr);

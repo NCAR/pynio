@@ -249,4 +249,8 @@ NhlArgVal /*udata*/
 #endif
 );
 
+NhlErrorTypes _NclReplaceCoordVar(struct _NclVarRec *self,
+                                  struct _NclMultiDValDataRec *value,
+                                  char *coord_name,
+                                  struct _NclSelectionRecord *sel_ptr);
 #endif /* NclVar_h */

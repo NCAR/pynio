@@ -1,5 +1,5 @@
 /*
- *      $Id: DataSupport.c 14204 2013-03-14 14:18:36Z huangwei $
+ *      $Id: DataSupport.c 14537 2013-09-04 21:52:44Z huangwei $
  */
 /************************************************************************
 *									*
@@ -688,6 +688,7 @@ NclObjTypes _NclBasicDataTypeToObjType
         case NCL_ulong:
                 return(Ncl_Typeulong);
         case NCL_uint64:
+        case NCL_reference:
                 return(Ncl_Typeuint64);
         case NCL_ubyte:
                 return(Ncl_Typeubyte);

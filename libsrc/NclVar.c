@@ -431,7 +431,6 @@ FILE *fp;
 	NclVar cvar= NULL;
 	NclMultiDValData tmp_md = NULL;
 	char *v_name;
-	char v_type[256];
 	int i;
 	NclMultiDValData thevalue = NULL;
 	int ret;
@@ -3017,8 +3016,6 @@ static NhlErrorTypes VarReplaceCoord(struct _NclVarRec* self,
 				     struct _NclSelectionRecord *sel_ptr)
 {
 	int index;
-	NclDimRec tmp;
-	NclObj tmp_obj;
 
 	index = VarIsADim(self,coord_name);
 	if((index>=0)&&(index < self->var.n_dims))
