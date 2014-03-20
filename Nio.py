@@ -1,7 +1,9 @@
+#$Id$
+
 '''
 PyNIO enables NetCDF-like access for
     NetCDF 3 (rw), HDF 4 (rw), GRIB 1 (r), CCM (r), and optionally
-    NetCDF 4 (rw), HDFEOS 2/4 (r), GRIB 2 (r), HDFEOS 5 (r), shapefiles
+    NetCDF 4 (rw), HDF 5 (rw), HDFEOS 2/4 (r), GRIB 2 (r), HDFEOS 5 (r), shapefiles
     and other GDAL OGR-supported (r) data formats.
 
 import Nio
@@ -428,8 +430,13 @@ type -- a type identifier. The following are currently supported:
     'd' -- 64 bit real
     'f' -- 32 bit real
     'l','i' -- 32 bit integer
+    'L','I' -- 32 bit unsigned integer
+    'q' -- 64 bit integer
+    'Q' -- 64 bit unsigned integer
     'h' -- 16 bit integer
+    'H' -- 16 bit unsigned integer
     'b' -- 8 bit integer
+    'B' -- 8 bit unsigned integer
     'S1','c' -- character
 dimensions -- a tuple of dimension names (strings), previously defined
     '''
@@ -577,6 +584,7 @@ be part of the actual file name), or it must be specified using the optional
     .nc, .cdf, .netcdf, .nc3, .nc4,  -- NetCDF
     .gr, .grb, .grib, .gr1, .grb1, .grib1, .gr2, .grb2, .grib2, -- GRIB
     .hd, .hdf -- HDF
+    .h5, .hdf5 -- HDF5
     .he2, .he4, .hdfeos -- HDFEOS
     .he5, .hdfeos5 -- HDFEOS5
     .shp, .mif, .gmt, .rt1 -- shapefiles, other formats supported by GDAL OGR

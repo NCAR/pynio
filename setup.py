@@ -231,6 +231,7 @@ try:
     except:
       pass
   else:
+    LIB_EXCLUDE_SOURCES.append('NclNewHDF5.c')
     LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
     LIB_EXCLUDE_SOURCES.append('h5reader.c')
     LIB_EXCLUDE_SOURCES.append('h5writer.c')
@@ -448,6 +449,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('nio',sources,
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,
+                       extra_compiler_args = [ '-O0 -g', '-w' ]
 #                       extra_compiler_args = [ '-O2', '-w' ]
                        )
     
@@ -470,6 +472,8 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
+print pkgs_pth
+pkgs_pth = '/glade/p/work/huangwei/lib/python2.7/site-packages/PyNIO'
  
 #print data_files
 setup (version      = pynio_version,
@@ -488,3 +492,5 @@ setup (version      = pynio_version,
 #
 if os.path.exists(pynio_vfile):
   os.system("/bin/rm -rf " + pynio_vfile)
+
+print "NEED TO change pkgs_pth to your own PYTHONPATH"
