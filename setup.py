@@ -286,6 +286,22 @@ formats['shapefile'] = HAS_GDAL
 
 try:
   try:
+    HAS_ZLIB = int(os.environ["HAS_ZLIB"])
+  except:
+    if HAS_NETCDF4 > 0 or HAS_HDFEOS5 > 0:
+      HAS_ZLIB = 1
+  if HAS_ZLIB > 0:
+    LIBRARIES.append('z')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["ZLIB_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["ZLIB_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_ZLIB = 0
+
+try:
+  try:
     HAS_SZIP = int(os.environ["HAS_SZIP"])
   except:
     if HAS_NETCDF4 > 0 or HAS_HDFEOS5 > 0:
@@ -472,8 +488,14 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-print pkgs_pth
-pkgs_pth = '/glade/p/work/huangwei/lib/python2.7/site-packages/PyNIO'
+print "\n\n\nOld pkgs_pth = ", pkgs_pth
+
+print "FORCED pkgs_pth to the first of PYTHONPATH"
+pythonpaths = os.environ["PYTHONPATH"].split(':')
+print "pythonpaths = ", pythonpaths
+pkgs_pth = pythonpaths[0]
+print "\n\n\nNew pkgs_pth = ", pkgs_pth
+print "\n\n\n"
  
 #print data_files
 setup (version      = pynio_version,
@@ -493,4 +515,6 @@ setup (version      = pynio_version,
 if os.path.exists(pynio_vfile):
   os.system("/bin/rm -rf " + pynio_vfile)
 
-print "NEED TO change pkgs_pth to your own PYTHONPATH"
+print "\n\n\nNew pkgs_pth = ", pkgs_pth
+print "\n\n\n"
+ 
