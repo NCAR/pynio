@@ -6,9 +6,11 @@
  setenv HAS_ZLIB	1
  setenv HAS_SZIP	1
  setenv HAS_HDF5	1
+ setenv HAS_NETCDF4	1
 
  set mn = `uname -n | cut -c -2`
  switch($mn)
+     case ys:
      case ge:
          #module refresh gnu/4.7.2
          #setenv ZLIB_PREFIX	/glade/p/work/huangwei/lib/zlib/1.2.8

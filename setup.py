@@ -155,6 +155,7 @@ try:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
     LIB_MACROS.append(('USE_NETCDF4', None))
+    LIB_MACROS.append(('USE_NETCDF4_FEATURES', None))
     try:
       HAS_OPENDAP = int(os.environ["HAS_OPENDAP"])
     except:    
@@ -222,9 +223,9 @@ try:
   HAS_HDF5 = int(os.environ["HAS_HDF5"])
   if HAS_HDF5 > 0:
     LIB_MACROS.append(('BuildHDF5', None))
-    if HAS_NETCDF4 == 0:
-      LIBRARIES.append('hdf5_hl')
-      LIBRARIES.append('hdf5')
+    LIBRARIES.append('hdf5_hl')
+    LIBRARIES.append('hdf5')
+
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"include"))
@@ -237,6 +238,7 @@ try:
     LIB_EXCLUDE_SOURCES.append('h5writer.c')
 except:
   HAS_HDF5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclNewHDF5.c')
   LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
   LIB_EXCLUDE_SOURCES.append('h5reader.c')
   LIB_EXCLUDE_SOURCES.append('h5writer.c')

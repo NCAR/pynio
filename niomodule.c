@@ -791,6 +791,8 @@ check_if_open(NioFileObject *file, int mode)
 static void
 NioFileObject_dealloc(NioFileObject *self)
 {
+  fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+		__PRETTY_FUNCTION__, __FILE__, __LINE__);
 /*
   if (self->open)
     NioFile_Close(self);
@@ -867,12 +869,16 @@ NioFile_Open(char *filename, char *mode)
   NclFile file = NULL;
   int crw;
 
+  fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+		__PRETTY_FUNCTION__, __FILE__, __LINE__);
+
   nio_ncerr = 0;
 
   if (self == NULL)
     return NULL;
   self->dimensions = NULL;
   self->variables = NULL;
+  self->groups = NULL;
   self->attributes = NULL;
   self->name = NULL;
   self->mode = NULL;
@@ -918,72 +924,161 @@ nio_file_init(NioFileObject *self)
 	self->recdim = -1; /* for now */
 	if(file->file.advanced_file_structure)
 	{
-		fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-				__PRETTY_FUNCTION__, __FILE__, __LINE__);
+		NclAdvancedFile advfile = (NclAdvancedFile) self->id;
+		NclFileDimRecord* dimrec;
+		NclFileDimNode*   dimnode;
+		char* name;
+		ng_size_t size;
+		PyObject* size_ob;
+
+		NclFileVarRecord* varrec;
+		NclFileVarNode*   varnode;
+		NclBasicDataTypes datatype;
+		NioVariableObject *variable;
+		NrmQuark* qdims;
+
+		int ndimensions, nattrs;
+
+                fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                               __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+		dimrec = advfile->advancedfile.grpnode->dim_rec;
+
+		if(NULL != dimrec)
+		{
+			for(i = 0; i < dimrec->n_dims; ++i)
+			{
+				dimnode = &(dimrec->dim_node[i]);
+				if(dimnode->is_unlimited)
+				{
+					self->recdim = i;
+				}
+
+				if(dimnode->name == scalar_dim)
+					scalar_dim_ix = i;
+				else
+				{
+					name = NrmQuarkToString(dimnode->name);
+					size = dimnode->size;
+					size_ob = PyInt_FromSize_t(size);
+					PyDict_SetItemString(self->dimensions, name, size_ob);
+					Py_DECREF(size_ob);
+
+                			fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
+                			fprintf(stderr, "\tDim %d: name: <%s>, size: %d\n", i, name, size);
+				}
+			}
+		}
+
+		varrec = advfile->advancedfile.grpnode->var_rec;
+		if(NULL != varrec)
+		{
+			for(i = 0; i < varrec->n_vars; ++i)
+			{
+				varnode = &(varrec->var_node[i]);
+				datatype = varnode->type;
+				ndimensions = varnode->dim_rec->n_dims;
+				nattrs = varnode->att_rec->n_atts;
+				name = NrmQuarkToString(varnode->name);
+
+                		fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
+                		fprintf(stderr, "\tVar %d: name: <%s>, ndims: %d, natts: %d\n", i, name, ndimensions, nattrs);
+
+				if(ndimensions == 1 && varnode->dim_rec->dim_node[0].id == scalar_dim_ix)
+				{
+					ndimensions = 0;
+					qdims = NULL;
+				}
+				else if (ndimensions > 0)
+				{
+					qdims = (NrmQuark *) malloc(ndimensions *sizeof(NrmQuark));
+
+					if(NULL == qdims)
+					{
+						PyErr_NoMemory();
+						return 0;
+					}
+
+					for(j = 0; j < ndimensions; ++j)
+					{
+						qdims[j] = varnode->dim_rec->dim_node[j].name;
+					}
+				}
+				else
+					qdims = NULL;
+
+				variable = nio_variable_new(self, name, i, data_type(datatype),
+											ndimensions, qdims, nattrs);
+				PyDict_SetItemString(self->variables, name, (PyObject *)variable);
+				Py_DECREF(variable);
+			}
+		}
 	}
 	else
 	{
-	for (i = 0; i < ndims; i++) {
-		char *name;
-		ng_size_t size;
-		PyObject *size_ob;
-		NclFDimRec *fdim = file->file.file_dim_info[i];
-		if (fdim->is_unlimited) {
-			self->recdim = i;
-		}
-		if (fdim->dim_name_quark != scalar_dim) {
-			name = NrmQuarkToString(fdim->dim_name_quark);
-			size = fdim->dim_size;
-			size_ob = PyInt_FromSize_t(size);
-			PyDict_SetItemString(self->dimensions, name, size_ob);
-			Py_DECREF(size_ob);
-		}
-		else {
-			scalar_dim_ix = i;
+                fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                               __PRETTY_FUNCTION__, __FILE__, __LINE__);
 
-		}
-	}
-	for (i = 0; i < nvars; i++) {
-		char *name;
-		NclBasicDataTypes datatype;
-		NclFVarRec *fvar;
-		NclFileAttInfoList *att_list;
-		int ndimensions, nattrs;
-		NioVariableObject *variable;
-		NrmQuark *qdims;
-
-		fvar = file->file.var_info[i];
-		ndimensions = fvar->num_dimensions;
-		datatype = fvar->data_type;
-		nattrs = 0;
-		att_list = file->file.var_att_info[i];
-		while (att_list != NULL) {
-			nattrs++;
-			att_list = att_list->next;
-		}
-		name = NrmQuarkToString(fvar->var_name_quark);
-		if (ndimensions == 1 && fvar->file_dim_num[0] == scalar_dim_ix) {
-			ndimensions = 0;
-			qdims = NULL;
-		}
-		else if (ndimensions > 0) {
-			qdims = (NrmQuark *) malloc(ndimensions *sizeof(NrmQuark));
-
-			if (qdims == NULL) {
-				PyErr_NoMemory();
-				return 0;
+		for (i = 0; i < ndims; i++) {
+			char *name;
+			ng_size_t size;
+			PyObject *size_ob;
+			NclFDimRec *fdim = file->file.file_dim_info[i];
+			if (fdim->is_unlimited) {
+				self->recdim = i;
 			}
-			for (j = 0; j < ndimensions; j++) {
-				qdims[j] = file->file.file_dim_info[fvar->file_dim_num[j]]->dim_name_quark;
+			if (fdim->dim_name_quark != scalar_dim) {
+				name = NrmQuarkToString(fdim->dim_name_quark);
+				size = fdim->dim_size;
+				size_ob = PyInt_FromSize_t(size);
+				PyDict_SetItemString(self->dimensions, name, size_ob);
+				Py_DECREF(size_ob);
+			}
+			else {
+				scalar_dim_ix = i;
 			}
 		}
-		else
-			qdims = NULL;
-		variable = nio_variable_new(self, name, i, data_type(datatype),
-					    ndimensions, qdims, nattrs);
-		PyDict_SetItemString(self->variables, name, (PyObject *)variable);
-		Py_DECREF(variable);
-	}
+		for (i = 0; i < nvars; i++) {
+			char *name;
+			NclBasicDataTypes datatype;
+			NclFVarRec *fvar;
+			NclFileAttInfoList *att_list;
+			int ndimensions, nattrs;
+			NioVariableObject *variable;
+			NrmQuark *qdims;
+	
+			fvar = file->file.var_info[i];
+			ndimensions = fvar->num_dimensions;
+			datatype = fvar->data_type;
+			nattrs = 0;
+			att_list = file->file.var_att_info[i];
+			while (att_list != NULL) {
+				nattrs++;
+				att_list = att_list->next;
+			}
+			name = NrmQuarkToString(fvar->var_name_quark);
+			if (ndimensions == 1 && fvar->file_dim_num[0] == scalar_dim_ix) {
+				ndimensions = 0;
+				qdims = NULL;
+			}
+			else if (ndimensions > 0) {
+				qdims = (NrmQuark *) malloc(ndimensions *sizeof(NrmQuark));
+	
+				if (qdims == NULL) {
+					PyErr_NoMemory();
+					return 0;
+				}
+				for (j = 0; j < ndimensions; j++) {
+					qdims[j] = file->file.file_dim_info[fvar->file_dim_num[j]]->dim_name_quark;
+				}
+			}
+			else
+				qdims = NULL;
+			variable = nio_variable_new(self, name, i, data_type(datatype),
+					    	ndimensions, qdims, nattrs);
+			PyDict_SetItemString(self->variables, name, (PyObject *)variable);
+			Py_DECREF(variable);
+		}
 	}
 
 	collect_attributes(self->id, NC_GLOBAL, self->attributes, ngattrs);

@@ -11,5 +11,8 @@
 #include "NclMdInc.h"
 #include "TypeSupport.h"
 
+#include "NclAdvancedFileStructure.h"
+#include "NclAdvancedFile.h"
+
 
 extern void NioInitialize(void);

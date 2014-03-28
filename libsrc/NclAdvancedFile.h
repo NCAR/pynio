@@ -125,22 +125,22 @@ extern NclFile _NclAdvancedFileCreate(NclObj       inst,
 				 char        *end_of_name,
 				 int          len_path);
 
-void _clearNclPrintIndentation();
-void _increaseNclPrintIndentation();
-void _decreaseNclPrintIndentation();
+static void _clearNclPrintIndentation();
+static void _increaseNclPrintIndentation();
+static void _decreaseNclPrintIndentation();
 
-void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
-void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
-void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
-void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
-void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
-void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *varnode);
-void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
-void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
+extern void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
+extern void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
+extern void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
+extern void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
+extern void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
+extern void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *varnode);
+extern void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
+extern void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
 
-void AdvancedLoadVarAtts(NclAdvancedFile thefile, NclQuark var);
+extern void AdvancedLoadVarAtts(NclAdvancedFile thefile, NclQuark var);
 
-NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp);
+extern NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp);
 
 extern char *_getComponentName(const char *fullname, char **structname);
 extern NclFileCompoundNode *_getComponentNodeFromVarNode(NclFileVarNode *varnode,

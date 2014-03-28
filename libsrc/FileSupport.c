@@ -3674,11 +3674,13 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
        		return file_ext_q;
 	}
 #endif
-	else if((0 == strcmp(fext, "cdf")) || (0 == strcmp(fext, "nc3")) ||
-           (0 == strcmp(fext, "nc4")) || (0 == strcmp(fext, "netcdf")))
+	else if((0 == strcmp(fext, "cdf")) || (0 == strcmp(fext, "nc")) ||
+                (0 == strcmp(fext, "nc3")) ||
+                (0 == strcmp(fext, "nc4")) || (0 == strcmp(fext, "netcdf")))
 	{
 		ori_file_ext_q = NrmStringToQuark("nc");
 		*use_advanced_file_structure = NCLadvancedFileStructure[_NclNETCDF]
+					     + NCLadvancedFileStructure[_NclNETCDF4]
 					     + NCLadvancedFileStructure[0];
 	}
 #ifdef BuildHDF4
@@ -4020,8 +4022,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 		}
 	}
 
-#ifndef NIO_LIB_ONLY
-
       /*Make h5 works for two file strucuture.
 
        *if(NrmStringToQuark("h5") == file_ext_q)
@@ -4060,12 +4060,9 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 	}					
 	else
 	{
-#endif
 		file_out = _NclFileCreate(inst, theclass, obj_type, obj_type_mask, status,
 				path, rw_status, file_ext_q, fname_q, is_http, end_of_name, len_path);
-#ifndef NIO_LIB_ONLY
 	}		
-#endif			
 
 	return file_out;
 }

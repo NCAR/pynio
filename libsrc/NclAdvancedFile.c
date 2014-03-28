@@ -2790,11 +2790,11 @@ NclFile _NclAdvancedFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes ob
     }
 
   /*
-   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tfname_q: <%s>\n", NrmQuarkToString(fname_q));
-   *fprintf(stderr, "\tpath: <%s>\n", NrmQuarkToString(path));
-   *fprintf(stderr, "\tfile_ext_q: <%s>\n", end_of_name);
    */
+    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tfname_q: <%s>\n", NrmQuarkToString(fname_q));
+    fprintf(stderr, "\tpath: <%s>\n", NrmQuarkToString(path));
+    fprintf(stderr, "\tfile_ext_q: <%s>\n", end_of_name);
 
     file_out->advancedfile.fname = fname_q;
     file_out->advancedfile.file_format = 0;
