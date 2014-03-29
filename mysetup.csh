@@ -8,6 +8,8 @@
  setenv HAS_HDF5	1
  setenv HAS_NETCDF4	1
 
+ setenv CFLAGS		"-O0 -g"
+
  set mn = `uname -n | cut -c -2`
  switch($mn)
      case ys:
