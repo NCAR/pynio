@@ -349,11 +349,14 @@ Return variable 't' will be one of the following:\n\
  */
 short NCLnoPrintElem = 0;
 
+size_t NCLtotalVariables = 0;
+
 staticforward int nio_file_init(NioFileObject *self);
 staticforward NioGroupObject *nio_group_new(NioFileObject *file, char *name);
-staticforward NioVariableObject *nio_variable_new(
-	NioFileObject *file, char *name, int id, 
-	int type, int ndims, NrmQuark *qdims, int nattrs);
+staticforward NioVariableObject* nio_advanced_variable_new(NioFileObject* file,
+                                                           NclFileVarNode* varnode, int id);
+staticforward NioVariableObject *nio_variable_new(NioFileObject *file, char *name, int id, 
+	                                          int type, int ndims, NrmQuark *qdims, int nattrs);
 
 static PyObject *Niomodule; /* the Nio Module object */
 
@@ -921,15 +924,9 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
     ng_size_t size;
     PyObject* size_ob;
 
-    NclBasicDataTypes datatype;
     NioVariableObject *variable;
-    NrmQuark* qdims;
-
-    int ndimensions, nattrs;
 
     int i, j;
-    int scalar_dim_ix = -1;
-    NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
 
     if(NULL != grpnode->att_rec)
         *ngattrs += grpnode->att_rec->n_atts;
@@ -949,23 +946,16 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
         {
             dimnode = &(dimrec->dim_node[i]);
             if(dimnode->is_unlimited)
-            {
                 self->recdim = i;
-            }
 
-            if(dimnode->name == scalar_dim)
-                scalar_dim_ix = i;
-            else
-            {
-                name = NrmQuarkToString(dimnode->name);
-                size = dimnode->size;
-                size_ob = PyInt_FromSize_t(size);
-                PyDict_SetItemString(self->dimensions, name, size_ob);
-                Py_DECREF(size_ob);
+            name = NrmQuarkToString(dimnode->name);
+            size = dimnode->size;
+            size_ob = PyInt_FromSize_t(size);
+            PyDict_SetItemString(self->dimensions, name, size_ob);
+            Py_DECREF(size_ob);
 
-                fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
-                fprintf(stderr, "\tDim %d: name: <%s>, size: %ld\n", i, name, size);
-            }
+            fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
+            fprintf(stderr, "\tDim %d: name: <%s>, size: %ld\n", i, name, size);
         }
     }
 
@@ -976,39 +966,12 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
         for(i = 0; i < varrec->n_vars; ++i)
         {
             varnode = &(varrec->var_node[i]);
-            datatype = varnode->type;
-            ndimensions = varnode->dim_rec->n_dims;
-            nattrs = varnode->att_rec->n_atts;
             name = NrmQuarkToString(varnode->name);
 
             fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
-            fprintf(stderr, "\tVar %d: name: <%s>, ndims: %d, natts: %d\n", i, name, ndimensions, nattrs);
+            fprintf(stderr, "\tVar %d: name: <%s>\n", i, name);
 
-            if(ndimensions == 1 && varnode->dim_rec->dim_node[0].id == scalar_dim_ix)
-            {
-                ndimensions = 0;
-                qdims = NULL;
-            }
-            else if (ndimensions > 0)
-            {
-                qdims = (NrmQuark *) malloc(ndimensions *sizeof(NrmQuark));
-
-                if(NULL == qdims)
-                {
-                    PyErr_NoMemory();
-                    return 0;
-                }
-
-                for(j = 0; j < ndimensions; ++j)
-                {
-                    qdims[j] = varnode->dim_rec->dim_node[j].name;
-                }
-            }
-            else
-                qdims = NULL;
-
-            variable = nio_variable_new(self, name, i, data_type(datatype),
-                                        ndimensions, qdims, nattrs);
+            variable = nio_advanced_variable_new(self, varnode, i);
             PyDict_SetItemString(self->variables, name, (PyObject *)variable);
             Py_DECREF(variable);
         }
@@ -2692,6 +2655,84 @@ NioVariableObject_dealloc(NioVariableObject *self)
 }
 
 /* Create variable object */
+
+statichere NioVariableObject* nio_advanced_variable_new(NioFileObject* file,
+                                                        NclFileVarNode* varnode, int id)
+{
+    NioVariableObject *self;
+    NclAdvancedFile advfile = (NclAdvancedFile) file->id;
+    NclFileDimRecord* dimrec = varnode->dim_rec;
+    NclFileDimNode*   dimnode;
+    NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+    NrmQuark* qdims = NULL;
+    char* name = NrmQuarkToString(varnode->name);
+    int scalar_dim_ix = -1;
+    int i;
+
+    if(! check_if_open(file, -1))
+        return NULL;
+
+    self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
+    if(self == NULL)
+       return NULL;
+
+    self->file = file;
+    Py_INCREF(file);
+    self->id = id;
+    self->type = data_type(varnode->type);
+    self->nd = 0;
+    self->qdims = NULL;
+    self->unlimited = 0;
+    self->dimensions = NULL;
+    self->name = (char *)malloc(strlen(name)+1);
+    if(self->name != NULL)
+        strcpy(self->name, name);
+    self->attributes = PyDict_New();
+    collect_advancedfile_attributes(varnode->att_rec, self->attributes);
+
+    if(NULL == dimrec)
+        return self;
+
+    self->dimensions = (Py_ssize_t *)malloc(dimrec->n_dims*sizeof(Py_ssize_t));
+    if(NULL == self->dimensions)
+        return self;
+
+    qdims = (NrmQuark *) malloc(dimrec->n_dims *sizeof(NrmQuark));
+
+    if(NULL == qdims)
+    {
+        PyErr_NoMemory();
+        return self;
+    }
+
+    for(i = 0; i < dimrec->n_dims; ++i)
+    {
+        dimnode = &(dimrec->dim_node[i]);
+        if(dimnode->id < 0)
+        {
+            sprintf(err_buf,"Dimension (%s) not found",NrmQuarkToString(qdims[i]));
+            PyErr_SetString(NIOError, err_buf);
+            return self;
+        }
+        if(dimnode->name == scalar_dim)
+            scalar_dim_ix = i;
+        qdims[i] = dimnode->name;
+        self->dimensions[i] = (Py_ssize_t)dimnode->size;
+        if(dimnode->is_unlimited)
+            self->unlimited = 1;
+    }
+
+    self->nd = dimrec->n_dims;
+    if(self->nd == 1 && dimrec->dim_node[0].id == scalar_dim_ix)
+    {
+        self->nd = 0;
+        free(qdims);
+        qdims = NULL;
+    }
+    self->qdims = qdims;
+
+    return self;
+}
 
 statichere NioVariableObject *
 nio_variable_new(NioFileObject *file, char *name, int id, 
