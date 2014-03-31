@@ -217,7 +217,7 @@ void
 #endif
 );
 
-extern int _NclFinalizeSymbol();
+extern int _NclFinalizeSymbol(void);
 
 extern int _NclNewScope(
 #if	NhlNeedProto

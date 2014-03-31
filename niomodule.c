@@ -185,6 +185,7 @@ Methods:\n\
     create_group(name) -- create a group in the file.\n\n\
 ";
 
+#if 0
 static char *niogroup_type_doc =
 "\n\
 NioGroup object\n\n\
@@ -207,6 +208,7 @@ Methods:\n\
     create_variable(name,type,dimensions) -- create a variable in the group.\n\n\
     create_group(name) -- create a group in the group.\n\n\
 ";
+#endif
 
 /* NioFile object method doc strings */
 
@@ -352,7 +354,9 @@ short NCLnoPrintElem = 0;
 size_t NCLtotalVariables = 0;
 
 staticforward int nio_file_init(NioFileObject *self);
+/*
 staticforward NioGroupObject *nio_group_new(NioFileObject *file, char *name);
+*/
 staticforward NioVariableObject* nio_advanced_variable_new(NioFileObject* file,
                                                            NclFileVarNode* varnode, int id);
 staticforward NioVariableObject *nio_variable_new(NioFileObject *file, char *name, int id, 
@@ -926,7 +930,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 
     NioVariableObject *variable;
 
-    int i, j;
+    int i;
 
     if(NULL != grpnode->att_rec)
         *ngattrs += grpnode->att_rec->n_atts;
@@ -998,6 +1002,8 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
            */
         }
     }
+
+    return 0;
 }
 
 static void collect_advancedfile_attributes(NclFileAttRecord* attrec, PyObject *attributes)
@@ -1062,7 +1068,7 @@ nio_file_init(NioFileObject *self)
 	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
 	self->dimensions = PyDict_New();
 	self->variables = PyDict_New();
-	self->groups = PyDict_New();
+	/*self->groups = PyDict_New();*/
 	self->attributes = PyDict_New();
 	self->recdim = -1; /* for now */
 	if(file->file.advanced_file_structure)
@@ -1287,7 +1293,7 @@ NioGroupObject *
 NioFile_CreateGroup( NioFileObject *file, char *name, 
 			  int typecode, char **dimension_names, int ndim)
 {
-
+#if 0
   if (check_if_open(file, 1)) {
 	  NioGroupObject *group;
 	  int i,id;
@@ -1351,7 +1357,9 @@ NioFile_CreateGroup( NioFileObject *file, char *name,
 		  return NULL;
 	  }
   }
-  else {
+  else
+#endif
+  {
 	  return NULL;
   }
 }
@@ -1418,8 +1426,8 @@ static PyObject *NioGroupObject_new_group(NioGroupObject *self, PyObject *args)
 {
   fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
 		__PRETTY_FUNCTION__, __FILE__, __LINE__);
+  NioGroupObject *var = NULL;
 #if 0
-  NioGroupObject *var;
   char **dimension_names;
   PyObject *item, *dim;
   char *name;
@@ -1471,17 +1479,17 @@ static PyObject *NioGroupObject_new_group(NioGroupObject *self, PyObject *args)
 
   if (dimension_names)
 	  free(dimension_names);
-  return (PyObject *)var;
 #endif
+  return (PyObject *)var;
 }
 
 /* Return a group object referring to an existing group */
-
-static NioGroupObject *
-NioFile_GetGroup(NioFileObject *file, char *name)
+#if 0
+static NioGroupObject* NioFile_GetGroup(NioFileObject *file, char *name)
 {
   return (NioGroupObject *)PyDict_GetItemString(file->groups, name);
 }
+#endif
 
 /* Create variable in a group */
 
@@ -1953,10 +1961,12 @@ NioFile_GetAttribute(NioFileObject *self, char *name)
       Py_INCREF(self->variables);
       return self->variables;
     }
+#if 0
     if (strcmp(name, "groups") == 0) {
       Py_INCREF(self->groups);
       return self->groups;
     }
+#endif
     if (strcmp(name, "__dict__") == 0) {
       Py_INCREF(self->attributes);
       return self->attributes;
@@ -2047,6 +2057,7 @@ NioFile_AddHistoryLine(NioFileObject *self, char *text)
 
 PyObject *NioGroup_GetAttribute(NioGroupObject *self, char *name)
 {
+#if 0
   PyObject *value;
   if (check_if_open(self, -1)) {
     if (strcmp(name, "dimensions") == 0) {
@@ -2076,12 +2087,14 @@ PyObject *NioGroup_GetAttribute(NioGroupObject *self, char *name)
     }
   }
   else
+#endif
     return NULL;
 }
 
 int NioGroup_SetAttribute(NioGroupObject *self, char *name, PyObject *value)
 {
   nio_ncerr = 0;
+#if 0
   if (check_if_open(self, 1)) {
     if (strcmp(name, "dimensions") == 0 ||
 	strcmp(name, "variables") == 0 ||
@@ -2091,9 +2104,11 @@ int NioGroup_SetAttribute(NioGroupObject *self, char *name, PyObject *value)
 	    return -1;
     }
     define_mode(self, 1);
+    /*FIXME, Wei*/
     return set_attribute(self, NC_GLOBAL, self->attributes, name, value);
   }
   else
+#endif
     return -1;
 }
 
@@ -2353,10 +2368,12 @@ static PyObject *NioGroupObject_str(NioGroupObject *file)
 	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
 	PyObject *att_val;
 
+#if 0
 	if (! check_if_open(file, -1)) {
 		PyErr_Clear();
 		return NioGroupObject_repr(file);
 	}
+#endif
 
 	buf = malloc(bufinc);
 	buflen = bufinc;
@@ -2660,7 +2677,6 @@ statichere NioVariableObject* nio_advanced_variable_new(NioFileObject* file,
                                                         NclFileVarNode* varnode, int id)
 {
     NioVariableObject *self;
-    NclAdvancedFile advfile = (NclAdvancedFile) file->id;
     NclFileDimRecord* dimrec = varnode->dim_rec;
     NclFileDimNode*   dimnode;
     NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
@@ -2781,7 +2797,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
 }
 
 /* Create group object */
-
+#if 0
 statichere NioGroupObject *nio_group_new(NioFileObject *file, char *name)
 {
   fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
@@ -2808,6 +2824,7 @@ statichere NioGroupObject *nio_group_new(NioFileObject *file, char *name)
 #endif
     return NULL;
 }
+#endif
 
 /* Return value */
 
@@ -2929,15 +2946,26 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
   }
   if (strcmp(name, "dimensions") == 0) {
     PyObject *tuple;
-    char *name;
+    char *dname;
     int i;
     if (check_if_open(self->file, -1)) {
       NclFile nfile = (NclFile) self->file->id;
       tuple = PyTuple_New(self->nd);
-      for (i = 0; i < self->nd; i++) {
+      if(nfile->file.advanced_file_structure)
+      {
+          for(i = 0; i < self->nd; i++)
+          {
+	      dname = NrmQuarkToString(self->qdims[i]);
+	      PyTuple_SetItem(tuple, i, PyString_FromString(dname));
+          }
+      }
+      else
+      {
+          for (i = 0; i < self->nd; i++) {
 	      int dimid = _NclFileIsDim(nfile,self->qdims[i]);
-	      name = NrmQuarkToString(nfile->file.file_dim_info[dimid]->dim_name_quark);
-	      PyTuple_SetItem(tuple, i, PyString_FromString(name));
+	      dname = NrmQuarkToString(nfile->file.file_dim_info[dimid]->dim_name_quark);
+	      PyTuple_SetItem(tuple, i, PyString_FromString(dname));
+          }
       }
       return tuple;
     }
@@ -4504,10 +4532,10 @@ NioFile_Options(PyObject *self, PyObject *args)
 	return PyInstance_New(class,NULL,NULL);
 }
 	
+#if 0
 /* Creator for NioGroup objects */
 
-static PyObject *
-NioGroup(PyObject *self, PyObject *args,PyObject *kwds)
+static PyObject *NioGroup(PyObject *self, PyObject *args,PyObject *kwds)
 {
   char *filepath;
   char *mode = "r";
@@ -4575,6 +4603,7 @@ NioGroup(PyObject *self, PyObject *args,PyObject *kwds)
   }
   return (PyObject *)file;
 }
+#endif
 
 static PyObject *
 SetUpDefaultOptions( void )

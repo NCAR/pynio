@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 14204 2013-03-14 14:18:36Z huangwei $
+ *      $Id: NclAdvancedFile.h 15121 2014-03-12 17:49:11Z huangwei $
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h
@@ -44,10 +44,6 @@
 #include "NclCallBacksI.h"
 #include "NclData.h"
 #include "NclAdvancedFileStructure.h"
-
-#define NCLFILE_INC -1
-#define NCLFILE_DEC -2
-#define NCLFILE_VEC 0
 
 extern int grib_version;
 
@@ -105,7 +101,6 @@ struct _NclAdvancedFileRec
     NclObjPart      obj;
     NclFilePart     file;
     NclAdvancedFilePart  advancedfile;
-
 };
 
 extern NclObjClass nclAdvancedFileClass;
@@ -125,22 +120,22 @@ extern NclFile _NclAdvancedFileCreate(NclObj       inst,
 				 char        *end_of_name,
 				 int          len_path);
 
-static void _clearNclPrintIndentation();
-static void _increaseNclPrintIndentation();
-static void _decreaseNclPrintIndentation();
+void _clearNclPrintIndentation(void);
+void _increaseNclPrintIndentation(void);
+void _decreaseNclPrintIndentation(void);
 
-extern void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
-extern void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
-extern void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
-extern void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
-extern void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
-extern void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *varnode);
-extern void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
-extern void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
+void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
+void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
+void _printNclFileDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
+void _printNclFileChunkDimRecord(FILE *fp, NclAdvancedFile thefile, NclFileDimRecord *dim_rec);
+void _printNclFileVarDimRecord(FILE *fp, NclFileDimRecord *dim_rec);
+void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *varnode);
+void _printNclFileVarRecord(FILE *fp, NclAdvancedFile thefile, NclFileVarRecord *var_rec);
+void _printNclFileGrpRecord(FILE *fp, NclAdvancedFile thefile, NclFileGrpRecord *grp_rec);
+
+NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp);
 
 extern void AdvancedLoadVarAtts(NclAdvancedFile thefile, NclQuark var);
-
-extern NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp);
 
 extern char *_getComponentName(const char *fullname, char **structname);
 extern NclFileCompoundNode *_getComponentNodeFromVarNode(NclFileVarNode *varnode,
