@@ -19,30 +19,13 @@ extern "C" {
 #include <stdio.h>
 #include "Python.h"
 
-/* NIOGroup object */
-
-typedef struct NioGroupObject NioGroupStruct;
-
-typedef struct {
-  PyObject_HEAD
-  NioGroupStruct *groups; /* dictionary */
-  PyObject *dimensions;   /* dictionary */
-  PyObject *variables;    /* dictionary */
-  PyObject *attributes;   /* dictionary */
-  PyObject *name;         /* string */
-  PyObject *mode;         /* string */
-  void *id;
-  char open;
-  char define;
-  char write;
-  int recdim;
-} NioGroupObject;
-
 /* NIOFile object */
 
-typedef struct {
+typedef struct NioFileObjectStruct NioFileObject;
+
+typedef struct NioFileObjectStruct {
   PyObject_HEAD
-  NioGroupStruct *groups; /* dictionary */
+  NioFileObject *groups;  /* dictionary */
   PyObject *dimensions;   /* dictionary */
   PyObject *variables;    /* dictionary */
   PyObject *attributes;   /* dictionary */
@@ -99,11 +82,6 @@ typedef enum
     NioFile_CreateVariable_NUM,
     NioFile_GetVariable_NUM,
     NioFile_CreateDimension_NUM,
-    NioGroup_CreateGroup_NUM,
-    NioGroup_GetGroup_NUM,
-    NioGroup_CreateVariable_NUM,
-    NioGroup_GetVariable_NUM,
-    NioGroup_CreateDimension_NUM,
     NioVariable_GetRank_NUM,
     NioVariable_GetShape_NUM,
     NioVariable_Indices_NUM,
@@ -112,9 +90,6 @@ typedef enum
     NioFile_GetAttribute_NUM,
     NioFile_SetAttribute_NUM,
     NioFile_SetAttributeString_NUM,
-    NioGroup_GetAttribute_NUM,
-    NioGroup_SetAttribute_NUM,
-    NioGroup_SetAttributeString_NUM,
     NioVariable_GetAttribute_NUM,
     NioVariable_SetAttribute_NUM,
     NioVariable_SetAttributeString_NUM,
