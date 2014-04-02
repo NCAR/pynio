@@ -31,12 +31,13 @@ typedef struct NioFileObjectStruct {
   PyObject *attributes;   /* dictionary */
   PyObject *name;         /* string */
   PyObject *mode;         /* string */
+  PyObject *type;         /* string */
   void *id;
   char open;
   char define;
   char write;
   int recdim;
-} NioFileObject;
+};
 
 /* NIOVariable object */
 
