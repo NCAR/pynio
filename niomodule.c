@@ -846,6 +846,7 @@ NioFile_Open(char *filename, char *mode)
   self->name = NULL;
   self->mode = NULL;
   self->open = 0;
+  self->type = PyString_FromString("file");
 
   crw = GetNioMode(filename,mode);
   file = _NclCreateFile(NULL,NULL,Ncl_File,0,TEMPORARY,
@@ -885,7 +886,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
     PyObject* size_ob;
 
     NioVariableObject *variable;
-    NioVariableObject *group;
+    NioFileObject *group;
 
     int i;
 
@@ -1677,7 +1678,7 @@ format_object(char *buf,PyObject *obj,int code)
 	}
 }
 
-static insert2buf(char* tbuf, char* buf, int *bufpos, int *buflen, int bufinc)
+static void insert2buf(char* tbuf, char* buf, int *bufpos, int *buflen, int bufinc)
 {
     int len = strlen(tbuf);
 
@@ -1706,11 +1707,16 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
    *    __PRETTY_FUNCTION__, __FILE__, __LINE__);
    */
 
-    sprintf(tbuf,"%s:\t%.510s\n", title, titlename);
+    if(strlen(title) > 1)
+        sprintf(tbuf,"%s:\t%.510s\n", title, titlename);
+    else
+        sprintf(tbuf,"\t%.510s\n", title, titlename);
     insert2buf(tbuf, buf, bufpos, buflen, bufinc);
 
-    sprintf(tbuf,"   %s:\n", attname);
-    insert2buf(tbuf, buf, bufpos, buflen, bufinc);
+  /*
+   *sprintf(tbuf,"   %s:\n", attname);
+   *insert2buf(tbuf, buf, bufpos, buflen, bufinc);
+   */
 
     if(NULL == attrec)
         return;
@@ -1817,8 +1823,8 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
                 sprintf(tbuf,"      %s = %ld // unlimited\n", name, dimnode->size);
             else
                 sprintf(tbuf,"      %s = %ld\n", name, dimnode->size);
+            insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
         }        
-        insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
     }
 
     sprintf(tbuf,"   variables:\n");
@@ -1843,35 +1849,45 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
                 dimnode = &(dimrec->dim_node[0]);
 	        if((1 == dimrec->n_dims) && (dimnode->name == scalar_dim))
                 {
-                    sprintf(tbuf,"      %s %s\n",
+                    sprintf(tbuf,"   %s %s\n",
                         _NclBasicDataTypeToName(varnode->type), vname);
                     insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
                 }
-            }
-            else
-            {
-                sprintf(tbuf,"      %s %s [ ",
-                    _NclBasicDataTypeToName(varnode->type), vname);
-                insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
-
-                for(j = 0; j < dimrec->n_dims; ++j)
+                else
                 {
-                    dimnode = &(dimrec->dim_node[j]);
+                    sprintf(tbuf,"   %s %s [ ",
+                        _NclBasicDataTypeToName(varnode->type), vname);
+                    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
 
-                    name = NrmQuarkToString(dimnode->name);
+                    for(j = 0; j < dimrec->n_dims; ++j)
+                    {
+                        dimnode = &(dimrec->dim_node[j]);
 
-                    sprintf(tbuf,"%s|%ld, ", name, (long)dimnode->size);
+                        name = NrmQuarkToString(dimnode->name);
+
+                        if(j)
+                            sprintf(tbuf,", %s|%ld", name, (long)dimnode->size);
+                        else
+                            sprintf(tbuf,"%s|%ld", name, (long)dimnode->size);
+                        insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+                    }
+                    sprintf(tbuf," ]");
+                    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
                 }
-                sprintf(tbuf,"]\n");
-                insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
             }
+
+            vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
+
+            attrec = varnode->att_rec;
+#if 1
+            attrec2buf(vobj->attributes, attrec, buf, &bufpos, &buflen, bufinc, " ", " ", vname);
+#else
+            sprintf(titlename,"%s", vname);
+            attrec2buf(vobj->attributes, attrec, buf, &bufpos, &buflen, bufinc, "Variable", titlename, vname);
+#endif
+            sprintf(tbuf,"\n");
+            insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
         }
-
-        vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
-
-        attrec = varnode->att_rec;
-        sprintf(titlename,"%s", vname);
-        attrec2buf(vobj->attributes, attrec, buf, &bufpos, &buflen, bufinc, "Variable", titlename, vname);
     }
 
     grprec = grpnode->grp_rec;
@@ -1884,7 +1900,7 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
 
         for(i = 0; i < grprec->n_grps; ++i)
         {
-            name = NrmQuarkToString(grpnode->name);
+            name = NrmQuarkToString(grprec->grp_node[i]->name);
             sprintf(titlebuf,"Nio group <%s>", name);
             sprintf(attribuf,"   group <%s> attribtes", name);
 
@@ -2310,32 +2326,31 @@ nio_variable_new(NioFileObject *file, char *name, int id,
 
 /* Create group object */
 
-statichere NioFileObject* nio_group_new(NioFileObject* file, NclFileGrpNode* grpnode)
+statichere NioFileObject* nio_group_new(NioFileObject* niofileobj, NclFileGrpNode* grpnode)
 {
     NioFileObject *self;
-    char mode[10];
-
-#if 0
+    NclFile nclfile = (NclFile) niofileobj->id;
+    NclFile group = NULL;
     int ndims, nvars, ngrps, ngattrs;
-    NclFileDimRecord* dimrec = grpnode->dim_rec;
-    NclFileDimNode*   dimnode;
-    NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
-    NrmQuark* qdims = NULL;
-    int scalar_dim_ix = -1;
-    int i;
-#endif
-    char* name = NrmQuarkToString(grpnode->name);
+    char* name;
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-		    __PRETTY_FUNCTION__, __FILE__, __LINE__);
-    fprintf(stderr, "\tgroup name: <%s>\n", name);
+    name = NrmQuarkToString(grpnode->name);
 
-    if(! check_if_open(file, -1))
+  /*
+   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+   *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   *fprintf(stderr, "\tgroup name: <%s>\n", name);
+   */
+
+    if(! check_if_open(niofileobj, -1))
+        return NULL;
+
+    if(NULL == grpnode)
         return NULL;
 
     self = PyObject_NEW(NioFileObject, &NioFile_Type);
     if(self == NULL)
-       return NULL;
+        return NULL;
 
     self->dimensions = PyDict_New();
     self->variables = PyDict_New();
@@ -2343,53 +2358,27 @@ statichere NioFileObject* nio_group_new(NioFileObject* file, NclFileGrpNode* grp
     self->attributes = PyDict_New();
     self->recdim = -1; /* for now */
 
-    self->open = file->open;
-    self->write = file->write;
-    self->define = file->define;
+    self->open = niofileobj->open;
+    self->write = niofileobj->write;
+    self->define = niofileobj->define;
+    self->name = PyString_FromString(name);
+    self->mode = niofileobj->mode;
+    self->type = PyString_FromString("group");
+
+    group = (NclFile) _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0,
+                                              TEMPORARY, nclfile, grpnode->name);
+
+    self->id = (void *) group;
+
+    ndims = 0;
+    nvars = 0;
+    ngrps = 0;
+    ngattrs = 0;
 
   /*
-   *file = _NclCreateFile(NULL,NULL,Ncl_File,0,TEMPORARY,
-   *                      NrmStringToQuark(filename),crw);
+   *dimNvarInfofromGroup(self, grpnode, &ndims, &nvars, &ngrps, &ngattrs);
    */
-    if(grpnode)
-    {
-        self->id = (void *) grpnode;
-
-      /*
-       *ndims = 0;
-       *nvars = 0;
-       *ngrps = 0;
-       *ngattrs = 0;
-
-       *dimNvarInfofromGroup(self, grpnode, &ndims, &nvars, &ngrps, &ngattrs);
-       */
-        collect_advancedfile_attributes(grpnode->att_rec, self->attributes);
-    }
-    else
-    {
-          NioFileObject_dealloc(self);
-          PyErr_SetString(NIOError,"Unable to open file");
-          return NULL;
-    }
-
-    fprintf(stderr, "\tname: <%s>\n", name);
-
-    if(NULL != file->mode)
-    {
-        strncpy(mode, (char *)file->mode, 9);
-    }
-    else
-        strcpy(mode, "unknown");
-
-    self->name = PyString_FromString(name);
-    self->mode = PyString_FromString(mode);
-
-/*
-    fprintf(stderr, "\tself->name: <%s>\n", self->name);
-
-    self->file = file;
-    Py_INCREF(file);
-*/
+    collect_advancedfile_attributes(grpnode->att_rec, self->attributes);
 
     return self;
 }

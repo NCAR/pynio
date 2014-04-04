@@ -73,7 +73,6 @@ typedef struct {
 typedef enum
 {
     NioFile_Type_NUM = 0,
-    NioGroup_Type_NUM,
     NioVariable_Type_NUM,
     NioFile_Open_NUM,
     NioFile_Close_NUM,
@@ -122,19 +121,9 @@ typedef enum
         Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
 
 /* Create a NIO group and return the group object */
-#define NioFile_CreateGroup_RET NioGroupObject *
+#define NioFile_CreateGroup_RET NioFileObject *
 #define NioFile_CreateGroup_PROTO \
       Py_PROTO((NioFileObject *file, char *name))
-
-/* Create a NIO group and return the group object */
-#define NioGroup_CreateGroup_RET NioGroupObject *
-#define NioGroup_CreateGroup_PROTO \
-      Py_PROTO((NioGroupObject *group, char *name))
-
-/* Create a new dimension. Returns -1 if there was an error. */
-#define NioGroup_CreateDimension_RET int
-#define NioGroup_CreateDimension_PROTO \
-        Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
 
 /* Create a NIO variable and return the variable object */
 #define NioFile_CreateVariable_RET NioVariableObject *
