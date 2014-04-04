@@ -13,6 +13,7 @@
 
 #include "NclAdvancedFileStructure.h"
 #include "NclAdvancedFile.h"
-
+#include "NclAdvancedGroup.h"
 
 extern void NioInitialize(void);
+

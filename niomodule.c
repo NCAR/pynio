@@ -1710,7 +1710,7 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
     if(strlen(title) > 1)
         sprintf(tbuf,"%s:\t%.510s\n", title, titlename);
     else
-        sprintf(tbuf,"\t%.510s\n", title, titlename);
+        sprintf(tbuf,"\t%.510s\n", titlename);
     insert2buf(tbuf, buf, bufpos, buflen, bufinc);
 
   /*
@@ -2330,7 +2330,7 @@ statichere NioFileObject* nio_group_new(NioFileObject* niofileobj, NclFileGrpNod
 {
     NioFileObject *self;
     NclFile nclfile = (NclFile) niofileobj->id;
-    NclFile group = NULL;
+    NclAdvancedFile advfilegroup = NULL;
     int ndims, nvars, ngrps, ngattrs;
     char* name;
 
@@ -2365,10 +2365,10 @@ statichere NioFileObject* nio_group_new(NioFileObject* niofileobj, NclFileGrpNod
     self->mode = niofileobj->mode;
     self->type = PyString_FromString("group");
 
-    group = (NclFile) _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0,
-                                              TEMPORARY, nclfile, grpnode->name);
+    advfilegroup = _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0,
+                                           TEMPORARY, nclfile, grpnode->name);
 
-    self->id = (void *) group;
+    self->id = (void *) advfilegroup;
 
     ndims = 0;
     nvars = 0;
@@ -2376,8 +2376,8 @@ statichere NioFileObject* nio_group_new(NioFileObject* niofileobj, NclFileGrpNod
     ngattrs = 0;
 
   /*
-   *dimNvarInfofromGroup(self, grpnode, &ndims, &nvars, &ngrps, &ngattrs);
    */
+    dimNvarInfofromGroup(self, grpnode, &ndims, &nvars, &ngrps, &ngattrs);
     collect_advancedfile_attributes(grpnode->att_rec, self->attributes);
 
     return self;
