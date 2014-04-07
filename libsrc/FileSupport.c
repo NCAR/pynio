@@ -3918,7 +3918,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 
 	if(! is_http)
 	{
-#if 0
 		/* Check if want advanced file-strucuture */
 		if(NULL != fcp->options[Ncl_ADVANCED_FILE_STRUCTURE].value)
 		{
@@ -3966,7 +3965,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 				}
 			}
 		}
-#endif
 
 		if(0 > file_ext_q)
 		{

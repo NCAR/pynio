@@ -3433,7 +3433,7 @@ static void *HE5ReadVarAtt(void *therec, NclQuark thevar, NclQuark theatt, void 
             if(attnode->is_virtual)
             {
                 NhlPError(NhlFATAL,NhlEUNKNOWN,
-                    "NclNetCDF4: Error retrieving value for is_virtual attribute (%s) of (%s->%s)",
+                    "NclNewHDFEOS5: Error retrieving value for is_virtual attribute (%s) of (%s->%s)",
                     NrmQuarkToString(theatt),NrmQuarkToString(grpnode->name),NrmQuarkToString(thevar));
                 return NULL;
             }
