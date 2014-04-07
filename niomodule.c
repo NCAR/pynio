@@ -1193,10 +1193,14 @@ NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size)
 	  ret = _NclFileAddDim(nfile,qname,(ng_size_t)size,(size == 0 ? 1 : 0));
 	  if (ret > NhlWARNING) {
 		  if (size == 0) {
-			  NclFile nfile = (NclFile) file->id;
 			  PyDict_SetItemString(file->dimensions, name, Py_None);
-                          if(0 > file->recdim)
-			      file->recdim = _NclFileIsDim(nfile,qname);
+		          if(nfile->file.advanced_file_structure)
+			      ++file->recdim;
+		          else
+                          {
+                              if(0 > file->recdim)
+			          file->recdim = _NclFileIsDim(nfile,qname);
+                          }
 		  }
 		  else {
 			  size_ob = PyInt_FromSsize_t(size);
@@ -1466,8 +1470,6 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		id = _NclFileIsVar(nfile,qvar);
 		if(nfile->file.advanced_file_structure)
 		{
-			fprintf(stderr, "\nfunction %s, in file: %s, line: %d\n",
-					__PRETTY_FUNCTION__, __FILE__, __LINE__);
 		        variable = nio_create_advancedfile_variable(file, name, id, ndim, qdims);
 		}
 		else
@@ -3411,13 +3413,29 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   else {
 	  int var_dim = 0;
-	  i = 0;
-
-	  while (i < array->nd && array->dimensions[i] == 1)
-		  i++;
 #if 0
           if (indices[var_dim].unlimited && dims[var_dim] == 0)
+#else
+	/*Added this paragraph to check the indices,
+	 *Where, the stop somehow become pretty wild, which has the INT64MAX.
+	 *Wei, April 7, 2014.
+	 */
+          if (indices[var_dim].unlimited)
+	  {
+              if(indices[var_dim].stop >= array->dimensions[var_dim])
+              {
+                 indices[var_dim].stop = array->dimensions[var_dim] - 1;
+                 dims[var_dim] = array->dimensions[var_dim];
+                 self->dimensions[var_dim] = array->dimensions[var_dim];
+                 nitems = 1;
+	         for(i = 0; i < self->nd; ++i)
+	             nitems *= self->dimensions[i];
+              }
+	  }
 #endif		  
+	  i = 0;
+	  while (i < array->nd && array->dimensions[i] == 1)
+		  i++;
 	  while (var_dim < n_dims && dims[var_dim] == 1)
 		  var_dim++;
 	  for ( ; i < array->nd; ) {
