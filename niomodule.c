@@ -443,6 +443,21 @@ int data_type(NclBasicDataTypes ntype)
 		return PyArray_BOOL;
         case NCL_string:
 		return PyArray_STRING;
+        case NCL_vlen:
+                return PyArray_VLEN;
+        case NCL_compound:
+                return PyArray_COMPOUND;
+        case NCL_enum:
+                return PyArray_ENUM;
+        case NCL_opaque:
+                return PyArray_OPAQUE;
+        case NCL_reference:
+                return PyArray_REFERENCE;
+        case NCL_list:
+                return PyArray_LIST;
+        case NCL_listarray:
+                return PyArray_LISTARRAY;
+
 	default:
 		return PyArray_NOTYPE;
 	}
@@ -522,6 +537,27 @@ typecode(int type)
   case PyArray_CHAR:
 	  strcpy(buf,"S1");
 	  break;
+  case PyArray_VLEN:
+          buf[0] = PyArray_VLENLTR;
+          break;
+  case PyArray_COMPOUND:
+          buf[0] = PyArray_COMPOUNDLTR;
+          break;
+  case PyArray_ENUM:
+          buf[0] = PyArray_ENUMLTR;
+          break;
+  case PyArray_OPAQUE:
+          buf[0] = PyArray_OPAQUELTR;
+          break;
+  case PyArray_LIST:
+          buf[0] = PyArray_LISTLTR;
+          break;
+  case PyArray_LISTARRAY:
+          buf[0] = PyArray_LISTARRAYLTR;
+          break;
+  case PyArray_REFERENCE:
+          buf[0] = PyArray_REFERENCELTR;
+          break;
   default: 
 	  buf[0] = ' ';
 	  break;
@@ -694,6 +730,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
           if (array) {
 	          n_dims = (array->nd == 0) ? 1 : array->nd;
 	          qtype = nio_type_from_code(array->descr->type);
+#if 0
 	          if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
                            PyArrayObject *array2 = (PyArrayObject *)
                                      PyArray_Cast(array, PyArray_INT);
@@ -701,6 +738,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
                            array = array2;
 			   qtype = NrmStringToQuark("integer");
                   }
+#endif
                   if (array) {
 			   ng_size_t *dims;
 			   void *data;
@@ -1461,9 +1499,11 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 		  }
 	  }
 	  qtype = nio_type_from_code(typecode);
+#if 0
           if (sizeof(long) > 4 && qtype == NrmStringToQuark("long")) {
 	          qtype = NrmStringToQuark("integer");
           }
+#endif
 	  qvar = NrmStringToQuark(name);
 	  ret = _NclFileAddVar(nfile,qvar,qtype,ncl_ndims,qdims);
 	  if (ret > NhlWARNING) {
@@ -1551,6 +1591,142 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   if (dimension_names)
 	  free(dimension_names);
   return (PyObject *)var;
+}
+
+NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name, 
+                                      int typecode, char **dimension_names, int ndim)
+{
+    NioVariableObject *variable;
+    int i;
+    NclFile nfile = (NclFile) file->id;
+    NrmQuark *qdims = NULL; 
+    NhlErrorTypes ret;
+    NrmQuark qvar;
+    NrmQuark qtype;
+    int ncl_ndims = ndim;
+
+    if(! check_if_open(file, 1))
+        return NULL;
+
+    define_mode(file, 1);
+
+    variable = (NioVariableObject *) PyDict_GetItemString(file->variables, name);
+    if (variable)
+    {
+        printf("variable (%s) exists: cannot create\n",name);
+        return variable;
+    }
+    	  
+    if (ndim > 0)
+    {
+        qdims = (NrmQuark *)malloc(ndim*sizeof(NrmQuark));
+        if (! qdims)
+	    return (NioVariableObject *)PyErr_NoMemory();
+    }
+    else if (ndim == 0)
+    {
+        qdims = (NrmQuark *)malloc(sizeof(NrmQuark));
+        if (! qdims)
+    	    return (NioVariableObject *)PyErr_NoMemory();
+
+        *qdims = NrmStringToQuark("ncl_scalar");
+        ncl_ndims = 1;
+    }
+
+    for(i = 0; i < ndim; ++i)
+        qdims[i] = NrmStringToQuark(dimension_names[i]);
+
+    qtype = nio_type_from_code(typecode);
+#if 0
+    if (sizeof(long) > 4 && qtype == NrmStringToQuark("long"))
+        qtype = NrmStringToQuark("integer");
+#endif
+
+    qvar = NrmStringToQuark(name);
+  /*
+   *ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, ncl_ndims, qdims);
+   */
+    ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, qdims[0]);
+    if (ret > NhlWARNING)
+    {
+        variable = nio_create_advancedfile_variable(file, name, 0, ndim, qdims);
+
+    	PyDict_SetItemString(file->variables, name, (PyObject *)variable);
+    	return variable;
+    }
+    else
+    {
+        sprintf(err_buf,"Error creating variable (%s)",name);
+        PyErr_SetString(NIOError, err_buf);
+        if (qdims != NULL) 
+    	    free(qdims);
+        return NULL;
+    }
+}
+
+static PyObject *NioFileObject_new_vlen(NioFileObject *self, PyObject *args)
+{
+    NioVariableObject *var;
+    char **dimension_names;
+    PyObject *item, *dim;
+    char *name;
+    int ndim;
+    char* type;
+    int i;
+    char errbuf[256];
+    char ltype;
+
+    if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
+      return NULL;
+
+    ltype = type[0];
+    if(strlen(type) > 1)
+    {
+        if (type[0] == 'S' && type[1] == '1')
+            ltype  = 'c';
+        else
+        {
+            sprintf (errbuf,"Cannot create vlen (%s): string arrays not yet supported on write",name);
+            PyErr_SetString(PyExc_TypeError, errbuf);
+            return NULL;
+        }
+    }
+    ndim = PyTuple_Size(dim);
+    if (ndim == 0)
+        dimension_names = NULL;
+    else
+    {
+        dimension_names = (char **)malloc(ndim*sizeof(char *));
+        if (dimension_names == NULL)
+        {
+            PyErr_SetString(PyExc_MemoryError, "out of memory");
+            return NULL;
+        }
+    }
+
+    for(i = 0; i < ndim; ++i)
+    {
+        item = PyTuple_GetItem(dim, i);
+        if (PyString_Check(item))
+            dimension_names[i] = PyString_AsString(item);
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "dimension name must be a string");
+            free(dimension_names);
+            return NULL;
+        }
+    }
+
+    var = NioFile_CreateVLEN(self, name, (int) ltype, dimension_names, ndim);
+    if (! var)
+    {
+        sprintf(err_buf,"Failed to create vlen (%s)",name);
+        PyErr_SetString(NIOError, err_buf);
+    }
+
+    if (dimension_names)
+        free(dimension_names);
+    return (PyObject *)var;
 }
 
 
@@ -1677,6 +1853,7 @@ static PyMethodDef NioFileObject_methods[] = {
   {"create_dimension", (PyCFunction)NioFileObject_new_dimension, METH_VARARGS},
   {"create_variable", (PyCFunction)NioFileObject_new_variable, METH_VARARGS},
   {"create_group", (PyCFunction)NioFileObject_new_group, METH_VARARGS},
+  {"create_vlen", (PyCFunction)NioFileObject_new_vlen, METH_VARARGS},
   {"unlimited", (PyCFunction) NioFileObject_Unlimited,METH_VARARGS},
   {NULL, NULL}		/* sentinel */
 };
@@ -1754,6 +1931,7 @@ static NclMultiDValData createAttMD(PyObject *attributes, char *name, PyObject *
         {
             n_dims = (array->nd == 0) ? 1 : array->nd;
             qtype = nio_type_from_code(array->descr->type);
+#if 0
             if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long"))
             {
                  PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array, PyArray_INT);
@@ -1761,6 +1939,7 @@ static NclMultiDValData createAttMD(PyObject *attributes, char *name, PyObject *
                  array = array2;
                  qtype = NrmStringToQuark("integer");
             }
+#endif
             if (array)
             {
                 ng_size_t *dims;
@@ -2797,16 +2976,20 @@ NioVariable_GetRank( NioVariableObject *var)
 static Py_ssize_t *
 NioVariable_GetShape(NioVariableObject *var)
 {
-  int i;
+  int i, j;
   if (check_if_open(var->file, -1))
   {
       NclFile nfile = (NclFile) var->file->id;
       if(nfile->file.advanced_file_structure)
       {
           NclAdvancedFile advfile = (NclAdvancedFile) var->file->id;
+          NclFileDimRecord* grpdimrec;
+          NclFileDimNode*   grpdimnode;
           NclFileDimRecord* dimrec;
           NclFileDimNode*   dimnode;
           NclFileVarNode*   varnode;
+
+          grpdimrec = advfile->advancedfile.grpnode->dim_rec;
 
           varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(var->name));
           if(NULL != varnode)
@@ -2820,11 +3003,45 @@ NioVariable_GetShape(NioVariableObject *var)
                       var->dimensions[i] = (Py_ssize_t) dimnode->size;
                       if(dimnode->is_unlimited)
                       {
-                          PyObject *size_ob = PyInt_FromSsize_t(var->dimensions[i]);
+                          PyObject *size_ob;
+                          for(j = 0; j < grpdimrec->n_dims; ++j)
+                          {
+                              grpdimnode = &(grpdimrec->dim_node[j]);
+                              if(grpdimnode->name == dimnode->name)
+                              {
+                                  if(grpdimnode->size < dimnode->size)
+                                  {
+                                      grpdimnode->size = dimnode->size;
+
+	                            /*
+	                             *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			             *                __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                                     *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                                     *     (int)j, NrmQuarkToString(grpdimnode->name), (int)grpdimnode->size);
+                                     */
+                                      break;
+                                  }
+
+                                  if(grpdimnode->size > dimnode->size)
+                                  {
+                                      dimnode->size = grpdimnode->size;
+                                    /*
+                                     *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                                     *                   i, NrmQuarkToString(dimnode->name), (int)dimnode->size);
+                                     */
+                                      var->dimensions[i] = (Py_ssize_t) dimnode->size;
+
+                                      break;
+                                  }
+                              }
+                          }
+
+                          size_ob = PyInt_FromSsize_t(var->dimensions[i]);
                           PyDict_SetItemString(var->file->dimensions, NrmQuarkToString(dimnode->name), size_ob);
                           Py_DECREF(size_ob);
                       }
                   }
+                  return var->dimensions;
               }
           }
       }
@@ -2839,11 +3056,11 @@ NioVariable_GetShape(NioVariableObject *var)
 			  Py_DECREF(size_ob);
 		  }
 	  }
+          return var->dimensions;
       }
-      return var->dimensions;
   }
-  else
-	  return NULL;
+
+  return NULL;
 }
 
 static PyObject *
@@ -3220,8 +3437,12 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   NclMultiDValData md;
   NhlErrorTypes nret;
   int select_all = 1;
-  Py_ssize_t array_el_count = 1;;
+  Py_ssize_t array_el_count = 1;
   int undefined_dim = -1, dim_undef = -1;
+
+  NclFileDimRecord* dimrec;
+  NclFileDimNode*   dimnode;
+  NclFileVarNode*   varnode;
 
   /* this code assumes ng_size_t and Py_ssize_t are basically equivalent */
   /* update shape */
@@ -3256,6 +3477,20 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
    * clear how many elements will be added.
    */
  
+
+/*
+ *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+ *	  __PRETTY_FUNCTION__, __FILE__, __LINE__);
+ */
+  if(nfile->file.advanced_file_structure)
+  {
+      NclAdvancedFile advfile = (NclAdvancedFile) self->file->id;
+      varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
+      if(NULL != varnode)
+      {
+          dimrec = varnode->dim_rec;
+      }
+  }
   for (i = 0; i < self->nd; i++) {
 	  if (indices[i].unlimited) {
 		  if ((indices[i].no_stop && indices[i].stride > 0) ||
@@ -3304,7 +3539,37 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  else {
 		  indices[i].stop = indices[i].start;
 	  }
+
+	  if (indices[i].stop >= self->dimensions[i])
+	      indices[i].stop  = self->dimensions[i] - 1;
+
+        /*
+         *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
+         *fprintf(stderr, "\tdims[%d] = %d\n", i, (int)dims[i]);
+         */
+          if(nfile->file.advanced_file_structure)
+          {
+              if(NULL != varnode)
+              {
+                  if(NULL != dimrec)
+                  {
+                      dimnode = &(dimrec->dim_node[i]);
+		      if(dims[i] != dimnode->size)
+                      {
+		         dims[i] = dimnode->size;
+		         indices[i].stop = dims[i] - 1;
+                      }
+                  }
+              }
+          }
+        /*
+         *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
+         *fprintf(stderr, "\tdims[%d] = %d\n", i, (int)dims[i]);
+         */
   }
+
   if (error) {
     PyErr_SetString(PyExc_IndexError, "illegal index");
     ret = -1;
@@ -3317,6 +3582,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
 	  array = (PyArrayObject *) value;
+#if 0
 	  if (array->descr->type == 'l' && array->descr->elsize == 8) {
 		  PyArrayObject *array2 = (PyArrayObject *)  PyArray_Cast(array, PyArray_INT);
 		  sprintf(err_buf,"coercing 8-byte long data to 4-byte integer variable (%s): possible data loss due to overflow",
@@ -3326,7 +3592,9 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  array = (PyArrayObject *)PyArray_ContiguousFromAny((PyObject*)array2,self->type,0,n_dims);
 		  Py_DECREF(array2);
 	  }
-	  else {
+	  else
+#endif
+          {
 		  int single_el_dim_count = 0;
 		  /* 
 		   * Use numpy semantics.
@@ -3420,16 +3688,67 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	 *Where, the stop somehow become pretty wild, which has the INT64MAX.
 	 *Wei, April 7, 2014.
 	 */
-          if (indices[var_dim].unlimited)
+          if(indices[var_dim].unlimited)
 	  {
-              if(indices[var_dim].stop >= array->dimensions[var_dim])
+              if((indices[var_dim].stop >= array->dimensions[var_dim]) ||
+                 (indices[var_dim].stop != (array->dimensions[var_dim] - 1)))
               {
-                 indices[var_dim].stop = array->dimensions[var_dim] - 1;
-                 dims[var_dim] = array->dimensions[var_dim];
-                 self->dimensions[var_dim] = array->dimensions[var_dim];
-                 nitems = 1;
-	         for(i = 0; i < self->nd; ++i)
-	             nitems *= self->dimensions[i];
+                  NclFile nfile = (NclFile) self->file->id;
+                  if(nfile->file.advanced_file_structure)
+                  {
+                      NclAdvancedFile advfile = (NclAdvancedFile) nfile;
+                      NclFileDimRecord* grpdimrec;
+                      NclFileDimNode*   grpdimnode;
+                      NclFileDimRecord* dimrec;
+                      NclFileDimNode*   dimnode;
+                      NclFileVarNode*   varnode;
+        
+                      varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
+                      if(NULL != varnode)
+                      {
+                          dimrec = varnode->dim_rec;
+                          if(NULL != dimrec)
+                          {
+                            /*
+                             *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                             *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                             */
+                              dimnode = &(dimrec->dim_node[var_dim]);
+                            /*
+                             *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                             *                   (int)var_dim, NrmQuarkToString(dimnode->name), (int)dimnode->size);
+                             */
+                              dimnode->size = (ng_size_t) array->dimensions[var_dim];
+                            /*
+                             *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                             *                   (int)var_dim, NrmQuarkToString(dimnode->name), (int)dimnode->size);
+                             */
+
+                              grpdimrec = advfile->advancedfile.grpnode->dim_rec;
+	                      for(i = 0; i < grpdimrec->n_dims; ++i)
+	                      {
+	                          grpdimnode = &(grpdimrec->dim_node[i]);
+                                  if(grpdimnode->name == dimnode->name)
+                                  {
+                                      if(grpdimnode->size != dimnode->size)
+                                         grpdimnode->size = dimnode->size;
+	                          }
+	                      }
+                          }
+                      }
+                  }
+
+                  indices[var_dim].stop = array->dimensions[var_dim] - 1;
+                  dims[var_dim] = array->dimensions[var_dim];
+                  self->dimensions[var_dim] = array->dimensions[var_dim];
+                  fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                                   __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                  nitems = 1;
+	          for(i = 0; i < self->nd; ++i)
+                  {
+                      fprintf(stderr, "\tDim %d, size: %d\n", (int)i, (int)self->dimensions[i]);
+	              nitems *= self->dimensions[i];
+                  }
               }
 	  }
 #endif		  
@@ -3488,6 +3807,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   qtype = nio_type_from_code(array->descr->type);
 
+#if 0
   if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
 	  PyArrayObject *array2 = (PyArrayObject *)
 		  PyArray_Cast(array, PyArray_INT);
@@ -3501,6 +3821,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   else if (qtype == NrmStringToQuark("long")) {
 	  qtype = NrmStringToQuark("integer");
   }
+#endif
 
   md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 			   (void*)array->data,NULL,n_dims,
@@ -4638,6 +4959,8 @@ initnio(void)
     (void *)&NioFile_AddHistoryLine;
   PyDict_SetItemString(d, "_C_API",
 		       PyCObject_FromVoidPtr((void *)PyNIO_API, NULL));
+
+  PyNIO_API[NioFile_CreateVLEN_NUM] = (void *)&NioFile_CreateVLEN;
 
   /* Check for errors */
   if (PyErr_Occurred())

@@ -96,6 +96,7 @@ typedef enum
     NioFile_AddHistoryLine_NUM,
     NioVariable_WriteString_NUM,
     NioVariable_ReadAsString_NUM,
+    NioFile_CreateVLEN_NUM,
     PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
@@ -128,6 +129,12 @@ typedef enum
 /* Create a NIO variable and return the variable object */
 #define NioFile_CreateVariable_RET NioVariableObject *
 #define NioFile_CreateVariable_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, int typecode, \
+                char **dimension_names, int ndim))
+
+/* Create a NIO vlen and return the vlen object */
+#define NioFile_CreateVLEN_RET NioVariableObject *
+#define NioFile_CreateVLEN_PROTO \
       Py_PROTO((NioFileObject *file, char *name, int typecode, \
                 char **dimension_names, int ndim))
 
@@ -257,6 +264,7 @@ static NioVariable_SetAttributeString_RET \
   NioVariable_SetAttributeString_PROTO;
 static NioFile_AddHistoryLine_RET NioFile_AddHistoryLine \
   NioFile_AddHistoryLine_PROTO;
+static NioFile_CreateVLEN_RET NioFile_CreateVLEN NioFile_CreateVLEN_PROTO;
 
 #else
 
@@ -348,7 +356,24 @@ static void **PyNIO_API;
 
 #endif
 
+#define	PyArray_VLEN		NCL_vlen
+#define PyArray_ENUM		NCL_enum
+#define PyArray_OPAQUE		NCL_opaque
+#define PyArray_COMPOUND	NCL_compound
+#define PyArray_REFERENCE	NCL_reference
+#define PyArray_LIST		NCL_list
+#define PyArray_LISTARRAY	NCL_listarray
 
+typedef enum
+{
+    PyArray_VLENLTR = 'v',
+    PyArray_COMPOUNDLTR = 'x',
+    PyArray_ENUMLTR = 'u',
+    PyArray_OPAQUELTR = 'a',
+    PyArray_REFERENCELTR = 'r',
+    PyArray_LISTLTR = 't',
+    PyArray_LISTARRAYLTR = 'y'
+} PYNIOEXTRATYPECHAR;
 
 #ifdef __cplusplus
 }
