@@ -1410,31 +1410,36 @@ GribFileRecord *therec;
 				int it_count = 0, ft_count = 0;
 				GIT it_cmp;
 				int ft_cmp;
+				GribDimInqRecList *dstep;
 
 				/* how many ? 1 for each initial_time * each forecast time */ 
 				if (! step->yymmddhh_isatt) {
-					for (i = 0; i < therec->n_it_dims; i++) {
+					dstep = therec->it_dims;
+					while (dstep != NULL) {
 						for (j = 0; j < step->var_info.num_dimensions; j++) {
-							if (therec->it_dims[i].dim_inq->dim_number == step->var_info.file_dim_num[j]) {
+							if (dstep->dim_inq->dim_number == step->var_info.file_dim_num[j]) {
 								it_count =  step->var_info.dim_sizes[j];
 								found = 1;
 								break;
 							}
 						}
 						if (found) break;
+						dstep = dstep->next;
 					}
 				}
 				if (! step->forecast_time_isatt) {
 					found = 0;
-					for (i = 0; i < therec->n_ft_dims; i++) {
+					dstep = therec->ft_dims;
+					while (dstep != NULL) {
 						for (j = 0; j < step->var_info.num_dimensions; j++) {
-							if (therec->ft_dims[i].dim_inq->dim_number == step->var_info.file_dim_num[j]) {
-								ft_count *=  step->var_info.dim_sizes[j];
+							if (therec->ft_dims->dim_inq->dim_number == step->var_info.file_dim_num[j]) {
+								ft_count =  step->var_info.dim_sizes[j];
 								found = 1; 
 								break;
 							}
 						}
 						if (found) break;
+						dstep = dstep->next;
 					}
 				}
 				it_cmp = grib_rec->initial_time;
@@ -2129,8 +2134,12 @@ int GdsCompare(unsigned char *gds1,int gds_size1,unsigned char *gds2,int gds_siz
 			return 0;
 		/* we only need to compare up to the beginning of the level values */
 		/* gds[4] (octet 5) does not need to be the same */
-		size = gds_size1 - (int)gds1[3] * 4;
-		for( i = 5; i < size - 1 ; i++) {
+		/* 2014-03-03: Just compare to the minimum value given by gds[4]: the end of the "regular" part of the GDS.
+		 * (unless gds[4] is 0 or less than the size of the minimum regular GDS size)
+		 */
+		size = MIN(gds1[4],gds2[4]) - 1;
+		if (size < 32) size = 32;
+		for( i = 5; i < size ; i++) {
 			switch (i) {
 			case 16:
 				break;
@@ -5918,8 +5927,14 @@ GribRecordInqRec *grib_rec;
 
 	if (compare_rec->gds_type != grib_rec->gds_type)
 		return compare_rec->gds_type - grib_rec->gds_type;
-	if (compare_rec->gds_size != grib_rec->gds_size)
-		return compare_rec->gds_size - grib_rec->gds_size;
+	if (compare_rec->gds_size != grib_rec->gds_size) {
+		/* we need to subtract out any difference due to vertical levels */
+		int diff = 0;
+		if (compare_rec->gds[3] != grib_rec->gds[3]) {
+			diff = 4 * (compare_rec->gds[3] - grib_rec->gds[3]);
+		}
+		return compare_rec->gds_size - grib_rec->gds_size - diff;
+	}
 	if (grib_rec->gds_type >= 50 && grib_rec->gds_type < 90)
 		return 0;
 	/* 
@@ -6647,7 +6662,7 @@ static void InitPtables
 }
 
 
-static int InitializeOptions 
+static int g1InitializeOptions 
 #if	NhlNeedProto
 (GribFileRecord *tmp)
 #else
@@ -6711,7 +6726,7 @@ NclFileFormatType *format;
 		NhlPError(NhlFATAL,ENOMEM,NULL);
 		return NULL;
 	}
-	InitializeOptions(therec);
+	g1InitializeOptions(therec);
 	*format = _NclGRIB;
 	return (void *) therec;
 }
@@ -8113,44 +8128,44 @@ void *therec;
 int *num_dims;
 #endif
 {
-GribFileRecord *thefile = (GribFileRecord*)therec;
-GribDimInqRecList *dstep;
-NclQuark *dims;
-int i,j;
+	GribFileRecord *thefile = (GribFileRecord*)therec;
+	GribDimInqRecList *dstep;
+	NclQuark *dims;
+	int i,j;
 
-dims = (NclQuark*)NclMalloc((unsigned)sizeof(NclQuark)*thefile->total_dims);
-i = 0;
-*num_dims = thefile->total_dims;
-dstep = thefile->scalar_dims;
-for(j=0; j < thefile->n_scalar_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
-dstep = thefile->ensemble_dims;
-for(j=0; j < thefile->n_ensemble_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
-dstep = thefile->it_dims;
-for(j=0; j < thefile->n_it_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
-dstep = thefile->ft_dims;
-for(j=0; j < thefile->n_ft_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
-dstep = thefile->lv_dims;
-for(j=0; j < thefile->n_lv_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
-dstep = thefile->grid_dims;
-for(j=0; j < thefile->n_grid_dims; j++) {
-	dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
-	dstep = dstep->next;
-}
+	dims = (NclQuark*)NclMalloc((unsigned)sizeof(NclQuark)*thefile->total_dims);
+	i = 0;
+	*num_dims = thefile->total_dims;
+	dstep = thefile->scalar_dims;
+	for(j=0; j < thefile->n_scalar_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
+	dstep = thefile->ensemble_dims;
+	for(j=0; j < thefile->n_ensemble_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
+	dstep = thefile->it_dims;
+	for(j=0; j < thefile->n_it_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
+	dstep = thefile->ft_dims;
+	for(j=0; j < thefile->n_ft_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
+	dstep = thefile->lv_dims;
+	for(j=0; j < thefile->n_lv_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
+	dstep = thefile->grid_dims;
+	for(j=0; j < thefile->n_grid_dims; j++) {
+		dims[dstep->dim_inq->dim_number] = dstep->dim_inq->dim_name;	
+		dstep = dstep->next;
+	}
 
 return(dims);
 }

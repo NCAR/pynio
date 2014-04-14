@@ -29,7 +29,12 @@
 #define FILE_COORD_VAR_ACCESS 0
 #define FILE_VAR_ACCESS 1
 
+#define NCLFILE_INC -1
+#define NCLFILE_DEC -2
+#define NCLFILE_VEC 0
+
 extern int grib_version;
+
 #ifdef NIO_LIB_ONLY
 short NCLadvancedFileStructure[_NclNumberOfFileFormats];
 #else
@@ -339,7 +344,8 @@ typedef enum {
 	Ncl_TIME_PERIOD_SUFFIX,
 	Ncl_ADVANCED_FILE_STRUCTURE,
 	Ncl_RECORD_MARKER_SIZE,
-	Ncl_GRIB_CACHE_SIZE
+	Ncl_GRIB_CACHE_SIZE,
+	Ncl_NUMBER_OF_FILE_OPTIONS
 } NclFileOptionValues;
 
 typedef struct _NclFileClassPart {
@@ -502,5 +508,10 @@ void _NclReallocFilePart(NclFilePart *file,
                                 int n_grps, int n_vars,
                                 int n_file_dims, int n_file_atts);
 NhlErrorTypes _NclFilePrintSummary(NclObj self, FILE *fp);
+extern void *FileObtainCallData(NclObj obj, unsigned int type);
+extern NhlErrorTypes FileAddParent(struct _NclObjRec *theobj, struct _NclObjRec *parent);
+extern NhlErrorTypes FileDelParent(struct _NclObjRec *theobj, struct _NclObjRec *parent);
+extern NhlErrorTypes InitializeFileOptions(NclFileOption *foptions);
+extern NclFileOption file_options[Ncl_NUMBER_OF_FILE_OPTIONS];
 
 #endif /* NclFile_h */

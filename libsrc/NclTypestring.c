@@ -1160,7 +1160,7 @@ NclTypeClass Ncl_Type_string_le_type
 }
 
 /*
- *      $Id: NclTypestring.c.specific 15033 2014-01-09 00:42:48Z huangwei $
+ *      $Id: NclTypestring.c.specific 15191 2014-03-31 22:29:58Z dbrown $
  */
 /************************************************************************
 *									*
@@ -1523,7 +1523,7 @@ NclTypeClass fc;
 		byte *fl = (byte*)from;
 		if((from_m == NULL)||(to_m == NULL)) {
 			for(i = 0; i < n;i++,res++,fl++)  {
-				sprintf(buffer,"0x%02x",*fl);
+				sprintf(buffer,"%d",*fl);
 				*res = (NclQuark)NrmStringToQuark(buffer);
 			}
 		} else {
@@ -1533,7 +1533,7 @@ NclTypeClass fc;
 				if(tmp) {
 					*res = tmp_mis.stringval;
 				} else {
-					sprintf(buffer,"0x%02x",*fl);
+					sprintf(buffer,"%d",*fl);
 					*res = (NclQuark)NrmStringToQuark(buffer);
 				}
 			}
