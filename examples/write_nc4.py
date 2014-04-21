@@ -38,6 +38,19 @@ fmdl1.create_dimension("level", None)
 fmdl1.create_dimension("lat", nlats)
 fmdl1.create_dimension("lon", nlons)
 
+mtimes = 1
+mlevels = (nlevels+1)/2
+mlats = (nlats+1)/2
+mlons = (nlons+1)/2
+
+print "mtimes: %d, mlevels: %d, mlats: %d, mlons: %d" %(mtimes, mlevels, mlats, mlons)
+
+#Create chunk dimensions.
+fmdl1.create_chunk_dimension("time", mtimes)
+fmdl1.create_chunk_dimension("level", mlevels)
+fmdl1.create_chunk_dimension("lat", mlats)
+fmdl1.create_chunk_dimension("lon", mlons)
+
 #Create some variables.
 time  = fmdl1.create_variable("time",  "d", ("time",))
 level = fmdl1.create_variable("level", "i", ("level",))
@@ -91,13 +104,15 @@ print('ftemp dtype = ', ftempvalues.dtype)
 print "max: %f, min: %f" %(numpy.amax(tempvalues), numpy.amin(tempvalues))
 print "max: %f, min: %f" %(numpy.amax(ftempvalues), numpy.amin(ftempvalues))
 
-fmdl1.variables['time'][:] = time
-fmdl1.variables['level'][:] = level
+#fmdl1.variables['time'][:] = time
+#fmdl1.variables['level'][:] = level
+fmdl1.variables['time'].assign_value(time)
+fmdl1.variables['level'].assign_value(level)
 fmdl1.variables['lat'][:] = latvalues
 fmdl1.variables['lon'][:] = lonvalues
-fmdl1.variables['temp'][:,:,:,:] = ftempvalues
 #fmdl1.variables['lat'].assign_value(latvalues)
 #fmdl1.variables['lon'].assign_value(lonvalues)
+fmdl1.variables['temp'][:,:,:,:] = ftempvalues
 #fmdl1.variables['temp'].assign_value(ftempvalues)
 
 #test data types

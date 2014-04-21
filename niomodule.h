@@ -27,6 +27,7 @@ typedef struct NioFileObjectStruct {
   PyObject_HEAD
   NioFileObject *groups;  /* dictionary */
   PyObject *dimensions;   /* dictionary */
+  PyObject *chunk_dimensions;   /* dictionary */
   PyObject *variables;    /* dictionary */
   PyObject *attributes;   /* dictionary */
   PyObject *name;         /* string */
@@ -48,6 +49,10 @@ typedef struct {
   char *name;
   NrmQuark *qdims;
   Py_ssize_t *dimensions;
+/*
+ *NrmQuark *qchunkdims;
+ *Py_ssize_t *chunk_dimensions;
+ */
   int type;               /* same as array types */
   int nd;
   int id;
@@ -82,6 +87,7 @@ typedef enum
     NioFile_CreateVariable_NUM,
     NioFile_GetVariable_NUM,
     NioFile_CreateDimension_NUM,
+    NioFile_CreateChunkDimension_NUM,
     NioVariable_GetRank_NUM,
     NioVariable_GetShape_NUM,
     NioVariable_Indices_NUM,
@@ -119,6 +125,11 @@ typedef enum
 /* Create a new dimension. Returns -1 if there was an error. */
 #define NioFile_CreateDimension_RET int
 #define NioFile_CreateDimension_PROTO \
+        Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
+
+/* Create a new chunk dimension. Returns -1 if there was an error. */
+#define NioFile_CreateChunkDimension_RET int
+#define NioFile_CreateChunkDimension_PROTO \
         Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
 
 /* Create a NIO group and return the group object */
@@ -231,6 +242,8 @@ static NioFile_Sync_RET NioFile_Sync NioFile_Sync_PROTO;
 */
 static NioFile_CreateDimension_RET NioFile_CreateDimension \
   NioFile_CreateDimension_PROTO;
+static NioFile_CreateChunkDimension_RET NioFile_CreateChunkDimension \
+  NioFile_CreateChunkDimension_PROTO;
 static NioFile_CreateVariable_RET NioFile_CreateVariable \
   NioFile_CreateVariable_PROTO;
 static NioFile_GetVariable_RET NioFile_GetVariable \
@@ -290,6 +303,9 @@ static void **PyNIO_API;
 #define NioFile_CreateDimension \
   (*(NioFile_CreateDimension_RET (*)NioFile_CreateDimension_PROTO) \
    PyNIO_API[NioFile_CreateDimension_NUM])
+#define NioFile_CreateChunkDimension \
+  (*(NioFile_CreateChunkDimension_RET (*)NioFile_CreateChunkDimension_PROTO) \
+   PyNIO_API[NioFile_CreateChunkDimension_NUM])
 #define NioFile_CreateVariable \
   (*(NioFile_CreateVariable_RET (*)NioFile_CreateVariable_PROTO) \
    PyNIO_API[NioFile_CreateVariable_NUM])

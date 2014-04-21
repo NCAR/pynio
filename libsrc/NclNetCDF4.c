@@ -4635,17 +4635,14 @@ static NhlErrorTypes NC4AddChunkDim(void* therec, NclQuark thedim,
             }
         }
 
-        if (add_scalar)
-        {
-            NclQuark ns_name = NrmStringToQuark("ncl_scalar");
-            grpnode->has_scalar_dim = 1;
-
-            dimnode = _getDimNodeFromNclFileGrpNode(grpnode, ns_name);
-            _addNclDimNode(&(grpnode->chunk_dim_rec), ns_name, dimnode->id, -5, 1);
-        }
-        else
+        if (!add_scalar)
         {
             dimnode = _getDimNodeFromNclFileGrpNode(grpnode, thedim);
+            if(NULL == grpnode->chunk_dim_rec)
+            {
+                grpnode->chunk_dim_rec = _NclFileDimAlloc(NCL_MINIMUM_DIMS);
+                grpnode->chunk_dim_rec->n_dims = 0;
+            }
             _addNclDimNode(&(grpnode->chunk_dim_rec), thedim, dimnode->id, size, is_unlimited);
         }
       /*

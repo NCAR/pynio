@@ -1323,6 +1323,17 @@ NhlErrorTypes _addNclDimNode(NclFileDimRecord **thedimrec, NclQuark name, int di
    *fprintf(stderr, "\tstart with dimrec->max_dims = %d\n", dimrec->max_dims);
    */
 
+    for(n = 0; n < dimrec->n_dims; ++n)
+    {
+        if(dimrec->dim_node[n].name == name)
+        {
+            dimrec->dim_node[n].id   = dimid;
+            dimrec->dim_node[n].size = size;
+            dimrec->dim_node[n].is_unlimited = is_unlimited;
+            return (NhlNOERROR);
+        }
+    }
+
     n = dimrec->n_dims;
 
     memset(&(dimrec->dim_node[n]), 0, sizeof(NclFileDimNode));
