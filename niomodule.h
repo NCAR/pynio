@@ -23,7 +23,7 @@ extern "C" {
 
 typedef struct NioFileObjectStruct NioFileObject;
 
-typedef struct NioFileObjectStruct {
+struct NioFileObjectStruct {
   PyObject_HEAD
   NioFileObject *groups;  /* dictionary */
   PyObject *dimensions;   /* dictionary */

@@ -1925,17 +1925,17 @@ struct _NclSelectionRecord* sel_ptr;
 	return(NhlFATAL);
 }
 
-extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuark var_name,
-                                     NclQuark type, NclQuark dim_name)
+NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuark var_name,
+                              NclQuark type, NclQuark *dim_names, ng_size_t ndims)
 {
 	NclAdvancedFile thefile = (NclAdvancedFile) infile;
 	NclAdvancedFileClass fc = NULL;
 
       /*
        *fprintf(stderr, "\nHit _NclFileAddVlen, file: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tvlen name: <%s>, var name: <%s>, base type: <%s>, dim_name: <%s>\n",
+       *fprintf(stderr, "\tvlen name: <%s>, var name: <%s>, base type: <%s>, dim_name[0]: <%s>\n",
        *                 NrmQuarkToString(vlen_name), NrmQuarkToString(var_name),
-       *                 NrmQuarkToString(type), NrmQuarkToString(dim_name));
+       *                 NrmQuarkToString(type), NrmQuarkToString(dim_name[0]));
        */
 
 	if(infile == NULL)
@@ -1945,7 +1945,7 @@ extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuar
 		return(NhlFATAL);
 	}
 
-	if(! thefile->file.advanced_file_structure)
+	if(! infile->file.advanced_file_structure)
 	{
 		NHLPERROR((NhlFATAL, NhlEUNKNOWN,
 			"_NclFileAddVlen: Old File Structure DO NOT Support vlen.\n"));
@@ -1958,7 +1958,7 @@ extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuar
 		if(fc->advancedfile_class.create_vlen_type != NULL)
 		{
 			return((*fc->advancedfile_class.create_vlen_type)
-                               (infile, vlen_name, var_name, type, dim_name));
+                               (infile, vlen_name, var_name, type, dim_names, ndims));
 		}
 		else
 		{

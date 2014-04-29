@@ -53,7 +53,7 @@ static NhlErrorTypes MyAdvancedFileWriteVar(NclFile thefile, NclQuark var,
                                        NclQuark *dim_names, int type);
 static NhlErrorTypes AdvancedFileWriteGrp(NclFile thefile, NclQuark grpname);
 static NhlErrorTypes AdvancedFileCreateVlenType(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
-                                           NclQuark type, NclQuark dim_name);
+                                           NclQuark type, NclQuark *dim_names, ng_size_t ndims);
 static NhlErrorTypes AdvancedFileWriteVar(NclFile thefile, NclQuark var,
                                      struct _NclMultiDValDataRec *value,
                                      struct _NclSelectionRecord *sel_ptr);
@@ -8501,7 +8501,7 @@ static NhlErrorTypes AdvancedFileWriteGrp(NclFile infile, NclQuark grpname)
 }
 
 NhlErrorTypes AdvancedFileCreateVlenType(NclFile infile, NclQuark vlen_name, NclQuark var_name,
-                                    NclQuark type, NclQuark dim_name)
+                                    NclQuark type, NclQuark *dim_names, ng_size_t ndims)
 {
     NclAdvancedFile thefile = (NclAdvancedFile) infile;
     NhlErrorTypes ret = NhlNOERROR;
@@ -8511,7 +8511,6 @@ NhlErrorTypes AdvancedFileCreateVlenType(NclFile infile, NclQuark vlen_name, Ncl
    *fprintf(stderr, "\tvlen_name: <%s>\n", NrmQuarkToString(vlen_name));
    *fprintf(stderr, "\tvar_name: <%s>\n", NrmQuarkToString(var_name));
    *fprintf(stderr, "\ttype: <%s>\n", NrmQuarkToString(type));
-   *fprintf(stderr, "\tdim_name: <%s>\n", NrmQuarkToString(dim_name));
    */
 
     if(thefile->advancedfile.wr_status > 0)
@@ -8526,7 +8525,7 @@ NhlErrorTypes AdvancedFileCreateVlenType(NclFile infile, NclQuark vlen_name, Ncl
     if(thefile->advancedfile.format_funcs->add_vlen != NULL)
     {
         ret = (*thefile->advancedfile.format_funcs->add_vlen)
-               ((void *)thefile->advancedfile.grpnode, vlen_name, var_name, type, dim_name);
+               ((void *)thefile->advancedfile.grpnode, vlen_name, var_name, type, dim_names, ndims);
     }
     
   /*

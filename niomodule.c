@@ -630,6 +630,9 @@ nio_type_from_code(int code)
   case '?':
 	  type = NrmStringToQuark("logical");
 	  break;
+  case 'v':
+	  type = NrmStringToQuark("list");
+	  break;
   default:
 	  type = NrmNULLQUARK;
   }
@@ -1480,8 +1483,11 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
     NrmQuark qvar = NrmStringToQuark(name);
     int i, j;
 
+	fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			__PRETTY_FUNCTION__, __FILE__, __LINE__);
+
     if(!check_if_open(file, -1))
-      return NULL;
+        return NULL;
 
     self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
     if(self == NULL)
@@ -1699,7 +1705,9 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
     NhlErrorTypes ret;
     NrmQuark qvar;
     NrmQuark qtype;
-    int ncl_ndims = ndim;
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+		__PRETTY_FUNCTION__, __FILE__, __LINE__);
 
     if(! check_if_open(file, 1))
         return NULL;
@@ -1726,23 +1734,15 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
     	    return (NioVariableObject *)PyErr_NoMemory();
 
         *qdims = NrmStringToQuark("ncl_scalar");
-        ncl_ndims = 1;
     }
 
     for(i = 0; i < ndim; ++i)
         qdims[i] = NrmStringToQuark(dimension_names[i]);
 
     qtype = nio_type_from_code(typecode);
-#if 0
-    if (sizeof(long) > 4 && qtype == NrmStringToQuark("long"))
-        qtype = NrmStringToQuark("integer");
-#endif
 
     qvar = NrmStringToQuark(name);
-  /*
-   *ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, ncl_ndims, qdims);
-   */
-    ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, qdims[0]);
+    ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, qdims, ndim);
     if (ret > NhlWARNING)
     {
         variable = nio_create_advancedfile_variable(file, name, 0, ndim, qdims);
@@ -1772,8 +1772,8 @@ static PyObject *NioFileObject_new_vlen(NioFileObject *self, PyObject *args)
     char errbuf[256];
     char ltype;
 
-    if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
-      return NULL;
+    if(!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim))
+        return NULL;
 
     ltype = type[0];
     if(strlen(type) > 1)
@@ -3549,6 +3549,43 @@ NioVariable_ReadAsString(NioVariableObject *self)
     return NULL;
 }
 
+int myCheckObj(PyObject* obj)
+{
+    PyObject* seq;
+    PyObject* seq2;
+    PyObject* item;
+    PyObject* item2;
+    int i, len;
+    int j, len2;
+
+    fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
+                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+    seq = PySequence_Fast(obj, "expected a sequence");
+    len = PySequence_Size(obj);
+
+    fprintf(stderr, "\tlen = %d\n", len);
+
+    for(i = 0; i < len; ++i)
+    {
+        item = PySequence_Fast_GET_ITEM(seq, i);
+
+        seq2 = PySequence_Fast(item, "expected a sequence");
+        len2 = PySequence_Size(item);
+
+        fprintf(stderr, "\tlen2 = %d\n", len2);
+
+        for(j = 0; j < len2; ++j)
+        {
+            item2 = PySequence_Fast_GET_ITEM(seq2, j);
+        }
+        Py_DECREF(seq2);
+    }
+    Py_DECREF(seq);
+
+    return len;
+}
+
 static int
 NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *value)
 {
@@ -3709,33 +3746,19 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  goto err_ret;
   }
   if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
+	  int single_el_dim_count = 0;
 	  array = (PyArrayObject *) value;
-#if 0
-	  if (array->descr->type == 'l' && array->descr->elsize == 8) {
-		  PyArrayObject *array2 = (PyArrayObject *)  PyArray_Cast(array, PyArray_INT);
-		  sprintf(err_buf,"coercing 8-byte long data to 4-byte integer variable (%s): possible data loss due to overflow",
-			  self->name);
-		  PyErr_SetString(NIOError, err_buf);
-		  PyErr_Print();
-		  array = (PyArrayObject *)PyArray_ContiguousFromAny((PyObject*)array2,self->type,0,n_dims);
-		  Py_DECREF(array2);
+	  /* 
+	   * Use numpy semantics.
+	   * Numpy allows single element 'slow' dimensions to be discarded on assignment
+	   */
+	  for (i = 0; i < array->nd; i++) {
+		  if (array->dimensions[i] == 1)
+			  single_el_dim_count++;
+		  else
+			  break;
 	  }
-	  else
-#endif
-          {
-		  int single_el_dim_count = 0;
-		  /* 
-		   * Use numpy semantics.
-		   * Numpy allows single element 'slow' dimensions to be discarded on assignment
-		   */
-		  for (i = 0; i < array->nd; i++) {
-			  if (array->dimensions[i] == 1)
-				  single_el_dim_count++;
-			  else
-				  break;
-		  }
-		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
-	  }
+	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
   }
   else {
 	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
@@ -3935,23 +3958,74 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   qtype = nio_type_from_code(array->descr->type);
 
+  if(nfile->file.advanced_file_structure)
+  {
+      if(NULL != varnode)
+      {
+          if((NCL_vlen == varnode->type) || (NCL_list == varnode->type))
+          {
+              PyArrayObject *objarray;
+              char buffer[16];
+              NclList vlist = NULL;
+              NclMultiDValData v_md;
+              ng_size_t one = 1;
+              int *id = (int *)NclMalloc(sizeof(int));
+
+              int ndims;
+              npy_intp *odims;
+
+              vlist = (NclList)_NclListCreate(NULL, NULL, 0, 0, NCL_FIFO);
+              assert(vlist);
+              _NclListSetType((NclObj)vlist,NCL_FIFO);
+              vlist->list.list_quark = NrmStringToQuark("vlen_list");
+              vlist->list.list_type = NrmStringToQuark("FIFO");
+              vlist->obj.obj_type = Ncl_List;
+
+              if(array)
+              {
+                  fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
+                                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                  ndims = PyArray_NDIM(array);
+                  odims = PyArray_DIMS(array);
+                  fprintf(stderr, "\tPyArray_NDIM(array): %d\n", ndims);
+                  for(i = 0; i < ndims; i++)
+                      fprintf(stderr, "\todims[%d] = %d\n", i, odims[i]);
+ 
+                  ndims = myCheckObj((PyObject*)array);
+              }
 #if 0
-  if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
-	  PyArrayObject *array2 = (PyArrayObject *)
-		  PyArray_Cast(array, PyArray_INT);
-	  Py_DECREF(array);
-	  array = array2;
-	  qtype = NrmStringToQuark("integer");
-	  sprintf(err_buf,"coercing 8-byte long to 4-byte integer: possible data loss due to overflow");
-	  PyErr_SetString(NIOError, err_buf);
-	  PyErr_Print();
-  }
-  else if (qtype == NrmStringToQuark("long")) {
-	  qtype = NrmStringToQuark("integer");
-  }
+
+            /*
+              *id = vlist->obj.id;
+              v_md = _NclMultiDVallistDataCreate(NULL,NULL,Ncl_MultiDVallistData,0,id,
+                                                 NULL,1,&one,TEMPORARY,NULL);
+             */
+
+              sprintf(buffer, "seg_%6.6d", *numSegments);
+              var = _NclCreateVlenVar(buffer, val, ndims, dimnames, dimsizes, NCL_double);
+              _NclListAppend((NclObj)vlist, (NclObj)var);
 #endif
 
-  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+	      qtype = NrmStringToQuark("list");
+
+	      fprintf(stderr, "\nneed to work in %s, in file: %s, line: %d to figure out a way to write vlen\n",
+			       __PRETTY_FUNCTION__, __FILE__, __LINE__);
+/*
+array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
+*/
+              md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+			   		(void*)array->data,NULL,n_dims,
+			   		dims, TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+          }
+          else
+              md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+			   		(void*)array->data,NULL,n_dims,
+			   		array->nd == 0 ? &scalar_size : dims,
+					TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+      }
+  }
+  else
+      md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
 			   (void*)array->data,NULL,n_dims,
 			   array->nd == 0 ? &scalar_size : dims,
 			   TEMPORARY,NULL,_NclNameToTypeClass(qtype));

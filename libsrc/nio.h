@@ -15,5 +15,7 @@
 #include "NclAdvancedFile.h"
 #include "NclAdvancedGroup.h"
 
+#include "ListSupport.h"
+
 extern void NioInitialize(void);
 

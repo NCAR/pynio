@@ -7391,7 +7391,7 @@ NhlErrorTypes H5AddOpaque(void *rec, NclQuark opaque_name, NclQuark var_name,
 }
 
 static NhlErrorTypes H5AddVlenVar(void* therec, NclQuark thevar,
-                                  int n_dims, NclQuark *dim_names, long *dim_sizes)
+                                  ng_size_t n_dims, NclQuark *dim_names, long *dim_sizes)
 {
     NclFileGrpNode *grpnode = (NclFileGrpNode *)therec;
     NclFileVarNode *varnode = NULL;
@@ -7446,7 +7446,7 @@ static NhlErrorTypes H5AddVlenVar(void* therec, NclQuark thevar,
 }
 
 NhlErrorTypes H5AddVlen(void *rec, NclQuark vlen_name, NclQuark var_name,
-                         NclQuark type, NclQuark dim_name)
+                         NclQuark type, NclQuark *dim_names, ng_size_t n_dims)
 {
     NclFileGrpNode *rootgrpnode = (NclFileGrpNode *) rec;
     NhlErrorTypes ret = NhlNOERROR;
@@ -7457,9 +7457,8 @@ NhlErrorTypes H5AddVlen(void *rec, NclQuark vlen_name, NclQuark var_name,
     NclQuark          mem_name[1];
     NclBasicDataTypes mem_type[1];
 
-    int n_dims = 1;
-    NclQuark  dim_names[1];
-    long      dim_sizes[1];
+    long *dim_sizes;
+    ng_size_t n = 0;
 
   /*
    *fprintf(stderr, "\nEnter H5AddVlen, file: %s, line: %d\n", __FILE__, __LINE__);
@@ -7478,9 +7477,14 @@ NhlErrorTypes H5AddVlen(void *rec, NclQuark vlen_name, NclQuark var_name,
                   NCL_vlen, NCL_vlen,
                   0, 1, mem_name, mem_type);
 
-    dimnode = _getDimNodeFromNclFileGrpNode(rootgrpnode, dim_name);
-    dim_names[0] = dim_name;
-    dim_sizes[0] = (long) dimnode->size;
+    dim_sizes = (long *)NclCalloc(n_dims, sizeof(long));
+    assert(dim_sizes);
+
+    for(n = 0; n < n_dims; ++n)
+    {
+        dimnode = _getDimNodeFromNclFileGrpNode(rootgrpnode, dim_names[n]);
+        dim_sizes[n] = (long) dimnode->size;
+    }
 
     ret = H5AddVlenVar(rec, var_name, n_dims, dim_names, dim_sizes);
 
