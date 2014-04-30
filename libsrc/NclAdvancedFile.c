@@ -1435,6 +1435,8 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
     var_node->name = name;
     var_node->id = varid;
     var_node->type = type;
+    var_node->base_type = type;
+    var_node->udt_type = NCL_UDT_none;
     var_node->comprec = NULL;
     var_node->att_rec = NULL;
     var_node->dim_rec = _NclFileDimAlloc(n_dims);

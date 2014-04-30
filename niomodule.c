@@ -1483,9 +1483,6 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
     NrmQuark qvar = NrmStringToQuark(name);
     int i, j;
 
-	fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-			__PRETTY_FUNCTION__, __FILE__, __LINE__);
-
     if(!check_if_open(file, -1))
         return NULL;
 
@@ -1705,9 +1702,6 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
     NhlErrorTypes ret;
     NrmQuark qvar;
     NrmQuark qtype;
-
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-		__PRETTY_FUNCTION__, __FILE__, __LINE__);
 
     if(! check_if_open(file, 1))
         return NULL;
@@ -3549,14 +3543,18 @@ NioVariable_ReadAsString(NioVariableObject *self)
     return NULL;
 }
 
-int myCheckObj(PyObject* obj)
+void _convertObjToList(PyObject* obj, NclList vlist, NclBasicDataTypes type,
+                       ng_size_t n_dims, ng_size_t curdim, ng_size_t* counter)
 {
+    NclQuark dimname;
+    ng_size_t dimsize = 0;
+    PyArrayObject *array;
     PyObject* seq;
-    PyObject* seq2;
     PyObject* item;
-    PyObject* item2;
+    char buffer[16];
+    NclVar var;
     int i, len;
-    int j, len2;
+    int processingdim = 1 + curdim;
 
     fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
@@ -3570,20 +3568,22 @@ int myCheckObj(PyObject* obj)
     {
         item = PySequence_Fast_GET_ITEM(seq, i);
 
-        seq2 = PySequence_Fast(item, "expected a sequence");
-        len2 = PySequence_Size(item);
-
-        fprintf(stderr, "\tlen2 = %d\n", len2);
-
-        for(j = 0; j < len2; ++j)
+        if(processingdim == n_dims)
         {
-            item2 = PySequence_Fast_GET_ITEM(seq2, j);
-        }
-        Py_DECREF(seq2);
-    }
-    Py_DECREF(seq);
+            array = (PyArrayObject *)PyArray_ContiguousFromAny(item,data_type(type),0,1);
+            dimsize = array->dimensions[0];
+            sprintf(buffer, "list_%6.6d", (int)(*counter));
+            dimname = NrmStringToQuark(buffer);
+            var = _NclCreateVlenVar(buffer, (void *)array->data, 1, &dimname, &dimsize, type);
+            _NclListAppend((NclObj)vlist, (NclObj)var);
 
-    return len;
+            *counter += 1;
+        }
+        else
+            _convertObjToList(item, vlist, type, n_dims, processingdim, counter);
+    }
+
+    Py_DECREF(seq);
 }
 
 static int
@@ -3965,57 +3965,33 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
           if((NCL_vlen == varnode->type) || (NCL_list == varnode->type))
           {
               PyArrayObject *objarray;
-              char buffer[16];
               NclList vlist = NULL;
-              NclMultiDValData v_md;
-              ng_size_t one = 1;
+              int curdim = 0;
+              int counter = 0;
               int *id = (int *)NclMalloc(sizeof(int));
-
-              int ndims;
-              npy_intp *odims;
-
-              vlist = (NclList)_NclListCreate(NULL, NULL, 0, 0, NCL_FIFO);
-              assert(vlist);
-              _NclListSetType((NclObj)vlist,NCL_FIFO);
-              vlist->list.list_quark = NrmStringToQuark("vlen_list");
-              vlist->list.list_type = NrmStringToQuark("FIFO");
-              vlist->obj.obj_type = Ncl_List;
 
               if(array)
               {
-                  fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
-                                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
-                  ndims = PyArray_NDIM(array);
-                  odims = PyArray_DIMS(array);
-                  fprintf(stderr, "\tPyArray_NDIM(array): %d\n", ndims);
-                  for(i = 0; i < ndims; i++)
-                      fprintf(stderr, "\todims[%d] = %d\n", i, odims[i]);
- 
-                  ndims = myCheckObj((PyObject*)array);
-              }
-#if 0
+                  vlist = (NclList)_NclListCreate(NULL, NULL, 0, 0, NCL_FIFO);
+                  assert(vlist);
+                  _NclListSetType((NclObj)vlist,NCL_FIFO);
+                  vlist->list.list_quark = NrmStringToQuark("vlen_list");
+                  vlist->list.list_type = NrmStringToQuark("FIFO");
+                  vlist->obj.obj_type = Ncl_List;
+    
+	          qtype = NrmStringToQuark("list");
 
-            /*
-              *id = vlist->obj.id;
-              v_md = _NclMultiDVallistDataCreate(NULL,NULL,Ncl_MultiDVallistData,0,id,
-                                                 NULL,1,&one,TEMPORARY,NULL);
-             */
-
-              sprintf(buffer, "seg_%6.6d", *numSegments);
-              var = _NclCreateVlenVar(buffer, val, ndims, dimnames, dimsizes, NCL_double);
-              _NclListAppend((NclObj)vlist, (NclObj)var);
+                  _convertObjToList((PyObject*)array, vlist, varnode->base_type, n_dims, curdim, &counter);
+#if 1
+                  *id = vlist->obj.id;
+                  md = _NclMultiDVallistDataCreate(NULL,NULL,Ncl_MultiDVallistData,0,id,
+                                                   NULL,n_dims,dims,TEMPORARY,NULL);
+#else
+                  md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+			   		    (void*)array->data,NULL,n_dims,
+			   		    dims, TEMPORARY,NULL,_NclNameToTypeClass(qtype));
 #endif
-
-	      qtype = NrmStringToQuark("list");
-
-	      fprintf(stderr, "\nneed to work in %s, in file: %s, line: %d to figure out a way to write vlen\n",
-			       __PRETTY_FUNCTION__, __FILE__, __LINE__);
-/*
-array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
-*/
-              md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-			   		(void*)array->data,NULL,n_dims,
-			   		dims, TEMPORARY,NULL,_NclNameToTypeClass(qtype));
+              }
           }
           else
               md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,

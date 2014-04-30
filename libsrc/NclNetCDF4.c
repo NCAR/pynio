@@ -3558,7 +3558,7 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
 
             if(NCL_list == varnode->type)
             {
-#if 0
+#if 1
                 NclListObjList  *tmp = NULL;
                 NclObj           tmpobj;
                 NclVar           tmpvar;
@@ -5364,7 +5364,7 @@ NhlErrorTypes NC4AddGrp(void *rec, NclQuark grpname)
     return ret;
 }
 
-static NhlErrorTypes NC4AddVlenVar(void* therec, NclQuark thevar,
+static NhlErrorTypes NC4AddVlenVar(void* therec, NclQuark thevar, NclBasicDataTypes ncl_type,
                                    nc_type vlen_type_id, int n_dims,
                                    NclQuark *dim_names, long *dim_sizes)
 {
@@ -5477,6 +5477,9 @@ static NhlErrorTypes NC4AddVlenVar(void* therec, NclQuark thevar,
                 varnode->dim_rec->dim_node[i].id = dim_ids[i];
             }
 
+            varnode->base_type = ncl_type;
+            varnode->udt_type = NCL_UDT_vlen;
+
           /*
            *fprintf(stderr, "\tthevar: <%s>, id: var_id = %d\n", 
            *                   NrmQuarkToString(thevar), varnode->id);
@@ -5573,7 +5576,7 @@ NhlErrorTypes NC4AddVlen(void *rec, NclQuark vlen_name, NclQuark var_name,
         dimnode = _getDimNodeFromNclFileGrpNode(rootgrpnode, dim_names[n]);
         dim_sizes[n] = (long) dimnode->size;
     }
-    ret =  NC4AddVlenVar(rec, var_name, nc_vlen_type_id, n_dims, dim_names, dim_sizes);
+    ret =  NC4AddVlenVar(rec, var_name, ncl_type, nc_vlen_type_id, n_dims, dim_names, dim_sizes);
 
   /*
    *NclFree(mem_name);

@@ -14,6 +14,16 @@
 #include "NclList.h"
 #include "NclOptions.h"
 
+typedef enum
+{
+    NCL_UDT_none = 0,
+    NCL_UDT_compound,
+    NCL_UDT_vlen,
+    NCL_UDT_enum,
+    NCL_UDT_opaque,
+    NCL_UDT_string
+} NclUDTType;
+
 typedef struct _NclFileUserDefinedTypeNode
 {
     ng_size_t         id;
@@ -63,6 +73,7 @@ typedef struct _NclFileAttNode
     int               n_elem;
     void             *value;
     nc_type           the_nc_type;
+    nc_type           base_type;
     int               is_virtual;
     int               is_compound;
     int               is_vlen;
@@ -153,6 +164,7 @@ typedef struct _NclFileVlenRecord
     size_t   size;
     nc_type  xtype;
     nc_type  base_nc_type;
+    NclBasicDataTypes ncl_type;
     int      ncl_class;
     int     *vs;
     int     *ve;
@@ -171,6 +183,7 @@ typedef struct _NclFileVarNode
     NclQuark          index_dim;
     NclQuark          class_name;
     NclBasicDataTypes type;
+    NclBasicDataTypes base_type;
     nc_type           the_nc_type;
 
     NclFileDimRecord *dim_rec;
@@ -179,6 +192,7 @@ typedef struct _NclFileVarNode
 
     NclFileDimRecord *chunk_dim_rec;
 
+    NclUDTType             udt_type;
     int                    is_compound;
     NclFileCompoundRecord *comprec;
 
