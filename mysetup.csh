@@ -11,6 +11,8 @@
 
  setenv CFLAGS		"-O0 -g"
 
+ ~/bin/cleanmyipy
+
  set mn = `uname -n | cut -c -2`
  switch($mn)
      case ys:

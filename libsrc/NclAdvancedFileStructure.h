@@ -72,8 +72,8 @@ typedef struct _NclFileAttNode
     ng_size_t         id;
     int               n_elem;
     void             *value;
-    nc_type           the_nc_type;
     nc_type           base_type;
+    nc_type           the_nc_type;
     int               is_virtual;
     int               is_compound;
     int               is_vlen;
@@ -113,6 +113,7 @@ typedef struct _NclFileCompoundRecord
     size_t            n_comps;   /* aka nfields */
     size_t            type;
     size_t            size;
+    size_t            nfields;
     NclQuark          name;
     nc_type           xtype;
     nc_type           base_nc_type;
@@ -191,7 +192,6 @@ typedef struct _NclFileVarNode
     int               is_chunked;
 
     NclFileDimRecord *chunk_dim_rec;
-
     NclUDTType             udt_type;
     int                    is_compound;
     NclFileCompoundRecord *comprec;
@@ -338,9 +338,9 @@ NhlErrorTypes _delNclAttNode(NclFileAttRecord **attrec, NclQuark name);
 
 NclFileCoordVarRecord *_NclFileCoordVarRealloc(NclFileCoordVarRecord *coord_var_rec);
 
-NclFileCompoundRecord *get_nc4_compoundrec(int ncid, nc_type xtype);
+NclFileCompoundRecord *get_nc4_compoundrec(int ncid, nc_type xtype, NrmQuark **componentnamesptr);
 
-NclMultiDValData get_nc4_vlenlist(int ncid, int varid, nc_type xtype);
+NclMultiDValData get_nc4_vlenlist(int ncid, int varid, nc_type xtype, NclBasicDataTypes* vlentype);
 
 void _printNclTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline);
 void _justPrintTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline);
