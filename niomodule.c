@@ -3319,84 +3319,31 @@ NioVariable_Indices(NioVariableObject *var)
   return indices;
 }
 
-void _convertListToObj(PyArrayObject* array, obj* listids, int cdim, int ndims, npy_intp* dims, ng_usize_t* counter)
+void _convertListToObj(PyArrayObject* array, obj* listids, ng_size_t nitems)
 {
     PyObject* pyobj;
     NclVar var;
-    int i = 1;
-    int py_type = 1;
-    npy_intp ldims[1];
+    ng_size_t i = 0;
     NclList thelist = NULL;
     NclListObjList *tmp_list;
     NclMultiDValData md;
-    int processdim = 1 + cdim;
-    int n;
-    int ntmpdims = ndims - processdim;
-    npy_intp* tmpdims[MAX_NC_DIMS];
-    int itemsize = 0;
+    npy_intp length;
+    int itemsize = PyArray_ITEMSIZE(array);
 
-/*
-    PyObject* seq;
-    seq = PySequence_Fast(array, "expected a sequence");
-*/
-
-    fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
-                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
-
-    for(i = 0; i < dims[cdim]; ++i)
+    for(i = 0; i < nitems; ++i)
     {
-        if(processdim == ndims)
-        {
-            thelist = (NclList)_NclGetObj(listids[*counter]);
-            tmp_list = thelist->list.last;
-            var = (NclVar)_NclGetObj(tmp_list->obj_id);
-            md = (NclMultiDValData)_NclGetObj(var->var.thevalue_id);
-            ldims[0] = md->multidval.totalelements;
+        thelist = (NclList)_NclGetObj(listids[i]);
+        tmp_list = thelist->list.last;
+        var = (NclVar)_NclGetObj(tmp_list->obj_id);
+        md = (NclMultiDValData)_NclGetObj(var->var.thevalue_id);
+        length = md->multidval.totalelements;
 
-            fprintf(stderr, "\tds = %d, vl[%d] = %d\n",
-                               (int)ldims[0], i, ((int*)md->multidval.val)[ldims[0]-1]);
-#if 0
-            pyobj = PyArray_SimpleNewFromData(1, ldims, data_type(md->multidval.data_type), md->multidval.val);
-#else
-            py_type = data_type(md->multidval.data_type);
-            pyobj = PyArray_SimpleNew(1, ldims, py_type);
-            if(pyobj != NULL)
-            {
-                memcpy(((PyArrayObject *)pyobj)->data, md->multidval.val,
-                        (size_t) ldims[0] * _NclSizeOf(md->multidval.data_type));
-            }
-#endif
-            ++(*counter);
-        }
-        else
-        {
-            for(n = 0; n < ntmpdims; ++n)
-                tmpdims[n] = dims[n+processdim];
+        pyobj = PyArray_SimpleNewFromData(1, &length, data_type(md->multidval.data_type), md->multidval.val);
 
-            pyobj = (PyObject*)PyArray_SimpleNew(ntmpdims, tmpdims, NPY_OBJECT);
-            if(NULL == pyobj)
-                PyErr_SetString(PyExc_MemoryError,
-                                "Problem to create PyArray in _convertListToObj.");
-
-            _convertListToObj(pyobj, listids, processdim, ndims, dims, counter);
-        }
-/*
-        Py_DECREF(pyobj);
-        PyObject_SetItem(array, i, pyobj);
-*/
-        itemsize = PyArray_ITEMSIZE(array);
         PyArray_SETITEM(array, array->data + i * itemsize, pyobj);
-    }
 
-  /*
-    array = PyArray_Return((PyArrayObject *)array);
-    if(array != NULL)
-    {
-        PyDict_SetItemString(attributes, name, array);
-        Py_DECREF(array);
+        Py_DECREF(pyobj);
     }
-    return (PyArrayObject*)array;
-   */
 }
 
 PyArrayObject *
@@ -3581,22 +3528,21 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  }
 			  if(NCL_list == md->multidval.data_type)
 			  {
-                              int cdim = 0;
-                              ng_usize_t counter = 0;
+                            /*
+                             *fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
+                             *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                             *fprintf(stderr, "\tNeed to work on read vlen\n");
+                             *fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
+                             *for(i = 0; i < self->nd; ++i)
+                             *    fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
+                             */
 
-                              fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
-                                               __PRETTY_FUNCTION__, __FILE__, __LINE__);
-                              fprintf(stderr, "\tNeed to work on read vlen\n");
-                              fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
-                              for(i = 0; i < self->nd; ++i)
-                                  fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
-
-                              array = PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
+                              array = (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
                               if(NULL == array)
                                   PyErr_SetString(PyExc_MemoryError,
                                                   "Problem to create PyArray in NioVariable_ReadAsArray for vlen data.");
 
-                              _convertListToObj((PyObject*)array, (obj*)md->multidval.val, cdim, ndims, dims, &counter);
+                              _convertListToObj(array, (obj*)md->multidval.val, nitems);
 			  }
 			  else
 			  {
@@ -3605,9 +3551,9 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 					      0,0,NULL);
 			  }
 
-			  md->multidval.val = NULL;
-			/*
-			  _NclDestroyObj((NclObj)md);
+			/*Delete md will cause seg. fault. Wei, May 9, 2014.
+			 *md->multidval.val = NULL;
+			 *_NclDestroyObj((NclObj)md);
 			 */
 			  free(sel_ptr);
 		  }
