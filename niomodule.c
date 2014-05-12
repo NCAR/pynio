@@ -1819,6 +1819,278 @@ static PyObject *NioFileObject_new_vlen(NioFileObject *self, PyObject *args)
     return (PyObject *)var;
 }
 
+NioVariableObject *NioFile_CreateCOMPOUND(NioFileObject *file, char *name, 
+                                          char **dimension_names, int ndim,
+                                          char **memb_names, int *memb_types,
+                                          int *memb_sizes, int nmemb)
+{
+    NioVariableObject *variable;
+    int i;
+    NclFile nfile = (NclFile) file->id;
+    NrmQuark *qdims = NULL; 
+    NhlErrorTypes ret;
+    NrmQuark qvar;
+    NrmQuark* memqname = NULL;
+    NrmQuark* memqtype = NULL;
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+    if(! check_if_open(file, 1))
+        return NULL;
+
+    define_mode(file, 1);
+
+    variable = (NioVariableObject *) PyDict_GetItemString(file->variables, name);
+    if (variable)
+    {
+        printf("variable (%s) exists: cannot create\n",name);
+        return variable;
+    }
+    	  
+    if (ndim > 0)
+    {
+        qdims = (NrmQuark *)malloc(ndim*sizeof(NrmQuark));
+        if (! qdims)
+	    return (NioVariableObject *)PyErr_NoMemory();
+    }
+    else if (ndim == 0)
+    {
+        qdims = (NrmQuark *)malloc(sizeof(NrmQuark));
+        if (! qdims)
+    	    return (NioVariableObject *)PyErr_NoMemory();
+
+        *qdims = NrmStringToQuark("ncl_scalar");
+    }
+
+    for(i = 0; i < ndim; ++i)
+        qdims[i] = NrmStringToQuark(dimension_names[i]);
+
+    if(nmemb > 0)
+    {
+        memqname = (NrmQuark *)malloc(nmemb*sizeof(NrmQuark));
+        if(! memqname)
+            return (NioVariableObject *)PyErr_NoMemory();
+        memqtype = (NrmQuark *)malloc(nmemb*sizeof(NrmQuark));
+        if(! memqtype)
+            return (NioVariableObject *)PyErr_NoMemory();
+    }
+    else
+    {
+        fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "\tnmemb = %d\n", nmemb);
+        fprintf(stderr, "\tnumber of compound components must great than 0.\n");
+        return NULL;
+    }
+
+    for(i = 0; i < nmemb; ++i)
+    {
+        memqname[i] = NrmStringToQuark(memb_names[i]);
+        memqtype[i] = nio_type_from_code(memb_types[i]);
+    }
+
+    qvar = NrmStringToQuark(name);
+    ret = _NclFileAddCompound(nfile, NrmStringToQuark("compound_data"), qvar,
+                              ndim, qdims, nmemb, memqname, memqtype, memb_sizes);
+
+    free(memqname);
+    free(memqtype);
+
+    if (ret > NhlWARNING)
+    {
+        variable = nio_create_advancedfile_variable(file, name, 0, ndim, qdims);
+
+    	PyDict_SetItemString(file->variables, name, (PyObject *)variable);
+    	return variable;
+    }
+    else
+    {
+        sprintf(err_buf,"Error creating variable (%s)",name);
+        PyErr_SetString(NIOError, err_buf);
+        if (qdims != NULL) 
+    	    free(qdims);
+        return NULL;
+    }
+}
+
+static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
+{
+    NioVariableObject *var;
+    char **dimension_names;
+    char **memb_names;
+    int   *memb_types;
+    int   *memb_sizes;
+    PyObject* seq;
+    PyObject* item;
+    PyObject* dim;
+    PyObject* type;
+    PyObject* seq2;
+    PyObject* item2;
+    char *name;
+    int ndim, nmemb, nitem;
+    int i;
+    char errbuf[256];
+    char ltype;
+    char *typestr;
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+    if(!PyArg_ParseTuple(args, "sOO!", &name, &type, &PyTuple_Type, &dim))
+        return NULL;
+
+    nmemb = PySequence_Size(type);
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+    fprintf(stderr, "\tnmemb = %d\n", nmemb);
+
+    if (nmemb == 0)
+    {
+        memb_names = NULL;
+        memb_types = NULL;
+        memb_sizes = NULL;
+    }
+    else
+    {
+        memb_names = (char **)malloc(nmemb*sizeof(char *));
+        if (memb_names == NULL)
+        {
+            PyErr_SetString(PyExc_MemoryError, "out of memory to define compound member name");
+            return NULL;
+        }
+        memb_types = (int *)malloc(nmemb*sizeof(int));
+        if (memb_types == NULL)
+        {
+            PyErr_SetString(PyExc_MemoryError, "out of memory to define compound member type");
+            return NULL;
+        }
+        memb_sizes = (int *)malloc(nmemb*sizeof(int));
+        if (memb_sizes == NULL)
+        {
+            PyErr_SetString(PyExc_MemoryError, "out of memory to define compound member size");
+            return NULL;
+        }
+    }
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+    seq = PySequence_Fast(type, "expected a sequence");
+    for(i = 0; i < nmemb; ++i)
+    {
+        item = PySequence_Fast_GET_ITEM(seq, i);
+        nitem = PySequence_Size(item);
+        fprintf(stderr, "\tItem %d has %d elements\n", i, nitem);
+
+        seq2 = PySequence_Fast(item,  "expected a sequence");
+
+        item2 = PySequence_Fast_GET_ITEM(seq2, 0);
+        if(PyString_Check(item2))
+        {
+            memb_names[i] = PyString_AsString(item2);
+            fprintf(stderr, "\tmemb_names[%d] = <%s>\n", i, memb_names[i]);
+        }
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "memb name must be a string");
+            free(memb_names);
+            return NULL;
+        }
+
+        item2 = PySequence_Fast_GET_ITEM(seq2, 1);
+        if(PyString_Check(item2))
+        {
+            typestr = PyString_AsString(item2);
+            ltype = typestr[0];
+            if(strlen(typestr) > 1)
+            {
+                if (typestr[0] == 'S' && typestr[1] == '1')
+                    ltype = 'c';
+                else
+                {
+                    sprintf (errbuf,"Cannot create compound (%s): string arrays not yet supported on write",name);
+                    PyErr_SetString(PyExc_TypeError, errbuf);
+                    return NULL;
+                }
+            }
+            memb_types[i] = ltype;
+            fprintf(stderr, "\tmemb_types[%d] = <%c>\n", i, ltype);
+        }
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "memb type must be a string");
+            free(memb_names);
+            return NULL;
+        }
+
+        memb_sizes[i] = 1;
+        if(3 <= nitem)
+        {
+            item2 = PySequence_Fast_GET_ITEM(seq2, 2);
+            if(PyInt_Check(item2))
+            {
+                memb_sizes[i] = (int)PyInt_AsLong(item2);
+            }
+            else if(PyLong_Check(item2))
+            {
+                memb_sizes[i] = (int)PyLong_AsLong(item2);
+            }
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "memb size must be a PyLong");
+                free(memb_names);
+                return NULL;
+            }
+        }
+        fprintf(stderr, "\tmemb_sizes[%d] = %d\n", i, memb_sizes[i]);
+    }
+
+    ndim = PyTuple_Size(dim);
+    if (ndim == 0)
+        dimension_names = NULL;
+    else
+    {
+        dimension_names = (char **)malloc(ndim*sizeof(char *));
+        if (dimension_names == NULL)
+        {
+            PyErr_SetString(PyExc_MemoryError, "out of memory");
+            return NULL;
+        }
+    }
+
+    for(i = 0; i < ndim; ++i)
+    {
+        item = PyTuple_GetItem(dim, i);
+        if (PyString_Check(item))
+            dimension_names[i] = PyString_AsString(item);
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "dimension name must be a string");
+            free(dimension_names);
+            return NULL;
+        }
+    }
+
+    var = NioFile_CreateCOMPOUND(self, name, dimension_names, ndim,
+                                 memb_names, memb_types, memb_sizes, nmemb);
+    if (! var)
+    {
+        sprintf(errbuf, "Failed to create compound (%s)",name);
+        PyErr_SetString(NIOError, errbuf);
+    }
+
+    if (dimension_names)
+        free(dimension_names);
+    if (memb_names)
+        free(memb_names);
+    if (memb_types)
+        free(memb_types);
+    if (memb_sizes)
+        free(memb_sizes);
+    return (PyObject *)var;
+}
+
 
 static PyObject *
 NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
@@ -1945,6 +2217,7 @@ static PyMethodDef NioFileObject_methods[] = {
   {"create_variable", (PyCFunction)NioFileObject_new_variable, METH_VARARGS},
   {"create_group", (PyCFunction)NioFileObject_new_group, METH_VARARGS},
   {"create_vlen", (PyCFunction)NioFileObject_new_vlen, METH_VARARGS},
+  {"create_compound", (PyCFunction)NioFileObject_new_compound, METH_VARARGS},
   {"unlimited", (PyCFunction) NioFileObject_Unlimited,METH_VARARGS},
   {NULL, NULL}		/* sentinel */
 };
@@ -3319,7 +3592,7 @@ NioVariable_Indices(NioVariableObject *var)
   return indices;
 }
 
-void _convertListToObj(PyArrayObject* array, obj* listids, ng_size_t nitems)
+void _convertVLEN2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems)
 {
     PyObject* pyobj;
     NclVar var;
@@ -3542,7 +3815,16 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
                                   PyErr_SetString(PyExc_MemoryError,
                                                   "Problem to create PyArray in NioVariable_ReadAsArray for vlen data.");
 
-                              _convertListToObj(array, (obj*)md->multidval.val, nitems);
+                              _convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
+			  }
+			  else if(NCL_compound == md->multidval.data_type)
+                          {
+                              fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
+                                               __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                              fprintf(stderr, "\tNeed to work on read compound\n");
+                              fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
+                              for(i = 0; i < self->nd; ++i)
+                                  fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
 			  }
 			  else
 			  {
@@ -3596,8 +3878,8 @@ NioVariable_ReadAsString(NioVariableObject *self)
     return NULL;
 }
 
-void _convertObjToList(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
-                       ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter)
+void _convertObj2VLEN(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
+                      ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter)
 {
     NclQuark dimname;
     ng_size_t dimsize = 0;
@@ -3635,7 +3917,52 @@ void _convertObjToList(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
             *counter += 1;
         }
         else
-            _convertObjToList(item, listids, type, n_dims, processingdim, counter);
+            _convertObj2VLEN(item, listids, type, n_dims, processingdim, counter);
+    }
+
+    Py_DECREF(seq);
+}
+
+void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
+                          ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter)
+{
+    NclQuark dimname;
+    ng_size_t dimsize = 0;
+    PyArrayObject *array;
+    PyObject* seq;
+    PyObject* item;
+    char buffer[16];
+    NclVar var;
+    int i, len;
+    int processingdim = 1 + curdim;
+    NclObj thelist = NULL;
+
+    fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
+                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+    seq = PySequence_Fast(pyobj, "expected a sequence");
+    len = PySequence_Size(pyobj);
+
+    fprintf(stderr, "\tlen = %d\n", len);
+
+    for(i = 0; i < len; ++i)
+    {
+        item = PySequence_Fast_GET_ITEM(seq, i);
+
+        if(processingdim == n_dims)
+        {
+            array = (PyArrayObject *)PyArray_ContiguousFromAny(item,data_type(type),0,1);
+            dimsize = array->dimensions[0];
+            sprintf(buffer, "list_%6.6d", (int)(*counter));
+            dimname = NrmStringToQuark(buffer);
+            var = _NclCreateVlenVar(buffer, (void *)array->data, 1, &dimname, &dimsize, type);
+            thelist = _NclGetObj(listids[*counter]);
+            _NclListAppend((NclObj)thelist, (NclObj)var);
+
+            *counter += 1;
+        }
+        else
+            _convertObj2COMPOUND(item, listids, type, n_dims, processingdim, counter);
     }
 
     Py_DECREF(seq);
@@ -4034,7 +4361,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 
                   _NclBuildArrayOfList(listids, n_dims, dims);
 
-                  _convertObjToList((PyObject*)array, listids, varnode->base_type, n_dims, curdim, &counter);
+                  _convertObj2VLEN((PyObject*)array, listids, varnode->base_type, n_dims, curdim, &counter);
 
                   md = _NclCreateVal(NULL,NULL,((the_obj_type & NCL_VAL_TYPE_MASK) ?
                                      Ncl_MultiDValData:the_obj_type),0,listids,
@@ -4042,6 +4369,36 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                                      (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
                                      _NclTypeEnumToTypeClass(the_obj_type):NULL));
               }
+          }
+          else if(NCL_compound == varnode->type)
+          {
+              obj *listids = NULL;
+              int curdim = 0;
+              ng_usize_t counter = 0;
+
+              qtype = NrmStringToQuark("compound");
+
+              if(array)
+              {
+                  NclObjTypes the_obj_type = Ncl_Typelist;
+
+                  listids = (obj*)NclMalloc((ng_usize_t)(nitems * sizeof(obj)));
+                  assert(listids);
+
+                  _NclBuildArrayOfList(listids, n_dims, dims);
+
+                  _convertObj2COMPOUND((PyObject*)array, listids, varnode->base_type, n_dims, curdim, &counter);
+
+                  md = _NclCreateVal(NULL,NULL,((the_obj_type & NCL_VAL_TYPE_MASK) ?
+                                     Ncl_MultiDValData:the_obj_type),0,listids,
+                                     NULL,n_dims,dims,TEMPORARY,NULL,
+                                     (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
+                                     _NclTypeEnumToTypeClass(the_obj_type):NULL));
+              }
+	      fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			      __PRETTY_FUNCTION__, __FILE__, __LINE__);
+	      fprintf(stderr, "\tNeed to work on write compound.\n");
+
           }
           else
               md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
@@ -5192,6 +5549,7 @@ initnio(void)
 		       PyCObject_FromVoidPtr((void *)PyNIO_API, NULL));
 
   PyNIO_API[NioFile_CreateVLEN_NUM] = (void *)&NioFile_CreateVLEN;
+  PyNIO_API[NioFile_CreateCOMPOUND_NUM] = (void *)&NioFile_CreateCOMPOUND;
 
   /* Check for errors */
   if (PyErr_Occurred())

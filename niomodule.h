@@ -103,6 +103,7 @@ typedef enum
     NioVariable_WriteString_NUM,
     NioVariable_ReadAsString_NUM,
     NioFile_CreateVLEN_NUM,
+    NioFile_CreateCOMPOUND_NUM,
     PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
@@ -148,6 +149,14 @@ typedef enum
 #define NioFile_CreateVLEN_PROTO \
       Py_PROTO((NioFileObject *file, char *name, int typecode, \
                 char **dimension_names, int ndim))
+
+/* Create a NIO compound and return the compound object */
+#define NioFile_CreateCOMPOUND_RET NioVariableObject *
+#define NioFile_CreateCOMPOUND_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, \
+                char **dimension_names, int ndim, \
+                char **memb_names, int *memb_types, \
+                int *memb_sizes, int nmemb))
 
 /* Return an object referring to an existing variable */
 #define NioFile_GetVariable_RET NioVariableObject *
@@ -278,6 +287,7 @@ static NioVariable_SetAttributeString_RET \
 static NioFile_AddHistoryLine_RET NioFile_AddHistoryLine \
   NioFile_AddHistoryLine_PROTO;
 static NioFile_CreateVLEN_RET NioFile_CreateVLEN NioFile_CreateVLEN_PROTO;
+static NioFile_CreateCOMPOUND_RET NioFile_CreateCOMPOUND NioFile_CreateCOMPOUND_PROTO;
 
 #else
 
