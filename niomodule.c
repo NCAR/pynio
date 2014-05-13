@@ -1832,9 +1832,6 @@ NioVariableObject *NioFile_CreateCOMPOUND(NioFileObject *file, char *name,
     NrmQuark* memqname = NULL;
     NrmQuark* memqtype = NULL;
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
-
     if(! check_if_open(file, 1))
         return NULL;
 
@@ -1932,17 +1929,21 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
     char ltype;
     char *typestr;
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+  /*
+   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+   *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   */
 
     if(!PyArg_ParseTuple(args, "sOO!", &name, &type, &PyTuple_Type, &dim))
         return NULL;
 
     nmemb = PySequence_Size(type);
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
-    fprintf(stderr, "\tnmemb = %d\n", nmemb);
+  /*
+   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+   *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   *fprintf(stderr, "\tnmemb = %d\n", nmemb);
+   */
 
     if (nmemb == 0)
     {
@@ -1972,15 +1973,19 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
         }
     }
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                     __PRETTY_FUNCTION__, __FILE__, __LINE__);
+  /*
+   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+   *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   */
 
     seq = PySequence_Fast(type, "expected a sequence");
     for(i = 0; i < nmemb; ++i)
     {
         item = PySequence_Fast_GET_ITEM(seq, i);
         nitem = PySequence_Size(item);
-        fprintf(stderr, "\tItem %d has %d elements\n", i, nitem);
+      /*
+       *fprintf(stderr, "\tItem %d has %d elements\n", i, nitem);
+       */
 
         seq2 = PySequence_Fast(item,  "expected a sequence");
 
@@ -1988,7 +1993,9 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
         if(PyString_Check(item2))
         {
             memb_names[i] = PyString_AsString(item2);
-            fprintf(stderr, "\tmemb_names[%d] = <%s>\n", i, memb_names[i]);
+          /*
+           *fprintf(stderr, "\tmemb_names[%d] = <%s>\n", i, memb_names[i]);
+           */
         }
         else
         {
@@ -2014,7 +2021,9 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
                 }
             }
             memb_types[i] = ltype;
-            fprintf(stderr, "\tmemb_types[%d] = <%c>\n", i, ltype);
+          /*
+           *fprintf(stderr, "\tmemb_types[%d] = <%c>\n", i, ltype);
+           */
         }
         else
         {
@@ -2042,7 +2051,9 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
                 return NULL;
             }
         }
-        fprintf(stderr, "\tmemb_sizes[%d] = %d\n", i, memb_sizes[i]);
+      /*
+       *fprintf(stderr, "\tmemb_sizes[%d] = %d\n", i, memb_sizes[i]);
+       */
     }
 
     ndim = PyTuple_Size(dim);
@@ -3618,6 +3629,67 @@ void _convertVLEN2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems)
     }
 }
 
+void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, NclFileVarNode* varnode)
+{
+    PyArrayObject* comparray;
+    PyObject* pyobj;
+    void* curval;
+    NclVar var;
+    ng_size_t i = 0;
+    NclList thelist = NULL;
+    NclListObjList *tmp_list;
+    NclMultiDValData md;
+    npy_intp length;
+    int itemsize = PyArray_ITEMSIZE(array);
+    int n, offset;
+    NclFileCompoundRecord *comprec = varnode->comprec;
+    NclFileCompoundNode   *compnode = NULL;
+
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			__PRETTY_FUNCTION__, __FILE__, __LINE__);
+    fprintf(stderr, "\titemsize = %d\n", itemsize);
+
+    if((NULL == comprec) || (1 > comprec->n_comps))
+    {
+        fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "\tThe compound record is NULL, there is nothing we can do then.\n");
+        return;
+    }
+
+    for(i = 0; i < nitems; ++i)
+    {
+        thelist = (NclList)_NclGetObj(listids[i]);
+        tmp_list = thelist->list.last;
+        var = (NclVar)_NclGetObj(tmp_list->obj_id);
+        md = (NclMultiDValData)_NclGetObj(var->var.thevalue_id);
+
+        comparray = (PyArrayObject*)PyArray_SimpleNew(1, &(comprec->n_comps), NPY_OBJECT);
+        if(NULL == comparray)
+            PyErr_SetString(PyExc_MemoryError,
+                           "Problem to create PyArray in NioVariable_ReadAsArray for compound data.");
+
+        curval = md->multidval.val + i * comprec->size;
+        offset = 0;
+
+        for(n = 0; n < comprec->n_comps; ++n)
+        {
+            compnode = &(comprec->compnode[n]);
+            offset += compnode->offset;
+            length = compnode->nvals;
+
+            pyobj = PyArray_SimpleNewFromData(1, &length, data_type(compnode->type), curval + offset);
+
+            PyArray_SETITEM(comparray, comparray->data + i * itemsize, pyobj);
+
+            Py_DECREF(pyobj);
+        }
+
+        PyArray_SETITEM(array, array->data + i * itemsize, comparray);
+
+        Py_DECREF(comparray);
+    }
+}
+
 PyArrayObject *
 NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 {
@@ -3798,32 +3870,71 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 				  Py_DECREF(array);
 				  array = NULL;
 			  }
-			  if(NCL_list == md->multidval.data_type)
+
+			  if(nfile->file.advanced_file_structure)
 			  {
-                            /*
-                             *fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
-                             *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
-                             *fprintf(stderr, "\tNeed to work on read vlen\n");
-                             *fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
-                             *for(i = 0; i < self->nd; ++i)
-                             *    fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
-                             */
+			  	NclFileVarNode* varnode;
+			  	NclAdvancedFile advfile = (NclAdvancedFile) self->file->id;
+			  	varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
+			  	if(NULL == varnode)
+					return NULL;
 
-                              array = (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
-                              if(NULL == array)
-                                  PyErr_SetString(PyExc_MemoryError,
-                                                  "Problem to create PyArray in NioVariable_ReadAsArray for vlen data.");
+			  	if(NCL_list == md->multidval.data_type)
+			  	{
+			  		if(NCL_vlen == varnode->type)
+			  		{
+                            			/*
+                             			*fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
+                             			*                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                             			*fprintf(stderr, "\tNeed to work on read vlen\n");
+                             			*fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
+                             			*for(i = 0; i < self->nd; ++i)
+                             			*    fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
+                             			*/
 
-                              _convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
-			  }
-			  else if(NCL_compound == md->multidval.data_type)
-                          {
-                              fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
-                                               __PRETTY_FUNCTION__, __FILE__, __LINE__);
-                              fprintf(stderr, "\tNeed to work on read compound\n");
-                              fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
-                              for(i = 0; i < self->nd; ++i)
-                                  fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
+                              			array = (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
+                              			if(NULL == array)
+                                  			PyErr_SetString(PyExc_MemoryError,
+                                                  			"Problem to create PyArray in NioVariable_ReadAsArray for vlen data.");
+
+                              			_convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
+			  		}
+			  		else if(NCL_compound == varnode->type)
+                          		{
+                            			/*
+                             			*/
+                              			fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
+                                               			__PRETTY_FUNCTION__, __FILE__, __LINE__);
+                              			fprintf(stderr, "\tNeed to work on read compound\n");
+                              			fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
+                              			for(i = 0; i < self->nd; ++i)
+                                  			fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
+
+                              			array = (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
+                              			if(NULL == array)
+                                  			PyErr_SetString(PyExc_MemoryError,
+                                                  			"Problem to create PyArray in NioVariable_ReadAsArray for compound data.");
+
+                              			_convertCOMPOUND2Obj(array, (obj*)md->multidval.val, nitems, varnode);
+			  		}
+			  		else
+                          		{
+                              			fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+                              			fprintf(stderr, "\tDo not know anythong about varnode->type. Return NULL.\n");
+                              			return NULL;
+			  		}
+			  	}
+			  	else
+			  	{
+			      		array =(PyArrayObject *) PyArray_New(&PyArray_Type,d,
+					      				dims,self->type,NULL,md->multidval.val,
+					      				0,0,NULL);
+			  	}
+
+				/*Delete md will cause seg. fault. Wei, May 9, 2014.
+			 	*md->multidval.val = NULL;
+			 	*_NclDestroyObj((NclObj)md);
+			 	*/
 			  }
 			  else
 			  {
@@ -3832,10 +3943,6 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 					      0,0,NULL);
 			  }
 
-			/*Delete md will cause seg. fault. Wei, May 9, 2014.
-			 *md->multidval.val = NULL;
-			 *_NclDestroyObj((NclObj)md);
-			 */
 			  free(sel_ptr);
 		  }
 	  }
@@ -3891,13 +3998,8 @@ void _convertObj2VLEN(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
     int processingdim = 1 + curdim;
     NclObj thelist = NULL;
 
-    fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
-                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
-
     seq = PySequence_Fast(pyobj, "expected a sequence");
     len = PySequence_Size(pyobj);
-
-    fprintf(stderr, "\tlen = %d\n", len);
 
     for(i = 0; i < len; ++i)
     {
@@ -3936,13 +4038,14 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *
     int processingdim = 1 + curdim;
     NclObj thelist = NULL;
 
-    fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
-                    __PRETTY_FUNCTION__, __FILE__, __LINE__);
-
     seq = PySequence_Fast(pyobj, "expected a sequence");
     len = PySequence_Size(pyobj);
 
-    fprintf(stderr, "\tlen = %d\n", len);
+  /*
+   *fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
+   *                __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   *fprintf(stderr, "\tlen = %d\n", len);
+   */
 
     for(i = 0; i < len; ++i)
     {
@@ -3957,8 +4060,10 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *
 
             seq2 = PySequence_Fast(item, "expected a sequence");
             len2 = PySequence_Size(item);
-            fprintf(stderr, "\tlen2 = %d\n", len2);
-            fprintf(stderr, "\tcomprec->n_comps = %d\n", (int)comprec->n_comps);
+          /*
+           *fprintf(stderr, "\tlen2 = %d\n", len2);
+           *fprintf(stderr, "\tcomprec->n_comps = %d\n", (int)comprec->n_comps);
+           */
 
             if(len2 != comprec->n_comps)
             {
@@ -3989,9 +4094,11 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *
                     array = (PyArrayObject *)PyArray_ContiguousFromAny(item2,PyArray_STRING,0,1);
                     dimsize = compnode->nvals;
                     strcpy(tmpv, (char*)array->data);
-                    fprintf(stderr, "\tcomp: %d, value: <%s>\n", n, tmpv);
                     var = _NclCreateVlenVar(buffer, (void *)tmpv, 1, &dimname, &dimsize, compnode->type);
-                  /*free(tmpv);*/
+                  /*
+                   *fprintf(stderr, "\tcomp: %d, value: <%s>\n", n, tmpv);
+                   *free(tmpv);
+                   */
                 }
                 else
                 {
@@ -4318,12 +4425,9 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                   indices[var_dim].stop = array->dimensions[var_dim] - 1;
                   dims[var_dim] = array->dimensions[var_dim];
                   self->dimensions[var_dim] = array->dimensions[var_dim];
-                  fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                                   __PRETTY_FUNCTION__, __FILE__, __LINE__);
                   nitems = 1;
 	          for(i = 0; i < self->nd; ++i)
                   {
-                      fprintf(stderr, "\tDim %d, size: %d\n", (int)i, (int)self->dimensions[i]);
 	              nitems *= self->dimensions[i];
                   }
               }
@@ -4439,10 +4543,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                                      (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
                                      _NclTypeEnumToTypeClass(the_obj_type):NULL));
               }
-	      fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-			      __PRETTY_FUNCTION__, __FILE__, __LINE__);
-	      fprintf(stderr, "\tNeed to work on write compound.\n");
-
           }
           else
               md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
