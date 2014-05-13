@@ -604,7 +604,9 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
         compnode->sides = sides;
         compnode->nvals = 1;
 
-        nc_inq_compound_size(ncid, xtype, &size);
+      /*
+       *nc_inq_compound_size(ncid, xtype, &size);
+       */
 
         for(i = 0; i < rank; i++)
         {
@@ -1258,11 +1260,11 @@ NclMultiDValData get_nc4_compoundlist(int ncid, int varid)
                     &base_nc_type, &nfields, &ncl_class);
 
   /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tname: <%s>\n", buffer);
+   *fprintf(stderr, "\tsize: %d, base_nc_type: %d, nfields: %d, ncl_class: %d\n",
+   *                  size, base_nc_type, nfields, ncl_class);
    */
-    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tname: <%s>\n", buffer);
-    fprintf(stderr, "\tsize: %d, base_nc_type: %d, nfields: %d, ncl_class: %d\n",
-                      size, base_nc_type, nfields, ncl_class);
 
     switch(ncl_class)
     {
@@ -1277,19 +1279,19 @@ NclMultiDValData get_nc4_compoundlist(int ncid, int varid)
     }
 
     nc_inq_compound(ncid, xtype, buffer, &size, &nfields);
-
+    complength = (int)size;
   /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tsize = %d, nfields = %d\n", (int)size, nfields);
    */
-    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tsize = %d, nfields = %d\n", (int)size, nfields);
 
     nc_inq_var(ncid, varid, var_name, &var_type, &ndims, dimids, &natts);
 
   /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tvar_name: <%s>, var_type = %d, ndims = %d, dimids[0] = %d, natts = %d\n",
+   *                   var_name, var_type, ndims, dimids[0], natts);
    */
-    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-    fprintf(stderr, "\tvar_name: <%s>, var_type = %d, ndims = %d, dimids[0] = %d, natts = %d\n",
-                       var_name, var_type, ndims, dimids[0], natts);
 
     nvals = 1;
     for(i = 0; i < ndims; ++i)
@@ -1298,24 +1300,15 @@ NclMultiDValData get_nc4_compoundlist(int ncid, int varid)
         dimsizes[i] = (ng_size_t)size;
         dimnames[i] = NrmStringToQuark(buffer);
         nvals *= size;
-
-        fprintf(stderr, "\tdim[%d] name: %s, size: %d\n", i, buffer, (int)size);
-    }
-
-    for(i = 0; i < nfields; ++i)
-    {
-        nc_inq_compound_field(ncid, var_type, i, buffer, &offset, &field_typeid,
-                             &field_ndims, field_sizes);
       /*
+       *fprintf(stderr, "\tdim[%d] name: %s, size: %d\n", i, buffer, (int)size);
        */
-        fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
-        fprintf(stderr, "\tname[%d]: <%s>\n", i, buffer);
-        fprintf(stderr, "\toffset = %d, field_typeid = %d, field_ndims = %d, field_sizes[0] = %d\n",
-                           offset, field_typeid, field_ndims, field_sizes[0]);
-
-        for(k = 0; k < field_ndims; ++k)
-            complength *= field_sizes[k];
     }
+
+  /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tnvals = %d, complength = %d\n", (int)nvals, (int)complength);
+   */
 
     values = (void *)NclCalloc(nvals * complength, sizeof(void));
     assert(values);
@@ -1329,7 +1322,7 @@ NclMultiDValData get_nc4_compoundlist(int ncid, int varid)
 
     ncompounddims = 1;
     compounddimsizes[0] = complength;
-    dimnames[0] = NrmStringToQuark("compounddim");
+    dimnames[0] = NrmStringToQuark("compound_dim");
     for(i = 0; i < nvals; i++)
     {
         compoundvalues = (void *)NclCalloc(complength, sizeof(void));
@@ -3201,9 +3194,9 @@ static void *NC4ReadVar(void *therec, NclQuark thevar,
             else
             {
               /*
+               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tvarnode->name: <%s>\n", NrmQuarkToString(varnode->name));
                */
-                fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                fprintf(stderr, "\tvarnode->name: <%s>\n", NrmQuarkToString(varnode->name));
 
                 varnode->udt_type = NCL_UDT_compound;
                 storage = (void *)get_nc4_compoundlist(varnode->gid, varnode->id);

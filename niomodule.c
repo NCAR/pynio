@@ -3641,13 +3641,15 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, 
     NclMultiDValData md;
     npy_intp length;
     int itemsize = PyArray_ITEMSIZE(array);
-    int n, offset;
+    int n;
     NclFileCompoundRecord *comprec = varnode->comprec;
     NclFileCompoundNode   *compnode = NULL;
 
-    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-			__PRETTY_FUNCTION__, __FILE__, __LINE__);
-    fprintf(stderr, "\titemsize = %d\n", itemsize);
+  /*
+   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+   *		__PRETTY_FUNCTION__, __FILE__, __LINE__);
+   *fprintf(stderr, "\titemsize = %d\n", itemsize);
+   */
 
     if((NULL == comprec) || (1 > comprec->n_comps))
     {
@@ -3668,18 +3670,38 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, 
             PyErr_SetString(PyExc_MemoryError,
                            "Problem to create PyArray in NioVariable_ReadAsArray for compound data.");
 
-        curval = md->multidval.val + i * comprec->size;
-        offset = 0;
+        curval = md->multidval.val;
 
         for(n = 0; n < comprec->n_comps; ++n)
         {
             compnode = &(comprec->compnode[n]);
-            offset += compnode->offset;
+
+          /*
+           *fprintf(stderr, "\n\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tcomponent [%d] name: <%s>\n", n, NrmQuarkToString(compnode->name));
+           *fprintf(stderr, "\toffset = %d, rank = %d, nvals = %d, type: %s\n",
+           *                   compnode->offset, compnode->rank, compnode->nvals,
+           *                   _NclBasicDataTypeToName(compnode->type));
+           */
+
             length = compnode->nvals;
 
-            pyobj = PyArray_SimpleNewFromData(1, &length, data_type(compnode->type), curval + offset);
+            if(NCL_char == compnode->type)
+            {
+                PyObject* tmpobj;
+                char* tmpstr = (char*)calloc(1 + compnode->nvals, sizeof(char));
+                assert(tmpstr);
+                memcpy(tmpstr, curval + compnode->offset, length);
+                length = strlen(tmpstr);
+                tmpobj = PyArray_SimpleNewFromData(1, &length, PyArray_CHAR, tmpstr);
+                pyobj = PyArray_ToString((PyArrayObject*)tmpobj, NPY_CORDER);
+                free(tmpstr);
+                Py_DECREF(tmpobj);
+            }
+            else
+                pyobj = PyArray_SimpleNewFromData(1, &length, data_type(compnode->type), curval + compnode->offset);
 
-            PyArray_SETITEM(comparray, comparray->data + i * itemsize, pyobj);
+            PyArray_SETITEM(comparray, comparray->data + n * itemsize, pyobj);
 
             Py_DECREF(pyobj);
         }
@@ -3902,13 +3924,13 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  		else if(NCL_compound == varnode->type)
                           		{
                             			/*
+                              			*fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
+                                               	*		__PRETTY_FUNCTION__, __FILE__, __LINE__);
+                              			*fprintf(stderr, "\tNeed to work on read compound\n");
+                              			*fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
+                              			*for(i = 0; i < self->nd; ++i)
+                                  		*	fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
                              			*/
-                              			fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
-                                               			__PRETTY_FUNCTION__, __FILE__, __LINE__);
-                              			fprintf(stderr, "\tNeed to work on read compound\n");
-                              			fprintf(stderr, "\tnitems = %ld\n", (long)nitems);
-                              			for(i = 0; i < self->nd; ++i)
-                                  			fprintf(stderr, "\tdims[%d] = %ld\n", i, (long)dims[i]);
 
                               			array = (PyArrayObject*)PyArray_SimpleNew(ndims, dims, NPY_OBJECT);
                               			if(NULL == array)
