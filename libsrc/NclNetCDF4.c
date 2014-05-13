@@ -3053,6 +3053,7 @@ found_component:
 
             nc_get_var(varnode->gid, varnode->id, values);
 
+            varnode->udt_type = NCL_UDT_compound;
             complength *= _NclSizeOf(compnode->type);
 
           /*
@@ -3657,6 +3658,8 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
                 for(i = 0; i < varnode->dim_rec->n_dims; i++)
                 {
                     dimnode = &(varnode->dim_rec->dim_node[i]);
+                    if(dimnode->is_unlimited)
+                        in_whole = 0;
                     for(j = locstart[i]; j < dimnode->size; j++)
                     {
                         tmpstr[n] = NrmQuarkToString(qd[n]);
@@ -3698,6 +3701,8 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
                 {
                     dimnode = &(varnode->dim_rec->dim_node[n]);
                     data_size *= (size_t) dimnode->size;
+                    if(dimnode->is_unlimited)
+                        in_whole = 0;
                 }
 
                 if(NULL != comp_rec)
@@ -3732,7 +3737,7 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
                     for(i = 0; i < data_size; ++i)
                     {
                         comp_list = (NclList)_NclGetObj(obj_id[i]);
-                        step = comp_list->list.last;
+                        step = comp_list->list.first;
                         for(n = 0; n < comp_rec->n_comps; ++n)
                         {
                             cur_var = (NclVar)_NclGetObj(step->obj_id);
@@ -3750,11 +3755,25 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
                                 fprintf(stderr, "\tUnknown cur_var->obj.obj_type: 0%x\n", cur_var->obj.obj_type);
                             }
 
-                            step = step->prev;
+                            step = step->next;
                         }
                     }
         
-                    ret = nc_put_var(fid, varnode->id, data_value);
+                    if(no_stride)
+                    {
+                        if(in_whole)
+                            ret = nc_put_var(fid, varnode->id, data_value);
+                        else
+                            ret = ncvarputg(fid, varnode->id,
+                                            start, (long *)count, NULL, NULL,
+                                            data_value);
+                    }
+                    else
+                    {
+                        ret = ncvarputg(fid, varnode->id,
+                                        start, (long *)count, stride, NULL,
+                                        data_value);
+                    }
 
                     NclFree(data_value);
                 }

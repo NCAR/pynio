@@ -471,7 +471,6 @@ int data_type(NclBasicDataTypes ntype)
                 return PyArray_LIST;
         case NCL_listarray:
                 return PyArray_LISTARRAY;
-
 	default:
 		return PyArray_NOTYPE;
 	}
@@ -3923,7 +3922,7 @@ void _convertObj2VLEN(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
     Py_DECREF(seq);
 }
 
-void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
+void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *comprec,
                           ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter)
 {
     NclQuark dimname;
@@ -3951,18 +3950,63 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
 
         if(processingdim == n_dims)
         {
-            array = (PyArrayObject *)PyArray_ContiguousFromAny(item,data_type(type),0,1);
-            dimsize = array->dimensions[0];
-            sprintf(buffer, "list_%6.6d", (int)(*counter));
+            NclFileCompoundNode* compnode;
+            PyObject* seq2;
+            PyObject* item2;
+            int n, len2;
+
+            seq2 = PySequence_Fast(item, "expected a sequence");
+            len2 = PySequence_Size(item);
+            fprintf(stderr, "\tlen2 = %d\n", len2);
+            fprintf(stderr, "\tcomprec->n_comps = %d\n", (int)comprec->n_comps);
+
+            if(len2 != comprec->n_comps)
+            {
+                fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+                fprintf(stderr, "\tlen2 = %d\n", len2);
+                fprintf(stderr, "\tcomprec->n_comps = %d\n", (int)comprec->n_comps);
+                fprintf(stderr, "\tcomprec->n_comps and len2 do not equal.\n");
+                return;
+            }
+
+            sprintf(buffer, "comp_%6.6d", (int)(*counter));
             dimname = NrmStringToQuark(buffer);
-            var = _NclCreateVlenVar(buffer, (void *)array->data, 1, &dimname, &dimsize, type);
-            thelist = _NclGetObj(listids[*counter]);
-            _NclListAppend((NclObj)thelist, (NclObj)var);
+
+            for(n = 0; n < len2; ++n)
+            {
+                item2 = PySequence_Fast_GET_ITEM(seq2, n);
+                compnode = &(comprec->compnode[n]);
+
+                if(NCL_char == compnode->type)
+                {
+                    char* tmpv = (char *)calloc(compnode->nvals, sizeof(char));
+                    if(NULL == tmpv)
+                    {
+                        fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+                        fprintf(stderr, "\tFailed to allocate memory of %d char.\n", compnode->nvals);
+                        return;
+                    }
+                    array = (PyArrayObject *)PyArray_ContiguousFromAny(item2,PyArray_STRING,0,1);
+                    dimsize = compnode->nvals;
+                    strcpy(tmpv, (char*)array->data);
+                    fprintf(stderr, "\tcomp: %d, value: <%s>\n", n, tmpv);
+                    var = _NclCreateVlenVar(buffer, (void *)tmpv, 1, &dimname, &dimsize, compnode->type);
+                  /*free(tmpv);*/
+                }
+                else
+                {
+                    array = (PyArrayObject *)PyArray_ContiguousFromAny(item2,data_type(compnode->type),0,1);
+                    dimsize = array->dimensions[0];
+                    var = _NclCreateVlenVar(buffer, (void *)array->data, 1, &dimname, &dimsize, compnode->type);
+                }
+                thelist = _NclGetObj(listids[*counter]);
+                _NclListAppend((NclObj)thelist, (NclObj)var);
+            }
 
             *counter += 1;
         }
         else
-            _convertObj2COMPOUND(item, listids, type, n_dims, processingdim, counter);
+            _convertObj2COMPOUND(item, listids, comprec, n_dims, processingdim, counter);
     }
 
     Py_DECREF(seq);
@@ -4387,7 +4431,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 
                   _NclBuildArrayOfList(listids, n_dims, dims);
 
-                  _convertObj2COMPOUND((PyObject*)array, listids, varnode->base_type, n_dims, curdim, &counter);
+                  _convertObj2COMPOUND((PyObject*)array, listids, varnode->comprec, n_dims, curdim, &counter);
 
                   md = _NclCreateVal(NULL,NULL,((the_obj_type & NCL_VAL_TYPE_MASK) ?
                                      Ncl_MultiDValData:the_obj_type),0,listids,
