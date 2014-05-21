@@ -30,6 +30,7 @@ struct NioFileObjectStruct {
   PyObject *chunk_dimensions;   /* dictionary */
   PyObject *variables;    /* dictionary */
   PyObject *attributes;   /* dictionary */
+  PyObject *ud_types;     /* dictionary */
   PyObject *name;         /* string */
   PyObject *mode;         /* string */
   PyObject *type;         /* string */
@@ -104,6 +105,7 @@ typedef enum
     NioVariable_ReadAsString_NUM,
     NioFile_CreateVLEN_NUM,
     NioFile_CreateCOMPOUND_NUM,
+    NioFile_CreateCOMPOUNDtype_NUM,
     PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
@@ -155,6 +157,13 @@ typedef enum
 #define NioFile_CreateCOMPOUND_PROTO \
       Py_PROTO((NioFileObject *file, char *name, \
                 char **dimension_names, int ndim, \
+                char **memb_names, int *memb_types, \
+                int *memb_sizes, int nmemb))
+
+/* Create a NIO compound type and return the compound object */
+#define NioFile_CreateCOMPOUNDtype_RET NioVariableObject *
+#define NioFile_CreateCOMPOUNDtype_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, \
                 char **memb_names, int *memb_types, \
                 int *memb_sizes, int nmemb))
 
@@ -288,6 +297,7 @@ static NioFile_AddHistoryLine_RET NioFile_AddHistoryLine \
   NioFile_AddHistoryLine_PROTO;
 static NioFile_CreateVLEN_RET NioFile_CreateVLEN NioFile_CreateVLEN_PROTO;
 static NioFile_CreateCOMPOUND_RET NioFile_CreateCOMPOUND NioFile_CreateCOMPOUND_PROTO;
+static NioFile_CreateCOMPOUNDtype_RET NioFile_CreateCOMPOUNDtype NioFile_CreateCOMPOUNDtype_PROTO;
 
 #else
 
