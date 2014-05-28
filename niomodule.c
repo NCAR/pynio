@@ -357,6 +357,8 @@ staticforward NioVariableObject *nio_variable_new(NioFileObject *file, char *nam
 	                                          int type, int ndims, NrmQuark *qdims, int nattrs);
 void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *comprec,
                           ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter);
+void _convertObj2COMPOUNDatt(PyObject* pyobj, obj* listids, NclFileUDTNode* udtnode,
+                             ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter);
 
 static PyObject *Niomodule; /* the Nio Module object */
 
@@ -983,6 +985,7 @@ static NclFileVarNode* getVarFromGroup(NclFileGrpNode* grpnode, NrmQuark vname)
 
 /* Get user-define node from file */
 
+#if 0
 static NclFileUDTNode* getUDTfromGroup(NclFileGrpNode* grpnode, NrmQuark name)
 {
     NclFileGrpRecord* grprec;
@@ -1014,6 +1017,7 @@ static NclFileUDTNode* getUDTfromGroup(NclFileGrpNode* grpnode, NrmQuark name)
 
     return NULL;
 }
+#endif
 
 static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
                                 int* ndims, int* nvars, int* ngrps, int* ngattrs)
@@ -2628,8 +2632,8 @@ NioFile_GetAttribute(NioFileObject *self, char *name)
     return NULL;
 }
 
-static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *name,
-                                    PyObject *value)
+static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes,
+                                    char *vname, char *aname, PyObject *value)
 {
     NclMultiDValData md = NULL;
     PyArrayObject *array = NULL;
@@ -2654,9 +2658,11 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *n
         int n_dims;
         NrmQuark qtype;
         int pyarray_type = PyArray_NOTYPE;
-        PyArrayObject *tmparray = (PyArrayObject *)PyDict_GetItemString(attributes,name);
+/*
+        PyArrayObject *tmparray = (PyArrayObject *)PyDict_GetItemString(attributes, aname);
         if (tmparray != NULL)
             pyarray_type = tmparray->descr->type_num;
+*/
 
         array = (PyArrayObject *)PyArray_ContiguousFromAny(value, pyarray_type, 0, 1);
         if (array)
@@ -2679,9 +2685,11 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *n
 		fprintf(stderr, "\tNeed to handle object array, here, probably a compound attribute.\n");
 		if(nfile->file.advanced_file_structure)
                 {
-                    NclAdvancedFile   advfile = (NclAdvancedFile) nfile;
-                    NclFileVarNode*   varnode;
-
+                    NclAdvancedFile advfile = (NclAdvancedFile) nfile;
+                    NclFileUDTRecord* udtrec;
+                    NclFileUDTNode*   udtnode = NULL;
+                    char ud_name[1024];
+                    NrmQuark qaname = 0;
                     obj *listids = NULL;
                     ng_size_t n, n_dims;
                     ng_size_t nitems = 1;
@@ -2689,11 +2697,12 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *n
                     ng_usize_t counter = 0;
                     ng_size_t *dims;
 
-		    varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(name));
-
                     if(array)
                     {
-                        NclObjTypes the_obj_type = Ncl_Typelist;
+                      /*
+                       *NclObjTypes the_obj_type = Ncl_Typelist;
+                       */
+                        NclObjTypes the_obj_type = Ncl_Typecompound;
 
                         n_dims = (ng_size_t) array->nd;
                         dims = (ng_size_t*) malloc(n_dims * sizeof(ng_size_t));
@@ -2709,13 +2718,34 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *n
 
                         _NclBuildArrayOfList(listids, n_dims, dims);
 
-                        _convertObj2COMPOUND((PyObject*)array, listids, varnode->comprec, n_dims, curdim, &counter);
+                        udtrec = advfile->advancedfile.grpnode->udt_rec;
+                        if(NULL != udtrec)
+                        {
+                            for(n = 0; n < udtrec->n_udts; ++n)
+                            {
+                                strcpy(ud_name, aname);
+                                strcat(ud_name, "_compound_type");
+                                qaname = NrmStringToQuark(ud_name);
+                                if(qaname == udtrec->udt_node[n].name)
+                                {
+                                    udtnode = &(udtrec->udt_node[n]);
+                                    break;
+                                }
+                            }
+                        }
 
-                        md = _NclCreateVal(NULL,NULL,((the_obj_type & NCL_VAL_TYPE_MASK) ?
-                                           Ncl_MultiDValData:the_obj_type),0,listids,
-                                           NULL,n_dims,dims,TEMPORARY,NULL,
-                                           (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
-                                           _NclTypeEnumToTypeClass(the_obj_type):NULL));
+                        if(NULL != udtnode)
+                        {
+                            _convertObj2COMPOUNDatt((PyObject*)array, listids, udtnode, n_dims, curdim, &counter);
+
+                            md = _NclCreateVal(NULL,NULL,((the_obj_type & NCL_VAL_TYPE_MASK) ?
+                                               Ncl_MultiDValData:the_obj_type),0,listids,
+                                               NULL,n_dims,dims,TEMPORARY,NULL,
+                                               (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
+                                               _NclTypeEnumToTypeClass(the_obj_type):NULL));
+                            md->multidval.data_type = NCL_compound;
+                        }
+
 
                         Py_DECREF(array);
                     }
@@ -2768,7 +2798,7 @@ static int set_advanced_file_attribute(NioFileObject *file, PyObject *attributes
         return 0;
     }
         
-    md = createAttMD(nfile, attributes, name, value);
+    md = createAttMD(nfile, attributes, NULL, name, value);
 
     if (! md)
     {
@@ -2816,7 +2846,7 @@ static int set_advanced_variable_attribute(NioFileObject *file, NioVariableObjec
         return 0;
     }
         
-    md = createAttMD(nfile, attributes, name, value);
+    md = createAttMD(nfile, attributes, self->name, name, value);
 
     if (! md)
     {
@@ -4551,6 +4581,99 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids, NclFileCompoundRecord *
         }
         else
             _convertObj2COMPOUND(item, listids, comprec, n_dims, processingdim, counter);
+    }
+
+    Py_DECREF(seq);
+}
+
+void _convertObj2COMPOUNDatt(PyObject* pyobj, obj* listids, NclFileUDTNode* udtnode,
+                             ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter)
+{
+    NclQuark dimname;
+    ng_size_t dimsize = 0;
+    PyArrayObject *array;
+    PyObject* seq;
+    PyObject* item;
+    char buffer[16];
+    NclVar var;
+    int i, len;
+    int processingdim = 1 + curdim;
+    NclObj thelist = NULL;
+
+    seq = PySequence_Fast(pyobj, "expected a sequence");
+    len = PySequence_Size(pyobj);
+
+  /*
+   *fprintf(stderr, "\nFunc %s, in file: %s, line: %d\n",
+   *                __PRETTY_FUNCTION__, __FILE__, __LINE__);
+   *fprintf(stderr, "\tlen = %d\n", len);
+   */
+
+    for(i = 0; i < len; ++i)
+    {
+        item = PySequence_Fast_GET_ITEM(seq, i);
+
+        if(processingdim == n_dims)
+        {
+            PyObject* seq2;
+            PyObject* item2;
+            int n, len2;
+
+            seq2 = PySequence_Fast(item, "expected a sequence");
+            len2 = PySequence_Size(item);
+          /*
+           *fprintf(stderr, "\tlen2 = %d\n", len2);
+           *fprintf(stderr, "\tudtnode->n_fields = %d\n", (int)udtnode->n_fields);
+           */
+
+            if(len2 != udtnode->n_fields)
+            {
+                fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+                fprintf(stderr, "\tlen2 = %d\n", len2);
+                fprintf(stderr, "\tudtnode->n_fields = %d\n", (int)udtnode->n_fields);
+                fprintf(stderr, "\tudtnode->n_fields and len2 do not equal.\n");
+                return;
+            }
+
+            sprintf(buffer, "comp_%6.6d", (int)(*counter));
+            dimname = NrmStringToQuark(buffer);
+
+            for(n = 0; n < len2; ++n)
+            {
+                item2 = PySequence_Fast_GET_ITEM(seq2, n);
+
+                if(NCL_char == udtnode->mem_type[n])
+                {
+                    char* tmpv = (char *)calloc(udtnode->mem_size[n], sizeof(char));
+                    if(NULL == tmpv)
+                    {
+                        fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+                        fprintf(stderr, "\tFailed to allocate memory of %d char.\n", (int)udtnode->mem_size[n]);
+                        return;
+                    }
+                    array = (PyArrayObject *)PyArray_ContiguousFromAny(item2,PyArray_STRING,0,1);
+                    dimsize = udtnode->mem_size[n];
+                    strcpy(tmpv, (char*)array->data);
+                    var = _NclCreateVlenVar(buffer, (void *)tmpv, 1, &dimname, &dimsize, udtnode->mem_type[n]);
+                  /*
+                   *fprintf(stderr, "\tcomp: %d, value: <%s>\n", n, tmpv);
+                   *free(tmpv);
+                   */
+                }
+                else
+                {
+                    array = (PyArrayObject *)PyArray_ContiguousFromAny(item2,data_type(udtnode->mem_type[n]),0,1);
+                    dimsize = array->dimensions[0];
+                    var = _NclCreateVlenVar(buffer, (void *)array->data, 1, &dimname, &dimsize, udtnode->mem_type[n]);
+                }
+                thelist = _NclGetObj(listids[*counter]);
+                _NclListAppend((NclObj)thelist, (NclObj)var);
+            }
+
+            *counter += 1;
+        }
+        else
+            _convertObj2COMPOUNDatt(item, listids, udtnode, n_dims, processingdim, counter);
     }
 
     Py_DECREF(seq);

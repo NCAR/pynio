@@ -92,7 +92,7 @@ void _NC4_add_udt(NclFileUDTRecord **rootudtrec,
                   int gid, int uid, NclQuark name,
                   int ncl_class, nc_type base_nc_type,
                   size_t size, size_t nfields, 
-                  NclQuark *mem_name, NclBasicDataTypes *mem_type);
+                  NclQuark *mem_name, NclBasicDataTypes *mem_type, ng_size_t *mem_size);
 
 void check_err(const int stat, const int line, const char *file)
 {
@@ -332,7 +332,7 @@ void _NC4_add_udt(NclFileUDTRecord **rootudtrec,
                   int gid, int uid, NclQuark name,
                   int ncl_class, nc_type base_nc_type,
                   size_t size, size_t nfields,
-                  NclQuark *mem_name, NclBasicDataTypes *mem_type)
+                  NclQuark *mem_name, NclBasicDataTypes *mem_type, ng_size_t *mem_size)
 {
     NclFileUDTRecord *udtrec = *rootudtrec;
     NclFileUDTNode   *udtnode;
@@ -372,11 +372,17 @@ void _NC4_add_udt(NclFileUDTRecord **rootudtrec,
     assert(udtnode->mem_name);
     udtnode->mem_type = (NclBasicDataTypes *)NclCalloc(nfields, sizeof(NclBasicDataTypes));
     assert(udtnode->mem_type);
+    udtnode->mem_size = (ng_size_t *)NclCalloc(nfields, sizeof(ng_size_t));
+    assert(udtnode->mem_size);
 
     for(n = 0; n < nfields; n++)
     {
         udtnode->mem_name[n] = mem_name[n];
         udtnode->mem_type[n] = mem_type[n];
+        if(NULL != mem_size)
+            udtnode->mem_size[n] = mem_size[n];
+        else
+            udtnode->mem_size[n] = 1;
     }
 
     udtrec->n_udts ++;
@@ -511,6 +517,7 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
     int *sides;
     int i, fidx;
 
+    size_t *complen;
     size_t alen;
     size_t offset;
     size_t size;
@@ -562,31 +569,47 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
     data = (void *) NclCalloc(alen * comprec->size, sizeof(void));
     assert(data);
 
-    nc_get_att(ncid, aid, NrmQuarkToString(attnode->name), data);
+    nc_get_att(ncid, aid, NrmQuarkToString(comprec->name), data);
 
   /*
-   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tncid = %d, aid = %d\n", ncid, aid);
-   *fprintf(stderr, "\tname: <%s>\n", NrmQuarkToString(attnode->name));
    */
+    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tncid = %d, aid = %d\n", ncid, aid);
+    fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(attnode->name));
+    fprintf(stderr, "\tcomprecname: <%s>\n", NrmQuarkToString(comprec->name));
+
+    complen = (size_t*)NclMalloc(nfields * sizeof(size_t));
+    assert(complen);
 
     for(fidx = 0; fidx < nfields; fidx++)
     {
-
-        compnode = &(comprec->compnode[fidx]);
-        
         sides = NULL;
         nc_inq_compound_field(ncid, xtype, fidx, buffer,
                           &offset, &ftype, &rank, sides);
 
       /*
-       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tfidx: %d, offset: %ld\n", fidx, (long)offset);
-       *fprintf(stderr, "\trank: %d\n", rank);
-       *fprintf(stderr, "\tftype: %d\n", (long)ftype);
-       *fprintf(stderr, "\tname: <%s>\n", buffer);
-       *fprintf(stderr, "\tftype = %d, NC_CHAR = %d, NC_STRING = %d\n", ftype, NC_CHAR, NC_STRING);
        */
+        fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "\tfidx: %d, offset: %ld\n", fidx, (long)offset);
+        fprintf(stderr, "\trank: %d\n", rank);
+        fprintf(stderr, "\tftype: %d\n", (long)ftype);
+        fprintf(stderr, "\tname: <%s>\n", buffer);
+        fprintf(stderr, "\tftype = %d, NC_CHAR = %d, NC_STRING = %d\n", ftype, NC_CHAR, NC_STRING);
+
+        if(fidx)
+            complen[fidx-1] = offset;
+    }
+
+    fprintf(stderr, "\tcomprec->size = %ld\n", comprec->size);
+    complen[nfields-1] = comprec->size - complen[nfields-2];
+
+    for(fidx = 0; fidx < nfields; fidx++)
+    {
+        compnode = &(comprec->compnode[fidx]);
+        
+        sides = NULL;
+        nc_inq_compound_field(ncid, xtype, fidx, buffer,
+                          &offset, &ftype, &rank, sides);
 
         if(rank > 0)
         {
@@ -638,13 +661,33 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
                     free(carr);
                  }
                  break;
+            case NC_CHAR:
+                 {
+                    size_t clen;
+                    NclQuark *qv;
+                    char  *carr;
+                    void  *vp = data + offset;
+                    carr = NclCalloc(complen[fidx], sizeof(char));
+                    assert(carr);
+                    strncpy(carr, (char*)vp, complen[fidx]);
+                    carr[complen[fidx]-1] = '\0';
+                    compnode->value = carr;
+                    
+                  /*
+                   */
+                    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+                    fprintf(stderr, "\tcarr: <%s>\n", carr);
+                 }
+                 break;
             default:
-                 fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-                 fprintf(stderr, "\tWe DO NOT KNOW how to handle ftype <%d> yet.\n\n", ftype);
-                 exit ( -1 );
+                 compnode->value = NclCalloc(complen[fidx], 1);
+                 assert(compnode->value);
+                 memcpy(compnode->value, data + offset, complen[fidx]);
                  break;
         }
     }
+
+    NclFree(complen);
 
     attnode->value = (void *)comprec;
     attnode->is_opaque = 0;
@@ -1166,7 +1209,6 @@ NclFileCompoundRecord *get_nc4_compoundrec(int ncid, nc_type xtype, NrmQuark **c
 
     for(fidx = 0; fidx < nfields; fidx++)
     {
-
         compnode = &(comprec->compnode[fidx]);
         
         sides = NULL;
@@ -5278,6 +5320,92 @@ static NhlErrorTypes NC4AddAtt(void *therec, NclQuark theatt,
     return(NhlFATAL);
 }
 
+void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type *the_data_type)
+{
+    void* data_value = NULL;
+    NclFileGrpNode* grpnode = (NclFileGrpNode *) rec;
+    NhlErrorTypes ret = NhlNOERROR;
+    NclFileDimNode* dimnode = NULL;
+    NclFileUDTNode* udtnode;
+    NclQuark qvar;
+    char buffer[1024];
+    int n;
+    size_t data_size = 1;
+    size_t cur_loc = 0;
+    size_t cur_size = 0;
+    size_t *mem_len = NULL;
+    char* tmpstr;
+
+  /*
+   *fprintf(stderr, "\nEnter getCompoundAttValue, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(attname));
+   */
+
+    strcpy(buffer, NrmQuarkToString(attname));
+    strcat(buffer, "_compound_type");
+    qvar = NrmStringToQuark(buffer);
+
+    udtnode = getUDTfromGroup(grpnode, qvar);
+
+    if((NULL != thelist) && (NULL != udtnode))
+    {
+        NclListObjList *list_list = thelist->list.first;
+
+        NclVar self = NULL;
+        NclMultiDValData theval = NULL;
+
+        *the_data_type = udtnode->id;
+        mem_len = (size_t *)NclMalloc((ng_usize_t) udtnode->n_fields * sizeof(size_t));
+        assert(mem_len);
+
+        data_size = 1;
+        for(n = 0; n < udtnode->n_fields; n++)
+        {
+            mem_len[n] = (size_t) udtnode->mem_size[n] * _NclSizeOf(udtnode->mem_type[n]);
+            data_size *= mem_len[n];
+        }
+
+        data_value = (void *)NclCalloc((ng_usize_t) data_size, sizeof(void));
+        assert(data_value);
+
+        for(n = 0; n < udtnode->n_fields; n++)
+        {
+            self = (NclVar)_NclGetObj(list_list->obj_id);
+            if(self != NULL)
+            {
+                theval = (NclMultiDValData)_NclGetObj(self->var.thevalue_id);
+
+                if(NCL_char == udtnode->mem_type[n])
+                {
+                    tmpstr = (char*)NclCalloc(mem_len[n], 1);
+                    assert(tmpstr);
+                    strcpy(tmpstr, theval->multidval.val);
+
+                    memcpy(data_value + cur_loc, tmpstr, mem_len[n]);
+                    NclFree(tmpstr);
+
+                  /*
+                   *fprintf(stderr, "\tmember no %d: type: <%s>, size: %ld\n",
+                   *                 n, _NclBasicDataTypeToName(udtnode->mem_type[n]), udtnode->mem_size[n]);
+                   *fprintf(stderr, "\tmember no %d: value: <%s>\n", n, (char*) theval->multidval.val);
+                   */
+                }
+
+                cur_loc += mem_len[n];
+            }
+
+            list_list = list_list->next;
+        }
+
+        NclFree(mem_len);
+    }
+
+  /*
+   *fprintf(stderr, "Leave getCompoundAttValue, file: %s, line: %d\n\n", __FILE__, __LINE__);
+   */
+    return data_value;
+}
+
 static NhlErrorTypes NC4AddVarAtt(void *therec, NclQuark thevar, NclQuark theatt,
                                   NclBasicDataTypes data_type, int n_items, void * values)
 {
@@ -5338,7 +5466,15 @@ static NhlErrorTypes NC4AddVarAtt(void *therec, NclQuark thevar, NclQuark theatt
                     grpnode->define_mode = 1;
                 }
 
-                if(NC_STRING == *the_data_type)
+                if(NCL_compound == data_type)
+                {
+                    NclList thelist = (NclList)_NclGetObj(*(obj*)values);
+                    void* attvalue = getCompoundAttValue((void *)grpnode, theatt, thelist, the_data_type);
+                    ret = nc_put_att(fid, varnode->id, NrmQuarkToString(theatt),
+                                     NC_COMPOUND, 1, values);
+                    NclFree(attvalue);
+                }
+                else if(NC_STRING == *the_data_type)
                 {
                     NclQuark  *qv     = (NclQuark *)values;
                     char     **tmpstr = (char **)NclCalloc(n_items, sizeof(char *));
@@ -5760,7 +5896,7 @@ NhlErrorTypes NC4AddVlen(void *rec, NclQuark vlen_name, NclQuark var_name,
     _NC4_add_udt(&(rootgrpnode->udt_rec),
                   rootgrpnode->gid, nc_vlen_type_id, vlen_name,
                   NC_VLEN, *nc_base_type,
-                  0, 1, mem_name, mem_type);
+                  0, 1, mem_name, mem_type, NULL);
 
     NclFree(nc_base_type);
 
@@ -5983,7 +6119,7 @@ NhlErrorTypes NC4AddEnum(void *rec, NclQuark enum_name, NclQuark var_name,
     _NC4_add_udt(&(rootgrpnode->udt_rec),
                   rootgrpnode->gid, nc_enum_type_id, enum_name,
                   NC_ENUM, *nc_base_type,
-                  0, 1, udt_mem_name, udt_mem_type);
+                  0, 1, udt_mem_name, udt_mem_type, NULL);
 
     NclFree(nc_base_type);
 
@@ -6189,7 +6325,7 @@ NhlErrorTypes NC4AddOpaque(void *rec, NclQuark opaque_name, NclQuark var_name,
     _NC4_add_udt(&(rootgrpnode->udt_rec),
                   rootgrpnode->gid, nc_opaque_type_id, opaque_name,
                   NC_OPAQUE, NC_UBYTE,
-                  0, 1, mem_name, mem_type);
+                  0, 1, mem_name, mem_type, NULL);
 
     dimnode = _getDimNodeFromNclFileGrpNode(rootgrpnode, dim_name);
     dim_names[0] = dim_name;
@@ -6359,6 +6495,7 @@ NhlErrorTypes NC4AddCompound(void *rec, NclQuark compound_name, NclQuark var_nam
 
     NclQuark *udt_mem_name = NULL;
     NclBasicDataTypes *udt_mem_type = NULL;
+    ng_size_t *udt_mem_size = NULL;
 
     size_t compound_length = 0;
     size_t component_size  = 4;
@@ -6377,6 +6514,8 @@ NhlErrorTypes NC4AddCompound(void *rec, NclQuark compound_name, NclQuark var_nam
     assert(udt_mem_name);
     udt_mem_type = (NclBasicDataTypes *)NclCalloc(n_mems, sizeof(NclBasicDataTypes));
     assert(udt_mem_type);
+    udt_mem_size = (ng_size_t *)NclCalloc(n_mems, sizeof(ng_size_t));
+    assert(udt_mem_size);
 
     mem_nc_type = (nc_type **)NclCalloc(n_mems, sizeof(NclBasicDataTypes *));
     assert(mem_nc_type);
@@ -6388,6 +6527,7 @@ NhlErrorTypes NC4AddCompound(void *rec, NclQuark compound_name, NclQuark var_nam
     {
         udt_mem_name[n] = mem_name[n];
         udt_mem_type[n] = _nameToNclBasicDataType(mem_type[n]);
+        udt_mem_size[n] = (ng_size_t)(mem_size[n]);
 
         mem_nc_type[n] = NC4MapFromNcl(udt_mem_type[n]);
 
@@ -6474,7 +6614,7 @@ NhlErrorTypes NC4AddCompound(void *rec, NclQuark compound_name, NclQuark var_nam
     _NC4_add_udt(&(grpnode->udt_rec),
                   grpnode->gid, nc_compound_type_id, compound_name,
                   NC_COMPOUND, NC_COMPOUND,
-                  compound_length, n_mems, udt_mem_name, udt_mem_type);
+                  compound_length, n_mems, udt_mem_name, udt_mem_type, udt_mem_size);
 
     if(n_dims)
     {
@@ -6539,6 +6679,7 @@ NhlErrorTypes NC4AddCompound(void *rec, NclQuark compound_name, NclQuark var_nam
 
     NclFree(udt_mem_name);
     NclFree(udt_mem_type);
+    NclFree(udt_mem_size);
     NclFree(mem_offset);
 
     for(n = 0; n < n_mems; n++)

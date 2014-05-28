@@ -144,5 +144,6 @@ extern NclVar _NclCreateVlenVar(char *var_name, void *val,
                                 int ndims, NclQuark *dimnames,
                                 ng_size_t *dimsizes, NclBasicDataTypes type);
 extern NclQuark *_NclGetGrpNames(void *therec, int *num_grps);
+extern NclFileUDTNode* getUDTfromGroup(NclFileGrpNode* grpnode, NrmQuark name);
 #endif /* NclAdvancedFile_h */
 

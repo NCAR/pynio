@@ -35,6 +35,8 @@ typedef struct _NclFileUserDefinedTypeNode
     ng_size_t         type;
     NclQuark          *mem_name;
     NclBasicDataTypes *mem_type;
+    ng_size_t         *mem_size;
+    nc_type           type_id;
 } NclFileUDTNode;
 
 typedef struct _NclFileUserDefinedTypeRecord

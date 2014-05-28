@@ -1249,6 +1249,120 @@ NhlErrorTypes _delNclAttNode(NclFileAttRecord **theattrec, NclQuark name)
     return (ret);
 }
 
+NhlErrorTypes _addNclCompoundAttNode(NclFileGrpNode *grpnode, NclFileAttRecord **rootattrec,
+                                     NclQuark name, NclBasicDataTypes type,
+                                     int n_elem, void *value)
+{
+    NclFileAttRecord *attrec;
+    NclFileAttNode   *attnode;
+    int i, n = 0;
+    NrmQuark qudtname;
+    char buffer[1024];
+    NclFileUDTNode* udtnode;
+    size_t data_size = 1;
+    size_t cur_loc = 0;
+    size_t *mem_len = NULL;
+    NclListObjList *list_list;
+    NclVar self = NULL;
+    NclMultiDValData theval = NULL;
+    NclList thelist;
+    char* tmpstr;
+
+    if(NULL == *rootattrec)
+    {
+        *rootattrec = _NclFileAttAlloc(NCL_MINIMUM_ATTS);
+        (*rootattrec)->n_atts = 0;
+    }
+    else if((*rootattrec)->n_atts >= (*rootattrec)->max_atts)
+    {
+        _NclFileAttRealloc(rootattrec);
+    }
+
+    attrec = *rootattrec;
+
+    n = attrec->n_atts;
+
+    for(i = 0; i < n; i++)
+    {
+        if(name == attrec->att_node[i].name)
+            return (NhlNOERROR);
+    }
+
+    attnode = &(attrec->att_node[n]);
+
+    attnode->name = name;
+    attnode->type = type;
+    attnode->id   = -1;
+    attnode->n_elem = n_elem;
+    attnode->the_nc_type = NC_COMPOUND;
+    attnode->is_virtual = 0;
+    attnode->is_compound = 1;
+    attnode->is_vlen = 0;
+    attnode->is_opaque = 0;
+    attnode->is_enum = 0;
+
+  /*
+   *fprintf(stderr, "\nEnter _addNclCompoundAttNode, file: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(name));
+   */
+
+    strcpy(buffer, NrmQuarkToString(name));
+    strcat(buffer, "_compound_type");
+    qudtname = NrmStringToQuark(buffer);
+    udtnode = getUDTfromGroup(grpnode, qudtname);
+
+    mem_len = (size_t *)NclMalloc((ng_usize_t) udtnode->n_fields * sizeof(size_t));
+    assert(mem_len);
+
+    data_size = 1;
+    for(n = 0; n < udtnode->n_fields; n++)
+    {
+        mem_len[n] = (size_t) udtnode->mem_size[n] * _NclSizeOf(udtnode->mem_type[n]);
+        data_size *= mem_len[n];
+    }
+
+    attnode->value = (void *)NclCalloc((ng_usize_t) data_size, sizeof(void));
+    assert(attnode->value);
+
+    thelist = (NclList)_NclGetObj(*(obj*)value);
+    list_list = thelist->list.first;
+
+    for(n = 0; n < udtnode->n_fields; n++)
+    {
+        self = (NclVar)_NclGetObj(list_list->obj_id);
+        if(self != NULL)
+        {
+            theval = (NclMultiDValData)_NclGetObj(self->var.thevalue_id);
+            if(NCL_char == udtnode->mem_type[n])
+            {
+                tmpstr = (char*)NclCalloc(mem_len[n], 1);
+                assert(tmpstr);
+                strcpy(tmpstr, theval->multidval.val);
+
+                memcpy(attnode->value + cur_loc, tmpstr, mem_len[n]);
+
+              /*
+               *fprintf(stderr, "\tmember no %d: type: <%s>, size: %ld\n",
+               *                 n, _NclBasicDataTypeToName(udtnode->mem_type[n]), udtnode->mem_size[n]);
+               *fprintf(stderr, "\tmember no %d: value: <%s>\n", n, (char*) theval->multidval.val);
+               */
+
+                NclFree(tmpstr);
+            }
+            else
+                memcpy(attnode->value + cur_loc, theval->multidval.val, mem_len[n]);
+            cur_loc += mem_len[n];
+        }
+
+        list_list = list_list->next;
+    }
+    NclFree(mem_len);
+
+    attrec->n_atts++;
+
+    return (NhlNOERROR);
+}
+
 NhlErrorTypes _addNclAttNode(NclFileAttRecord **rootattrec,
                              NclQuark name, NclBasicDataTypes type,
                              int n_elem, void *value)
@@ -5128,9 +5242,19 @@ static NhlErrorTypes AdvancedFileWriteAtt(NclFile infile, NclQuark attname,
            */
         }
 
-        ret = _addNclAttNode(&(thefile->advancedfile.grpnode->att_rec),
-                             attname, value->multidval.data_type,
-                             value->multidval.totalelements, value->multidval.val);
+        if(NCL_compound == value->multidval.data_type)
+        {
+            ret = _addNclCompoundAttNode(thefile->advancedfile.grpnode,
+                                         &(thefile->advancedfile.grpnode->att_rec),
+                                         attname, value->multidval.data_type,
+                                         value->multidval.totalelements, value->multidval.val);
+        }
+        else
+        {
+            ret = _addNclAttNode(&(thefile->advancedfile.grpnode->att_rec),
+                                 attname, value->multidval.data_type,
+                                 value->multidval.totalelements, value->multidval.val);
+        }
       /*
        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
        *fprintf(stderr, "\tvalue->multidval.data_type: <%s>\n",
@@ -5963,8 +6087,17 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
        *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
        *fprintf(stderr, "\texists = %d\n", exists);
        */
-        ret = _addNclAttNode(&(varnode->att_rec), attname, value->multidval.data_type,
-                              value->multidval.totalelements, value->multidval.val);
+        if(NCL_compound == value->multidval.data_type)
+        {
+            ret = _addNclCompoundAttNode(thefile->advancedfile.grpnode, &(varnode->att_rec),
+                                         attname, value->multidval.data_type,
+                                         value->multidval.totalelements, value->multidval.val);
+        }
+        else
+        {
+            ret = _addNclAttNode(&(varnode->att_rec), attname, value->multidval.data_type,
+                                  value->multidval.totalelements, value->multidval.val);
+        }
 
         if(value->multidval.data_type == NCL_char)
         {
@@ -6001,9 +6134,29 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
         {
             data_type = (void *)(*thefile->advancedfile.format_funcs->map_ncl_type_to_format)
                         (value->multidval.data_type);
-            if(data_type == NULL)
+            if(data_type != NULL)
             {
-                if(value->multidval.data_type == NCL_string)
+                if(NCL_compound == value->multidval.data_type)
+                {
+                    ret = (*thefile->advancedfile.format_funcs->add_var_att)
+                          (thefile->advancedfile.grpnode,
+                           var, attname,
+                           value->multidval.data_type,
+                           value->multidval.totalelements,
+                           value->multidval.val);
+
+                    goto done_AdvancedFileWriteVarAtt;
+                }
+                else if(NCL_vlen == value->multidval.data_type)
+                {
+	            fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+		   	             __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+                    tmp_md = _NclCoerceData(value,NCL_char,NULL);
+                    ret = _NclFileWriteVarAtt(infile,var,attname,tmp_md,sel_ptr);
+                    _NclDestroyObj((NclObj)tmp_md);
+                }
+                else if(NCL_string == value->multidval.data_type)
                 {
                     tmp_md = _NclStringMdToCharMd(value);
                     /* 
@@ -6017,7 +6170,6 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
                      */
                     ret = _NclFileWriteVarAtt(infile,var,attname,tmp_md,sel_ptr);
                     _NclDestroyObj((NclObj)tmp_md);
-                    goto done_AdvancedFileWriteVarAtt;
                 }
                 else
                 {
@@ -8801,6 +8953,38 @@ NclQuark *_NclGetGrpNames(void *therec, int *num_grps)
     }
 
     return(out_quarks);
+}
+
+NclFileUDTNode* getUDTfromGroup(NclFileGrpNode* grpnode, NrmQuark name)
+{
+    NclFileGrpRecord* grprec;
+    NclFileUDTRecord* udtrec;
+    NclFileUDTNode*   udtnode = NULL;
+    int i;
+
+    udtrec = grpnode->udt_rec;
+    if(NULL != udtrec)
+    {
+        for(i = 0; i < udtrec->n_udts; ++i)
+        {
+            udtnode = &(udtrec->udt_node[i]);
+            if(name == udtnode->name)
+                return udtnode;
+        }
+    }
+
+    grprec = grpnode->grp_rec;
+    if(NULL != grprec)
+    {
+        for(i = 0; i < grprec->n_grps; ++i)
+        {
+            udtnode = getUDTfromGroup(grprec->grp_node[i], name);
+            if(NULL != udtnode)
+                return udtnode;
+        }
+    }
+
+    return NULL;
 }
 
 NclAdvancedFileClassRec nclAdvancedFileClassRec =
