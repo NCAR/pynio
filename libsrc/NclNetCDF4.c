@@ -93,6 +93,7 @@ void _NC4_add_udt(NclFileUDTRecord **rootudtrec,
                   int ncl_class, nc_type base_nc_type,
                   size_t size, size_t nfields, 
                   NclQuark *mem_name, NclBasicDataTypes *mem_type, ng_size_t *mem_size);
+void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type *the_data_type, size_t *attsize);
 
 void check_err(const int stat, const int line, const char *file)
 {
@@ -530,8 +531,8 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
 
     int rc = -1;
   /*
-   *fprintf(stderr, "\nEnter set_compound_attnode, file: %s, line: %d\n", __FILE__, __LINE__);
    */
+    fprintf(stderr, "\nEnter set_compound_attnode, file: %s, line: %d\n", __FILE__, __LINE__);
 
     xtype = attnode->the_nc_type;
     alen  = attnode->n_elem;
@@ -540,11 +541,12 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
                     &base_nc_type, &nfields, &ncl_class);
 
   /*
-   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tname: <%s>\n", buffer);
-   *fprintf(stderr, "\tsize: %d, base_nc_typep: %d, nfieldsp: %d, classp: %d\n",
-   *                  size, base_nc_type, nfields, ncl_class);
    */
+    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tname: <%s>\n", buffer);
+    fprintf(stderr, "\tsize: %d, xtype: %d, alen: %d\n", xtype, alen);
+    fprintf(stderr, "\tsize: %d, base_nc_typep: %d, nfieldsp: %d, classp: %d\n",
+                      size, base_nc_type, nfields, ncl_class);
 
     switch(ncl_class)
     {
@@ -696,8 +698,8 @@ int set_compound_attnode(int ncid, int aid, NclFileAttNode **thenode)
     attnode->is_compound = 1;
 
   /*
-   *fprintf(stderr, "Leave set_compound_attnode, file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
+    fprintf(stderr, "Leave set_compound_attnode, file: %s, line: %d\n\n", __FILE__, __LINE__);
     return (rc);
 }
 
@@ -3583,6 +3585,11 @@ static void *NC4ReadVarAtt(void *therec, NclQuark thevar, NclQuark theatt, void 
     int ret;
     char *tmp;
 
+  /*
+   */
+    fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tthevar: <%s>\n", NrmQuarkToString(thevar));
+
     varnode = _getVarNodeFromNclFileGrpNode(grpnode, thevar);
 
     if(NULL != varnode)
@@ -4334,7 +4341,7 @@ static NhlErrorTypes NC4WriteVarAtt(void *therec, NclQuark thevar,
                 if (*(NrmQuark*)attnode->value == *(NrmQuark*)data)
                     return NhlNOERROR;
             }
-            else
+            else if(NCL_compound != attnode->type)
             {
                 memcmp(attnode->value,data,
                          nctypelen(attnode->the_nc_type)*attnode->n_elem);
@@ -4386,6 +4393,26 @@ static NhlErrorTypes NC4WriteVarAtt(void *therec, NclQuark thevar,
             if (ret != -1 && attnode->value != NULL)
                 memcpy(attnode->value,data,sizeof(NclQuark));
             attnode->is_virtual = 0;
+        }
+        else if(NCL_compound == attnode->type)
+        {
+            NclList thelist = (NclList)_NclGetObj(*(obj*)data);
+            nc_type the_data_type;
+            size_t attsize = 0;
+            void* attvalue = getCompoundAttValue((void *)grpnode, theatt, thelist, &the_data_type, &attsize);
+
+	    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			    __PRETTY_FUNCTION__, __FILE__, __LINE__);
+
+            ret = nc_put_att(fid, attrec->aid, NrmQuarkToString(theatt),
+                             the_data_type, 1, attvalue);
+/*
+                             NC_CHAR, attsize, attvalue);
+            ret = nc_put_att(fid, varnode->id, NrmQuarkToString(theatt),
+                             the_data_type, 1, attvalue);
+                             NC_COMPOUND, 1, values);
+*/
+            NclFree(attvalue);
         }
         else
         {
@@ -5320,7 +5347,7 @@ static NhlErrorTypes NC4AddAtt(void *therec, NclQuark theatt,
     return(NhlFATAL);
 }
 
-void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type *the_data_type)
+void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type *the_data_type, size_t *attsize)
 {
     void* data_value = NULL;
     NclFileGrpNode* grpnode = (NclFileGrpNode *) rec;
@@ -5337,9 +5364,9 @@ void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type 
     char* tmpstr;
 
   /*
-   *fprintf(stderr, "\nEnter getCompoundAttValue, file: %s, line: %d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(attname));
    */
+    fprintf(stderr, "\nEnter getCompoundAttValue, file: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tattname: <%s>\n", NrmQuarkToString(attname));
 
     strcpy(buffer, NrmQuarkToString(attname));
     strcat(buffer, "_compound_type");
@@ -5358,11 +5385,17 @@ void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type 
         mem_len = (size_t *)NclMalloc((ng_usize_t) udtnode->n_fields * sizeof(size_t));
         assert(mem_len);
 
-        data_size = 1;
+        data_size = 0;
         for(n = 0; n < udtnode->n_fields; n++)
         {
             mem_len[n] = (size_t) udtnode->mem_size[n] * _NclSizeOf(udtnode->mem_type[n]);
-            data_size *= mem_len[n];
+            data_size += mem_len[n];
+
+          /*
+           */
+            fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+            fprintf(stderr, "\tmem_len[%ld] = %ld, data_size = %ld\n",
+                             n, mem_len[n], data_size);
         }
 
         data_value = (void *)NclCalloc((ng_usize_t) data_size, sizeof(void));
@@ -5385,10 +5418,10 @@ void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type 
                     NclFree(tmpstr);
 
                   /*
-                   *fprintf(stderr, "\tmember no %d: type: <%s>, size: %ld\n",
-                   *                 n, _NclBasicDataTypeToName(udtnode->mem_type[n]), udtnode->mem_size[n]);
-                   *fprintf(stderr, "\tmember no %d: value: <%s>\n", n, (char*) theval->multidval.val);
                    */
+                    fprintf(stderr, "\tmember no %d: type: <%s>, size: %ld\n",
+                                     n, _NclBasicDataTypeToName(udtnode->mem_type[n]), udtnode->mem_size[n]);
+                    fprintf(stderr, "\tmember no %d: value: <%s>\n", n, (char*) theval->multidval.val);
                 }
 
                 cur_loc += mem_len[n];
@@ -5399,6 +5432,10 @@ void* getCompoundAttValue(void *rec, NclQuark attname, NclList thelist, nc_type 
 
         NclFree(mem_len);
     }
+
+    *attsize = (size_t)data_size;
+    fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+    fprintf(stderr, "\tdata_size = %ld\n", *attsize);
 
   /*
    *fprintf(stderr, "Leave getCompoundAttValue, file: %s, line: %d\n\n", __FILE__, __LINE__);
@@ -5469,9 +5506,20 @@ static NhlErrorTypes NC4AddVarAtt(void *therec, NclQuark thevar, NclQuark theatt
                 if(NCL_compound == data_type)
                 {
                     NclList thelist = (NclList)_NclGetObj(*(obj*)values);
-                    void* attvalue = getCompoundAttValue((void *)grpnode, theatt, thelist, the_data_type);
+                    size_t attsize;
+                    void* attvalue = getCompoundAttValue((void *)grpnode, theatt, thelist, the_data_type, &attsize);
+
+	            fprintf(stderr, "\nfunction: %s, in file: %s, line: %d\n",
+			            __PRETTY_FUNCTION__, __FILE__, __LINE__);
+	            fprintf(stderr, "\tattsize = %ld\n", attsize);
+	            fprintf(stderr, "\tattvalue = %s\n", (char*)attvalue);
+
                     ret = nc_put_att(fid, varnode->id, NrmQuarkToString(theatt),
+                                     *the_data_type, 1, attvalue);
+/*
+                                     NC_CHAR, attsize, attvalue);
                                      NC_COMPOUND, 1, values);
+*/
                     NclFree(attvalue);
                 }
                 else if(NC_STRING == *the_data_type)

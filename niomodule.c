@@ -250,6 +250,8 @@ type -- a type identifier. The following are currently supported:\n\
     'b' -- 8 bit integer\n\
     'B' -- 8 bit unsigned integer\n\
     'S1','c' -- character\n\
+    'v' -- Vlen\n\
+    'x' -- Compound\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
 
@@ -337,7 +339,7 @@ Return variable 't' will be one of the following:\n\
     'S1', 'c' -- character\n\
     'S' -- string\n\
     'v' -- Vlen\n\
-    'x' -- Cmpound\n\
+    'x' -- Compound\n\
 ";
 
 /*
@@ -3025,9 +3027,9 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
     int i;
 
   /*
-   *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-   *    __PRETTY_FUNCTION__, __FILE__, __LINE__);
    */
+    fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+        __PRETTY_FUNCTION__, __FILE__, __LINE__);
 
     if(strlen(title) > 1)
         sprintf(tbuf,"%s:\t%.510s\n", title, titlename);

@@ -6138,6 +6138,10 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
             {
                 if(NCL_compound == value->multidval.data_type)
                 {
+#if 0
+                    ret = _NclFileWriteVarAtt(infile,var,attname,value,sel_ptr);
+#else
+                    tmp_md = value;
                     ret = (*thefile->advancedfile.format_funcs->add_var_att)
                           (thefile->advancedfile.grpnode,
                            var, attname,
@@ -6145,7 +6149,13 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
                            value->multidval.totalelements,
                            value->multidval.val);
 
+#if 0
+                    ret = (*thefile->advancedfile.format_funcs->write_var_att)
+                          (thefile->advancedfile.grpnode, var, attname, value);
+#endif
+
                     goto done_AdvancedFileWriteVarAtt;
+#endif
                 }
                 else if(NCL_vlen == value->multidval.data_type)
                 {
