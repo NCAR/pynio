@@ -30,7 +30,7 @@
           breaksw
      default:
           setenv ZLIB_PREFIX	/usr/local
-          setenv SZIP_PREFIX	/opt/local
+          setenv SZIP_PREFIX	/usr/local
           setenv HDF5_PREFIX	/usr/local
           breaksw
  endsw
@@ -46,5 +46,6 @@
  setenv F2CLIBS		gfortran
 
  python setup.py install \
-	--prefix=${PREFIX}
+	--prefix=/Users/huangwei/anaconda
+#	--prefix=${PREFIX}
 

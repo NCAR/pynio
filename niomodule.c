@@ -4350,7 +4350,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 
 			  	if(NCL_list == md->multidval.data_type)
 			  	{
-			  		if(NCL_vlen == varnode->type)
+			  		if(NCL_UDT_vlen == varnode->udt_type)
 			  		{
                             			/*
                              			*fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
@@ -4389,7 +4389,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  		else
                           		{
                               			fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
-                              			fprintf(stderr, "\tDo not know anythong about varnode->type. Return NULL.\n");
+                              			fprintf(stderr, "\tDo not know anything about varnode->type. Return NULL.\n");
                               			return NULL;
 			  		}
 			  	}

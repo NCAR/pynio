@@ -59,12 +59,18 @@ lon   = fmdl1.create_variable("lon",   "f", ("lon",))
 temp  = fmdl1.create_variable("temp" , "f", ("time", "level", "lat", "lon"))
 #temp  = fmdl1.create_variable("temp" , "d", ("time", "level", "lat", "lon"))
 
+print "prepare to add attributes:"
+
 #Specify attributes.
 time.units = "hours since 0001-01-01 00:00:00.0"
+print "prepare to add attributes: 2"
 time.calendar = "gregorian"
 level.units = "hPa"
+print "prepare to add attributes: 3"
 lat.units = "degrees north"
+print "prepare to add attributes: 4"
 lon.units = "degrees east"
+print "prepare to add attributes: 5"
 temp.units = "K"
 #setattr(fmdl1.variables['temp'], 'units', 'K')
 
