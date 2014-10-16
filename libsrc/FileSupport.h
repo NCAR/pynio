@@ -1,5 +1,5 @@
 /*
- *      $Id: FileSupport.h 15121 2014-03-12 17:49:11Z huangwei $
+ *      $Id: FileSupport.h 15249 2014-04-21 16:03:44Z huangwei $
  */
 /************************************************************************
 *									*
@@ -420,7 +420,7 @@ extern int _NclFileReadCompressionLevel(NclFile thefile);
 extern NclQuark _NclFileReadVersion(NclFile thefile);
 
 extern int _isNewFileStructure(NclFile thefile);
-extern void _NclInitFileClasses(void);
+extern void _NclInitFileClasses();
 
 #endif /*_FileSupport_h */
 

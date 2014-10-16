@@ -8,6 +8,8 @@
 #include "NclFileInterfaces.h"
 #include "DataSupport.h"
 #include "FileSupport.h"
+#include "NclGRIB.h"
+#include "NclGRIB2.h"
 #include "NclMdInc.h"
 #include "TypeSupport.h"
 

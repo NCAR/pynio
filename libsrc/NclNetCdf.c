@@ -704,7 +704,9 @@ int wr_status;
 			}
 		}
 
-		NhlPError(NhlFATAL,NhlEUNKNOWN,emsg,NrmQuarkToString(path));
+		/*
+		NhlPError(NhlWARNING,NhlEUNKNOWN,emsg,NrmQuarkToString(path));
+		*/
 		NclFree(tmp);
 		return(NULL);
 	}
@@ -1400,7 +1402,7 @@ void* storage;
 					count,
 					out_data);
 #if NETCDF_DEBUG
-				fprintf(stderr,"ncvargetg(%d,%d,start,count,NULL,NULL,outdata);\n",cdfid,stepvl->var_inq->varid);
+				fprintf(stderr,"nc_get_vara(%d,%d,start,count,NULL,NULL,outdata);\n",cdfid,stepvl->var_inq->varid);
 #endif                
 
 			} else {
@@ -1411,7 +1413,7 @@ void* storage;
 					stride,
 					out_data);
 #if NETCDF_DEBUG
-				fprintf(stderr,"ncvargetg(%d,%d,start,count,stride,NULL,outdata);\n",cdfid,stepvl->var_inq->varid);
+				fprintf(stderr,"nc_get_vars(%d,%d,start,count,stride,NULL,outdata);\n",cdfid,stepvl->var_inq->varid);
 #endif
 			}
 			CloseOrNot(rec,cdfid,0);

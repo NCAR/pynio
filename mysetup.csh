@@ -6,8 +6,13 @@
  setenv HAS_ZLIB	1
  setenv HAS_SZIP	1
  setenv HAS_HDF5	1
- setenv HAS_NETCDF4	1
  setenv USE_GFORTRAN	1
+ setenv HAS_NETCDF4	1
+ setenv HAS_HDF4	1
+ setenv HAS_HDFEOS	1
+ setenv HAS_HDFEOS5	1
+ setenv HAS_GRIB2	1
+ setenv HAS_GDAL	1
 
  setenv CFLAGS		"-O0 -g"
 

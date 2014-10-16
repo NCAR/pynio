@@ -217,7 +217,7 @@ void
 #endif
 );
 
-extern int _NclFinalizeSymbol(void);
+extern int _NclFinalizeSymbol();
 
 extern int _NclNewScope(
 #if	NhlNeedProto
@@ -461,6 +461,10 @@ NclQuark /*file_var_name*/,
 NclQuark /*attname*/
 #endif
 );
+
+extern NclQuark *_NclGetFileCompoundVarComponentInfo(NclQuark file_sym_name,
+							NclQuark file_var_name,
+							ng_size_t* num_components);
 
 extern struct _NclExtValueRec *_NclReadFileVarCoord(
 #if     NhlNeedProto

@@ -55,6 +55,14 @@
 #include "ecmwf_201_gtb.h"
 #include "ecmwf_210_gtb.h"
 #include "ecmwf_211_gtb.h"
+#include "ecmwf_213_gtb.h"
+#include "ecmwf_214_gtb.h"
+#include "ecmwf_215_gtb.h"
+#include "ecmwf_217_gtb.h"
+#include "ecmwf_218_gtb.h"
+#include "ecmwf_219_gtb.h"
+#include "ecmwf_220_gtb.h"
+#include "ecmwf_221_gtb.h"
 #include "ecmwf_228_gtb.h"
 #include "ecmwf_230_gtb.h"
 #include "ecmwf_234_gtb.h"
@@ -1366,7 +1374,7 @@ GribFileRecord *therec;
 		if (step->time_range_indicator > 50) { /* climatological and other statistically processed data - not including simple averages and accumulations, etc. */
 			int tr_ix = -1;
 			int num, test_num, need_array = 0;
-			int j, num_found;
+			int j;
 			if (grib_rec->center_ix == 32 && grib_rec->ptable_version == 200) {
 				for (i = 0; i < sizeof(jra55_local_time_range_indicator) / sizeof(int); i++) {
 					if (jra55_local_time_range_indicator[i] == step->time_range_indicator) {
@@ -2128,7 +2136,6 @@ int GdsCompare(unsigned char *gds1,int gds_size1,unsigned char *gds2,int gds_siz
 		return(1);
 	}
 	if (gds1[3] > 0 || gds2[3] > 0) {
-		int top1,top2;
 		int size;
 		if ((gds_size1 - (int)gds1[3] * 4  != gds_size2 - (int)gds2[3] * 4))
 			return 0;
@@ -2660,7 +2667,7 @@ GribFileRecord *therec;
 		if (cp && ! strcmp(cp,"_hours")) {
 			if ((NrmQuark)therec->options[GRIB_INITIAL_TIME_COORDINATE_TYPE_OPT].values == NrmStringToQuark("numeric"))
 				continue;
-			sprintf(buffer,NrmQuarkToString(dimq));
+			sprintf(buffer,"%s",NrmQuarkToString(dimq));
 			cp = strrchr(buffer,'_');
 			*cp = '\0';
 			newdimq = NrmStringToQuark(buffer);
@@ -3990,7 +3997,7 @@ int** valid_lv_vals1;
 #endif
 {
 	int i;
-	GribRecordInqRecList *strt,*fnsh,*istep,*last;
+	GribRecordInqRecList *strt,*fnsh,*istep;
 	int n_its = 0;
 	ITLIST header;
 	ITLIST *the_end;
@@ -4007,7 +4014,6 @@ int** valid_lv_vals1;
 	
 	strt = istep = step;
 
-	last = istep;
 	current_it = strt->rec_inq->initial_time;
 	while(istep->next != NULL) {
 		if((istep->next->rec_inq->initial_time.year == current_it.year)
@@ -4017,7 +4023,6 @@ int** valid_lv_vals1;
 			continue;
 		}
 		fnsh = istep;
-		last = istep;
 		istep = istep->next;
 		fnsh->next = NULL;
 		the_end->next = (ITLIST*)NclMalloc((unsigned)sizeof(ITLIST));
@@ -5024,11 +5029,13 @@ int *version;
 	off = startoff;
 	while(1) {
 		tries++;
+		/*
 		if (tries > 100) {
 			NhlPError(NhlFATAL,NhlEUNKNOWN,"100 blocks read without finding start of GRIB record -- is this a GRIB file?");
 			*totalsize = 0;
 			return(GRIBEOF);
-		}	 
+		}	
+		*/
 		/* jump into GRIB file, read vbuflen bytes at a time */
 		lseek(gribfile,off,SEEK_SET);
 		ret1 = read(gribfile,(void*)vbuf,vbuflen);
@@ -5662,12 +5669,16 @@ static GribParamList *_NewListNode
 	list->next = NULL;
 	tmp->thelist = list;
 	tmp->var_info.var_name_quark = grib_rec->var_name_q;
-	if (grib_rec->ptable_rec) {
+	if (grib_rec->ptable_rec && grib_rec->ptable_rec->long_name && strlen(grib_rec->ptable_rec->long_name) > 0) {
 		tmp->var_info.long_name_q = NrmStringToQuark(grib_rec->ptable_rec->long_name);
-		tmp->var_info.units_q = NrmStringToQuark(grib_rec->ptable_rec->units);
 	}
 	else {
 		tmp->var_info.long_name_q = grib_rec->long_name_q;
+	}
+	if (grib_rec->ptable_rec && grib_rec->ptable_rec->units && strlen(grib_rec->ptable_rec->units) > 0) {
+		tmp->var_info.units_q = NrmStringToQuark(grib_rec->ptable_rec->units);
+	}
+	else {
 		tmp->var_info.units_q = grib_rec->units_q;
 	}
 	tmp->var_info.data_type = GribMapToNcl((void*)&(grib_rec->int_or_float));
@@ -6430,7 +6441,7 @@ char *name;
 	int len;
 	char *tablename = NULL;
 	TBLE2 *param;
-	char *abrev, *units, *long_name;
+	char *abrev, *units , *long_name;
 	PtableInfo *ptable = NULL;
 	int table_count = 0;
 	
@@ -6527,6 +6538,7 @@ char *name;
 		}
 		param = &(ptable->table[ptable->pcount++]);
 		param->num = index;
+		param->abrev = param->units = param->long_name = NULL;
 		TOKENSTART(cp);
 		if (cp) {
 			lcp = cp;
@@ -7125,6 +7137,38 @@ int wr_status;
 								ptable = &ecmwf_211_params[0];
 								ptable_count = sizeof(ecmwf_211_params)/sizeof(TBLE2);
 								break;
+							case 213:
+								ptable = &ecmwf_213_params[0];
+								ptable_count = sizeof(ecmwf_213_params)/sizeof(TBLE2);
+								break;
+							case 214:
+								ptable = &ecmwf_214_params[0];
+								ptable_count = sizeof(ecmwf_214_params)/sizeof(TBLE2);
+								break;
+							case 215:
+								ptable = &ecmwf_215_params[0];
+								ptable_count = sizeof(ecmwf_215_params)/sizeof(TBLE2);
+								break;
+							case 217:
+								ptable = &ecmwf_217_params[0];
+								ptable_count = sizeof(ecmwf_217_params)/sizeof(TBLE2);
+								break;
+							case 218:
+								ptable = &ecmwf_218_params[0];
+								ptable_count = sizeof(ecmwf_218_params)/sizeof(TBLE2);
+								break;
+							case 219:
+								ptable = &ecmwf_219_params[0];
+								ptable_count = sizeof(ecmwf_219_params)/sizeof(TBLE2);
+								break;
+							case 220:
+								ptable = &ecmwf_220_params[0];
+								ptable_count = sizeof(ecmwf_220_params)/sizeof(TBLE2);
+								break;
+							case 221:
+								ptable = &ecmwf_221_params[0];
+								ptable_count = sizeof(ecmwf_221_params)/sizeof(TBLE2);
+								break;
 							case 228:
 								ptable = &ecmwf_228_params[0];
 								ptable_count = sizeof(ecmwf_228_params)/sizeof(TBLE2);
@@ -7348,8 +7392,8 @@ int wr_status;
 					tmp_name_rec = NclMalloc(sizeof(TBLE2));
 					tmp_name_rec->abrev = NclMalloc(strlen("VAR_") + 4);
 					sprintf(tmp_name_rec->abrev,"VAR_%d",grib_rec->param_number);
-					tmp_name_rec->long_name = NclMalloc(strlen("Unknown Variable Name") + 1);
-					sprintf(tmp_name_rec->long_name,"Unknown Variable Name");
+					tmp_name_rec->long_name = NclMalloc(strlen("unknown variable name") + 1);
+					sprintf(tmp_name_rec->long_name,"unknown variable name");
 					tmp_name_rec->units= NclMalloc(strlen("unknown") + 1);
 					sprintf(tmp_name_rec->units,"unknown");
 					name_rec = tmp_name_rec;
@@ -7445,7 +7489,7 @@ int wr_status;
 						}
 					}
 
-					if (strlen(name_rec->abrev) > 0) {
+					if (name_rec->abrev && strlen(name_rec->abrev) > 0) {
 						strcpy((char*)buffer,name_rec->abrev);
 					}
 					else {
@@ -7607,8 +7651,14 @@ int wr_status;
 					grib_rec->var_name = (char*)NclMalloc((unsigned)strlen((char*)buffer) + 1);
 					strcpy(grib_rec->var_name,(char*)buffer);
 					grib_rec->var_name_q = NrmStringToQuark(grib_rec->var_name);
-					grib_rec->long_name_q = NrmStringToQuark(name_rec->long_name);
-					grib_rec->units_q = NrmStringToQuark(name_rec->units);
+					if (name_rec->long_name && strlen(name_rec->long_name) > 0) 
+						grib_rec->long_name_q = NrmStringToQuark(name_rec->long_name);
+					else 
+						grib_rec->long_name_q = NrmStringToQuark("unknown variable name");
+					if (name_rec->units && strlen(name_rec->units) > 0)
+						grib_rec->units_q = NrmStringToQuark(name_rec->units);
+					else
+						grib_rec->units_q = NrmStringToQuark("unknown");
 
 					if(therec->var_list == NULL) {
 						therec->var_list = _NewListNode(grib_rec);

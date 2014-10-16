@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 15121 2014-03-12 17:49:11Z huangwei $
+ *      $Id: NclAdvancedFile.h 15249 2014-04-21 16:03:44Z huangwei $
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h
@@ -120,9 +120,9 @@ extern NclFile _NclAdvancedFileCreate(NclObj       inst,
 				 char        *end_of_name,
 				 int          len_path);
 
-void _clearNclPrintIndentation(void);
-void _increaseNclPrintIndentation(void);
-void _decreaseNclPrintIndentation(void);
+void _clearNclPrintIndentation();
+void _increaseNclPrintIndentation();
+void _decreaseNclPrintIndentation();
 
 void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
 void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);
