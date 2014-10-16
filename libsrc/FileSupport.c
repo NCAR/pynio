@@ -1925,17 +1925,17 @@ struct _NclSelectionRecord* sel_ptr;
 	return(NhlFATAL);
 }
 
-extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuark var_name,
-                                     NclQuark type, NclQuark dim_name)
+NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuark var_name,
+                              NclQuark type, NclQuark *dim_names, ng_size_t ndims)
 {
 	NclAdvancedFile thefile = (NclAdvancedFile) infile;
 	NclAdvancedFileClass fc = NULL;
 
       /*
        *fprintf(stderr, "\nHit _NclFileAddVlen, file: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tvlen name: <%s>, var name: <%s>, base type: <%s>, dim_name: <%s>\n",
+       *fprintf(stderr, "\tvlen name: <%s>, var name: <%s>, base type: <%s>, dim_name[0]: <%s>\n",
        *                 NrmQuarkToString(vlen_name), NrmQuarkToString(var_name),
-       *                 NrmQuarkToString(type), NrmQuarkToString(dim_name));
+       *                 NrmQuarkToString(type), NrmQuarkToString(dim_name[0]));
        */
 
 	if(infile == NULL)
@@ -1945,7 +1945,7 @@ extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuar
 		return(NhlFATAL);
 	}
 
-	if(! thefile->file.advanced_file_structure)
+	if(! infile->file.advanced_file_structure)
 	{
 		NHLPERROR((NhlFATAL, NhlEUNKNOWN,
 			"_NclFileAddVlen: Old File Structure DO NOT Support vlen.\n"));
@@ -1958,7 +1958,7 @@ extern NhlErrorTypes _NclFileAddVlen(NclFile infile, NclQuark vlen_name, NclQuar
 		if(fc->advancedfile_class.create_vlen_type != NULL)
 		{
 			return((*fc->advancedfile_class.create_vlen_type)
-                               (infile, vlen_name, var_name, type, dim_name));
+                               (infile, vlen_name, var_name, type, dim_names, ndims));
 		}
 		else
 		{
@@ -3918,7 +3918,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 
 	if(! is_http)
 	{
-#if 0
 		/* Check if want advanced file-strucuture */
 		if(NULL != fcp->options[Ncl_ADVANCED_FILE_STRUCTURE].value)
 		{
@@ -3966,7 +3965,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 				}
 			}
 		}
-#endif
 
 		if(0 > file_ext_q)
 		{
@@ -4020,8 +4018,6 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 		}
 	}
 
-#ifndef NIO_LIB_ONLY
-
       /*Make h5 works for two file strucuture.
 
        *if(NrmStringToQuark("h5") == file_ext_q)
@@ -4060,12 +4056,9 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
 	}					
 	else
 	{
-#endif
 		file_out = _NclFileCreate(inst, theclass, obj_type, obj_type_mask, status,
 				path, rw_status, file_ext_q, fname_q, is_http, end_of_name, len_path);
-#ifndef NIO_LIB_ONLY
 	}		
-#endif			
 
 	return file_out;
 }

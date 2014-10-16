@@ -286,7 +286,7 @@ int	/* is_unlimited*/
 );
 
 extern NhlErrorTypes _NclFileAddVlen(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
-                                     NclQuark type, NclQuark dim_name);
+                                     NclQuark type, NclQuark *dim_names, ng_size_t ndims);
 extern NhlErrorTypes _NclFileAddEnum(NclFile thefile, NclQuark vlen_name, NclQuark var_name,
                                      NclQuark dim_name, NclQuark *mem_name, void *mem_value,
                                      ng_size_t n_mems, NclBasicDataTypes val_type);
@@ -420,7 +420,7 @@ extern int _NclFileReadCompressionLevel(NclFile thefile);
 extern NclQuark _NclFileReadVersion(NclFile thefile);
 
 extern int _isNewFileStructure(NclFile thefile);
-extern void _NclInitFileClasses();
+extern void _NclInitFileClasses(void);
 
 #endif /*_FileSupport_h */
 

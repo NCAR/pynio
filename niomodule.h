@@ -1,3 +1,7 @@
+/*******************************************************
+ * $Id$
+ *******************************************************/
+
 #ifndef Py_NIOMODULE_H
 #define Py_NIOMODULE_H
 #ifdef __cplusplus
@@ -17,19 +21,25 @@ extern "C" {
 
 /* NIOFile object */
 
-typedef struct {
+typedef struct NioFileObjectStruct NioFileObject;
+
+struct NioFileObjectStruct {
   PyObject_HEAD
+  NioFileObject *groups;  /* dictionary */
   PyObject *dimensions;   /* dictionary */
+  PyObject *chunk_dimensions;   /* dictionary */
   PyObject *variables;    /* dictionary */
   PyObject *attributes;   /* dictionary */
+  PyObject *ud_types;     /* dictionary */
   PyObject *name;         /* string */
   PyObject *mode;         /* string */
+  PyObject *type;         /* string */
   void *id;
   char open;
   char define;
   char write;
   int recdim;
-} NioFileObject;
+};
 
 /* NIOVariable object */
 
@@ -40,12 +50,15 @@ typedef struct {
   char *name;
   NrmQuark *qdims;
   Py_ssize_t *dimensions;
+/*
+ *NrmQuark *qchunkdims;
+ *Py_ssize_t *chunk_dimensions;
+ */
   int type;               /* same as array types */
   int nd;
   int id;
   char unlimited;
 } NioVariableObject;
-
 
 /* Variable index structure */
 
@@ -63,130 +76,169 @@ typedef struct {
  * C API functions
  */
 
-/* Type definitions */
-#define NioFile_Type_NUM 0
-#define NioVariable_Type_NUM 1
+typedef enum
+{
+    NioFile_Type_NUM = 0,
+    NioVariable_Type_NUM,
+    NioFile_Open_NUM,
+    NioFile_Close_NUM,
+    NioFile_Sync_NUM,
+    NioFile_CreateGroup_NUM,
+    NioFile_GetGroup_NUM,
+    NioFile_CreateVariable_NUM,
+    NioFile_GetVariable_NUM,
+    NioFile_CreateDimension_NUM,
+    NioFile_CreateChunkDimension_NUM,
+    NioVariable_GetRank_NUM,
+    NioVariable_GetShape_NUM,
+    NioVariable_Indices_NUM,
+    NioVariable_ReadAsArray_NUM,
+    NioVariable_WriteArray_NUM,
+    NioFile_GetAttribute_NUM,
+    NioFile_SetAttribute_NUM,
+    NioFile_SetAttributeString_NUM,
+    NioVariable_GetAttribute_NUM,
+    NioVariable_SetAttribute_NUM,
+    NioVariable_SetAttributeString_NUM,
+    NioFile_AddHistoryLine_NUM,
+    NioVariable_WriteString_NUM,
+    NioVariable_ReadAsString_NUM,
+    NioFile_CreateVLEN_NUM,
+    NioFile_CreateCOMPOUND_NUM,
+    NioFile_CreateCOMPOUNDtype_NUM,
+    PyNIO_API_pointers /* Total number of C API pointers */
+} NioFileGroupVariableNUM;
 
+
+/* Type definitions */
 /* Open a NIO file (i.e. create a new file object) */
 #define NioFile_Open_RET NioFileObject *
 #define NioFile_Open_PROTO Py_PROTO((char *filename, char *mode))
-#define NioFile_Open_NUM 2
 
 /* Close a NIO file. Returns -1 if there was an error. */
 #define NioFile_Close_RET int
 #define NioFile_Close_PROTO Py_PROTO((NioFileObject *file))
-#define NioFile_Close_NUM 3
 
 /* Ensure that all data is written to the disk file.
    Returns 0 if there was an error. */
 /*
 #define NioFile_Sync_RET int
 #define NioFile_Sync_PROTO Py_PROTO((NioFileObject *file))
-#define NioFile_Sync_NUM 4
 */
 /* Create a new dimension. Returns -1 if there was an error. */
 #define NioFile_CreateDimension_RET int
 #define NioFile_CreateDimension_PROTO \
         Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
-#define NioFile_CreateDimension_NUM 5
+
+/* Create a new chunk dimension. Returns -1 if there was an error. */
+#define NioFile_CreateChunkDimension_RET int
+#define NioFile_CreateChunkDimension_PROTO \
+        Py_PROTO((NioFileObject *file, char *name, Py_ssize_t size))
+
+/* Create a NIO group and return the group object */
+#define NioFile_CreateGroup_RET NioFileObject *
+#define NioFile_CreateGroup_PROTO \
+      Py_PROTO((NioFileObject *file, char *name))
 
 /* Create a NIO variable and return the variable object */
 #define NioFile_CreateVariable_RET NioVariableObject *
 #define NioFile_CreateVariable_PROTO \
       Py_PROTO((NioFileObject *file, char *name, int typecode, \
                 char **dimension_names, int ndim))
-#define NioFile_CreateVariable_NUM 6
+
+/* Create a NIO vlen and return the vlen object */
+#define NioFile_CreateVLEN_RET NioVariableObject *
+#define NioFile_CreateVLEN_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, int typecode, \
+                char **dimension_names, int ndim))
+
+/* Create a NIO compound and return the compound object */
+#define NioFile_CreateCOMPOUND_RET NioVariableObject *
+#define NioFile_CreateCOMPOUND_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, \
+                char **dimension_names, int ndim, \
+                char **memb_names, int *memb_types, \
+                int *memb_sizes, int nmemb))
+
+/* Create a NIO compound type and return the compound object */
+#define NioFile_CreateCOMPOUNDtype_RET NioVariableObject *
+#define NioFile_CreateCOMPOUNDtype_PROTO \
+      Py_PROTO((NioFileObject *file, char *name, \
+                char **memb_names, int *memb_types, \
+                int *memb_sizes, int nmemb))
 
 /* Return an object referring to an existing variable */
 #define NioFile_GetVariable_RET NioVariableObject *
 #define NioFile_GetVariable_PROTO \
 	  Py_PROTO((NioFileObject *file, char *name))
-#define NioFile_GetVariable_NUM 7
 
 /* Get variable rank */
 #define NioVariable_GetRank_RET int
 #define NioVariable_GetRank_PROTO Py_PROTO((NioVariableObject *var))
-#define NioVariable_GetRank_NUM 8
 
 /* Get variable shape */
 #define NioVariable_GetShape_RET Py_ssize_t *
 #define NioVariable_GetShape_PROTO Py_PROTO((NioVariableObject *var))
-#define NioVariable_GetShape_NUM 9
 
 /* Allocate and initialize index structures for reading/writing data */
 #define NioVariable_Indices_RET NioIndex *
 #define NioVariable_Indices_PROTO Py_PROTO((NioVariableObject *var))
-#define NioVariable_Indices_NUM 10
 
 /* Read data and return an array object */
 #define NioVariable_ReadAsArray_RET PyArrayObject *
 #define NioVariable_ReadAsArray_PROTO \
 	  Py_PROTO((NioVariableObject *var, NioIndex *indices))
-#define NioVariable_ReadAsArray_NUM 11
 
 /* Write array. Returns -1 if there was an error.  */
 #define NioVariable_WriteArray_RET int
 #define NioVariable_WriteArray_PROTO \
 	  Py_PROTO((NioVariableObject *var, NioIndex *indices, \
 		    PyObject *array))
-#define NioVariable_WriteArray_NUM 12
 
 /* Get file attribute */
 #define NioFile_GetAttribute_RET PyObject *
 #define NioFile_GetAttribute_PROTO \
 	  Py_PROTO((NioFileObject *var, char *name))
-#define NioFile_GetAttribute_NUM 13
 
 /* Set file attribute */
 #define NioFile_SetAttribute_RET int
 #define NioFile_SetAttribute_PROTO \
 	  Py_PROTO((NioFileObject *var, char *name, PyObject *value))
-#define NioFile_SetAttribute_NUM 14
 
 /* Set file attribute to string value */
 #define NioFile_SetAttributeString_RET int
 #define NioFile_SetAttributeString_PROTO \
 	  Py_PROTO((NioFileObject *var, char *name, char *value))
-#define NioFile_SetAttributeString_NUM 15
 
 /* Get variable attribute */
 #define NioVariable_GetAttribute_RET PyObject *
 #define NioVariable_GetAttribute_PROTO \
 	  Py_PROTO((NioVariableObject *var, char *name))
-#define NioVariable_GetAttribute_NUM 16
 
 /* Set variable attribute */
 #define NioVariable_SetAttribute_RET int
 #define NioVariable_SetAttribute_PROTO \
 	  Py_PROTO((NioVariableObject *var, char *name, PyObject *value))
-#define NioVariable_SetAttribute_NUM 17
 
 /* Set variable attribute to string value */
 #define NioVariable_SetAttributeString_RET int
 #define NioVariable_SetAttributeString_PROTO \
 	  Py_PROTO((NioVariableObject *var, char *name, char *value))
-#define NioVariable_SetAttributeString_NUM 18
 
 /* Add entry to the history */
 #define NioFile_AddHistoryLine_RET int
 #define NioFile_AddHistoryLine_PROTO \
 	  Py_PROTO((NioFileObject *self, char *text))
-#define NioFile_AddHistoryLine_NUM 19
 
 /* Write string. Returns -1 if there was an error.  */
 #define NioVariable_WriteString_RET int
 #define NioVariable_WriteString_PROTO \
 	  Py_PROTO((NioVariableObject *var, PyStringObject *value))
-#define NioVariable_WriteString_NUM 20
 
 /* Read string  */
 #define NioVariable_ReadAsString_RET PyStringObject *
 #define NioVariable_ReadAsString_PROTO \
 	  Py_PROTO((NioVariableObject *var))
-#define NioVariable_ReadAsString_NUM 21
-
-/* Total number of C API pointers */
-#define PyNIO_API_pointers 22
 
 
 
@@ -208,6 +260,8 @@ static NioFile_Sync_RET NioFile_Sync NioFile_Sync_PROTO;
 */
 static NioFile_CreateDimension_RET NioFile_CreateDimension \
   NioFile_CreateDimension_PROTO;
+static NioFile_CreateChunkDimension_RET NioFile_CreateChunkDimension \
+  NioFile_CreateChunkDimension_PROTO;
 static NioFile_CreateVariable_RET NioFile_CreateVariable \
   NioFile_CreateVariable_PROTO;
 static NioFile_GetVariable_RET NioFile_GetVariable \
@@ -241,6 +295,9 @@ static NioVariable_SetAttributeString_RET \
   NioVariable_SetAttributeString_PROTO;
 static NioFile_AddHistoryLine_RET NioFile_AddHistoryLine \
   NioFile_AddHistoryLine_PROTO;
+static NioFile_CreateVLEN_RET NioFile_CreateVLEN NioFile_CreateVLEN_PROTO;
+static NioFile_CreateCOMPOUND_RET NioFile_CreateCOMPOUND NioFile_CreateCOMPOUND_PROTO;
+static NioFile_CreateCOMPOUNDtype_RET NioFile_CreateCOMPOUNDtype NioFile_CreateCOMPOUNDtype_PROTO;
 
 #else
 
@@ -266,6 +323,9 @@ static void **PyNIO_API;
 #define NioFile_CreateDimension \
   (*(NioFile_CreateDimension_RET (*)NioFile_CreateDimension_PROTO) \
    PyNIO_API[NioFile_CreateDimension_NUM])
+#define NioFile_CreateChunkDimension \
+  (*(NioFile_CreateChunkDimension_RET (*)NioFile_CreateChunkDimension_PROTO) \
+   PyNIO_API[NioFile_CreateChunkDimension_NUM])
 #define NioFile_CreateVariable \
   (*(NioFile_CreateVariable_RET (*)NioFile_CreateVariable_PROTO) \
    PyNIO_API[NioFile_CreateVariable_NUM])
@@ -332,7 +392,24 @@ static void **PyNIO_API;
 
 #endif
 
+#define	PyArray_VLEN		NCL_vlen
+#define PyArray_ENUM		NCL_enum
+#define PyArray_OPAQUE		NCL_opaque
+#define PyArray_COMPOUND	NCL_compound
+#define PyArray_REFERENCE	NCL_reference
+#define PyArray_LIST		NCL_list
+#define PyArray_LISTARRAY	NCL_listarray
 
+typedef enum
+{
+    PyArray_VLENLTR = 'v',
+    PyArray_COMPOUNDLTR = 'x',
+    PyArray_ENUMLTR = 'u',
+    PyArray_OPAQUELTR = 'a',
+    PyArray_REFERENCELTR = 'r',
+    PyArray_LISTLTR = 't',
+    PyArray_LISTARRAYLTR = 'y'
+} PYNIOEXTRATYPECHAR;
 
 #ifdef __cplusplus
 }

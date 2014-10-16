@@ -155,6 +155,7 @@ try:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
     LIB_MACROS.append(('USE_NETCDF4', None))
+    LIB_MACROS.append(('USE_NETCDF4_FEATURES', None))
     try:
       HAS_OPENDAP = int(os.environ["HAS_OPENDAP"])
     except:    
@@ -222,20 +223,22 @@ try:
   HAS_HDF5 = int(os.environ["HAS_HDF5"])
   if HAS_HDF5 > 0:
     LIB_MACROS.append(('BuildHDF5', None))
-    if HAS_NETCDF4 == 0:
-      LIBRARIES.append('hdf5_hl')
-      LIBRARIES.append('hdf5')
+    LIBRARIES.append('hdf5_hl')
+    LIBRARIES.append('hdf5')
+
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDF5_PREFIX"],"include"))
     except:
       pass
   else:
+    LIB_EXCLUDE_SOURCES.append('NclNewHDF5.c')
     LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
     LIB_EXCLUDE_SOURCES.append('h5reader.c')
     LIB_EXCLUDE_SOURCES.append('h5writer.c')
 except:
   HAS_HDF5 = 0
+  LIB_EXCLUDE_SOURCES.append('NclNewHDF5.c')
   LIB_EXCLUDE_SOURCES.append('NclHDF5.c')
   LIB_EXCLUDE_SOURCES.append('h5reader.c')
   LIB_EXCLUDE_SOURCES.append('h5writer.c')
@@ -282,6 +285,22 @@ except:
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
 
 formats['shapefile'] = HAS_GDAL
+
+try:
+  try:
+    HAS_ZLIB = int(os.environ["HAS_ZLIB"])
+  except:
+    if HAS_NETCDF4 > 0 or HAS_HDFEOS5 > 0:
+      HAS_ZLIB = 1
+  if HAS_ZLIB > 0:
+    LIBRARIES.append('z')
+    try:
+      LIB_DIRS.append(os.path.join(os.environ["ZLIB_PREFIX"],"lib"))
+      INC_DIRS.append(os.path.join(os.environ["ZLIB_PREFIX"],"include"))
+    except:
+      pass
+except:
+  HAS_ZLIB = 0
 
 try:
   try:
@@ -448,6 +467,7 @@ def configuration(parent_package='',top_path=None):
     config.add_library('nio',sources,
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,
+                       extra_compiler_args = [ '-O0 -g', '-w' ]
 #                       extra_compiler_args = [ '-O2', '-w' ]
                        )
     
@@ -470,6 +490,14 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
+print "\n\n\nOld pkgs_pth = ", pkgs_pth
+
+print "FORCED pkgs_pth to the first of PYTHONPATH"
+pythonpaths = os.environ["PYTHONPATH"].split(':')
+print "pythonpaths = ", pythonpaths
+pkgs_pth = pythonpaths[0]
+print "\n\n\nNew pkgs_pth = ", pkgs_pth
+print "\n\n\n"
  
 #print data_files
 setup (version      = pynio_version,
@@ -488,3 +516,7 @@ setup (version      = pynio_version,
 #
 if os.path.exists(pynio_vfile):
   os.system("/bin/rm -rf " + pynio_vfile)
+
+print "\n\n\nNew pkgs_pth = ", pkgs_pth
+print "\n\n\n"
+ 
