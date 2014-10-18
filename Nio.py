@@ -172,8 +172,9 @@ class _Proxy(object):
         super(_Proxy,self).__setattr__('_obj', obj)
         super(_Proxy,self).__setattr__('attributes',{})
         for key in obj.__dict__.keys():
-           super(_Proxy,self).__setattr__(key,obj.__dict__[key])
-           self.attributes[key] = obj.__dict__[key]
+            if key != 'attributes':
+                super(_Proxy,self).__setattr__(key,obj.__dict__[key])
+            self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
 
