@@ -91,9 +91,39 @@ print "======================================================================="
 print f.create_dimension.__doc__
 print "======================================================================="
 
+print "The create_chunk_dimension method docstring (f.create_chunk_dimension.__doc__):"
+print "======================================================================="
+print f.create_chunk_dimension.__doc__
+print "======================================================================="
+
 print "The create_variable method docstring (f.create_variable.__doc__):"
 print "======================================================================="
 print f.create_variable.__doc__
+print "======================================================================="
+
+print "The create_group method docstring (f.create_group.__doc__):"
+print "======================================================================="
+print f.create_group.__doc__
+print "======================================================================="
+
+print "The create_vlen method docstring (f.create_vlen.__doc__):"
+print "======================================================================="
+print f.create_vlen.__doc__
+print "======================================================================="
+
+print "The create_compound_type method docstring (f.create_compound_type.__doc__):"
+print "======================================================================="
+print f.create_compound_type.__doc__
+print "======================================================================="
+
+print "The create_compound method docstring (f.create_compound.__doc__):"
+print "======================================================================="
+print f.create_compound.__doc__
+print "======================================================================="
+
+print "The unlimited method docstring (f.unlimited.__doc__):"
+print "======================================================================="
+print f.unlimited.__doc__
 print "======================================================================="
 
 v = f.variables['t']

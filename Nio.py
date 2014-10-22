@@ -1,9 +1,9 @@
 #$Id$
 
 '''
-PyNIO enables NetCDF-like access for
-    NetCDF 3 (rw), HDF 4 (rw), GRIB 1 (r), CCM (r), and optionally
-    NetCDF 4 (rw), HDF 5 (rw), HDFEOS 2/4 (r), GRIB 2 (r), HDFEOS 5 (r), shapefiles
+PyNIO enables NetCDF-like access for multiple file formats including
+    NetCDF 3 (rw) and  GRIB 1 (r), and optionally
+    NetCDF 4 (rw), HDF 4 (rw), HDF 5 (rw), HDFEOS 2/4 (r), GRIB 2 (r), HDFEOS 5 (r), shapefiles
     and other GDAL OGR-supported (r) data formats.
 
 import Nio
@@ -45,6 +45,7 @@ associated coordinate variables, and attributes:
     print v 
 Attributes:
     rank -- a scalar value indicating the number of dimensions
+    size -- a scalar value indicating the size in bytes of the variable
     shape -- a tuple containing the number of elements in each dimension
     dimensions -- a tuple containing the dimensions names in order
     attributes (or __dict__) -- a dictionary containing the variable attributes
@@ -430,10 +431,12 @@ name -- a string specifying the variable name.
 type -- a type identifier. The following are currently supported:
     'd' -- 64 bit real
     'f' -- 32 bit real
-    'l','i' -- 32 bit integer
-    'L','I' -- 32 bit unsigned integer
+    'i' -- 32 bit integer
+    'I' -- 32 bit unsigned integer
     'q' -- 64 bit integer
     'Q' -- 64 bit unsigned integer
+    'l' -- 32 or 64 bit integer (platform dependent)
+    'L' -- 32 or 64 bit unsigned integer (platform dependent)
     'h' -- 16 bit integer
     'H' -- 16 bit unsigned integer
     'b' -- 8 bit integer

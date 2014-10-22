@@ -272,6 +272,7 @@ try:
   if HAS_GDAL > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
+    LIBRARIES.append('iconv') 
     LIB_MACROS.append(('BuildGDAL', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"lib"))
@@ -490,14 +491,15 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-print "\n\n\nOld pkgs_pth = ", pkgs_pth
+if os.environ.has_key('PYTHONPATH'):
+  print "\n\n\nOld pkgs_pth = ", pkgs_pth
 
-print "FORCED pkgs_pth to the first of PYTHONPATH"
-pythonpaths = os.environ["PYTHONPATH"].split(':')
-print "pythonpaths = ", pythonpaths
-pkgs_pth = pythonpaths[0]
-print "\n\n\nNew pkgs_pth = ", pkgs_pth
-print "\n\n\n"
+  print "FORCED pkgs_pth to the first of PYTHONPATH"
+  pythonpaths = os.environ["PYTHONPATH"].split(':')
+  print "pythonpaths = ", pythonpaths
+  pkgs_pth = pythonpaths[0]
+  print "\n\n\nNew pkgs_pth = ", pkgs_pth
+  print "\n\n\n"
  
 #print data_files
 setup (version      = pynio_version,

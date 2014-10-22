@@ -181,13 +181,18 @@ Attributes (do not modify):\n\
         objects as values.\n\
     groups -- a dictionary with group names as keys and NioFile.\n\
         objects as values.\n\
-    __dict__ -- a dictionary containing global attribute names and values.\n\
+    attributes (or __dict__) -- a dictionary containing global attribute names and values.\n\
 Methods:\n\
     close([history]) -- close the file.\n\
     create_dimension(name,length) -- create a dimension in the file.\n\
     create_chunk_dimension(name,length) -- create a chunk dimension in the file.\n\
-    create_variable(name,type,dimensions) -- create a variable in the file.\n\n\
-    create_group(name) -- create a group in the file.\n\n\
+    create_variable(name,type,dimensions) -- create a variable in the file.\n\
+    create_group(name) -- create a group in the file.\n\
+    create_vlen(name,type,dimensions) -- create a variable length array variable in the file.\n\
+    create_compound_type(name, type)  -- create a user-defined compound type; with member names, sizes\n\
+        and types as defined in the type sequence argument.\n\
+    create_compound(name,type,dimensions) -- create a compound variable with the given type and dimensions.\n\
+    unlimited(dimension_name) -- returns True if dimension_name refers to an unlimited dimension; False otherwise\n\n\
 ";
 
 /* NioFile object method doc strings */
@@ -215,22 +220,19 @@ raise an exception.\n\
 ";
 
 static char *create_dimension_doc =
-"\n\
-Create a new dimension with the given name and length in a writable file.\n\n\
+"\nCreate a new dimension with the given name and length in a writable file.\n\n\
 f.create_dimension(name,length)\n\
 name -- a string specifying the dimension name.\n\
 length -- a positive integer specifying the dimension length. If set to\n\
-None or 0, specifies the unlimited dimension.\n\
-";
+None or 0, specifies the unlimited dimension.\n";
 
 static char *create_chunk_dimension_doc =
-"\n\
-Create a new chunk dimension with the given name and length in a writable file.\n\n\
+"\nCreate a chunking size for a dimension that has been defined but not yet used in a writable file.\n\
+The size must be no larger than the dimension size; once set it cannot be changed.\n\
 f.create_chunk_dimension(name,length)\n\
 name -- a string specifying the dimension name.\n\
 length -- a positive integer specifying the dimension length. If set to\n\
-None or 0, it will be reset to 1.\n\
-";
+None or 0, it will be reset to 1.\n";
 
 static char *create_variable_doc =
 "\n\
@@ -253,6 +255,49 @@ type -- a type identifier. The following are currently supported:\n\
 dimensions -- a tuple of dimension names (strings), previously defined\n\
 ";
 
+static char *create_group_doc =
+"\n\
+Create a new group with given name in a writable file.\
+\n\n\
+f.create_group(name)\n\
+name -- a string specifying the group name.\n\
+";
+
+static char *create_vlen_doc =
+"\n\
+Create a new variable length array variable with given name in a writable file.\
+\n\n\
+f.create_vlen(name,type,dimensions)\n\
+name -- a string specifying the vlen variable name.\n\
+type -- the variable type.\n\
+dimensions -- the dimensions of the vlen variable.\n\
+";
+
+static char *create_compound_type_doc =
+"\n\
+Create a new compound variable type with given name in a writable file.\
+\n\n\
+f.create_compound_type(name,type)\n\
+name -- a string specifying the compound type name.\n\
+type -- a sequence containing the name, type, and number of elements for each member of the compound type\n\
+";
+
+static char *create_compound_doc =
+"\n\
+Create a new compound variable with given name in a writable file.\
+\n\n\
+f.create_compound(name,type,dimensions)\n\
+name -- a string specifying the compound variable name.\n\
+type -- the variable type.\n\
+dimensions -- the dimensions of the compound variable.\n\
+";
+
+static char *unlimited_doc =
+"\n\
+Returns True or False depending on whether the named dimension is unlimited.\n\n\
+f.unlimited(name)\n\
+name -- a string specifying the dimension name to be queried for the unlimited property.\n\
+";
 
 static char *niovariable_type_doc =
 "\n\
@@ -268,6 +313,7 @@ assigns the entire variable contents to variable 'val'.\n\
 Attributes:(do not modify)\n\
     rank -- a scalar value indicating the number of dimensions\n\
     shape -- a tuple containing the number of elements in each dimension\n\
+    size -- a scalar value indicating the size in bytes of the variable\n\
     dimensions -- a tuple containing the dimensions names in order\n\
     chunk_dimensions -- a tuple containing the chunk_dimensions names in order\n\
     attributes (or __dict__) -- a dictionary containing the variable attributes\n\
@@ -278,13 +324,6 @@ Methods:\n\
     set_option(option,value) -- set certain options.\n\
 ";
 
-static char *create_group_doc =
-"\n\
-Create a new group with given name in a writable file.\
-\n\n\
-f.create_group(name)\n\
-name -- a string specifying the group name.\n\
-";
 
 /* NioVariable object method doc strings */
 
@@ -326,8 +365,10 @@ t = v.typecode()\n\
 Return variable 't' will be one of the following:\n\
     'd' -- 64 bit real\n\
     'f' -- 32 bit real\n\
-    'l' -- 32 bit integer\n\
-    'L' -- 32 bit unsigned integer\n\
+    'i' -- 32 bit integer\n\
+    'I' -- 32 bit unsigned integer\n\
+    'l' -- 32 or 64 bit integer (platform dependent)\n\
+    'L' -- 32 or 64 bit unsigned integer (platform dependent)\n\
     'q' -- 64 bit integer\n\
     'Q' -- 64 bit unsigned integer\n\
     'h' -- 16 bit integer\n\
@@ -2991,22 +3032,22 @@ format_object(char *buf,PyObject *obj,int code)
 	}
 }
 
-static void insert2buf(char* tbuf, char* buf, int *bufpos, int *buflen, int bufinc)
+static void insert2buf(char* tbuf, char** buf, int *bufpos, int *buflen, int bufinc)
 {
     int len = strlen(tbuf);
 
     while((*bufpos + len) > (*buflen - 2))
     {
         *buflen += bufinc;
-        buf = realloc(buf, *buflen);
+        *buf = realloc(*buf, *buflen);
     }
 
-    strcpy(&(buf[*bufpos]),tbuf); \
+    strcpy(&((*buf)[*bufpos]),tbuf);		\
     *bufpos += len;
 }
 
 static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
-                       char* buf, int *bufpos, int *buflen, int bufinc,
+                       char** buf, int *bufpos, int *buflen, int bufinc,
                        char* title, char* titlename, char* attname)
 {
     NclFileAttNode*   attnode;
@@ -3085,7 +3126,7 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
 {
     char tbuf[1024];
     char titlename[512];
-    char *buf;
+    char **buf = NULL;
     int bufinc = 8192;
     int buflen = 0;
     int bufpos = 0;
@@ -3109,7 +3150,8 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
    *        __PRETTY_FUNCTION__, __FILE__, __LINE__);
    */
 
-    buf = malloc(bufinc);
+    buf = malloc(sizeof(char *));
+    *buf = malloc(bufinc);
     buflen = bufinc;
 
     sprintf(titlename,"%.510s", PyString_AsString(file->name));
@@ -3245,7 +3287,7 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
         }
     }
 
-    return buf;
+    return *buf;
 }
 
 /* Printed representation */
@@ -3917,10 +3959,104 @@ NioVariable_GetShape(NioVariableObject *var)
   return NULL;
 }
 
+static Py_ssize_t
+NioVariable_GetSize(NioVariableObject *var)
+{
+  int i, j;
+  Py_ssize_t size = -1;
+  if (check_if_open(var->file, -1))
+  {
+      NclFile nfile = (NclFile) var->file->id;
+      if(nfile->file.advanced_file_structure)
+      {
+          NclAdvancedFile advfile = (NclAdvancedFile) var->file->id;
+          NclFileDimRecord* grpdimrec;
+          NclFileDimNode*   grpdimnode;
+          NclFileDimRecord* dimrec;
+          NclFileDimNode*   dimnode;
+          NclFileVarNode*   varnode;
+
+          grpdimrec = advfile->advancedfile.grpnode->dim_rec;
+
+          varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(var->name));
+          if(NULL != varnode)
+          {
+	      size = _NclSizeOf(varnode->type);
+              dimrec = varnode->dim_rec;
+              if(NULL != dimrec)
+              {
+                  for(i = 0; i < dimrec->n_dims; ++i)
+                  {
+                      dimnode = &(dimrec->dim_node[i]);
+                      var->dimensions[i] = (Py_ssize_t) dimnode->size;
+		      size *= dimnode->size;
+                      if(dimnode->is_unlimited)
+                      {
+                          PyObject *size_ob = PyInt_FromSsize_t(var->dimensions[i]);
+                          for(j = 0; j < grpdimrec->n_dims; ++j)
+                          {
+                              grpdimnode = &(grpdimrec->dim_node[j]);
+                              if(grpdimnode->name == dimnode->name)
+                              {
+                                  if(grpdimnode->size < dimnode->size)
+                                  {
+                                      grpdimnode->size = dimnode->size;
+
+	                            /*
+	                             *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
+			             *                __PRETTY_FUNCTION__, __FILE__, __LINE__);
+                                     *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                                     *     (int)j, NrmQuarkToString(grpdimnode->name), (int)grpdimnode->size);
+                                     */
+                                      break;
+                                  }
+
+                                  if(grpdimnode->size > dimnode->size)
+                                  {
+                                      dimnode->size = grpdimnode->size;
+                                    /*
+                                     *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
+                                     *                   i, NrmQuarkToString(dimnode->name), (int)dimnode->size);
+                                     */
+                                      var->dimensions[i] = (Py_ssize_t) dimnode->size;
+
+                                      break;
+                                  }
+                              }
+                          }
+
+                          PyDict_SetItemString(var->file->dimensions, NrmQuarkToString(dimnode->name), size_ob);
+                          Py_DECREF(size_ob);
+                      }
+                  }
+                  return size;
+              }
+          }
+      }
+      else
+      {
+	  int varid = _NclFileIsVar(nfile,NrmStringToQuark(var->name));
+	  size = _NclSizeOf(nfile->file.var_info[varid]->data_type);
+	  for (i = 0; i < var->nd; i++) {
+		  int dimid = _NclFileIsDim(nfile,var->qdims[i]);
+		  var->dimensions[i] = (Py_ssize_t) nfile->file.file_dim_info[dimid]->dim_size;
+		  size *= (Py_ssize_t) nfile->file.file_dim_info[dimid]->dim_size;
+		  if (dimid == var->file->recdim) {
+			  PyObject *size_ob = PyInt_FromSsize_t(var->dimensions[i]);
+			  PyDict_SetItemString(var->file->dimensions,NrmQuarkToString(var->qdims[i]),size_ob);
+			  Py_DECREF(size_ob);
+		  }
+	  }
+          return size;
+      }
+  }
+
+  return -1;
+}
+
 static PyObject *
 NioVariable_GetAttribute(NioVariableObject *self, char *name)
 {
-  NrmQuark qncl_scalar = NrmStringToQuark("ncl_scalar");
   PyObject *value;
   if (strcmp(name, "shape") == 0) {
     PyObject *tuple;
@@ -3940,6 +4076,15 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
     if (check_if_open(self->file, -1)) {
       rank = NioVariable_GetRank(self);
       return Py_BuildValue("i",rank);
+    }
+    else
+      return NULL;
+  }
+  if (strcmp(name, "size") == 0) {
+    ng_size_t size;
+    if (check_if_open(self->file, -1)) {
+      size = NioVariable_GetSize(self);
+      return Py_BuildValue("L",size);
     }
     else
       return NULL;
@@ -6121,9 +6266,13 @@ initnio(void)
   nio_methods[1].ml_doc = options_doc;
   NioFileObject_methods[0].ml_doc = close_doc; 
   NioFileObject_methods[1].ml_doc = create_dimension_doc;
-  NioFileObject_methods[2].ml_doc = create_variable_doc;
-  NioFileObject_methods[3].ml_doc = create_group_doc;
-  NioFileObject_methods[4].ml_doc = create_chunk_dimension_doc;
+  NioFileObject_methods[2].ml_doc = create_chunk_dimension_doc;
+  NioFileObject_methods[3].ml_doc = create_variable_doc;
+  NioFileObject_methods[4].ml_doc = create_group_doc;
+  NioFileObject_methods[5].ml_doc = create_vlen_doc;
+  NioFileObject_methods[6].ml_doc = create_compound_type_doc;
+  NioFileObject_methods[7].ml_doc = create_compound_doc;
+  NioFileObject_methods[8].ml_doc = unlimited_doc;
   NioVariableObject_methods[0].ml_doc = assign_value_doc; 
   NioVariableObject_methods[1].ml_doc = get_value_doc; 
   NioVariableObject_methods[2].ml_doc = typecode_doc; 
@@ -6213,6 +6362,7 @@ initnio(void)
   PyNIO_API[NioFile_CreateVLEN_NUM] = (void *)&NioFile_CreateVLEN;
   PyNIO_API[NioFile_CreateCOMPOUND_NUM] = (void *)&NioFile_CreateCOMPOUND;
   PyNIO_API[NioFile_CreateCOMPOUNDtype_NUM] = (void *)&NioFile_CreateCOMPOUNDtype;
+  PyNIO_API[NioVariable_GetSize_NUM] = (void *)&NioVariable_GetSize;
 
   /* Check for errors */
   if (PyErr_Occurred())

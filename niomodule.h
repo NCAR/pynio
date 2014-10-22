@@ -106,6 +106,7 @@ typedef enum
     NioFile_CreateVLEN_NUM,
     NioFile_CreateCOMPOUND_NUM,
     NioFile_CreateCOMPOUNDtype_NUM,
+    NioVariable_GetSize_NUM,
     PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
