@@ -9,7 +9,9 @@
 #include "DataSupport.h"
 #include "FileSupport.h"
 #include "NclGRIB.h"
+#ifdef BuildGRIB2
 #include "NclGRIB2.h"
+#endif
 #include "NclMdInc.h"
 #include "TypeSupport.h"
 

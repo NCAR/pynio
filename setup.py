@@ -171,11 +171,12 @@ except:
   HAS_NETCDF4 = 0
 
 formats['netcdf4'] = HAS_NETCDF4
+formats['opendap'] = 0
 if HAS_NETCDF4 > 0:
     formats['opendap'] = HAS_OPENDAP
 
 try:
-  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
+  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"]) and int(os.environ["HAS_HDF4"])
   if HAS_HDFEOS > 0:
     LIB_MACROS.append(('BuildHDFEOS', None))
     LIBRARIES.append('hdfeos')
@@ -246,14 +247,11 @@ except:
 formats['hdf5'] = HAS_HDF5
 
 try:
-  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"])
+  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"]) and int(os.environ["HAS_HDF5"])
   if HAS_HDFEOS5 > 0:
     LIB_MACROS.append(('BuildHDFEOS5', None))
     LIBRARIES.append('he5_hdfeos')
     LIBRARIES.append('Gctp')
-    if HAS_NETCDF4 == 0 and HAS_HDF5 == 0:
-      LIBRARIES.append('hdf5_hl')
-      LIBRARIES.append('hdf5')
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
@@ -273,6 +271,8 @@ try:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
     LIBRARIES.append('iconv') 
+    LIBRARIES.append('jasper')   # png is needed again, b/c it 
+    LIBRARIES.append('png')      # must come after jasper
     LIB_MACROS.append(('BuildGDAL', None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GDAL_PREFIX"],"lib"))

@@ -31,8 +31,6 @@
 #include "NclList.h"
 #include "ListSupport.h"
 
-
-
 int _NclListGetNext(NclObj thelist)
 {
 	NclListClass lc;
@@ -173,6 +171,7 @@ NhlErrorTypes _NclListAppend(NclObj thelist, NclObj theobj)
 	}
 	return(NhlFATAL);
 }
+
 
 void _NclBuildArrayOfList(void *tmp_val, int ndims, ng_size_t *dim_sizes)
 {
