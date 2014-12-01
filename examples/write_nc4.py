@@ -2,10 +2,14 @@ import numpy
 import Nio 
 import time, os
 
+print "part 0"
+
 opt = Nio.options()
 opt.Format = 'NetCDF4'
 
 print opt.Format
+
+print "part 1"
 
 #create a file
 hatt = "Created at " + time.ctime(time.time())
@@ -14,19 +18,27 @@ if(os.path.isfile(fn)):
     os.remove(fn)
 file = Nio.open_file(fn, options=opt, history=hatt, mode="w")
 
+print "part 2"
+
 #create global attributes
 file.source   = "Nio created NetCDF4 file"
 #setattr(file, 'source', "Nio test NetCDF file")
 file.history = "Created " + time.ctime(time.time())
 
+print "part 2.1"
+
 #Create some groups.
 forecast = file.create_group("forecast")
 analysis = file.create_group("analysis")
+
+print "part 2.2"
 
 fmdl1 = forecast.create_group("model1")
 fmdl2 = forecast.create_group("model2")
 amdl1 = analysis.create_group("model1")
 amdl2 = analysis.create_group("model2")
+
+print "part 3"
 
 ntimes = 5
 nlevels = 10
@@ -37,6 +49,8 @@ fmdl1.create_dimension("time", None)
 fmdl1.create_dimension("level", None)
 fmdl1.create_dimension("lat", nlats)
 fmdl1.create_dimension("lon", nlons)
+
+print "part 4"
 
 mtimes = 1
 mlevels = (nlevels+1)/2
@@ -51,6 +65,8 @@ fmdl1.create_chunk_dimension("level", mlevels)
 fmdl1.create_chunk_dimension("lat", mlats)
 fmdl1.create_chunk_dimension("lon", mlons)
 
+print "part 5"
+
 #Create some variables.
 time  = fmdl1.create_variable("time",  "d", ("time",))
 level = fmdl1.create_variable("level", "i", ("level",))
@@ -58,6 +74,8 @@ lat   = fmdl1.create_variable("lat",   "f", ("lat",))
 lon   = fmdl1.create_variable("lon",   "f", ("lon",))
 temp  = fmdl1.create_variable("temp" , "f", ("time", "level", "lat", "lon"))
 #temp  = fmdl1.create_variable("temp" , "d", ("time", "level", "lat", "lon"))
+
+print "part 6"
 
 #Specify attributes.
 time.units = "hours since 0001-01-01 00:00:00.0"

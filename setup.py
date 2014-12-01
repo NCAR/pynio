@@ -252,6 +252,9 @@ try:
     LIB_MACROS.append(('BuildHDFEOS5', None))
     LIBRARIES.append('he5_hdfeos')
     LIBRARIES.append('Gctp')
+    if HAS_NETCDF4 == 0 and HAS_HDF5 == 0:
+      LIBRARIES.append('hdf5_hl')
+      LIBRARIES.append('hdf5')
     try:
       LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
@@ -500,6 +503,7 @@ if os.environ.has_key('PYTHONPATH'):
   pkgs_pth = pythonpaths[0]
   print "\n\n\nNew pkgs_pth = ", pkgs_pth
   print "\n\n\n"
+#pkgs_pth = '/usr/local/lib/python2.7/site-packages/PyNIO'
  
 #print data_files
 setup (version      = pynio_version,

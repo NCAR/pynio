@@ -799,7 +799,7 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
           if (array) {
 	          n_dims = (array->nd == 0) ? 1 : array->nd;
 	          qtype = nio_type_from_code(array->descr->type);
-#if 1
+#if 0
 	          if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
                            PyArrayObject *array2 = (PyArrayObject *)
                                      PyArray_Cast(array, PyArray_INT);
@@ -1095,6 +1095,8 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
         for(i = 0; i < dimrec->n_dims; ++i)
         {
             dimnode = &(dimrec->dim_node[i]);
+          /*if(dimnode->is_unlimited)*/
+            if((dimnode->is_unlimited) && (0 > self->recdim))
             if(dimnode->is_unlimited)
                 self->recdim = i;
 
@@ -4514,7 +4516,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 
                               			_convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
 			  		}
-			  		else if(NCL_compound == varnode->type)
+					else if(NCL_UDT_compound == varnode->udt_type)
                           		{
                             			/*
                               			*fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
@@ -5021,7 +5023,8 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	 */
           if(indices[var_dim].unlimited)
 	  {
-              if(indices[var_dim].stop >= array->dimensions[var_dim])
+              if((indices[var_dim].stop >= array->dimensions[var_dim]) ||
+                 (indices[var_dim].stop != (array->dimensions[var_dim] - 1)))
               {
                   NclFile nfile = (NclFile) self->file->id;
                   if(nfile->file.advanced_file_structure)
