@@ -1,5 +1,5 @@
 #!/bin/csh -f
-#$Id$
+#$Id: mysetup.csh 15291 2014-05-09 21:31:48Z huangwei $
 
  set echo
 
@@ -30,7 +30,7 @@
           breaksw
      default:
           setenv ZLIB_PREFIX	/usr/local
-          setenv SZIP_PREFIX	/usr/local
+          setenv SZIP_PREFIX	/opt/local
           setenv HDF5_PREFIX	/usr/local
           breaksw
  endsw
@@ -46,6 +46,5 @@
  setenv F2CLIBS		gfortran
 
  python setup.py install \
-	--prefix=/Users/huangwei/anaconda
-#	--prefix=${PREFIX}
+	--prefix=${PREFIX}
 

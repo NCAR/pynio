@@ -490,14 +490,15 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-print "\n\n\nOld pkgs_pth = ", pkgs_pth
-
-print "FORCED pkgs_pth to the first of PYTHONPATH"
-pythonpaths = os.environ["PYTHONPATH"].split(':')
-print "pythonpaths = ", pythonpaths
-pkgs_pth = pythonpaths[0]
-print "\n\n\nNew pkgs_pth = ", pkgs_pth
-print "\n\n\n"
+#print "\n\n\nOld pkgs_pth = ", pkgs_pth
+#
+#print "FORCED pkgs_pth to the first of PYTHONPATH"
+#pythonpaths = os.environ["PYTHONPATH"].split(':')
+#print "pythonpaths = ", pythonpaths
+#pkgs_pth = pythonpaths[0]
+#print "\n\n\nNew pkgs_pth = ", pkgs_pth
+#print "\n\n\n"
+pkgs_pth = '/usr/local/lib/python2.7/site-packages/PyNIO'
  
 #print data_files
 setup (version      = pynio_version,
