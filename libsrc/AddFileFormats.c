@@ -108,10 +108,6 @@ void _NclAddFileFormats
 #ifdef BuildHDF5
         _NclRegisterFormat(H5AddFileFormat,"h5");
         _NclRegisterFormat(H5AddFileFormat,"hdf5");
-	/*
-        _NclRegisterFormat(HDF5AddFileFormat,"h5");
-        _NclRegisterFormat(HDF5AddFileFormat,"hdf5");
-	*/
 #endif
 	_NclRegisterFormat(GribAddFileFormat,"gr");
 	_NclRegisterFormat(GribAddFileFormat,"gr1");

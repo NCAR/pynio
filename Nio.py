@@ -437,6 +437,8 @@ type -- a type identifier. The following are currently supported:
     'Q' -- 64 bit unsigned integer
     'l' -- 32 or 64 bit integer (platform dependent)
     'L' -- 32 or 64 bit unsigned integer (platform dependent)
+    'q' -- 64 bit integer
+    'Q' -- 64 bit unsigned integer
     'h' -- 16 bit integer
     'H' -- 16 bit unsigned integer
     'b' -- 8 bit integer

@@ -120,9 +120,9 @@ extern NclFile _NclAdvancedFileCreate(NclObj       inst,
 				 char        *end_of_name,
 				 int          len_path);
 
-void _clearNclPrintIndentation();
-void _increaseNclPrintIndentation();
-void _decreaseNclPrintIndentation();
+void _clearNclPrintIndentation(void);
+void _increaseNclPrintIndentation(void);
+void _decreaseNclPrintIndentation(void);
 
 void _printNclFileUDTRecord(FILE *fp, NclAdvancedFile thefile, NclFileUDTRecord *udt_rec);
 void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord *att_rec);

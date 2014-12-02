@@ -110,7 +110,6 @@ typedef enum
     PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
-
 /* Type definitions */
 /* Open a NIO file (i.e. create a new file object) */
 #define NioFile_Open_RET NioFileObject *
