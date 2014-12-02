@@ -7,7 +7,6 @@
 #include <ncarg/hlu/NresDB.h>
 #include <ncarg/hlu/Callbacks.h>
 #endif
-
 #include "defs.h"
 #include "NclDataDefs.h"
 #include "Symbol.h"
@@ -123,6 +122,11 @@ FILE *fp;
 	        case Ncl_MultiDVallistData:
 	        case Ncl_List:
 	 		ret = nclfprintf(fp,"\tList\n");
+			break;
+	        case Ncl_MultiDValData:
+			/*
+	 		ret = nclfprintf(fp,"\tMultiDValData\n");
+			*/
 			break;
 	        default:
 		    fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
@@ -438,14 +442,20 @@ NclObj list;
 	}
 }
 
-NhlErrorTypes ListAppend(NclObj list,NclObj theobj)
+NhlErrorTypes ListAppend
+#if     NhlNeedProto
+(NclObj list,NclObj theobj)
+#else
+(list,theobj)
+NclObj list;
+NclObj theobj;
+#endif
 {
 	NclList thelist = (NclList)list;
 	NclListObjList *tmp = (NclListObjList*)NclMalloc(sizeof(NclListObjList));
 	NhlErrorTypes  ret = NhlNOERROR;
 	NclObj tmp_obj;
-	if((thelist!=NULL)&&(theobj != NULL))
-	{
+	if((thelist!=NULL)&&(theobj != NULL)) {
 		tmp->orig_type = theobj->obj.obj_type_mask;
 		if(theobj->obj.obj_type_mask & Ncl_Var)
 		{
@@ -461,20 +471,21 @@ NhlErrorTypes ListAppend(NclObj list,NclObj theobj)
 			tmp_obj= (NclObj)_NclHLUVarCreate(NULL,NULL,Ncl_HLUVar,0,NULL,
 							  (NclMultiDValData)theobj,NULL,-1,NULL,NORMAL,NULL,PERMANENT);
 		}
-		else if (theobj->obj.obj_type_mask & Ncl_MultiDVallistData)
-		{
-			tmp_obj = theobj;
-		}
-		else if (theobj->obj.obj_type_mask & Ncl_MultiDValData)
-		{
-			tmp_obj = (NclObj)_NclVarCreate(NULL,NULL,Ncl_Var,0,NULL,(NclMultiDValData)theobj,
-                                                        NULL,-1,NULL,NORMAL,NULL,PERMANENT);
-		}
+                else if (theobj->obj.obj_type_mask & Ncl_MultiDVallistData)
+                {
+                        tmp_obj = theobj;
+                }
+                else if (theobj->obj.obj_type_mask & Ncl_MultiDValData)
+                {
+                        tmp_obj = (NclObj)_NclVarCreate(NULL,NULL,Ncl_Var,0,NULL,(NclMultiDValData)theobj,
+                                                         NULL,-1,NULL,NORMAL,NULL,PERMANENT);
+                }
 		else
 		{
 			NclObj tmp_parent_obj;
 			NclRefList *p;
 			if (theobj->obj.parents) {  
+				tmp_obj = theobj;
 				for (p = theobj->obj.parents; p; p = p->next) {
 					tmp_parent_obj = _NclGetObj(p->pid);
 					if (tmp_parent_obj->obj.obj_type_mask & Ncl_Att) {
@@ -491,39 +502,36 @@ NhlErrorTypes ListAppend(NclObj list,NclObj theobj)
 							       (NclMultiDValData)theobj, NULL,-1,NULL,NORMAL,NULL,PERMANENT);
 			}
 		}
-			
+
 		ret = _NclAddParent(tmp_obj,list);
 		tmp->cb = _NclAddCallback( tmp_obj, list, ListItemDestroyNotify,DESTROYED,NULL);
 
-		if(tmp_obj->obj.status == TEMPORARY)
-		{
+		if(tmp_obj->obj.status == TEMPORARY) {
 			_NclSetStatus(tmp_obj,PERMANENT);
 		}
-		if(ret != NhlNOERROR)
-		{
+		if(ret != NhlNOERROR) {
 			return(ret);
 		}
 		tmp->obj_id = tmp_obj->obj.id;
 
-		tmp->next = NULL;
-		if(thelist->list.last == NULL)
-		{
+		tmp->prev = thelist->list.last;
+		if(thelist->list.last == NULL) {
+			thelist->list.last = tmp;
+			thelist->list.last->next = NULL;	
 			thelist->list.first = tmp;
-			thelist->list.first->prev = NULL;	
-			thelist->list.last = tmp;
-		}
-		else
-		{
+		} else {
 			thelist->list.last->next = tmp;
-			tmp->prev = thelist->list.last;
 			thelist->list.last = tmp;
+			tmp->next = NULL;
 		}
+
 		thelist->list.nelem++;
 		return(NhlNOERROR);
 	} else {
 		return(NhlFATAL);
 	}
 }
+
 static int ListGetType
 #if     NhlNeedProto
 (NclObj list)

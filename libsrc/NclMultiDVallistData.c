@@ -45,32 +45,36 @@
 static NhlErrorTypes MultiDValListPrintSummary(NclObj self, FILE *fp)
 {
 	NclMultiDValData self_md = (NclMultiDValData)self;
-	NhlErrorTypes ret = NhlNOERROR;
-	int n;
+	NhlErrorTypes ret;
+	NclObj theobj;
+	NclObjClass oc;
 
-	if(NULL == self)
+	theobj = (NclObj) _NclGetObj(*(obj*)self_md->multidval.val);
+
+	if(self == NULL)
 	{
 		NHLPERROR((NhlWARNING,NhlEUNKNOWN,
 			"MultiDValListPrintSummary: Cannot print info of NULL list."));
 		return(NhlWARNING);
 	}
-
-	ret += nclfprintf(fp,"Type: %s\n",_NclBasicDataTypeToName(self_md->multidval.data_type));
-	ret += nclfprintf(fp,"Total Size: %lld bytes\n",(long long)self_md->multidval.totalsize);
-	ret += nclfprintf(fp,"            %lld values\n",(long long)self_md->multidval.totalelements);
-	ret += nclfprintf(fp,"Number of Dimensions: %d\n",self_md->multidval.n_dims);
-	ret += nclfprintf(fp,"Dimensions and sizes:\t[");
-
-	for(n = 0; n < self_md->multidval.n_dims; ++n)
+	else
 	{
-		if(n)
-			ret += nclfprintf(fp,", %ld",(long)self_md->multidval.dim_sizes[n]);
-		else
-			ret += nclfprintf(fp,"%ld",(long)self_md->multidval.dim_sizes[n]);
+		oc = theobj->obj.class_ptr;
 	}
-	ret += nclfprintf(fp,"]\n");
 
-        return ret;
+	while(oc != NULL)
+	{
+		if(oc->obj_class.print_summary != NULL)
+		{
+			return((*(oc->obj_class.print_summary))(theobj,fp));
+		}
+		else
+		{
+			oc = oc->obj_class.super_class;
+		}
+	} 
+
+        return(NhlWARNING);
 }
 
 static NhlErrorTypes MultiDValListPrint
@@ -82,58 +86,98 @@ NclObj self;
 FILE *fp;
 #endif
 {
-	obj *objids = NULL;
+	NclMultiDValData self_md = (NclMultiDValData)self;
+	NhlErrorTypes ret;
+	NclObj theobj;
+	NclObjClass oc;
+
+	theobj = (NclObj) _NclGetObj(*(obj*)self_md->multidval.val);
+
+	if(self == NULL)
+	{
+		NHLPERROR((NhlWARNING,NhlEUNKNOWN,
+			"MultiDValListPrintSummary: Cannot print info of NULL list."));
+		return(NhlWARNING);
+	}
+	else
+	{
+		oc = theobj->obj.class_ptr;
+	}
+
+	while(oc != NULL)
+	{
+		if(oc->obj_class.print != NULL)
+		{
+			return((*(oc->obj_class.print))(theobj,fp));
+		}
+		else
+		{
+			oc = oc->obj_class.super_class;
+		}
+	} 
+
+        return(NhlWARNING);
+#if 0
+        return(NhlWARNING);
 	NclList tmp_list;
 	NclListObjList *step;
 	NclObjClass oc;
 	NclMultiDValData self_md = (NclMultiDValData)self;
-	NhlErrorTypes ret = NhlNOERROR;
-	int n;
+	NhlErrorTypes ret;
 	int nv = 0;
 	NclObj cur_obj;
-	NclObj tmp_obj;
+	int is_vlen = 0;
 
-	objids = (obj *)self_md->multidval.val;
-	for(n = 0; n < self_md->multidval.totalelements; ++n)
-	{
-		tmp_list = (NclList) _NclGetObj(objids[n]);
+	tmp_list = (NclList) _NclGetObj(*(obj*)self_md->multidval.val);
 
-		step = tmp_list->list.first;
+	is_vlen = (NCL_VLEN & tmp_list->list.list_type);
+
+	fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+
+	step = tmp_list->list.first;
 	
-		nv = 0;
-		while(step != NULL)
-		{
-	    		cur_obj = (NclObj)_NclGetObj(step->obj_id);
-	    		/* orig_type is a mask it wont work with this func 
-	       		oc = _NclObjTypeToPointer(step->orig_type); */
+	while(step != NULL)
+	{
+	   
+	    cur_obj = (NclObj)_NclGetObj(step->obj_id);
+	    /* orig_type is a mask it wont work with this func 
+	       oc = _NclObjTypeToPointer(step->orig_type); */
 
-	    		oc = _NclObjTypeToPointer(cur_obj->obj.obj_type);
+	    oc = _NclObjTypeToPointer(cur_obj->obj.obj_type);
 
-	    		if(oc != NULL)
-	 			ret += nclfprintf(fp,"List %d, Item %d:\t%s", n, nv, oc->obj_class.class_name);
+	    if(oc != NULL)
+	    {
+	 	ret = nclfprintf(fp,"List Item %d:\t%s", nv, oc->obj_class.class_name);
+	    }
+	    else
+	    {
+	        ret = NhlWARNING;
+	    }
 
-            		if(ret < 0)
-                		return(NhlWARNING);
+            if(ret < 0)
+	    {
+                return(NhlWARNING);
+            }
 
-			switch(cur_obj->obj.obj_type)
-			{
-				case Ncl_Var:
-				case Ncl_FileVar:
-					tmp_obj = _NclGetObj(cur_obj->obj.id);
-					_NclPrintVarSummary((NclVar)tmp_obj);
-					break;
-				default:
-					fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
-					fprintf(stderr, "\tUNRECOGANIZED cur_obj->obj.obj_type %d: %o\n", nv, cur_obj->obj.obj_type);
-			}
+	    switch(cur_obj->obj.obj_type)
+	    {
+	        NclObj tmpobj;
+	        case Ncl_Var:
+	        case Ncl_FileVar:
+			tmpobj = _NclGetObj(cur_obj->obj.id);
+			_NclPrintVarSummary((NclVar)tmpobj);
+			break;
+	        default:
+		    fprintf(stderr, "\tin file: %s, line: %d\n", __FILE__, __LINE__);
+		    fprintf(stderr, "\tUNRECOGANIZED cur_obj->obj.obj_type %d: %o\n", nv, cur_obj->obj.obj_type);
+	    }
 
-			step = step->next;
-			nv++;
-			nclfprintf(fp,"\n");
-		}
+	    step = step->next;
+	    nv++;
+ 	    nclfprintf(fp,"\n");
 	}
-
-        return ret;
+        return(NhlNOERROR);
+#endif
 }
 	
 static struct _NclDataRec *MultiDVal_list_ReadSection
@@ -319,7 +363,7 @@ static struct _NclDataRec *MultiDVal_list_ReadSection
 * index >= 0 into the integer vector array.
 */
 
-	val = (int*)NclMalloc(total_elements * sizeof(int));
+	val = (obj*)NclMalloc(total_elements * sizeof(obj));
 	to = 0;
 	while(!done) {
 		from = 0;
@@ -470,6 +514,7 @@ static NhlErrorTypes MultiDVal_list_md_WriteSection
 	long multiplier[NCL_MAX_DIMENSIONS];
 	long compare_sel[NCL_MAX_DIMENSIONS];
 	long strider[NCL_MAX_DIMENSIONS];
+	ng_size_t output_dim_sizes[NCL_MAX_DIMENSIONS];
 
 	ng_size_t *dim_sizes_value = value_md->multidval.dim_sizes;
 	int n_dims_value = value_md->multidval.n_dims;
@@ -628,6 +673,7 @@ static NhlErrorTypes MultiDVal_list_md_WriteSection
 		} else {
 			multiplier[i] = 1;
 		}
+		output_dim_sizes[i] = n_elem;
 		total_elements = total_elements * n_elem;
 		sel_ptr++;
 		if(n_elem != 1) {
@@ -786,12 +832,14 @@ static NhlErrorTypes MultiDVal_list_s_WriteSection
 	int multiplier[NCL_MAX_DIMENSIONS];
 	int compare_sel[NCL_MAX_DIMENSIONS];
 	int strider[NCL_MAX_DIMENSIONS];
+	int output_dim_sizes[NCL_MAX_DIMENSIONS];
 
 	int total_elements = 1;
 	int n_dims_target = target_md->multidval.n_dims;
 	long n_elem=0;
 	int done = 0;
 	int inc_done = 0;
+	int chckmiss = 0;
 
 /*
 * preconditions:
@@ -802,9 +850,6 @@ static NhlErrorTypes MultiDVal_list_s_WriteSection
 * 	*****Value is a SCALAR array***** 
 *	number of dimensions == 1 && size == 1
 */
-
-#ifdef CHCKMISS
-	int chckmiss = 0;
 	if((target_md->multidval.missing_value.has_missing)&&
 		(value_md->multidval.missing_value.has_missing)) {
 		if(target_md->multidval.missing_value.value.intval ==
@@ -821,7 +866,6 @@ static NhlErrorTypes MultiDVal_list_s_WriteSection
 	} else {
 		chckmiss = 0;
 	}
-#endif
 	
 	for(i = 0 ; i < n_dims_target; i++) {
 		switch(sel_ptr->sel_type) {
@@ -933,6 +977,7 @@ static NhlErrorTypes MultiDVal_list_s_WriteSection
 		} else {
 			multiplier[i] = 1;
 		}
+		output_dim_sizes[i] = n_elem;
 		total_elements = total_elements * n_elem;
 		sel_ptr++;
 	}
@@ -950,14 +995,14 @@ static NhlErrorTypes MultiDVal_list_s_WriteSection
 * index >= 0 into the integer vector array.
 */
 
-	val = (obj*)value_md->multidval.val;
-#ifdef CHCKMISS
+	val = (int*)value_md->multidval.val;
+/*
 	if(chckmiss) {
 		if(*val == value_md->multidval.missing_value.value.intval){
 			*val = target_md->multidval.missing_value.value.intval;
 		}
 	}
-#endif
+*/
 	while(!done) {
 		to = 0;
 		for(i = 0; i < n_dims_target;i++) {

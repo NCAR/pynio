@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 15159 2014-03-26 16:50:51Z huangwei $
+*ID: $Id: NclNewHDF5.c 15249 2014-04-21 16:03:44Z huangwei $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
@@ -86,10 +86,6 @@ static NrmQuark Qfill_val;
 
 #ifndef FAILED
 #define FAILED          (-1)
-#endif
-
-#ifndef FAIL
-#define FAIL		(-1)
 #endif
 
 void *_Ncl2HDF5type(NclBasicDataTypes type);
@@ -2554,7 +2550,7 @@ NrmQuark* _get_refquarks(hid_t dset, hid_t p_type, int *nref)
 
     f_space = H5Dget_space(dset);
 
-    if (f_space == FAIL)
+    if (f_space == FAILED)
     {
         fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
         fprintf(stderr, "\tH5Dget_space failed.\n");
@@ -6392,7 +6388,7 @@ static NhlErrorTypes H5WriteVar(void *therec, NclQuark thevar, void *data,
                 ip[j] = (unsigned int)cptr[j];
             }
             status = H5Dwrite(did, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, ip);
-          /*
+          /*Do not close the did, as we need to write attributes later
            *H5Dclose(did);
            */
 
