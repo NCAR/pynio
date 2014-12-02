@@ -1433,8 +1433,6 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
     var_node->name = name;
     var_node->id = varid;
     var_node->type = type;
-    var_node->base_type = type;
-    var_node->udt_type = NCL_UDT_none;
     var_node->comprec = NULL;
     var_node->att_rec = NULL;
     var_node->dim_rec = _NclFileDimAlloc(n_dims);
@@ -1921,42 +1919,159 @@ NclFileGrpNode *_getGrpNodeFromNclFileGrpNode(NclFileGrpNode *ingrpnode,
 {
     int n;
     NclFileGrpNode *outgrpnode = NULL;
+    NclQuark new_grpname = -1;
+    NclQuark newroot_grpname = -1;
+
+    char *full_str;
+    char buffer[NCL_MAX_STRING];
+    char newroot[NCL_MAX_STRING];
+    int  gl;
+    int  only_this_level = 1;
 
     if(NULL == ingrpnode)
     {
         NHLPERROR((NhlWARNING,NhlEUNKNOWN, "_getGrpNodeFromNclFileGrpNode: input grpnode is NULL.\n"));
-        return NULL;
+        goto done_getGrpNodeFromNclFileGrpNode;
     }
+
+  /*
+   *fprintf(stderr, "\nEnter _getGrpNodeFromNclFileGrpNode, file: %s, line:%d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tingrpnode->name: <%s>\n", NrmQuarkToString(ingrpnode->name));
+   *fprintf(stderr, "\tgrpname: <%s>\n", NrmQuarkToString(grpname));
+   */
 
     if((grpname == ingrpnode->name) || (grpname == ingrpnode->real_name))
     {
        outgrpnode =  ingrpnode;
-       return outgrpnode;
+       goto done_getGrpNodeFromNclFileGrpNode;
     }
+
+    full_str = NrmQuarkToString(grpname);
+
+  /*
+   *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+   */
+
+    if('/' == full_str[0])
+    {
+        strcpy(buffer, full_str + 1);
+    }
+    else
+    {
+        strcpy(buffer, full_str);
+    }
+
+    strcpy(newroot, buffer);
+    full_str = strchr(buffer, '/');
+
+    if(NULL != full_str)
+    {
+      /*
+       *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tnewroot: <%s>, full_str: <%s>\n", newroot, full_str);
+       */
+
+        gl = strlen(newroot) - strlen(full_str);
+        newroot[gl] = '\0';
+        full_str = full_str + 1;
+        only_this_level = 0;
+
+      /*
+       *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tnewroot: <%s>, full_str: <%s>\n", newroot, full_str);
+       */
+
+        new_grpname = NrmStringToQuark(full_str);
+
+      /*
+       *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+       *fprintf(stderr, "\tnew_grpname: <%s>\n", NrmQuarkToString(new_grpname));
+       */
+    }
+
+    newroot_grpname = NrmStringToQuark(newroot);
+
+  /*
+   *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tnewroot_grpname: <%s>\n", NrmQuarkToString(newroot_grpname));
+   */
 
     if(NULL != ingrpnode->grp_rec)
     {
-        for(n = 0; n < ingrpnode->grp_rec->n_grps; n++)
+        if(only_this_level)
         {
-            outgrpnode = ingrpnode->grp_rec->grp_node[n];
+            full_str = NrmQuarkToString(grpname);
 
-            if((grpname == outgrpnode->name) || (grpname == outgrpnode->real_name))
-                return outgrpnode;
+            if('/' == full_str[0])
+            {
+              /*
+               *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tfull_str: <%s>, grpname: <%s>\n", full_str, NrmQuarkToString(grpname));
+               */
+
+                strcpy(buffer, full_str + 1);
+                
+                new_grpname = NrmStringToQuark(buffer);
+            }
+            else
+            {
+                new_grpname = grpname;
+            }
+
+          /*
+           *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tfull_str: <%s>, new_grpname: <%s>\n", full_str, NrmQuarkToString(new_grpname));
+           */
+
+            for(n = 0; n < ingrpnode->grp_rec->n_grps; n++)
+            {
+                outgrpnode = ingrpnode->grp_rec->grp_node[n];
+              /*
+               *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tCheck group %d, name: <%s>, new_grpname: <%s>\n", n, 
+               *                 NrmQuarkToString(outgrpnode->name),
+               *                 NrmQuarkToString(new_grpname));
+               */
+                if(new_grpname == outgrpnode->name)
+		{
+                  /*
+                   *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+                   *fprintf(stderr, "\tFound group %d, name: <%s>\n", n, 
+                   *             NrmQuarkToString(outgrpnode->name));
+                   */
+                    goto done_getGrpNodeFromNclFileGrpNode;
+		}
+            }
         }
-
-        for(n = 0; n < ingrpnode->grp_rec->n_grps; n++)
+        else
         {
-            outgrpnode = _getGrpNodeFromNclFileGrpNode(ingrpnode->grp_rec->grp_node[n], grpname);
-
-            if(NULL == outgrpnode)
-                continue;
-
-            if((grpname == outgrpnode->name) || (grpname == outgrpnode->real_name))
-                return outgrpnode;
+            for(n = 0; n < ingrpnode->grp_rec->n_grps; n++)
+            {
+                outgrpnode = ingrpnode->grp_rec->grp_node[n];
+              /*
+               *fprintf(stderr, "\tfile: %s, line:%d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tCheck group %d, name: <%s>, rootgrpname: <%s>\n", n, 
+               *                 NrmQuarkToString(outgrpnode->name),
+               *                 NrmQuarkToString(newroot_grpname));
+               */
+                if(newroot_grpname == outgrpnode->name)
+                {
+                    outgrpnode = _getGrpNodeFromNclFileGrpNode(ingrpnode->grp_rec->grp_node[n], new_grpname);
+                    if(NULL != outgrpnode)
+                        goto done_getGrpNodeFromNclFileGrpNode;
+                }
+            }
         }
     }
 
-    return NULL;
+    outgrpnode = NULL;
+
+done_getGrpNodeFromNclFileGrpNode:
+  /*
+   *fprintf(stderr, "Leave _getGrpNodeFromNclFileGrpNode, file: %s, line:%d\n\n", __FILE__, __LINE__);
+   */
+
+    return outgrpnode;
 }
 
 NclFileVarNode *_getVarNodeFromNclFileVarRecord(NclFileVarRecord *var_rec,
@@ -2039,26 +2154,6 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
            *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
            *fprintf(stderr, "\tvar no %d, name: <%s>, real_name: <%s>\n", n, 
            *        NrmQuarkToString(varnode->name), NrmQuarkToString(varnode->real_name));
-           */
-
-            if(NULL == varnode)
-                continue;
-
-            if((vn == varnode->name) || (vn == varnode->real_name))
-                return varnode;
-        }
-    }
-
-    if(NULL != grpnode->grp_rec)
-    {
-        for(n = 0; n < grpnode->grp_rec->n_grps; n++)
-        {
-            tmpgrpnode = grpnode->grp_rec->grp_node[n];
-            varnode = _getVarNodeFromNclFileGrpNode(tmpgrpnode, vn);
-          /*
-           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-           *fprintf(stderr, "\tgrp no %d, name: <%s>\n", n, 
-           *        NrmQuarkToString(tmpgrpnode->name));
            */
 
             if(NULL == varnode)

@@ -1,5 +1,5 @@
 /*
- *      $Id: NclAdvancedOGR.c 15806 2014-10-21 22:47:25Z huangwei $
+ *      $Id: NclAdvancedOGR.c 15810 2014-10-23 23:42:21Z huangwei $
  */
 /************************************************************************
 *    								*
@@ -659,7 +659,7 @@ static void *AdvancedOGROpenFile(void *therec, NclQuark path, int wr_status)
     {
         geom = OGR_F_GetGeometryRef(feature);
         _countGeometry(geom, &segmentsCounter, &numPoints);
-        OGR_F_Destroy(feature);
+      /*OGR_F_Destroy(feature);*/
         geometryRecord[numGeometry] = segmentsCounter;
 
         ++numGeometry;
