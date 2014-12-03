@@ -1198,7 +1198,7 @@ NclFileCompoundRecord *get_nc4_compoundrec(int ncid, nc_type xtype, NrmQuark **c
         compnode->sides = sides;
         compnode->nvals = 1;
 
-        componentnames[i] = compnode->name;
+        componentnames[fidx] = compnode->name;
 
         nc_inq_compound_size(ncid, xtype, &size);
 
