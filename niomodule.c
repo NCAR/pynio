@@ -3123,12 +3123,75 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
         }
     }
 }
+char* NioVarInfo2str(NioVariableObject *var, NclFileVarNode* varnode)
+{
+    char *buf[1];
+    char *name, *vname;
+    char tbuf[1024];
+    int bufinc = 8192;
+    int buflen = 0;
+    int bufpos = 0;
+    NioFileObject *file = var->file;
+    NclFileAttRecord* attrec;
+    NclFileDimRecord* dimrec;
+    NclFileDimNode*   dimnode;
+    NioVariableObject *vobj;
+    NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
+    int j;
+
+    *buf = malloc(bufinc);
+    buflen = bufinc;
+
+    vname = NrmQuarkToString(varnode->name);
+
+    dimrec = varnode->dim_rec;
+
+    if(NULL != dimrec)
+    {
+	    dimnode = &(dimrec->dim_node[0]);
+	    if((1 == dimrec->n_dims) && (dimnode->name == scalar_dim))
+	    {
+                    sprintf(tbuf,"   %s %s\n",
+			    _NclBasicDataTypeToName(varnode->type), vname);
+                    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+	    }
+	    else
+	    {
+                    sprintf(tbuf,"   %s %s [ ",
+			    _NclBasicDataTypeToName(varnode->type), vname);
+                    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+
+                    for(j = 0; j < dimrec->n_dims; ++j)
+                    {
+			    dimnode = &(dimrec->dim_node[j]);
+			    name = NrmQuarkToString(dimnode->name);
+
+			    if(j)
+				    sprintf(tbuf,", %s|%ld", name, (long)dimnode->size);
+			    else
+				    sprintf(tbuf,"%s|%ld", name, (long)dimnode->size);
+			    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+                    }
+                    sprintf(tbuf," ]");
+                    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+	    }
+    }
+
+    vobj = (NioVariableObject *) PyDict_GetItemString(file->variables,vname);
+
+    attrec = varnode->att_rec;
+    attrec2buf(vobj->attributes, attrec, buf, &bufpos, &buflen, bufinc, " ", " ", vname);
+    sprintf(tbuf,"\n");
+    insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
+
+    return *buf;
+}
 
 char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title, char* attname)
 {
     char tbuf[1024];
     char titlename[512];
-    char **buf = NULL;
+    char *buf[1];
     int bufinc = 8192;
     int buflen = 0;
     int bufpos = 0;
@@ -3152,7 +3215,6 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
    *        __PRETTY_FUNCTION__, __FILE__, __LINE__);
    */
 
-    buf = malloc(sizeof(char *));
     *buf = malloc(bufinc);
     buflen = bufinc;
 
@@ -3265,6 +3327,7 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
             sprintf(tbuf,"\n");
             insert2buf(tbuf, buf, &bufpos, &buflen, bufinc);
         }
+	
     }
 
     grprec = grpnode->grp_rec;
@@ -3488,7 +3551,7 @@ NioFileObject_str(NioFileObject *file)
 	}
 
 	pystr = PyString_FromString(buf);
-	/*free(buf);*/
+	free(buf);
 
 	return pystr;
 }
@@ -3587,7 +3650,6 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
     NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
     NrmQuark* qdims = NULL;
     char* name = NrmQuarkToString(varnode->name);
-    int scalar_dim_ix = -1;
     int i;
 
     if(! check_if_open(file, -1))
@@ -3611,12 +3673,20 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
     self->attributes = PyDict_New();
     collect_advancedfile_attributes(varnode->att_rec, self->attributes);
 
+    /* shouldn't this be an error */
     if(NULL == dimrec)
         return self;
+    /* --------------- */
 
+    if (dimrec->n_dims == 1 &&  dimrec->dim_node[0].name == scalar_dim) {
+	    return self;
+    }
     self->dimensions = (Py_ssize_t *)malloc(dimrec->n_dims*sizeof(Py_ssize_t));
     if(NULL == self->dimensions)
+    {
+        PyErr_NoMemory();
         return self;
+    }
 
     qdims = (NrmQuark *) malloc(dimrec->n_dims *sizeof(NrmQuark));
 
@@ -3635,8 +3705,6 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
             PyErr_SetString(NIOError, err_buf);
             return self;
         }
-        if(dimnode->name == scalar_dim)
-            scalar_dim_ix = i;
         qdims[i] = dimnode->name;
         self->dimensions[i] = (Py_ssize_t)dimnode->size;
         if(dimnode->is_unlimited)
@@ -3644,12 +3712,6 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
     }
 
     self->nd = dimrec->n_dims;
-    if(self->nd == 1 && dimrec->dim_node[0].id == scalar_dim_ix)
-    {
-        self->nd = 0;
-        free(qdims);
-        qdims = NULL;
-    }
     self->qdims = qdims;
 
     return self;
@@ -5705,6 +5767,20 @@ NioVariableObject_str(NioVariableObject *var)
 	qncl_scalar = NrmStringToQuark("ncl_scalar");
 	buf = malloc(bufinc);
 	buflen = bufinc;
+	if(nfile->file.advanced_file_structure)
+	{
+		NclFileVarNode* varnode;
+		NclAdvancedFile advfile = (NclAdvancedFile) file->id;
+		varnode = getVarFromGroup(advfile->advancedfile.grpnode, varq);
+		if(NULL == varnode) {
+			PyErr_SetString(NIOError, "variable not found");
+			return NULL;
+		}
+		buf = NioVarInfo2str(var,varnode);
+		pystr = PyString_FromString(buf);
+		free(buf);
+		return pystr;
+	}
 	for(i = 0; i < nfile->file.n_vars; i++) {
 		if(nfile->file.var_info[i]->var_name_quark != varq) {
 			continue;

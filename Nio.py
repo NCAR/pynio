@@ -159,7 +159,7 @@ _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash_
             '__setattr__', '__str__', '__weakref__', '__getitem__', '__setitem__', '__len__' ]
 
 _localatts = ['attributes','_obj','variables','file','varname', \
-              'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', \
+              'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', 'coordinates', \
               'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'close', 'assign_value', 'get_value']    
 
 # The Proxy concept is adapted from Martelli, Ravenscroft, & Ascher, 'Python Cookbook' Second Edition, 6.6
@@ -422,6 +422,8 @@ raise an exception.
 
     return
 
+    
+
 def create_variable(self,name,type,dimensions):
     '''
 Create a new variable with given name, type, and dimensions in a writable file.
@@ -578,6 +580,7 @@ def set_option(self,option,value):
 
     return setattr(self,valid_opts[loption],lvalue)
 
+
 def open_file(filename, mode = 'r', options=None, history='', format=''):
     '''
 Open a file containing data in a supported format for reading and/or writing.
@@ -669,9 +672,16 @@ Returns an NioFile object.
         else:
             vp.cf_dimensions = vp.dimensions
     file_proxy.variables = variable_proxies
+    
+#    for var in file.variables.keys():
+#        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,var)
 
     #print file_proxy, file_proxy.variables
     return file_proxy
+
+#def _create_coordinates_attriibute(file,var):
+#    print "creating coordinates for ", var
+#    return {}
 
 
 def _get_cf_dims(file):
