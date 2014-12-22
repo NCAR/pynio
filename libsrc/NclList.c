@@ -471,6 +471,7 @@ NclObj theobj;
 			tmp_obj= (NclObj)_NclHLUVarCreate(NULL,NULL,Ncl_HLUVar,0,NULL,
 							  (NclMultiDValData)theobj,NULL,-1,NULL,NORMAL,NULL,PERMANENT);
 		}
+#if 0
                 else if (theobj->obj.obj_type_mask & Ncl_MultiDVallistData)
                 {
                         tmp_obj = theobj;
@@ -480,6 +481,7 @@ NclObj theobj;
                         tmp_obj = (NclObj)_NclVarCreate(NULL,NULL,Ncl_Var,0,NULL,(NclMultiDValData)theobj,
                                                          NULL,-1,NULL,NORMAL,NULL,PERMANENT);
                 }
+#endif
 		else
 		{
 			NclObj tmp_parent_obj;
