@@ -25,7 +25,7 @@ typedef struct NioFileObjectStruct NioFileObject;
 
 struct NioFileObjectStruct {
   PyObject_HEAD
-  NioFileObject *groups;  /* dictionary */
+  PyObject *groups;  /* dictionary */
   PyObject *dimensions;   /* dictionary */
   PyObject *chunk_dimensions;   /* dictionary */
   PyObject *variables;    /* dictionary */

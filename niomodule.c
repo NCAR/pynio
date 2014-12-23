@@ -976,6 +976,8 @@ NioFile_Open(char *filename, char *mode)
 	  self->define = 1;
 	  self->open = 1;
 	  self->write = (crw != 1);
+	  self->name = PyString_FromString(filename);
+	  self->mode = PyString_FromString(mode);
 	  nio_file_init(self); 
   }
   else {
@@ -983,8 +985,6 @@ NioFile_Open(char *filename, char *mode)
 	  PyErr_SetString(NIOError,"Unable to open file");
 	  return NULL;
   }
-  self->name = PyString_FromString(filename);
-  self->mode = PyString_FromString(mode);
   return self;
 }
 
@@ -1243,7 +1243,7 @@ nio_file_init(NioFileObject *self)
 	self->chunk_dimensions = PyDict_New();
 	self->variables = PyDict_New();
 	self->ud_types = PyDict_New();
-	self->groups = (NioFileObject *)PyDict_New();
+	self->groups = PyDict_New();
 	self->attributes = PyDict_New();
 	self->recdim = -1; /* for now */
 	if(file->file.advanced_file_structure)
@@ -1495,7 +1495,7 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj, NrmQuark q
     self->chunk_dimensions = PyDict_New();
     self->ud_types = PyDict_New();
     self->variables = PyDict_New();
-    self->groups = (NioFileObject *)PyDict_New();
+    self->groups = PyDict_New();
     self->attributes = PyDict_New();
     self->recdim = -1; /* for now */
 
@@ -3340,11 +3340,13 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
 
         for(i = 0; i < grprec->n_grps; ++i)
         {
+	    NioFileObject *group;
             name = NrmQuarkToString(grprec->grp_node[i]->name);
             sprintf(titlebuf,"Nio group <%s>", name);
             sprintf(attribuf,"   group <%s> attribtes", name);
+	    group = (NioFileObject *) PyDict_GetItemString(file->groups,name);
 
-            grpbuf = NioGroupInfo2str(file, grprec->grp_node[i], titlebuf, attribuf);
+            grpbuf = NioGroupInfo2str(group, grprec->grp_node[i], titlebuf, attribuf);
 
             insert2buf(grpbuf, buf, &bufpos, &buflen, bufinc);
             insert2buf("\n", buf, &bufpos, &buflen, bufinc);
@@ -3834,7 +3836,7 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNo
     self->chunk_dimensions = PyDict_New();
     self->ud_types = PyDict_New();
     self->variables = PyDict_New();
-    self->groups = (NioFileObject *)PyDict_New();
+    self->groups = PyDict_New();
     self->attributes = PyDict_New();
     self->recdim = -1; /* for now */
 
