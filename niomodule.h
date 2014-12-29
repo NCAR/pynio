@@ -35,6 +35,7 @@ struct NioFileObjectStruct {
   PyObject *mode;         /* string */
   PyObject *type;         /* string */
   void *id;
+  void *gnode;
   char open;
   char define;
   char write;

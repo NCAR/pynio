@@ -1076,11 +1076,13 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 
     int i;
 
-    if(NULL != grpnode->att_rec)
-        *ngattrs += grpnode->att_rec->n_atts;
 
     if(NULL == grpnode)
         return 0;
+
+
+    if(NULL != grpnode->att_rec)
+        *ngattrs += grpnode->att_rec->n_atts;
 
   /*
    *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
@@ -1168,6 +1170,8 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
            */
 
             group = nio_read_group(self, grprec->grp_node[i]);
+	    group->id = self->id;
+	    group->gnode = grprec->grp_node[i];
             PyDict_SetItemString((PyObject *)self->groups, name, (PyObject *)group);
             Py_DECREF(group);
 
@@ -1254,6 +1258,7 @@ nio_file_init(NioFileObject *self)
 		ngrps = 0;
 		ngattrs = 0;
 
+		self->gnode = advfile->advancedfile.grpnode;
                 dimNvarInfofromGroup(self, advfile->advancedfile.grpnode,
                                      &ndims, &nvars, &ngrps, &ngattrs);
 		collect_advancedfile_attributes(advfile->advancedfile.grpnode->att_rec,
@@ -3372,14 +3377,14 @@ NioFileObject_str(NioFileObject *file)
 
 	if(nfile->file.advanced_file_structure)
 	{
-		NclAdvancedFile advfile = (NclAdvancedFile) file->id;
+		NclFileGrpNode *grpnode = (NclFileGrpNode *) file->gnode;
 
               /*
 	       *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
 	       *		__PRETTY_FUNCTION__, __FILE__, __LINE__);
                */
 
-		buf = NioGroupInfo2str(file, advfile->advancedfile.grpnode,
+		buf = NioGroupInfo2str(file, grpnode,
                                           "Nio file", "   file attributes");
 	}
 	else
