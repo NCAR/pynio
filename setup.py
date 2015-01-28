@@ -262,9 +262,11 @@ try:
       pass
   else:
     LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
+    LIB_EXCLUDE_SOURCES.append('NclNewHDFEOS5.c')
 except:
   HAS_HDFEOS5 = 0
   LIB_EXCLUDE_SOURCES.append('NclHDFEOS5.c')
+  LIB_EXCLUDE_SOURCES.append('NclNewHDFEOS5.c')
 
 formats['hdfeos5'] = HAS_HDFEOS5
 
