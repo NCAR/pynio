@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 15835 2014-12-02 17:22:03Z huangwei $
+ *      $Id: NclAdvancedFile.c 15907 2015-01-08 22:46:05Z huangwei $
  */
 
 #include "NclAdvancedFile.h"
@@ -472,13 +472,13 @@ void _justPrintTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline)
         case NCL_float:
             {
              float *v = (float *)val;
-             nclfprintf(fp, "%f", v[0]);
+             nclfprintf(fp, "%2.7g", v[0]);
              break;
             }
         case NCL_double:
             {
              double *v = (double *)val;
-             nclfprintf(fp, "%f", v[0]);
+             nclfprintf(fp, "%4.16g", v[0]);
              break;
             }
         case NCL_byte:
@@ -1065,6 +1065,8 @@ void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *var
 
                     if(NULL != tmp_md)
                     {
+                        dimvarnode->value = (void *)NclMalloc(tmp_md->multidval.totalsize);
+                        assert(dimvarnode->value);
                         memcpy(dimvarnode->value, tmp_md->multidval.val, tmp_md->multidval.totalsize);
                         if(NCL_float == tmp_md->multidval.data_type)
                         {
@@ -1411,6 +1413,7 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
     NclFileDimNode   *var_dim_node;
     NclFileDimRecord *dim_rec;
     NclFileVarRecord *var_rec;
+    char buffer[NCL_MAX_NAME_LENGTH];
     int i, n = 0;
 
     var_rec = grpnode->var_rec;
@@ -1430,7 +1433,11 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
     n = var_rec->n_vars;
     var_node = &(var_rec->var_node[n]);
 
+    strcpy(buffer, NrmQuarkToString(grpnode->real_name));
+    strcat(buffer, "/");
+    strcat(buffer, NrmQuarkToString(name));
     var_node->name = name;
+    var_node->real_name = NrmStringToQuark(buffer);
     var_node->id = varid;
     var_node->type = type;
     var_node->comprec = NULL;
@@ -8897,7 +8904,11 @@ NclQuark *_NclGetGrpNames(void *therec, int *num_grps)
 
             for(i = 0; i < grpnode->grp_rec->n_grps; ++i)
             {
+#if 1
+                out_quarks[i] = grpnode->grp_rec->grp_node[i]->real_name;
+#else
                 out_quarks[i] = grpnode->grp_rec->grp_node[i]->name;
+#endif
             }
 
             for(n = 0; n < grpnode->grp_rec->n_grps; ++n)
