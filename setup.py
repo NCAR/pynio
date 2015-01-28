@@ -286,9 +286,11 @@ try:
       pass
   else:
     LIB_EXCLUDE_SOURCES.append('NclOGR.c')
+    LIB_EXCLUDE_SOURCES.append('NclAdvancedOGR.c')
 except:
   HAS_GDAL = 0
   LIB_EXCLUDE_SOURCES.append('NclOGR.c')
+  LIB_EXCLUDE_SOURCES.append('NclAdvancedOGR.c')
 
 formats['shapefile'] = HAS_GDAL
 
