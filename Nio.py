@@ -133,6 +133,7 @@ from numpy import ma
 from coordsel import get_variable, inp2csel, inp2isel, inp2xsel, idxsel2xsel, \
                      xSelect, crdSelect, idxSelect 
 import coordsel as cs
+import niodict  as nd
 
 _Nio.option_defaults['UseAxisAttribute'] = False
 _Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
@@ -158,9 +159,9 @@ _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash_
             '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', \
             '__setattr__', '__str__', '__weakref__', '__getitem__', '__setitem__', '__len__' ]
 
-_localatts = ['attributes','_obj','variables','file','varname', \
+_localatts = ['attributes','_obj','variables','file','varname', 'groups',  \
               'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', 'coordinates', \
-              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'close', 'assign_value', 'get_value']    
+              'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'create_group', 'close', 'assign_value', 'get_value']    
 
 # The Proxy concept is adapted from Martelli, Ravenscroft, & Ascher, 'Python Cookbook' Second Edition, 6.6
 
@@ -458,7 +459,47 @@ dimensions -- a tuple of dimension names (strings), previously defined
         vp.varname = name
         vp.cf_dimensions = vp.dimensions
         self.variables[name] = vp
+        if not self.variables.topdict is None:
+            self.variables.topdict[name] = vp
         return vp
+    else:
+        return None
+
+def create_group(self,name):
+    '''
+Create a new group with given name in a writable file.
+
+f.create_group(name)
+name -- a string specifying the group name.
+    '''
+
+    #print 'in create group'
+    g = self._obj.create_group(name)
+    if not g is None:
+        gp  = _proxy(g,'str')
+        gp.file = g
+        gp.ma_mode = self.ma_mode
+        gp.groups = nd.nioDict()
+        gp.groups.path = g.path
+        gp.variables = nd.nioDict()
+        gp.variables.path = g.path
+        if self.groups.topdict is None:
+            self.groups[name] = gp
+            self.groups['/'].groups[name] = gp
+            gp.groups.topdict = self.groups
+            gp.variables.topdict = self.variables
+        elif self.name is '/': 
+            self.groups.topdict[name] = gp
+            self.groups[name] = gp
+            gp.groups.topdict = self.groups.topdict
+            gp.variables.topdict = self.variables.topdict
+        else:
+            path = self.path + '/' + name
+            self.groups.topdict[path] = gp
+            self.groups[name] = gp
+            gp.groups.topdict = self.groups.topdict
+            gp.variables.topdict = self.variables.topdict
+        return gp
     else:
         return None
 
@@ -623,7 +664,7 @@ Returns an NioFile object.
 
     file = _Nio.open_file(filename,mode,options,history,format)
 
-    file_proxy = _proxy(file, 'str', create_variable=create_variable,close=close)
+    file_proxy = _proxy(file, 'str', create_variable=create_variable,create_group=create_group,close=close)
     setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
     if not (explicit_fill_values is None and mask_below_value is None and mask_above_value is None):
@@ -652,7 +693,9 @@ Returns an NioFile object.
     file_proxy.cf_dimensions = newdims
     file_proxy.cf2dims = cf2dims
 
-    variable_proxies = {}
+    variable_proxies = nd.nioDict()
+    variable_proxies.path = '/'
+    variable_proxies.topdict = None
     for var in file.variables.keys():
         vp  = _proxy(file.variables[var],'str','len',
                      __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
@@ -672,6 +715,40 @@ Returns an NioFile object.
         else:
             vp.cf_dimensions = vp.dimensions
     file_proxy.variables = variable_proxies
+
+    group_proxies = nd.nioDict()
+    group_proxies.path = '/'
+    group_proxies.topdict = None
+    for group in file.groups.keys():
+        gp = _proxy(file.groups[group], 'str')
+        gp.file = file
+        group_proxies[group] = gp
+
+        v_proxy_refs = nd.nioDict()
+        v_proxy_refs.path = file.groups[group].path
+        v_proxy_refs.topdict = file_proxy.variables
+        for var in file.groups[group].variables.keys():
+            #print file.groups[group].variables[var].path
+            vp = file_proxy.variables[file.groups[group].variables[var].path]
+            #print vp is file_proxy.variables[file.groups[group].variables[var].path]
+            v_proxy_refs[var] = vp
+        gp.variables = v_proxy_refs
+
+    file_proxy.groups = group_proxies
+    # all the groups need proxies before we can do this
+
+    for group in file.groups.keys():
+        g = file.groups[group]
+        gp = file_proxy.groups[group]
+        g_proxy_refs = nd.nioDict()
+        g_proxy_refs.path = g.path
+        g_proxy_refs.topdict = file_proxy.groups
+        for grp in g.groups.keys():
+            grp_obj = g.groups[grp]
+            #print grp_obj.path
+            gproxy = file_proxy.groups[grp_obj.path]
+            g_proxy_refs[grp] = gproxy
+        gp.groups = g_proxy_refs
     
 #    for var in file.variables.keys():
 #        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,var)

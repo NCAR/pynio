@@ -10,6 +10,7 @@ file = Nio.open_file(fn, "r")
 print "file:"
 print file
 
+print file.variables['vlen_var']
 var = file.variables['vlen_var'][:]
 
 print "var:"

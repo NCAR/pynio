@@ -947,6 +947,7 @@ NioFile_Open(char *filename, char *mode)
   NioFileObject *self = PyObject_NEW(NioFileObject,&NioFile_Type);
   NclFile file = NULL;
   int crw;
+  char *name;
 
 /*
  *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
@@ -976,7 +977,15 @@ NioFile_Open(char *filename, char *mode)
 	  self->define = 1;
 	  self->open = 1;
 	  self->write = (crw != 1);
-	  self->name = PyString_FromString(filename);
+	  name = strrchr(filename,'/');
+	  if (name && strlen(name) > 1) {
+		  self->name = PyString_FromString(name + 1);
+		  self->full_path = PyString_FromString(filename);
+	  }
+	  else {
+		  self->name = PyString_FromString(filename);
+		  self->full_path = PyString_FromString(filename);
+	  }
 	  self->mode = PyString_FromString(mode);
 	  nio_file_init(self); 
   }
@@ -1075,6 +1084,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
     NioFileObject *group;
 
     int i;
+    char *path;
 
 
     if(NULL == grpnode)
@@ -1089,6 +1099,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
    *                  __PRETTY_FUNCTION__, __FILE__, __LINE__);
    */
 
+    path = PyString_AsString(self->full_path);
     dimrec = grpnode->dim_rec;
 
     if(NULL != dimrec)
@@ -1106,6 +1117,12 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
             size = dimnode->size;
             size_ob = PyInt_FromSize_t(size);
             PyDict_SetItemString(self->dimensions, name, size_ob);
+	    if (! strcmp(path,"/")) {
+		    PyDict_SetItem(self->top->dimensions,PyString_FromFormat("%s",name), (PyObject *)size_ob);
+	    }
+	    else {
+		    PyDict_SetItem(self->top->dimensions,PyString_FromFormat("%s/%s",path,name), (PyObject *)size_ob);
+	    }
             Py_DECREF(size_ob);
 
           /*
@@ -1152,6 +1169,12 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 
             variable = nio_read_advanced_variable(self, varnode, i);
             PyDict_SetItemString(self->variables, name, (PyObject *)variable);
+	    if (! strcmp(path,"/") || strlen(path) == 0) {
+		    PyDict_SetItem(self->top->variables,PyString_FromFormat("%s",name), (PyObject *)variable);
+	    }
+	    else {
+		    PyDict_SetItem(self->top->variables,PyString_FromFormat("%s/%s",path,name), (PyObject *)variable);
+	    }
             Py_DECREF(variable);
         }
     }
@@ -1173,27 +1196,38 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 	    group->id = self->id;
 	    group->gnode = grprec->grp_node[i];
             PyDict_SetItemString((PyObject *)self->groups, name, (PyObject *)group);
+	    if (! strcmp(path,"/") || strlen(path) == 0) {
+		    PyDict_SetItem(self->top->groups,PyString_FromFormat("%s",name), (PyObject *)group);
+	    }
+	    else {
+		    PyDict_SetItem(self->top->groups,PyString_FromFormat("%s/%s",path,name), (PyObject *)group);
+	    }
             Py_DECREF(group);
 
-            dimNvarInfofromGroup(self, grprec->grp_node[i],
-                                 ndims, nvars, ngrps, ngattrs);
+            /*dimNvarInfofromGroup(self, grprec->grp_node[i],
+	      ndims, nvars, ngrps, ngattrs);*/
         }
     }
 
     return 0;
 }
 
-static void collect_advancedfile_attributes(NclFileAttRecord* attrec, PyObject *attributes)
+static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecord* attrec, PyObject *attributes)
 {
     NclFileAttNode*   attnode;
     char *name;
     npy_intp length;
     int py_type;
     int i;
+    char *path = NULL;
 
     if(NULL == attrec)
         return;
   
+    if (self) {
+	    path = PyString_AsString(self->full_path);
+    }
+
     for(i = 0; i < attrec->n_atts; ++i)
     {
         attnode = &(attrec->att_node[i]);
@@ -1211,6 +1245,14 @@ static void collect_advancedfile_attributes(NclFileAttRecord* attrec, PyObject *
             if(astring != NULL)
             {
                 PyDict_SetItemString(attributes, name, astring);
+		if (path) {
+			if (! strcmp(path,"/")) {
+				PyDict_SetItem(self->top->attributes,PyString_FromFormat("%s",name), astring);
+			}
+			else {
+				PyDict_SetItem(self->top->attributes,PyString_FromFormat("%s/%s",path,name), astring);
+			}
+		}
                 Py_DECREF(astring);
             }
         }
@@ -1228,6 +1270,14 @@ static void collect_advancedfile_attributes(NclFileAttRecord* attrec, PyObject *
                 if (array != NULL)
                 {
                     PyDict_SetItemString(attributes, name, array);
+		    if (path) {
+			    if (! strcmp(path,"/")) {
+				    PyDict_SetItem(self->top->attributes,PyString_FromFormat("%s",name), array);
+			    }
+			    else {
+				    PyDict_SetItem(self->top->attributes,PyString_FromFormat("%s/%s",path,name), array);
+			    }
+		    }
                     Py_DECREF(array);
                 }
             }
@@ -1253,16 +1303,26 @@ nio_file_init(NioFileObject *self)
 	if(file->file.advanced_file_structure)
 	{
 		NclAdvancedFile advfile = (NclAdvancedFile) self->id;
+		char *name = NrmQuarkToString(advfile->advancedfile.grpnode->name);
+		NioFileObject *group;
+
 		ndims = 0;
 		nvars = 0;
 		ngrps = 0;
 		ngattrs = 0;
 
 		self->gnode = advfile->advancedfile.grpnode;
-                dimNvarInfofromGroup(self, advfile->advancedfile.grpnode,
-                                     &ndims, &nvars, &ngrps, &ngattrs);
-		collect_advancedfile_attributes(advfile->advancedfile.grpnode->att_rec,
-                                                self->attributes);
+		self->parent = NULL;
+		self->top = self;
+		group = nio_read_group(self, self->gnode);
+		group->id = self->id;
+		group->gnode = self->gnode;
+		PyDict_SetItemString((PyObject *)self->groups, name, (PyObject *)group);
+		Py_DECREF(group);
+                /*dimNvarInfofromGroup(self, advfile->advancedfile.grpnode,
+		  &ndims, &nvars, &ngrps, &ngattrs);*/
+		/*collect_advancedfile_attributes(self,advfile->advancedfile.grpnode->att_rec,
+		  self->attributes);*/
 	}
 	else
 	{
@@ -1486,6 +1546,8 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj, NrmQuark q
     NclAdvancedFile advfilegroup = NULL;
     NhlErrorTypes ret = -1;
     char* name;
+    char* buf;
+    Py_ssize_t len;
 
     name = NrmQuarkToString(qname);
 
@@ -1510,6 +1572,17 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj, NrmQuark q
     self->name = PyString_FromString(name);
     self->mode = niofileobj->mode;
     self->type = PyString_FromString("group");
+    self->parent = niofileobj;
+    len = PyString_Size(niofileobj->full_path);
+    buf = malloc(len +1);
+    strcpy(buf,PyString_AsString(niofileobj->full_path));
+    if (! strcmp(buf,"/")) {
+	    self->full_path = PyString_FromString(name);
+    }
+    else {
+	    self->full_path = PyString_FromFormat("%s/%s",PyString_AsString(niofileobj->full_path), name);
+    }
+    /*printf("path is %s\n",PyString_AsString(self->full_path));*/
 
   /*
    *fprintf(stderr, "\nfunc: %s, in file: %s, line: %d\n",
@@ -1527,15 +1600,18 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj, NrmQuark q
                                            TEMPORARY, nclfile, qname);
 
     self->id = (void *) advfilegroup;
+    self->gnode = (void *) advfilegroup->advancedfile.grpnode;
+    self->top = niofileobj->top;
 
     return self;
 }
 
 static NioFileObject* NioFileObject_new_group(NioFileObject *self, PyObject *args)
 {
-    NioFileObject *group;
+    NioFileObject *group, *pgroup;
     NrmQuark qname;
     char* name;
+    char *path;
 
     if(! PyArg_ParseTuple(args, "s", &name))
         return NULL;
@@ -1558,10 +1634,28 @@ static NioFileObject* NioFileObject_new_group(NioFileObject *self, PyObject *arg
    *         __PRETTY_FUNCTION__, __FILE__, __LINE__);
    *fprintf(stderr, "\tnio_create_group(self, %s)\n", name);
    */
-    group = nio_create_group(self, qname);
+
+    if (self->parent) { 
+	    group = nio_create_group(self, qname);
+	    pgroup = self;
+    } 
+    else {/* top file level object */
+	    pgroup =(NioFileObject *) PyDict_GetItemString(self->groups,"/");
+	    if (pgroup)
+		    group = nio_create_group(pgroup, qname);
+    }
+		    
     if(group)
     {
-        PyDict_SetItemString((PyObject *)self->groups, name, (PyObject *)group);
+	path = PyString_AsString(pgroup->full_path);
+        PyDict_SetItemString((PyObject *)pgroup->groups, name, (PyObject *)group);
+	if (! strcmp(path,"/") || strlen(path) == 0) {
+		PyDict_SetItem(pgroup->top->groups,PyString_FromFormat("%s",name), (PyObject *)group);
+	}
+	else {
+		PyDict_SetItem(pgroup->top->groups,PyString_FromFormat("%s/%s",path,name), (PyObject *)group);
+	}
+
         return group;
     }
     else
@@ -1684,7 +1778,7 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
     if(self->name != NULL)
         strcpy(self->name, name);
     self->attributes = PyDict_New();
-    collect_advancedfile_attributes(varnode->att_rec, self->attributes);
+    collect_advancedfile_attributes(NULL,varnode->att_rec, self->attributes);
     return self;
 }
 
@@ -1703,8 +1797,10 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  NrmQuark qvar;
 	  NrmQuark qtype;
           int ncl_ndims = ndim;
-	  define_mode(file, 1);
+	  char *path;
+	  NioFileObject *pgroup;
 
+	  define_mode(file, 1);
 
 	  variable = (NioVariableObject *) PyDict_GetItemString(file->variables,name);
 	  if (variable) {
@@ -1742,10 +1838,21 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  qvar = NrmStringToQuark(name);
 	  if(nfile->file.advanced_file_structure)
 	  {
+	     if (file->parent) { 
+		     pgroup = file;
+	     } 
+	     else {/* top file level object */
+		     pgroup =(NioFileObject *) PyDict_GetItemString(file->groups,"/");
+	     }
+	     variable = (NioVariableObject *) PyDict_GetItemString(pgroup->variables,name);
+	     if (variable) {
+		     printf("variable (%s) exists: cannot create\n",name);
+		     return variable;
+	     }
 	      ret = _NclFileAddVar(nfile,qvar,qtype,ncl_ndims,qdims);
 	      if (ret > NhlWARNING) {
 	 	  id = _NclFileIsVar(nfile,qvar);
-		  variable = nio_create_advancedfile_variable(file, name, id, ndim, qdims);
+		  variable = nio_create_advancedfile_variable(pgroup, name, id, ndim, qdims);
 	      }
 	      else
 	      {
@@ -1787,6 +1894,16 @@ NioFile_CreateVariable( NioFileObject *file, char *name,
 	  }
 
 	  PyDict_SetItemString(file->variables, name, (PyObject *)variable);
+
+	  if (nfile->file.advanced_file_structure) {
+		  path = PyString_AsString(pgroup->full_path);
+		  if (! strcmp(path,"/") || strlen(path) == 0) {
+			  PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s",name), (PyObject *)variable);
+		  }
+		  else {
+			  PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s/%s",path,name), (PyObject *)variable);
+		  }
+	  }
 	  return variable;
   }
   else {
@@ -1862,13 +1979,21 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
     NhlErrorTypes ret;
     NrmQuark qvar;
     NrmQuark qtype;
+    NioFileObject *pgroup;
 
     if(! check_if_open(file, 1))
         return NULL;
 
     define_mode(file, 1);
 
-    variable = (NioVariableObject *) PyDict_GetItemString(file->variables, name);
+    if (file->parent) { 
+	    pgroup = file;
+    } 
+    else {/* top file level object */
+	    pgroup =(NioFileObject *) PyDict_GetItemString(file->groups,"/");
+    }
+
+    variable = (NioVariableObject *) PyDict_GetItemString(pgroup->variables, name);
     if (variable)
     {
         printf("variable (%s) exists: cannot create\n",name);
@@ -1898,9 +2023,17 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
     ret = _NclFileAddVlen(nfile, NrmStringToQuark("vlen"), qvar, qtype, qdims, ndim);
     if (ret > NhlWARNING)
     {
+	char *path;
         variable = nio_create_advancedfile_variable(file, name, 0, ndim, qdims);
+	path = PyString_AsString(pgroup->full_path);
+	if (! strcmp(path,"/") || strlen(path) == 0) {
+		PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s",name), (PyObject *)variable);
+	}
+	else {
+		PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s/%s",path,name), (PyObject *)variable);
+	}
 
-    	PyDict_SetItemString(file->variables, name, (PyObject *)variable);
+    	PyDict_SetItemString(pgroup->variables, name, (PyObject *)variable);
     	return variable;
     }
     else
@@ -2064,13 +2197,21 @@ NioVariableObject *NioFile_CreateCOMPOUND(NioFileObject *file, char *name,
     NrmQuark qvar;
     NrmQuark* memqname = NULL;
     NrmQuark* memqtype = NULL;
+    NioFileObject *pgroup;
 
     if(! check_if_open(file, 1))
         return NULL;
 
     define_mode(file, 1);
 
-    variable = (NioVariableObject *) PyDict_GetItemString(file->variables, name);
+    if (file->parent) { 
+	    pgroup = file;
+    } 
+    else {/* top file level object */
+	    pgroup =(NioFileObject *) PyDict_GetItemString(file->groups,"/");
+    }
+
+    variable = (NioVariableObject *) PyDict_GetItemString(pgroup->variables, name);
     if (variable)
     {
         printf("variable (%s) exists: cannot create\n",name);
@@ -2129,9 +2270,17 @@ NioVariableObject *NioFile_CreateCOMPOUND(NioFileObject *file, char *name,
 
     if (ret > NhlWARNING)
     {
-        variable = nio_create_advancedfile_variable(file, name, 0, ndim, qdims);
+	char *path;
+        variable = nio_create_advancedfile_variable(pgroup, name, 0, ndim, qdims);
+	path = PyString_AsString(pgroup->full_path);
+	if (! strcmp(path,"/") || strlen(path) == 0) {
+		PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s",name), (PyObject *)variable);
+	}
+	else {
+		PyDict_SetItem(pgroup->top->variables,PyString_FromFormat("%s/%s",path,name), (PyObject *)variable);
+	}
 
-    	PyDict_SetItemString(file->variables, name, (PyObject *)variable);
+    	PyDict_SetItemString(pgroup->variables, name, (PyObject *)variable);
     	return variable;
     }
     else
@@ -2535,13 +2684,60 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
 	      return NULL;
 	  }
 	  qstr = NrmStringToQuark(str);
-	  for (i = 0; i < nfile->file.n_file_dims; i++) {
-		  if (nfile->file.file_dim_info[i]->dim_name_quark != qstr)
-			  continue;
-		  return (nfile->file.file_dim_info[i]->is_unlimited == 0 ? Py_False : Py_True);
+	  if(nfile->file.advanced_file_structure)
+	  {
+		  NclFileGrpNode* grpnode;
+		  NclFileDimRecord* dimrec;
+
+		  if (self->parent) {
+			  grpnode = (NclFileGrpNode*)self->gnode;
+			  dimrec = grpnode->dim_rec;
+		  }
+		  else {
+			  char *cp;
+			  char *dimname, *dimpath;
+			  NioFileObject *grp;
+			  cp = strrchr(str,'/');
+			  if (cp >= str) {
+				  dimname = cp + 1;
+				  *cp = '\0';
+				  if (strlen(str) > 0) {
+					  dimpath = str[0] == '/' ? &(str[1]) : str;
+				  }
+			  }
+			  else {
+				  dimname = str;
+				  dimpath = "/";
+			  }
+			  grp = (NioFileObject *)PyDict_GetItemString(self->groups,dimpath);
+			  grpnode = grp->gnode;
+			  dimrec = grpnode->dim_rec;
+			  qstr = NrmStringToQuark(dimname);
+		  }
+		  if (dimrec) {
+			  NclFileDimNode*   dimnode;
+			  int i;
+			  for (i = 0; i < dimrec->n_dims; i++) {
+				  dimnode =  &(dimrec->dim_node[i]);
+				  if (qstr == dimnode->name) {
+					  return (dimnode->is_unlimited == 0 ? Py_False : Py_True);
+				  }
+			  }
+		  }
+		  PyErr_SetString(NIOError, self->parent == NULL ? "dimension name not found in file" : "dimension name not found in group");
+		  return NULL;
 	  }
-	  PyErr_SetString(NIOError, "dimension name not found in file");
-	  return NULL;
+	  else {
+		  for (i = 0; i < nfile->file.n_file_dims; i++) {
+			  if (nfile->file.file_dim_info[i]->dim_name_quark != qstr)
+				  continue;
+			  return (nfile->file.file_dim_info[i]->is_unlimited == 0 ? Py_False : Py_True);
+
+
+		  }
+		  PyErr_SetString(NIOError, "dimension name not found in file");
+		  return NULL;
+	  }
   }
   PyErr_SetString(PyExc_TypeError, "Invalid type");
   return NULL;
@@ -2647,6 +2843,16 @@ static PyMethodDef NioFileObject_methods[] = {
   {NULL, NULL}		/* sentinel */
 };
 
+static PyMemberDef NioFileObject_members[] = {
+  {"dimensions", T_OBJECT, NhlOffset(NioFileObject,dimensions),READONLY,NULL},
+  {"variables", T_OBJECT, NhlOffset(NioFileObject,variables),READONLY,NULL},
+  {"attributes", T_OBJECT, NhlOffset(NioFileObject,attributes),READONLY,NULL},
+  {"groups", T_OBJECT, NhlOffset(NioFileObject,groups),READONLY,NULL},
+  {"name", T_OBJECT, NhlOffset(NioFileObject,name),READONLY,NULL},
+  {"path", T_OBJECT, NhlOffset(NioFileObject,full_path),READONLY,NULL},
+  {NULL,0, 0,0, NULL}		/* sentinel */
+};
+
 
 /* Attribute access */
 
@@ -2682,6 +2888,14 @@ NioFile_GetAttribute(NioFileObject *self, char *name)
     if (strcmp(name, "__dict__") == 0) {
       Py_INCREF(self->attributes);
       return self->attributes;
+    }
+    if (strcmp(name, "path") == 0) {
+      Py_INCREF(self->full_path);
+      return (PyObject *)self->full_path;
+    }
+    if (strcmp(name, "name") == 0) {
+      Py_INCREF(self->name);
+      return (PyObject *)self->name;
     }
     value = PyDict_GetItemString(self->attributes, name);
     if (value != NULL) {
@@ -2924,24 +3138,25 @@ NioFile_SetAttribute(NioFileObject *self, char *name, PyObject *value)
   NclFile nfile = (NclFile) self->id;
   nio_ncerr = 0;
   if (check_if_open(self, 1)) {
-    if (strcmp(name, "dimensions") == 0 ||
-	strcmp(name, "chunk_dimensions") == 0 ||
-	strcmp(name, "ud_types") == 0 ||
-	strcmp(name, "variables") == 0 ||
-	strcmp(name, "groups") == 0 ||
-	strcmp(name, "attributes") == 0 ||
-	strcmp(name, "__dict__") == 0) {
-	    PyErr_SetString(PyExc_TypeError, "attempt to set read-only attribute");
-	    return -1;
-    }
-    define_mode(self, 1);
-    if(nfile->file.advanced_file_structure)
-        return set_advanced_file_attribute(self, self->attributes, name, value);
-    else
-        return set_attribute(self, NC_GLOBAL, self->attributes, name, value);
+	  if (strcmp(name, "dimensions") == 0 ||
+	      strcmp(name, "chunk_dimensions") == 0 ||
+	      strcmp(name, "ud_types") == 0 ||
+	      strcmp(name, "variables") == 0 ||
+	      strcmp(name, "groups") == 0 ||
+	      strcmp(name, "attributes") == 0 ||
+	      strcmp(name, "__dict__") == 0) {
+		  PyErr_SetString(PyExc_TypeError, "attempt to set read-only attribute");
+		  return -1;
+	  }
+	  define_mode(self, 1);
+	  if(nfile->file.advanced_file_structure) {
+		  return set_advanced_file_attribute(self, self->attributes, name, value);
+	  }
+	  else
+		  return set_attribute(self, NC_GLOBAL, self->attributes, name, value);
   }
   else
-    return -1;
+	  return -1;
 }
 
 int
@@ -3074,10 +3289,10 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
         sprintf(tbuf,"\t%.510s\n", titlename);
     insert2buf(tbuf, buf, bufpos, buflen, bufinc);
 
-  /*
-   *sprintf(tbuf,"   %s:\n", attname);
-   *insert2buf(tbuf, buf, bufpos, buflen, bufinc);
-   */
+
+/*    sprintf(tbuf,"   %s:\n", attname);
+      insert2buf(tbuf, buf, bufpos, buflen, bufinc);*/
+   
 
     if(NULL == attrec)
         return;
@@ -3092,6 +3307,9 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
         insert2buf(tbuf, buf, bufpos, buflen, bufinc);
         att_val = PyDict_GetItemString(attributes, name);
 
+	if (! att_val) {
+		continue;
+	}
         if (PyString_Check(att_val))
         {
             insert2buf(PyString_AsString(att_val), buf, bufpos, buflen, bufinc);
@@ -3225,6 +3443,10 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
 
     sprintf(titlename,"%.510s", PyString_AsString(file->name));
 
+    if (file->parent == NULL) { /* top level file object */
+	   file = (NioFileObject *) PyDict_GetItemString(file->groups,"/");
+    }
+
     attrec = grpnode->att_rec;
     attrec2buf(file->attributes, attrec, buf, &bufpos, &buflen, bufinc, title, titlename, attname);
 
@@ -3348,7 +3570,7 @@ char* NioGroupInfo2str(NioFileObject *file, NclFileGrpNode* grpnode, char* title
 	    NioFileObject *group;
             name = NrmQuarkToString(grprec->grp_node[i]->name);
             sprintf(titlebuf,"Nio group <%s>", name);
-            sprintf(attribuf,"   group <%s> attribtes", name);
+            sprintf(attribuf,"group attributes");
 	    group = (NioFileObject *) PyDict_GetItemString(file->groups,name);
 
             grpbuf = NioGroupInfo2str(group, grprec->grp_node[i], titlebuf, attribuf);
@@ -3378,14 +3600,26 @@ NioFileObject_str(NioFileObject *file)
 	if(nfile->file.advanced_file_structure)
 	{
 		NclFileGrpNode *grpnode = (NclFileGrpNode *) file->gnode;
+		char *name, *attname;
+		NioFileObject *group;
 
               /*
 	       *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
 	       *		__PRETTY_FUNCTION__, __FILE__, __LINE__);
                */
-
-		buf = NioGroupInfo2str(file, grpnode,
-                                          "Nio file", "   file attributes");
+		if (file->parent == NULL) {
+			name = "Nio file";
+			attname = "file attributes";
+			group = (NioFileObject *)PyDict_GetItemString(file->groups,"/");
+			group = file;
+		}
+		else {
+			name = "Nio group";
+			attname = "group attributes";
+			group = file;
+		}
+		buf = NioGroupInfo2str(group, grpnode,
+                                          name, attname);
 	}
 	else
 	{
@@ -3606,7 +3840,7 @@ statichere PyTypeObject NioFile_Type = {
   /* Sub-classing (new-style object) support */
 
   NioFileObject_methods,                    /* tp_methods */
-  0,                                        /* tp_members */
+  NioFileObject_members,                    /* tp_members */
   0,                                        /* tp_getset */
   0,                                        /* tp_base */
   0,                                        /* tp_dict */
@@ -3678,7 +3912,7 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
     if(self->name != NULL)
         strcpy(self->name, name);
     self->attributes = PyDict_New();
-    collect_advancedfile_attributes(varnode->att_rec, self->attributes);
+    collect_advancedfile_attributes(NULL,varnode->att_rec, self->attributes);
 
     /* shouldn't this be an error */
     if(NULL == dimrec)
@@ -3791,7 +4025,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
         if(NULL != varnode)
         {
             self->attributes = PyDict_New();
-            collect_advancedfile_attributes(varnode->att_rec, self->attributes);
+            collect_advancedfile_attributes(NULL, varnode->att_rec, self->attributes);
         }
     }
     else
@@ -3818,6 +4052,8 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNo
     NclAdvancedFile advfilegroup = NULL;
     int ndims, nvars, ngrps, ngattrs;
     char* name;
+    char* buf;
+    Py_ssize_t len;
 
     name = NrmQuarkToString(grpnode->name);
 
@@ -3842,6 +4078,8 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNo
     self->ud_types = PyDict_New();
     self->variables = PyDict_New();
     self->groups = PyDict_New();
+    self->parent = niofileobj;
+    self->top = niofileobj->top;
     self->attributes = PyDict_New();
     self->recdim = -1; /* for now */
 
@@ -3851,6 +4089,21 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNo
     self->name = PyString_FromString(name);
     self->mode = niofileobj->mode;
     self->type = PyString_FromString("group");
+    len = PyString_Size(niofileobj->full_path);
+    buf = malloc(len + 1);
+    strcpy(buf,PyString_AsString(niofileobj->full_path));
+    len = strlen(buf);
+    while (--len >= 0 && buf[len] == '/') {
+	    buf[len] = '\0';
+    }
+    if (! strcmp(name,"/") || strlen(buf) == 0) {
+	    self->full_path = PyString_FromFormat("%s",name);
+    }
+    else {
+	    self->full_path = PyString_FromFormat("%s/%s",buf, name);
+    }
+    free(buf);
+    /*printf("path is %s\n",PyString_AsString(self->full_path));*/
 
     advfilegroup = _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0,
                                            TEMPORARY, nclfile, grpnode->name);
@@ -3865,7 +4118,7 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNo
   /*
    */
     dimNvarInfofromGroup(self, grpnode, &ndims, &nvars, &ngrps, &ngattrs);
-    collect_advancedfile_attributes(grpnode->att_rec, self->attributes);
+    collect_advancedfile_attributes(self, grpnode->att_rec, self->attributes);
 
     return self;
 }
@@ -3956,10 +4209,12 @@ NioVariable_GetShape(NioVariableObject *var)
           NclFileDimRecord* dimrec;
           NclFileDimNode*   dimnode;
           NclFileVarNode*   varnode;
+	  NclFileGrpNode*   grpnode;
 
-          grpdimrec = advfile->advancedfile.grpnode->dim_rec;
+	  grpnode = (NclFileGrpNode*)var->file->gnode;
+          grpdimrec = grpnode->dim_rec;
+          varnode = getVarFromGroup(grpnode, NrmStringToQuark(var->name));
 
-          varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(var->name));
           if(NULL != varnode)
           {
               dimrec = varnode->dim_rec;
@@ -4046,10 +4301,12 @@ NioVariable_GetSize(NioVariableObject *var)
           NclFileDimRecord* dimrec;
           NclFileDimNode*   dimnode;
           NclFileVarNode*   varnode;
+	  NclFileGrpNode*   grpnode;
 
-          grpdimrec = advfile->advancedfile.grpnode->dim_rec;
+	  grpnode = (NclFileGrpNode*)var->file->gnode;
+          grpdimrec = grpnode->dim_rec;
+          varnode = getVarFromGroup(grpnode, NrmStringToQuark(var->name));
 
-          varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(var->name));
           if(NULL != varnode)
           {
 	      size = _NclSizeOf(varnode->type);
@@ -4129,6 +4386,16 @@ static PyObject *
 NioVariable_GetAttribute(NioVariableObject *self, char *name)
 {
   PyObject *value;
+  if (strcmp(name, "name") == 0) {
+	  return( PyString_FromString(self->name));
+  }
+  if (strcmp(name, "path") == 0) {
+	  char *path = PyString_AsString(self->file->full_path);
+	  if (! strcmp(path,"") || ! strcmp(path,"/"))
+		  return( PyString_FromFormat("/%s",self->name));
+	  else
+		  return( PyString_FromFormat("%s/%s",path,self->name));
+  }
   if (strcmp(name, "shape") == 0) {
     PyObject *tuple;
     int i;
@@ -4561,7 +4828,10 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  {
 			  	NclFileVarNode* varnode;
 			  	NclAdvancedFile advfile = (NclAdvancedFile) self->file->id;
-			  	varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
+				NclFileGrpNode*   grpnode;
+
+				grpnode = (NclFileGrpNode*)self->file->gnode;
+				varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
 			  	if(NULL == varnode)
 					return NULL;
 
@@ -4868,8 +5138,10 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
  */
   if(nfile->file.advanced_file_structure)
   {
-      NclAdvancedFile advfile = (NclAdvancedFile) self->file->id;
-      varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
+      NclFileGrpNode*   grpnode;
+
+      grpnode = (NclFileGrpNode*)self->file->gnode;
+      varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
       if(NULL != varnode)
       {
           dimrec = varnode->dim_rec;
@@ -4964,11 +5236,11 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  ret = 0;
 	  goto err_ret;
   }
-#if 1
+
   if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
 	  array = (PyArrayObject *) value;
-#if 1
-	  if (array->descr->type == 'l' && array->descr->elsize == 8) {
+
+	  if ((! nfile->file.advanced_file_structure) && array->descr->type == 'l' && array->descr->elsize == 8) {
 		  PyArrayObject *array2 = (PyArrayObject *)  PyArray_Cast(array, PyArray_INT);
 		  sprintf(err_buf,"coercing 8-byte long data to 4-byte integer variable (%s): possible data loss due to overflow",
 			  self->name);
@@ -4978,7 +5250,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  Py_DECREF(array2);
 	  }
 	  else
-#endif
           {
 		  int single_el_dim_count = 0;
 		  /* 
@@ -4994,23 +5265,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
 	  }
   }
-#else
-  if (! strcmp(value->ob_type->tp_name,"numpy.ndarray") || !strcmp(value->ob_type->tp_name,"array")) {
-	  int single_el_dim_count = 0;
-	  array = (PyArrayObject *) value;
-	  /* 
-	   * Use numpy semantics.
-	   * Numpy allows single element 'slow' dimensions to be discarded on assignment
-	   */
-	  for (i = 0; i < array->nd; i++) {
-		  if (array->dimensions[i] == 1)
-			  single_el_dim_count++;
-		  else
-			  break;
-	  }
-	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
-  }
-#endif
   else {
 	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
   }
@@ -5104,7 +5358,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                       NclFileDimRecord* dimrec;
                       NclFileDimNode*   dimnode;
                       NclFileVarNode*   varnode;
-        
+
                       varnode = getVarFromGroup(advfile->advancedfile.grpnode, NrmStringToQuark(self->name));
                       if(NULL != varnode)
                       {
@@ -5205,21 +5459,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
   }
   qtype = nio_type_from_code(array->descr->type);
-#if 1
-  if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
-	  PyArrayObject *array2 = (PyArrayObject *)
-		  PyArray_Cast(array, PyArray_INT);
-	  Py_DECREF(array);
-	  array = array2;
-	  qtype = NrmStringToQuark("integer");
-	  sprintf(err_buf,"coercing 8-byte long to 4-byte integer: possible data loss due to overflow");
-	  PyErr_SetString(NIOError, err_buf);
-	  PyErr_Print();
-  }
-  else if (qtype == NrmStringToQuark("long")) {
-	  qtype = NrmStringToQuark("integer");
-  }
-#endif
 
   if(nfile->file.advanced_file_structure)
   {
@@ -5772,12 +6011,12 @@ NioVariableObject_str(NioVariableObject *var)
 	}
 
 	qncl_scalar = NrmStringToQuark("ncl_scalar");
-	buf = malloc(bufinc);
-	buflen = bufinc;
 	if(nfile->file.advanced_file_structure)
 	{
 		NclFileVarNode* varnode;
+		NclFileGrpNode*   grpnode;
 		NclAdvancedFile advfile = (NclAdvancedFile) file->id;
+
 		varnode = getVarFromGroup(advfile->advancedfile.grpnode, varq);
 		if(NULL == varnode) {
 			PyErr_SetString(NIOError, "variable not found");
@@ -5788,6 +6027,8 @@ NioVariableObject_str(NioVariableObject *var)
 		free(buf);
 		return pystr;
 	}
+	buf = malloc(bufinc);
+	buflen = bufinc;
 	for(i = 0; i < nfile->file.n_vars; i++) {
 		if(nfile->file.var_info[i]->var_name_quark != varq) {
 			continue;
@@ -5873,7 +6114,7 @@ NioVariableObject_str(NioVariableObject *var)
 				BUF_INSERT(tbuf);
 				sprintf(tbuf,"%s: not a coordinate variable\n",
 					NrmQuarkToString(nfile->file.file_dim_info[dim_ix]->dim_name_quark));
-				BUF_INSERT(tbuf);
+ 				BUF_INSERT(tbuf);
 			}
 		}	
 	}
@@ -6372,7 +6613,7 @@ initnio(void)
   m = Py_InitModule("nio", nio_methods);
   Niomodule = m;
 
-  /* Initialize the NIO library (this function for now appears in the ncl source directory in nio.c) */
+  /* Initialize the NIO library */
 
   NioInitialize();
  

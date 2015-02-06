@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 15907 2015-01-08 22:46:05Z huangwei $
+ *      $Id: NclAdvancedFile.c 15932 2015-02-03 00:04:26Z dbrown $
  */
 
 #include "NclAdvancedFile.h"
@@ -2500,7 +2500,7 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
     
             NclFree(grpnode->grp_rec->grp_node);
             NclFree(grpnode->grp_rec);
-            grpnode->grp_rec->grp_node = NULL;
+            /*grpnode->grp_rec->grp_node = NULL;     --- can't set this because previous statement made the whole structure go away */
             grpnode->grp_rec = NULL;
         }
 

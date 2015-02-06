@@ -37,7 +37,7 @@ fmdl1 = forecast.create_group("model1")
 fmdl2 = forecast.create_group("model2")
 amdl1 = analysis.create_group("model1")
 amdl2 = analysis.create_group("model2")
-
+print file.groups
 print "part 3"
 
 ntimes = 5
@@ -68,12 +68,13 @@ fmdl1.create_chunk_dimension("lon", mlons)
 print "part 5"
 
 #Create some variables.
+#import pdb; pdb.set_trace()
 time  = fmdl1.create_variable("time",  "d", ("time",))
 level = fmdl1.create_variable("level", "i", ("level",))
 lat   = fmdl1.create_variable("lat",   "f", ("lat",))
 lon   = fmdl1.create_variable("lon",   "f", ("lon",))
 temp  = fmdl1.create_variable("temp" , "f", ("time", "level", "lat", "lon"))
-#temp  = fmdl1.create_variable("temp" , "d", ("time", "level", "lat", "lon"))
+#temp  = fmdl2.create_variable("temp" , "d", ("time", "level", "lat", "lon"))
 
 print "part 6"
 
@@ -122,6 +123,10 @@ print('ftemp dtype = ', ftempvalues.dtype)
 print "max: %f, min: %f" %(numpy.amax(tempvalues), numpy.amin(tempvalues))
 print "max: %f, min: %f" %(numpy.amax(ftempvalues), numpy.amin(ftempvalues))
 
+print file.variables
+print file.groups
+print fmdl1.variables
+#import pdb; pdb.set_trace()
 print fmdl1.variables['time'][:]
 print "writing lat"
 lat[:] = latvalues
@@ -180,5 +185,6 @@ vlogical[:] = [0, 1]
 vstring = amdl1.create_variable("vstring", "S1", ("x",))
 vstring[:] = ["abcdef", "XYZ"]
 
+print (file)
 file.close()
 

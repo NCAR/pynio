@@ -49,7 +49,7 @@ forecasts = file.groups['forecasts']
 print "forecasts:\n"
 print forecasts
 
-temp = forecasts.variables['temp'][:]
+temp = forecasts.variables['model1/temp'][:]
 
 print "temp:"
 print temp
