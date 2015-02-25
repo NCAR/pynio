@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 15835 2014-12-02 17:22:03Z huangwei $
+ *      $Id: FileSupport.c 15996 2015-02-25 20:20:48Z dbrown $
  */
 /************************************************************************
 *									*
@@ -59,6 +59,7 @@
 #include "NclMultiDValData.h"
 #include "NclFile.h"
 #include "NclList.h"
+#include "NclGlobalParams.h"
 #include "NclAdvancedFile.h"
 #include "NclGroup.h"
 #include "NclAdvancedGroup.h"
@@ -3470,6 +3471,8 @@ struct _NclMultiDValDataRec *value;
 	NclFileClass fc = NULL;
 
 #ifdef USE_NETCDF4_FEATURES
+	NCLadvancedFileStructure[0] = NCLuseAFS;
+
 	if(NCLadvancedFileStructure[0] ||
 	   NCLadvancedFileStructure[_NclNewHDF5] ||
 	   NCLadvancedFileStructure[_NclNewHE5] ||
@@ -3625,8 +3628,27 @@ NclQuark _NclFindFileExt(NclQuark path, NclQuark *fname_q, NhlBoolean *is_http,
 
 	int i;
 
-        char *ext_list[] = {".nc", ".cdf", ".nc3", ".nc4", ".netcdf", ".hdf", ".h4", ".hdf4", ".h5", ".hdf5", ".grib1", ".grib2",
-			    ".he", ".he2", ".he4", ".hdfeos", ".he5", ".hdfeos5", ".shp", ".grb", ".grb1", ".grb2", ".gr" };
+        char *ext_list[] = {".nc", ".cdf", ".nc3", ".nc4",
+#ifdef BuildHDF4
+		            ".hdf", ".h4", ".hdf4",
+#ifdef BuildHDFEOS
+			    ".he", ".he2", ".he4", ".hdfeos",
+#endif
+#endif
+#ifdef BuildHDF5
+			    ".h5", ".hdf5",
+#ifdef BuildHDFEOS5
+			    ".he5", ".hdfeos5",
+#endif
+#endif
+#ifdef BuildGDAL
+			    ".shp",
+#endif
+#ifdef BuildGRIB2
+			    ".grib2", ".grb2",
+#endif
+			    ".grib1", ".grb1", ".grb", ".gr",
+	                    ".netcdf"};
 
 	int n = -1;
 	int sizeofextlist = sizeof(ext_list) / sizeof(ext_list[0]);
@@ -3744,15 +3766,15 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
                           , "gr"
 #ifdef BuildHDF5
                           , "h5"
-#endif
 #ifdef BuildHDFEOS5
 			   , "he5"
 #endif
+#endif
 #ifdef BuildHDF4
 			   , "hdf"
-#endif
 #ifdef BuildHDFEOS
 			   , "he2"
+#endif
 #endif
 			   };
 
@@ -3787,6 +3809,10 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
 #ifdef BuildHDF4
 	else if((0 == strcmp(fext, "hdf")) || (0 == strcmp(fext, "h4")) || (0 == strcmp(fext, "hd")))
 		ori_file_ext_q = NrmStringToQuark("hdf");
+#ifdef BuildHDFEOS
+	else if((0 == strcmp(fext, "hdfeos")) || (0 == strcmp(fext, "he")) || (0 == strcmp(fext, "he4")))
+		ori_file_ext_q = NrmStringToQuark("he2");
+#endif
 #endif
 #ifdef BuildHDF5
 	else if(0 == strcmp(fext, "hdf5") || 0 == strcmp(fext, "h5"))
@@ -3796,11 +3822,6 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
                                              + NCLadvancedFileStructure[0];
 		ori_file_ext_q = NrmStringToQuark("h5");
 	}
-#endif
-#ifdef BuildHDFEOS
-	else if((0 == strcmp(fext, "hdfeos")) || (0 == strcmp(fext, "he")) || (0 == strcmp(fext, "he4")))
-		ori_file_ext_q = NrmStringToQuark("he2");
-#endif
 #ifdef BuildHDFEOS5
 	else if(0 == strcmp(fext, "hdfeos5") || (0 == strcmp(fext, "he5")))
 	{
@@ -3809,6 +3830,7 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
 					     + NCLadvancedFileStructure[_NclNewHE5]
 					     + NCLadvancedFileStructure[0];
 	}
+#endif
 #endif
 
 	strcpy(filename, NrmQuarkToString(the_path));
@@ -4072,6 +4094,8 @@ NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
         struct stat file_stat;
 	short use_advanced_file_structure = 0;
 
+	NCLadvancedFileStructure[0] = NCLuseAFS;
+
 	file_ext_q = _NclFindFileExt(path, &fname_q, &is_http, &end_of_name, &len_path, rw_status, &use_advanced_file_structure);
 
 	if(! is_http)
@@ -4238,6 +4262,8 @@ NclAdvancedFile _NclCreateAdvancedFile(NclObj inst, NclObjClass theclass, NclObj
 	int len_path;
 
 	short use_advanced_file_structure = 0;
+
+	NCLadvancedFileStructure[0] = NCLuseAFS;
 
 	file_ext_q = _NclFindFileExt(path, &fname_q, &is_http, &end_of_name, &len_path, rw_status, &use_advanced_file_structure);
 
@@ -4947,6 +4973,22 @@ NhlErrorTypes InitializeFileOptions(NclFileOption *options)
 				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypeintClass);
 	options[Ncl_GRIB_CACHE_SIZE].valid_values = NULL;
 	/* End of options */
+
+	/* Binary option KeepOpen */
+	options[Ncl_KEEP_OPEN].format = NrmStringToQuark("bin");
+	options[Ncl_KEEP_OPEN].name = NrmStringToQuark("keepopen");
+	len_dims = 1;
+	lval = (logical*) NclMalloc(sizeof(logical));
+	*lval = False;
+	options[Ncl_KEEP_OPEN].value = 
+		_NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,(void *)lval,
+				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypelogicalClass);
+	lval = (logical*) NclMalloc(sizeof(logical));
+	*lval = True;
+	options[Ncl_KEEP_OPEN].def_value = 
+		_NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,(void *)lval,
+				    NULL,1,&len_dims,PERMANENT,NULL,(NclTypeClass)nclTypelogicalClass);
+	options[Ncl_KEEP_OPEN].valid_values = NULL;
 
 	return ret;
 }
