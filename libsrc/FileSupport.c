@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 15996 2015-02-25 20:20:48Z dbrown $
+ *      $Id: FileSupport.c 15998 2015-02-26 00:07:12Z dbrown $
  */
 /************************************************************************
 *									*
@@ -25,10 +25,12 @@
 #include "niohlu.h"
 #include "nioNresDB.h"
 #include "nioError.h"
+short    NCLuseAFS;
 #else
 #include <ncarg/hlu/hlu.h>
 #include <ncarg/hlu/NresDB.h>
 #include "ncarg/hlu/Error.h"
+#include "NclGlobalParams.h"
 #endif
 
 #include <ctype.h>
@@ -59,7 +61,6 @@
 #include "NclMultiDValData.h"
 #include "NclFile.h"
 #include "NclList.h"
-#include "NclGlobalParams.h"
 #include "NclAdvancedFile.h"
 #include "NclGroup.h"
 #include "NclAdvancedGroup.h"
