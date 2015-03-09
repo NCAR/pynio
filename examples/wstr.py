@@ -10,7 +10,9 @@ file = Nio.open_file(fn, mode="r")
 print "file <%s>:" %(fn)
 print file
 
-strs = file.variables['universal_declaration_of_human_rights'][:]
+varname = 'universal_declaration_of_human_rights'
+#strs = file.variables['universal_declaration_of_human_rights'][:]
+strs = file.variables[varname].get_value()
 
 #print "strs:"
 #print  strs
@@ -42,7 +44,7 @@ nstrings = strf.create_dimension('nstrings', len(strs))
 
 newstrs = strf.create_variable("newstrs", "S1", ("nstrings", ))
 
-newstrs[:] = strs
+newstrs[:] = strs[:]
 
 #print "strf after add strs:"
 #print strf

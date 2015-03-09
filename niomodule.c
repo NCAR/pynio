@@ -594,9 +594,15 @@ typecode(int type)
   case PyArray_STRING:
 	  buf[0] = PyArray_STRINGLTR;
 	  break;
+#if 0
+  case PyArray_CHAR:
+	  buf[0] = PyArray_STRINGLTR;
+	  break;
+#else
   case PyArray_CHAR:
 	  strcpy(buf,"S1");
 	  break;
+#endif
   case PyArray_VLEN:
           buf[0] = PyArray_VLENLTR;
           break;
@@ -1930,7 +1936,7 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   ltype = type[0];
   if (strlen(type) > 1) {
 	  if (type[0] == 'S' && type[1] == '1') {
-		  ltype  = 'c';
+		  ltype  = 'S';
 	  }
 	  else {
 		  sprintf (errbuf,"Cannot create variable (%s): string arrays not yet supported on write",name);
@@ -2668,10 +2674,10 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 static PyObject *
 NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
 {
-  PyObject *obj;
+  PyObject *obj = NULL;
   int i;
   NrmQuark qstr;
-  char *str;
+  char *str = NULL;
   NclFile nfile = (NclFile) self->id;
 
   if (!PyArg_ParseTuple(args, "O", &obj))
@@ -2694,9 +2700,10 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
 			  dimrec = grpnode->dim_rec;
 		  }
 		  else {
-			  char *cp;
-			  char *dimname, *dimpath;
-			  NioFileObject *grp;
+			  char *cp = NULL;
+			  char *dimname = NULL;
+			  char *dimpath = NULL;
+			  NioFileObject *grp = NULL;
 			  cp = strrchr(str,'/');
 			  if (cp >= str) {
 				  dimname = cp + 1;
@@ -4203,7 +4210,6 @@ NioVariable_GetShape(NioVariableObject *var)
       NclFile nfile = (NclFile) var->file->id;
       if(nfile->file.advanced_file_structure)
       {
-          NclAdvancedFile advfile = (NclAdvancedFile) var->file->id;
           NclFileDimRecord* grpdimrec;
           NclFileDimNode*   grpdimnode;
           NclFileDimRecord* dimrec;
@@ -4295,7 +4301,6 @@ NioVariable_GetSize(NioVariableObject *var)
       NclFile nfile = (NclFile) var->file->id;
       if(nfile->file.advanced_file_structure)
       {
-          NclAdvancedFile advfile = (NclAdvancedFile) var->file->id;
           NclFileDimRecord* grpdimrec;
           NclFileDimNode*   grpdimnode;
           NclFileDimRecord* dimrec;
@@ -4827,8 +4832,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  if(nfile->file.advanced_file_structure)
 			  {
 			  	NclFileVarNode* varnode;
-			  	NclAdvancedFile advfile = (NclAdvancedFile) self->file->id;
-				NclFileGrpNode*   grpnode;
+				NclFileGrpNode* grpnode;
 
 				grpnode = (NclFileGrpNode*)self->file->gnode;
 				varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
@@ -5079,7 +5083,7 @@ static int
 NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *value)
 {
   ng_size_t *dims = NULL;
-  PyArrayObject *array;
+  PyArrayObject *array = NULL;
   int i, n_dims;
   Py_ssize_t nitems,var_el_count;
   int error = 0;
@@ -5088,15 +5092,15 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   NrmQuark qtype;
   ng_size_t scalar_size = 1;
   NclFile nfile = (NclFile) self->file->id;
-  NclMultiDValData md;
+  NclMultiDValData md = NULL;
   NhlErrorTypes nret;
   int select_all = 1;
   Py_ssize_t array_el_count = 1;
   int undefined_dim = -1, dim_undef = -1;
 
-  NclFileDimRecord* dimrec;
-  NclFileDimNode*   dimnode;
-  NclFileVarNode*   varnode;
+  NclFileDimRecord* dimrec  = NULL;
+  NclFileDimNode*   dimnode = NULL;
+  NclFileVarNode*   varnode = NULL;
 
   /* this code assumes ng_size_t and Py_ssize_t are basically equivalent */
   /* update shape */
@@ -5262,7 +5266,8 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  else
 				  break;
 		  }
-		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
+		  if(NCL_char != varnode->type)
+		      array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
 	  }
   }
   else {
@@ -5515,6 +5520,36 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                                      (NclObjClass)((the_obj_type & NCL_VAL_TYPE_MASK) ?
                                      _NclTypeEnumToTypeClass(the_obj_type):NULL));
               }
+          }
+          else if(NCL_string == varnode->type)
+          {
+              NrmQuark *qval;
+              char *cptr = NULL;
+              char *cval = NULL;
+              ng_size_t n_items = 1;
+              ng_size_t i;
+
+              for(i = 0; i < n_dims; i++)
+                  n_items *= dims[i];
+
+              qval = (NrmQuark*)NclCalloc(n_items, sizeof(NrmQuark));
+
+	      varnode->type = NCL_string;
+             /*
+              qval[0] = NrmStringToQuark((char*)array->data);
+	     */
+              cptr = (char*)array->data;
+              for(i = 0; i < n_items; i++)
+	      {
+                  cval = cptr + i*array->descr->elsize;
+                  /*fprintf(stderr, "\tcval[%ld] = %s\n", i, cval);*/
+                  qval[i] = NrmStringToQuark(cval);
+	      }
+
+              md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+			   		qval,NULL,n_dims,
+			   		array->nd == 0 ? &scalar_size : dims,
+					TEMPORARY,NULL,_NclNameToTypeClass(qtype));
           }
           else
               md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
@@ -6014,7 +6049,6 @@ NioVariableObject_str(NioVariableObject *var)
 	if(nfile->file.advanced_file_structure)
 	{
 		NclFileVarNode* varnode;
-		NclFileGrpNode*   grpnode;
 		NclAdvancedFile advfile = (NclAdvancedFile) file->id;
 
 		varnode = getVarFromGroup(advfile->advancedfile.grpnode, varq);
