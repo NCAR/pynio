@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 15956 2015-02-13 16:06:55Z huangwei $
+ *      $Id: NclAdvancedFile.c 16124 2015-03-25 17:28:52Z dbrown $
  */
 
 #include "NclAdvancedFile.h"
@@ -600,8 +600,10 @@ void _justPrintTypeValAtPoint(FILE *fp, NclBasicDataTypes type, void *val, size_
              break;
             }
         default:
+#if 0
             fprintf(stderr, "\nIn file: %s, line: %d\n", __FILE__, __LINE__);
             fprintf(stderr, "\tUNKNOWN type: 0%o, val (in char): <%s>", type, (char *)val);
+#endif
             break;
     }
 
@@ -659,7 +661,8 @@ void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord 
                 {
                     _justPrintTypeVal(fp, NCL_char, "\", \"", 0);
                 }
-                _justPrintTypeVal(fp, NCL_string, compnode->value, 0);
+                if(NULL != compnode->value)
+                    _justPrintTypeVal(fp, NCL_string, compnode->value, 0);
               /*
                *_justPrintTypeVal(fp, compnode->type, compnode->value, 0);
                */
@@ -768,6 +771,7 @@ void _printNclFileAttRecord(FILE *fp, NclAdvancedFile thefile, NclFileAttRecord 
         if(NULL == attnode->value)
         {
             tmp_md = _NclFileReadAtt((NclFile)thefile,attnode->name,NULL);
+            attnode->value = NclCalloc(attnode->n_elem, _NclSizeOf(attnode->type));
             memcpy(attnode->value, tmp_md->multidval.val,
                    attnode->n_elem * _NclSizeOf(attnode->type));
         }
@@ -1038,6 +1042,8 @@ void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *var
         for(i = 0; i < dim_rec->n_dims; i++)
         {
             dimnode = &(dim_rec->dim_node[i]);
+            if(0 < dimnode->name)
+            {
             dimvarnode = _getVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, dimnode->name);
 
             if(NULL != dimvarnode)
@@ -1092,6 +1098,7 @@ void _printNclFileVarNode(FILE *fp, NclAdvancedFile thefile, NclFileVarNode *var
                 _justPrintTypeVal(fp, NCL_char, "..", 0);
                 _justPrintTypeVal(fp, NCL_float, &eval, 0);
                 _justPrintTypeVal(fp, NCL_char, "]", 1);
+            }
             }
         }
     }
@@ -1484,7 +1491,7 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
     var_node = &(var_rec->var_node[n]);
 
     strcpy(buffer, NrmQuarkToString(grpnode->real_name));
-    strcat(buffer, "/");
+  /*strcat(buffer, "/");*/
     strcat(buffer, NrmQuarkToString(name));
     var_node->name = name;
     var_node->real_name = NrmStringToQuark(buffer);
@@ -1523,6 +1530,8 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
         var_node->is_chunked = grpnode->is_chunked;
 
         dim_rec = grpnode->chunk_dim_rec;
+        if(NULL != dim_rec)
+        {
         for(n = 0; n < n_dims; n++)
         {
             var_dim_node = &(var_node->chunk_dim_rec->dim_node[n]);
@@ -1541,6 +1550,7 @@ NhlErrorTypes _addNclVarNodeToGrpNode(NclFileGrpNode *grpnode, NclQuark name,
                      break;
                 }
             }
+        }
         }
     }
 
@@ -2197,8 +2207,47 @@ NclFileVarNode *_getVarNodeFromThisGrpNode(NclFileGrpNode *grpnode,
     return NULL;
 }
 
-NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
-                        NclQuark varname)
+NclFileVarNode *_getVarNodeFromNclFileGrpNode_asVar(NclFileGrpNode *grpnode,
+                                                    NclQuark varname)
+{
+    int n;
+    NclFileVarNode *varnode = NULL;
+    NclFileGrpNode *tmpgrpnode = NULL;
+
+    if(NULL != grpnode->var_rec)
+    {
+        for(n = 0; n < grpnode->var_rec->n_vars; n++)
+        {
+            varnode = &(grpnode->var_rec->var_node[n]);
+
+            if(NULL == varnode)
+                continue;
+
+            if((varname == varnode->name) || (varname == varnode->real_name))
+                return varnode;
+        }
+    }
+
+    if(NULL != grpnode->grp_rec)
+    {
+        for(n = 0; n < grpnode->grp_rec->n_grps; n++)
+        {
+            tmpgrpnode = grpnode->grp_rec->grp_node[n];
+            varnode = _getVarNodeFromNclFileGrpNode_asVar(tmpgrpnode, varname);
+
+            if(NULL == varnode)
+                continue;
+
+            if((varname == varnode->name) || (varname == varnode->real_name))
+                return varnode;
+        }
+    }
+
+    return NULL;
+}
+
+NclFileVarNode *_getVarNodeFromNclFileGrpNode_asCompound(NclFileGrpNode *grpnode,
+                                                         NclQuark varname)
 {
     int n;
     NclFileGrpNode *tmpgrpnode;
@@ -2207,21 +2256,9 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
     char *struct_name = NULL;
     char *component_name = NULL;
 
-  /*
-   *fprintf(stderr, "\nHit _getVarNodeFromNclFileGrpNode, file: %s, line: %d\n", __FILE__, __LINE__);
-   *fprintf(stderr, "\tgrpname: <%s>\n", NrmQuarkToString(grpnode->name));
-   *fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(varname));
-   */
-
     component_name = _getComponentName(NrmQuarkToString(varname), &struct_name);
     if(NULL != component_name)
     {
-      /*
-       *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tvarname: <%s>\n", NrmQuarkToString(varname));
-       *fprintf(stderr, "\tcomponent_name: <%s>, struct_name: <%s>\n",
-       *                   component_name, struct_name);
-       */
         vn = NrmStringToQuark(struct_name);
         free(component_name);
         free(struct_name);
@@ -2232,11 +2269,6 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
         for(n = 0; n < grpnode->var_rec->n_vars; n++)
         {
             varnode = &(grpnode->var_rec->var_node[n]);
-          /*
-           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-           *fprintf(stderr, "\tvar no %d, name: <%s>, real_name: <%s>\n", n, 
-           *        NrmQuarkToString(varnode->name), NrmQuarkToString(varnode->real_name));
-           */
 
             if(NULL == varnode)
                 continue;
@@ -2251,16 +2283,10 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
         for(n = 0; n < grpnode->grp_rec->n_grps; n++)
         {
             tmpgrpnode = grpnode->grp_rec->grp_node[n];
-            varnode = _getVarNodeFromNclFileGrpNode(tmpgrpnode, vn);
+            varnode = _getVarNodeFromNclFileGrpNode_asVar(tmpgrpnode, vn);
 
             if(NULL == varnode)
                 continue;
-
-          /*
-           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-           *fprintf(stderr, "\tgrp no %d, name: <%s>\n", n, 
-           *        NrmQuarkToString(tmpgrpnode->name));
-           */
 
             if((vn == varnode->name) || (vn == varnode->real_name))
                 return varnode;
@@ -2268,6 +2294,18 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
     }
 
     return NULL;
+}
+
+NclFileVarNode *_getVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
+                                              NclQuark varname)
+{
+    NclFileVarNode *varnode = _getVarNodeFromNclFileGrpNode_asVar(grpnode, varname);
+
+    if(NULL != varnode)
+        return varnode;
+
+    varnode = _getVarNodeFromNclFileGrpNode_asCompound(grpnode, varname);
+    return varnode;
 }
 
 NclFileVarNode *_getCoordVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
@@ -2288,6 +2326,19 @@ NclFileVarNode *_getCoordVarNodeFromNclFileGrpNode(NclFileGrpNode *grpnode,
         for(n = 0; n < grpnode->coord_var_rec->n_vars; n++)
         {
             varnode = grpnode->coord_var_rec->var_node[n];
+
+            if(NULL == varnode)
+                continue;
+
+            if((vn == varnode->name) || (vn == varnode->real_name))
+                return varnode;
+        }
+    }
+    else if(NULL != grpnode->var_rec)
+    {
+        for(n = 0; n < grpnode->var_rec->n_vars; n++)
+        {
+            varnode = &grpnode->var_rec->var_node[n];
 
             if(NULL == varnode)
                 continue;
@@ -2448,7 +2499,12 @@ void FileDestroyAttRecord(NclFileAttRecord *att_rec)
 	}
         if(NULL != att_rec->att_node)
         {
-            for(n = 0; n < att_rec->n_atts; n++)
+          /*
+           *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "n_atts: %d, max_atts: %d\n", att_rec->n_atts, att_rec->max_atts);
+           */
+          /*for(n = 0; n < att_rec->n_atts; n++)*/
+            for(n = 0; n < att_rec->max_atts; n++)
             {
                 attnode = &(att_rec->att_node[n]);
                 if((! has_att_obj) && NULL != attnode->value)
@@ -2539,7 +2595,12 @@ void FileDestroyVarRecord(NclFileVarRecord *var_rec)
     {
         if(NULL != var_rec->var_node)
         {
-            for(n = 0; n < var_rec->n_vars; n++)
+          /*
+           *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "n_vars: %d, max_vars: %d\n", var_rec->n_vars, var_rec->max_vars);
+           */
+          /*for(n = 0; n < var_rec->n_vars; n++)*/
+            for(n = 0; n < var_rec->max_vars; n++)
             {
                 varnode = &(var_rec->var_node[n]);
 
@@ -2570,17 +2631,26 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
     {
         if(NULL != grpnode->grp_rec)
         {
-            for(n = 0; n < grpnode->grp_rec->n_grps; n++)
+          /*
+           *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "n_grps: %d, max_grps: %d\n", grpnode->grp_rec->n_grps, grpnode->grp_rec->max_grps);
+           */
+          /*for(n = 0; n < grpnode->grp_rec->n_grps; n++)*/
+            for(n = 0; n < grpnode->grp_rec->max_grps; n++)
                 FileDestroyGrpNode(grpnode->grp_rec->grp_node[n]);
     
             NclFree(grpnode->grp_rec->grp_node);
             NclFree(grpnode->grp_rec);
-            /*grpnode->grp_rec->grp_node = NULL;     --- can't set this because previous statement made the whole structure go away */
             grpnode->grp_rec = NULL;
         }
 
         if(NULL != grpnode->options)
+	{
+            for(n = 0; n < grpnode->n_options; ++n)
+                if(NULL != grpnode->options[n].values)
+                    NclFree(grpnode->options[n].values);
             NclFree(grpnode->options);
+	}
 
         grpnode->options = NULL;
 
@@ -2597,11 +2667,31 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
         FileDestroyVarRecord(grpnode->var_rec);
         grpnode->var_rec = NULL;
 
-      /*
-       *NclFree(grpnode);
-       */
+        if(NULL != grpnode->parent)
+            grpnode->parent = NULL;
+
+        NclFree(grpnode);
+        grpnode = NULL;
     }
-    grpnode = NULL;
+}
+
+void FileDestroyGrpVarNode(NclFileGrpNode *grpnode)
+{
+	int n;
+
+        if(NULL != grpnode->options)
+	{
+		for(n = 0; n < grpnode->n_options; ++n)
+			if(NULL != grpnode->options[n].values)
+				NclFree(grpnode->options[n].values);
+		NclFree(grpnode->options);
+	}
+
+        grpnode->options = NULL;
+
+        NclFree(grpnode);
+        grpnode = NULL;
+	return;
 }
 
 void AdvancedFileDestroy(NclObj self)
@@ -2610,13 +2700,12 @@ void AdvancedFileDestroy(NclObj self)
     NclRefList *p, *pt;
 
     _NclUnRegisterObj((NclObj)self);
-    if(thefile->advancedfile.format_funcs->free_file_rec != NULL) {
+    if(thefile->advancedfile.format_funcs->free_file_rec != NULL && thefile->advancedfile.grpnode->parent == NULL) {
 	    if(thefile->advancedfile.grpnode != NULL)
 		    (*thefile->advancedfile.format_funcs->free_file_rec)(thefile->advancedfile.grpnode);
     }
-    FileDestroyGrpNode(thefile->advancedfile.grpnode);
-
-    thefile->advancedfile.grpnode = NULL;
+    else
+        FileDestroyGrpVarNode(thefile->advancedfile.grpnode);
 
     if(thefile->obj.cblist != NULL)
     {
@@ -2673,15 +2762,6 @@ static int _NclFileFillHLFS(NclAdvancedFile file_out, int is_http,
 
         file_out->advancedfile.grpnode = (NclFileGrpNode *)(*file_out->advancedfile.format_funcs->open_file)
                       (file_out->advancedfile.grpnode, the_real_path, rw_status);
-        if(NULL == file_out->advancedfile.grpnode)
-        {
-            NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                "_NclFileFillHLFS: Could not open (%s)",
-                NrmQuarkToString(the_real_path)));
-            if(need_free_file) 
-                NclFree((void*)file_out);
-            return (1);
-        }
     }
     else
     {
@@ -2697,14 +2777,6 @@ static int _NclFileFillHLFS(NclAdvancedFile file_out, int is_http,
                 file_out->advancedfile.grpnode = (*file_out->advancedfile.format_funcs->create_file)
                               (file_out->advancedfile.grpnode,
                                NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))));
-                if(! file_out->advancedfile.grpnode)
-                {
-                    NhlPError(NhlFATAL,NhlEUNKNOWN,"Could not create (%s)",
-                        NrmQuarkToString(the_real_path));
-                    if(need_free_file) 
-                        NclFree((void*)file_out);
-                    return (1);
-                }
             }
             else
             {
@@ -2742,15 +2814,6 @@ static int _NclFileFillHLFS(NclAdvancedFile file_out, int is_http,
                                (file_out->advancedfile.grpnode,
                                 NrmStringToQuark(_NGResolvePath(NrmQuarkToString(the_real_path))),
                                 rw_status);
-                if(! file_out->advancedfile.grpnode)
-                {
-                    NHLPERROR((NhlFATAL,NhlEUNKNOWN,
-                        "_NclFileFillHLFS: Could not open (%s)",
-                        NrmQuarkToString(the_real_path)));
-                    if(need_free_file) 
-                        NclFree((void*)file_out);
-                    return (1);
-                }
             }
         }
         else
@@ -4544,7 +4607,6 @@ static struct _NclMultiDValDataRec* MyAdvancedFileReadVarValue(NclFile infile, N
                     }
                 }
                 n_dims_output = n_dims_input;
-                fprintf(stdout,"Temporary comment 9\n");
                 if(sel_ptr != NULL)
                 {
                     i = 0;
@@ -4888,12 +4950,14 @@ static struct _NclVarRec *AdvancedFileReadVar(NclFile infile, NclQuark var_name,
             char cvn[1024];
             char *varstr = NrmQuarkToString(var_name);
             char *cptr = strrchr(varstr, '/');
+	    int head_leng = 0;
 
             if(NULL != cptr)
             {
                 i = 1 + strlen(varstr) - strlen(cptr);
                 strncpy(cvnhead, varstr, i);
                 cvnhead[i] = '\0';
+                head_leng = i;
 
               /*
                *fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -4905,23 +4969,26 @@ static struct _NclVarRec *AdvancedFileReadVar(NclFile infile, NclQuark var_name,
             {
                 for(i = 0 ; i < tmp_md->multidval.n_dims; i++)
                 {
-                    if(NULL == cptr)
-                        coordvarname = dim_info[i].dim_quark;
-                    else
+                    if(0 < dim_info[i].dim_quark)
                     {
-                        strcpy(cvn, cvnhead);
-                        strcat(cvn, NrmQuarkToString(dim_info[i].dim_quark));
-                        coordvarname = NrmStringToQuark(cvn);
-                    }
+                        if(head_leng)
+			{
+                            strcpy(cvn, cvnhead);
+                            strcat(cvn, NrmQuarkToString(dim_info[i].dim_quark));
+                            coordvarname = NrmStringToQuark(cvn);
+			}
+			else
+                            coordvarname = dim_info[i].dim_quark;
 
-                    coordnode = _getCoordVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coordvarname);
-                    if(NULL != coordnode)
-                    {
-                        tmp_var = _NclFileReadCoord((NclFile)thefile,coordvarname,NULL);
-                        if(tmp_var != NULL)
-                            coords[i] = tmp_var->obj.id;
-                        else
-                            coords[i] = -1;
+                        coordnode = _getCoordVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, coordvarname);
+                        if(NULL != coordnode)
+                        {
+                            tmp_var = _NclFileReadCoord((NclFile)thefile,coordvarname,NULL);
+                            if(tmp_var != NULL)
+                                coords[i] = tmp_var->obj.id;
+                            else
+                                coords[i] = -1;
+                        }
                     }
                     else
                     {
@@ -4942,14 +5009,14 @@ static struct _NclVarRec *AdvancedFileReadVar(NclFile infile, NclQuark var_name,
                 {
                     dimnode = &(varnode->dim_rec->dim_node[i]);
 
-                    if(NULL == cptr)
-                        coordvarname = dimnode->name;
-                    else
+                    if(head_leng)
                     {
                         strcpy(cvn, cvnhead);
                         strcat(cvn, NrmQuarkToString(dimnode->name));
                         coordvarname = NrmStringToQuark(cvn);
                     }
+                    else
+                        coordvarname = dimnode->name;
 
                     coordnode = _getCoordVarNodeFromNclFileGrpNode(thefile->advancedfile.grpnode,
                                                                    coordvarname);
@@ -8269,9 +8336,15 @@ static struct _NclMultiDValDataRec *AdvancedFileReadAtt(NclFile infile, NclQuark
         }
     }
 
+#if 1
+    NHLPERROR((NhlINFO,NhlEUNKNOWN,
+        "AdvancedFileReadVarAtt: (%s) is not an attribute of (%s)",
+         NrmQuarkToString(attname),NrmQuarkToString(thefile->advancedfile.fname)));
+#else
     NHLPERROR((NhlWARNING,NhlEUNKNOWN,
         "AdvancedFileReadVarAtt: (%s) is not an attribute of (%s)",
          NrmQuarkToString(attname),NrmQuarkToString(thefile->advancedfile.fname)));
+#endif
 
     return(_NclCreateMissing());
 }
@@ -8680,7 +8753,6 @@ static NhlErrorTypes AdvancedFileWriteGrp(NclFile infile, NclQuark grpname)
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
             "AdvancedFileWriteGrp: file (%s) was opened for reading only, can not write",
              NrmQuarkToString(thefile->advancedfile.fname)));
-        fprintf(stderr, "Leave AdvancedFileWriteGrp, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
@@ -8718,7 +8790,6 @@ NhlErrorTypes AdvancedFileCreateVlenType(NclFile infile, NclQuark vlen_name, Ncl
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
             "AdvancedFileCreateVlenType: file (%s) was opened for reading only, can not write",
              NrmQuarkToString(thefile->advancedfile.fname)));
-        fprintf(stderr, "Leave AdvancedFileCreateVlenType, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
@@ -8856,7 +8927,6 @@ NhlErrorTypes AdvancedFileCreateOpaqueType(NclFile infile, NclQuark opaque_name,
         NHLPERROR((NhlFATAL,NhlEUNKNOWN,
             "AdvancedFileCreateOpaqueType: file (%s) was opened for reading only, can not write",
              NrmQuarkToString(thefile->advancedfile.fname)));
-        fprintf(stderr, "Leave AdvancedFileCreateOpaqueType, file: %s, line: %d\n\n", __FILE__, __LINE__);
         return (NhlFATAL);
     }
 
@@ -8956,6 +9026,7 @@ NclQuark *_NclGetGrpNames(void *therec, int *num_grps)
     NclFileGrpNode *tmpgrpnode = NULL;
     NclQuark *out_quarks = NULL;
     NclQuark *tmp_quarks = NULL;
+    char carr[2048];
     int n, ng;
     int i;
 
@@ -8972,7 +9043,22 @@ NclQuark *_NclGetGrpNames(void *therec, int *num_grps)
             for(i = 0; i < grpnode->grp_rec->n_grps; ++i)
             {
 #if 1
-                out_quarks[i] = grpnode->grp_rec->grp_node[i]->real_name;
+                strcpy(carr, NrmQuarkToString(grpnode->grp_rec->grp_node[i]->real_name));
+                n = strlen(carr) - 1;
+              /*
+               *fprintf(stderr, "\nIn file: %s, line: %d\n", __FILE__, __LINE__);
+               *fprintf(stderr, "\tori group No. %d: <%s>, strlen = %d\n", i, carr, n);
+               */
+                if(carr[n] == '/')
+                {
+                    carr[n] = '\0';
+                  /*
+                   *fprintf(stderr, "\tnew group No. %d: <%s>, strlen = %d\n", i, carr, n);
+                   */
+                    out_quarks[i] = NrmStringToQuark(carr);
+                }
+                else
+                    out_quarks[i] = grpnode->grp_rec->grp_node[i]->real_name;
 #else
                 out_quarks[i] = grpnode->grp_rec->grp_node[i]->name;
 #endif

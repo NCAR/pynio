@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 15998 2015-02-26 00:07:12Z dbrown $
+ *      $Id: FileSupport.c 16045 2015-03-06 01:29:16Z dbrown $
  */
 /************************************************************************
 *									*
@@ -4038,6 +4038,7 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
 			FILE *fd = fopen(filename, "r");
 
 			_g2_seekgb(fd, seek, (size_t)32 * GBUFSZ_T, &lskip, &lgrib);
+  			fclose(fd);
 			if (lgrib == 0)
 				break;
 
@@ -4057,6 +4058,7 @@ NclQuark _NclVerifyFile(NclQuark the_path, NclQuark pre_file_ext_q, short *use_a
 				int version;
 				int fid = open(filename, O_RDONLY);
 				int ret = GetNextGribOffset(fid,&offset,&size,offset,&nextoff,&version);
+				close(fid);
                         	if((ret != GRIBEOF) && (ret != GRIBERROR))
                         	{
                                 	file_ext_q = cur_ext_q;
@@ -4480,7 +4482,7 @@ NhlErrorTypes UpdateDims(NclFile thefile)
 	NclQuark *name_list;
 	int n_names;
 	int i;
-	int index;
+	int index = -1;
 
 	name_list = (*thefile->file.format_funcs->get_dim_names)(thefile->file.private_rec,&n_names);
 	thefile->file.n_file_dims = n_names;
@@ -4489,7 +4491,8 @@ NhlErrorTypes UpdateDims(NclFile thefile)
 			NclFree(thefile->file.file_dim_info[i]);
 		thefile->file.file_dim_info[i] = (thefile->file.format_funcs->get_dim_info)
 			(thefile->file.private_rec,name_list[i]);
-		index = _NclFileIsVar(thefile,name_list[i]);
+		if(thefile->file.n_vars)
+		    index = _NclFileIsVar(thefile,name_list[i]);
 		if(index > -1 && thefile->file.var_info[index]->num_dimensions == 1) {
 			thefile->file.coord_vars[i] = thefile->file.var_info[index];
 		}

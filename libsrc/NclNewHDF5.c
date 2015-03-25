@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 15839 2014-12-02 23:06:43Z huangwei $
+*ID: $Id: NclNewHDF5.c 16121 2015-03-23 17:33:29Z huangwei $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
@@ -65,12 +65,9 @@
 static NrmQuark Qmissing_val;
 static NrmQuark Qfill_val;
 
-#define H5_USE_CACHE_OPT         0
-#define H5_COMPRESSION_LEVEL_OPT 1
-#define H5_CACHE_SIZE_OPT        2
-#define H5_CACHE_NELEMS_OPT      3
-#define H5_CACHE_PREEMPTION_OPT  4
-#define H5_NUM_OPTIONS           5
+#define NUMPOSDIMNAMES	6
+
+NclQuark possibleDimNames[NUMPOSDIMNAMES];
 
 #ifndef FALSE
 #define FALSE           0
@@ -135,7 +132,8 @@ typedef struct
 
 void *H5OpenFile(void *rootgrp, NclQuark path, int status);
 static NclBasicDataTypes string2NclType(char* name);
-static int _buildH5dimlist(NclFileGrpNode **rootgrp);
+static void _buildH5dimlist(NclFileGrpNode **rootgrp);
+static int _updateH5attributes(NclFileGrpNode **rootgrp);
 static NhlErrorTypes _addH5dim(NclFileDimRecord **grpdimrec, NclQuark dimname,
                                ng_size_t dimsize, int is_unlimited);
 static NclFileEnumRecord *readH5EnumAtt(hid_t type);
@@ -3418,40 +3416,42 @@ static herr_t _recursiveH5check(NclFileGrpNode **rootgrp,
 static int H5InitializeOptions(NclFileGrpNode *grpnode)
 {
     NCLOptions *options;
+    int iv = 0;
+    float fv = 0.0;
 
-    grpnode->n_options = H5_NUM_OPTIONS;
+    grpnode->n_options = Ncl_NUMBER_OF_FILE_OPTIONS;
 
-    options = NclMalloc(grpnode->n_options * sizeof(NCLOptions));
+    possibleDimNames[0] = NrmStringToQuark("coordinates");
+    possibleDimNames[1] = NrmStringToQuark("DimensionNames");
+    possibleDimNames[2] = NrmStringToQuark("Dimensions");
+    possibleDimNames[3] = NrmStringToQuark("DIMSCALE");
+    possibleDimNames[4] = NrmStringToQuark("DIMENSION_LIST");
+    possibleDimNames[5] = NrmStringToQuark("HDF4_DIMENSION_LIST");
+
+    options = NclCalloc(grpnode->n_options, sizeof(NCLOptions));
     if (! options)
     {
         NHLPERROR((NhlFATAL,ENOMEM,NULL));
         return 0;
     }
 
-    options[H5_USE_CACHE_OPT].name = NrmStringToQuark("usecache");
-    options[H5_USE_CACHE_OPT].type = NCL_int;
-    options[H5_USE_CACHE_OPT].size = 1;
-    options[H5_USE_CACHE_OPT].values = (void *) 0;
+    options[Ncl_USE_CACHE].name = NrmStringToQuark("usecache");
+    _NclCopyOption(&options[Ncl_USE_CACHE], options[Ncl_USE_CACHE].name, NCL_int, 1, &iv);
 
-    options[H5_COMPRESSION_LEVEL_OPT].name = NrmStringToQuark("compressionlevel");
-    options[H5_COMPRESSION_LEVEL_OPT].type = NCL_int;
-    options[H5_COMPRESSION_LEVEL_OPT].size = 1;
-    options[H5_COMPRESSION_LEVEL_OPT].values = (void *) -1;
+    iv = -1;
+    options[Ncl_COMPRESSION_LEVEL].name = NrmStringToQuark("compressionlevel");
+    _NclCopyOption(&options[Ncl_COMPRESSION_LEVEL], options[Ncl_COMPRESSION_LEVEL].name, NCL_int, 1, &iv);
 
-    options[H5_CACHE_SIZE_OPT].name = NrmStringToQuark("cachesize");
-    options[H5_CACHE_SIZE_OPT].type = NCL_int;
-    options[H5_CACHE_SIZE_OPT].size = 1;
-    options[H5_CACHE_SIZE_OPT].values = (void *) 3200000;
+    iv = 3200000;
+    options[Ncl_CACHE_SIZE].name = NrmStringToQuark("cachesize");
+    _NclCopyOption(&options[Ncl_CACHE_SIZE], options[Ncl_CACHE_SIZE].name, NCL_int, 1, &iv);
 
-    options[H5_CACHE_NELEMS_OPT].name = NrmStringToQuark("cachenelems");
-    options[H5_CACHE_NELEMS_OPT].type = NCL_int;
-    options[H5_CACHE_NELEMS_OPT].size = 1;
-    options[H5_CACHE_NELEMS_OPT].values = (void *) 1009;
+    iv = 1009;
+    options[Ncl_CACHE_NELEMS].name = NrmStringToQuark("cachenelems");
+    _NclCopyOption(&options[Ncl_CACHE_NELEMS], options[Ncl_CACHE_NELEMS].name, NCL_int, 1, &iv);
 
-    options[H5_CACHE_PREEMPTION_OPT].name = NrmStringToQuark("cachepreemption");
-    options[H5_CACHE_PREEMPTION_OPT].type = NCL_float;
-    options[H5_CACHE_PREEMPTION_OPT].size = 1;
-    options[H5_CACHE_PREEMPTION_OPT].values = (void *) 0;
+    options[Ncl_CACHE_PREEMPTION].name = NrmStringToQuark("cachepreemption");
+    _NclCopyOption(&options[Ncl_CACHE_PREEMPTION], options[Ncl_CACHE_PREEMPTION].name, NCL_float, 1, &fv);
 
     grpnode->options = options;
     return 0;
@@ -3639,9 +3639,106 @@ NhlErrorTypes _addH5dim(NclFileDimRecord **grpdimrec, NclQuark dimname,
     return ret;
 }
 
-static int _buildH5dimlist(NclFileGrpNode **rootgrp)
+static NclFileAttNode *_get_diminfo_attnode(NclFileVarNode *varnode, NclQuark qattname)
 {
-    int ndims = 0;
+    NclFileAttRecord *attrec  = NULL;
+    NclFileAttNode   *attnode = NULL;
+    int j;
+
+    attrec = varnode->att_rec;
+    if(NULL == attrec)
+        return NULL;
+
+    for(j = 0; j < attrec->n_atts; ++j)
+    {
+        attnode = &(attrec->att_node[j]);
+        if(qattname == attnode->name)
+           return attnode;
+    }
+
+    return NULL;
+}
+
+static int _buildH5VarDimlist(NclFileVarNode *varnode, NclFileDimRecord *grpdimrec)
+{
+    NclFileDimRecord *vardimrec = NULL;
+
+    NclFileDimNode   *vardimnode = NULL;
+    NclFileAttNode   *attnode = NULL;
+    char *ori_str;
+    char *tmp_str;
+    char *result;
+    char delimiter[3] = " ,";
+
+    int dimname_updated = 0;
+    int i, j, n;
+
+    vardimrec = varnode->dim_rec;
+
+    if(NULL == vardimrec)
+        return 0;
+
+  /*
+   *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+   *fprintf(stderr, "\tvar name: <%s>, ndims = %d\n",
+   *                   NrmQuarkToString(varnode->name), vardimrec->n_dims);
+   */
+
+    for(j = 0; j < vardimrec->n_dims; ++j)
+    {
+        vardimnode = &(vardimrec->dim_node[j]);
+        if(0 > vardimnode->name)
+        {
+            if(NULL != grpdimrec)
+            {
+                for(i = 0; i < grpdimrec->n_dims; ++i)
+                {
+                    if(vardimnode->size == grpdimrec->dim_node[i].size)
+                    {
+                        vardimnode->name = grpdimrec->dim_node[i].name;
+                        ++dimname_updated;
+                    }
+                }
+            }
+        }
+    }
+
+    if(dimname_updated == vardimrec->n_dims)
+        return 0;
+
+    dimname_updated = 0;
+    for(n = 0; n < NUMPOSDIMNAMES; ++n)
+    {
+        if(dimname_updated)
+            break;
+
+        attnode = _get_diminfo_attnode(varnode, possibleDimNames[n]);
+        if(NULL == attnode)
+            continue;
+
+        i = 0;
+        ori_str = NrmQuarkToString(*(NclQuark *)attnode->value);
+        tmp_str = strdup(ori_str);
+        result = strtok(tmp_str, delimiter);
+        while(result != NULL)
+        {
+            vardimnode = &(vardimrec->dim_node[i]);
+            vardimnode->name = NrmStringToQuark(result);
+            result = strtok(NULL, delimiter);
+            ++i;
+            if(i >= vardimrec->n_dims)
+                break;
+        }
+        free(tmp_str);
+        dimname_updated = 1;
+        break;
+    }
+
+    return dimname_updated;
+}
+
+static void _buildH5dimlist(NclFileGrpNode **rootgrp)
+{
     NclFileGrpNode *grpnode = *rootgrp;
 
     NclFileVarRecord *varrec = NULL;
@@ -3652,7 +3749,8 @@ static int _buildH5dimlist(NclFileGrpNode **rootgrp)
     NclFileDimNode   *vardimnode = NULL;
 
     int i, j, n;
-    char tmp_name[MAX_NCL_NAME_LENGTH];
+    int find_new_dim = 0;
+    int dimname_updated = 0;
 
   /*
    *fprintf(stderr, "\nEnter _buildH5dimlist. file: %s, line: %d\n", __FILE__, __LINE__);
@@ -3662,80 +3760,135 @@ static int _buildH5dimlist(NclFileGrpNode **rootgrp)
     {
         for(n = 0; n < grpnode->grp_rec->n_grps; ++n)
         {
-            ndims = _buildH5dimlist(&(grpnode->grp_rec->grp_node[n]));
+            _buildH5dimlist(&(grpnode->grp_rec->grp_node[n]));
         }
     }
 
     varrec = grpnode->var_rec;
 
     if(NULL == varrec)
-        return 0;
+        return;
+
+    grpdimrec = grpnode->dim_rec;
 
     for(n = 0; n < varrec->n_vars; ++n)
     {
         varnode = &(varrec->var_node[n]);
 
+        dimname_updated = _buildH5VarDimlist(varnode, grpnode->dim_rec);
+
         vardimrec = varnode->dim_rec;
+        if(NULL == vardimrec)
+            continue;
 
-      /*
-       *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-       *fprintf(stderr, "\tvar name: <%s>, ndims = %d\n",
-       *                   NrmQuarkToString(varnode->name),
-       *                   vardimrec->n_dims);
-       */
-
-        for(i = 0; i < vardimrec->n_dims; ++i)
+        if(dimname_updated)
         {
-            vardimnode = &(vardimrec->dim_node[i]);
-          /*
-           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-           *fprintf(stderr, "\tDim %d, name: <%s>, length: %d\n",
-           *                   n, NrmQuarkToString(vardimnode->name), vardimnode->size);
-           */
-
-            if(NULL == grpnode->dim_rec)
+            if(NULL == grpdimrec)
             {
-                if(0 > vardimnode->name)
+                for(j = 0; j < vardimrec->n_dims; ++j)
                 {
-                    sprintf(tmp_name, "phony_dim_%4.4d", i);
-                    vardimnode->name = NrmStringToQuark(tmp_name);
+                    vardimnode = &(vardimrec->dim_node[j]);
+                    _addH5dim(&grpdimrec, vardimnode->name, vardimnode->size, 0);
                 }
-                _addH5dim(&grpdimrec, vardimnode->name,
-                          vardimnode->size, 0);
                 grpnode->dim_rec = grpdimrec;
             }
             else
             {
-                int new_dim = 1;
-
-                for(j = 0; j < grpdimrec->n_dims; ++j)
+                for(j = 0; j < vardimrec->n_dims; ++j)
                 {
-                    if(vardimnode->name == grpdimrec->dim_node[j].name)
+                    find_new_dim = 1;
+                    vardimnode = &(vardimrec->dim_node[j]);
+                    for(i = 0; i < grpdimrec->n_dims; ++i)
                     {
-                        new_dim = 0;
-                        break;
+                        if((vardimnode->name == grpdimrec->dim_node[i].name) ||
+                           (vardimnode->size == grpdimrec->dim_node[i].size))
+                        {
+                            find_new_dim = 0;
+                            break;
+                        }
                     }
-                }
 
-                if(new_dim)
-                {
-                    if(0 > vardimnode->name)
-                    {
-                        j = grpdimrec->n_dims;
-                        sprintf(tmp_name, "phony_dim_%4.4d", j);
-                        vardimnode->name = NrmStringToQuark(tmp_name);
-                    }
-                    _addH5dim(&grpdimrec, vardimnode->name, vardimnode->size, 0);
+                    if(find_new_dim)
+                        _addH5dim(&grpnode->dim_rec, vardimnode->name, vardimnode->size, 0);
                 }
             }
         }
     }
+}
 
-  /*
-   *fprintf(stderr, "Leave _buildH5dimlist. file: %s, line: %d\n\n", __FILE__, __LINE__);
-   */
+static int _updateH5attributes(NclFileGrpNode **rootgrp)
+{
+    int ercode = 0;
+    NclFileVarRecord *varrec  = NULL;
+    NclFileAttRecord *attrec  = NULL;
+    NclFileGrpNode   *grpnode = *rootgrp;
+    NclFileVarNode   *varnode = NULL;
+    NclFileAttNode   *attnode = NULL;
 
-    return ndims;
+    int j, n;
+    short has_fillvalue = 0;
+
+    if(NULL != grpnode->grp_rec)
+    {
+        for(n = 0; n < grpnode->grp_rec->n_grps; ++n)
+        {
+            ercode += _updateH5attributes(&(grpnode->grp_rec->grp_node[n]));
+        }
+    }
+
+    varrec = grpnode->var_rec;
+
+    if(NULL == varrec)
+        return ercode;
+
+    for(n = 0; n < varrec->n_vars; ++n)
+    {
+        has_fillvalue = 0;
+        varnode = &(varrec->var_node[n]);
+
+        attrec = varnode->att_rec;
+        if(NULL == attrec)
+            continue;
+
+        for(j = 0; j < attrec->n_atts; ++j)
+        {
+            attnode = &(attrec->att_node[j]);
+            if(NrmStringToQuark("_FillValue") == attnode->name)
+            {
+                has_fillvalue = 1;
+                break;
+            }
+        }
+        if(has_fillvalue)
+            continue;
+
+        for(j = 0; j < attrec->n_atts; ++j)
+        {
+            attnode = &(attrec->att_node[j]);
+            if((NrmStringToQuark("CodeMissingValue") == attnode->name) ||
+               (NrmStringToQuark("missing_value") == attnode->name) ||
+               (NrmStringToQuark("missingvalue") == attnode->name) ||
+               (NrmStringToQuark("MissingValue") == attnode->name))
+            {
+                void *attvalue = NclCalloc(attnode->n_elem, _NclSizeOf(varnode->type));
+                if(varnode->type != attnode->type)
+                {
+                       _NclScalarForcedCoerce(attnode->value, attnode->type,
+                                              attvalue, varnode->type);
+                }
+                else
+                {
+                       memcpy(attvalue, attnode->value, _NclSizeOf(varnode->type));
+                }
+
+                _addNclAttNode(&attrec, NrmStringToQuark("_FillValue"),
+                               varnode->type, attnode->n_elem, attvalue);
+                break;
+            }
+        }
+    }
+
+    return ercode;
 }
 
 void *H5OpenFile(void *rec, NclQuark path, int status)
@@ -3794,6 +3947,7 @@ void *H5OpenFile(void *rec, NclQuark path, int status)
     _readH5info(&grpnode);
 
     _buildH5dimlist(&grpnode);
+    _updateH5attributes(&grpnode);
 
   /*
    *fprintf(stderr,"Leave H5OpenFile, file: %s, line: %d\n\n", __FILE__, __LINE__);
@@ -5322,28 +5476,39 @@ static NclFVarRec *H5GetCoordInfo(void* therec, NclQuark thevar)
 
 static void H5FreeFileRec(void* therec)
 {
-
+    int n;
     NclFileGrpNode *grpnode = (NclFileGrpNode *)therec;
 
     if(grpnode->open)
     {
-        if(0 > grpnode->pid)
+
+      /*Only need to close the root-group fid, so we set other group fid to -1.*/
+        if(NULL != grpnode->grp_rec)
         {
-            H5Fclose(grpnode->fid);
+            for(n = 0; n < grpnode->grp_rec->n_grps; ++n)
+            {
+                grpnode->grp_rec->grp_node[n]->fid = -1;
+	        H5FreeFileRec(grpnode->grp_rec->grp_node[n]);
+                FileDestroyGrpNode(grpnode->grp_rec->grp_node[n]);
+            }
+        }
+
+        if(0 < grpnode->fid)
+        {
+          /*We suppose should be able to close the file, but it cause "invalid file identifier" error.
+	   * Let us do further test later. 3/16/2015, Wei
+           *H5Fclose(grpnode->fid);
+           */
             H5close();
         }
-      /*
-       *else if(0 <= grpnode->gid)
-       *    H5Gclose(grpnode->gid);
-       */
+        else if(0 <= grpnode->gid)
+            H5Gclose(grpnode->gid);
 
         grpnode->open = 0;
         grpnode->fid = -1;
         grpnode->gid = -1;
         grpnode->pid = -1;
     }
-
-    FileDestroyGrpNode(grpnode);
 
   /*Free visited addresses table*/
   /*FIXME
@@ -5400,7 +5565,7 @@ static NhlErrorTypes H5SetOption(void *rootgrp, NclQuark option,
 
     if (option == NrmStringToQuark("usecache"))
     {
-        grpnode->options[H5_USE_CACHE_OPT].values = values;
+        _NclCopyOption(&grpnode->options[Ncl_USE_CACHE], option, data_type, n_items, values);
     }
     else if (option == NrmStringToQuark("compressionlevel"))
     {
@@ -5411,7 +5576,7 @@ static NhlErrorTypes H5SetOption(void *rootgrp, NclQuark option,
                    NrmQuarkToString(option)));
             return(NhlWARNING);
         }
-        grpnode->options[H5_COMPRESSION_LEVEL_OPT].values = values;
+        _NclCopyOption(&grpnode->options[Ncl_COMPRESSION_LEVEL], option, data_type, n_items, values);
     }
     else if (option == NrmStringToQuark("cachesize"))
     {
@@ -5422,7 +5587,7 @@ static NhlErrorTypes H5SetOption(void *rootgrp, NclQuark option,
                    NrmQuarkToString(option)));
             return(NhlWARNING);
         }
-        grpnode->options[H5_CACHE_SIZE_OPT].values = values;
+        _NclCopyOption(&grpnode->options[Ncl_CACHE_SIZE], option, data_type, n_items, values);
     }
     else if (option == NrmStringToQuark("cachenelems"))
     {
@@ -5435,15 +5600,12 @@ static NhlErrorTypes H5SetOption(void *rootgrp, NclQuark option,
         }
         else
         {
-            unsigned int *iv = (unsigned int *)values;
-            *iv = _closest_prime(*iv);
-            grpnode->options[H5_CACHE_NELEMS_OPT].values = (void*) iv;
+            _NclCopyOption(&grpnode->options[Ncl_CACHE_NELEMS], option, data_type, n_items, values);
         }
     }
     else if (option == NrmStringToQuark("cachepreemption"))
     {
-        float *fv = (float *)values;
-        grpnode->options[H5_CACHE_PREEMPTION_OPT].values = (void*) fv;
+        _NclCopyOption(&grpnode->options[Ncl_CACHE_PREEMPTION], option, data_type, n_items, values);
     }
 
   /*

@@ -1,5 +1,5 @@
 /*
- *      $Id: DataSupport.c 15982 2015-02-23 21:59:40Z huangwei $
+ *      $Id: DataSupport.c 16049 2015-03-06 18:48:20Z huangwei $
  */
 /************************************************************************
 *									*
@@ -1919,9 +1919,70 @@ NclBasicDataTypes totype;
 		}
 	case NCL_string:
 		{
-			char *the_str = NrmQuarkToString(*(NrmQuark*)from);
-           
-			return _NclScalarForcedCoerce((void*)the_str, NCL_char, to, totype);
+		char *val = NrmQuarkToString(*(NrmQuark*)from);
+		char *end;
+
+		switch(totype) {
+		case NCL_byte:
+			*(byte*)to = (byte) _Nclstrtol(val, &end);
+			return(1);
+		case NCL_char:
+			*(char*)to = (char) _Nclstrtoul(val, &end);
+			return(1);
+		case NCL_short:
+			*(short*)to = (short) _Nclstrtol(val, &end);
+			return(1);
+                case NCL_int:
+			*(int*)to = (int) _Nclstrtol(val, &end);
+			return(1);
+		case NCL_long:
+			*(long*)to = _Nclstrtol(val, &end);
+			return(1);
+		case NCL_int64:
+			*(long long*)to = _Nclstrtoll(val, &end);
+			return(1);
+                case NCL_ubyte:
+                        *(unsigned char*)to = (unsigned char) _Nclstrtoul(val, &end);
+                        return(1);
+                case NCL_ushort:
+			*(unsigned short*)to = (unsigned short) _Nclstrtoul(val, &end);
+                        return(1);
+                case NCL_uint:
+			*(unsigned int*)to = (unsigned int) _Nclstrtoul(val, &end);
+                        return(1);
+                case NCL_ulong:
+			*(unsigned long*)to = (unsigned long) _Nclstrtoul(val, &end);
+                        return(1);
+                case NCL_uint64:
+			*(unsigned long long*)to = (unsigned long long) _Nclstrtoull(val, &end);
+                        return(1);
+                case NCL_float:
+			{
+			double dval = strtod(val,&end);
+                	if (end == val || errno == ERANGE) {
+                        	*(float*)to = ((NclTypeClass)nclTypefloatClass)->type_class.default_mis.floatval;
+                	} else
+                        	*(float*)to = (float)dval;
+			return(1);
+			}
+                case NCL_double:
+			{
+			double dval = strtod(val,&end);
+                	if (end == val || errno == ERANGE) {
+                        	*(double*)to = ((NclTypeClass)nclTypedoubleClass)->type_class.default_mis.doubleval;
+                	} else
+                        	*(double*)to = dval;
+			return(1);
+			}
+                case NCL_logical:
+			*(logical*)to = (logical)_Nclstrtol(val, &end);
+			return(1);
+		case NCL_string:
+			*(NclQuark*)to = (NclQuark*)from;
+			return(1);
+		default:
+			return(0);
+		}
 		}
 	case NCL_logical:
 	default:
@@ -2964,4 +3025,80 @@ int  type_size;
 		}
 	}
 		
+}
+
+long _Nclstrtol(const char *str, char **endptr)
+{
+
+	long tval;
+	int i = 0;
+
+	while (isspace(str[i]))
+			i++;
+	if (strlen(&(str[i])) >= 2 && str[i] == '0' && (str[i+1] == 'x' || str[i+1] == 'X'))
+		tval = strtol(str,endptr,16);
+	else
+		tval = strtol(str,endptr,10);
+	return tval;
+}
+
+unsigned long _Nclstrtoul(const char *str, char **endptr)
+{
+        unsigned long tval;
+        int i = 0;
+
+        while (isspace(str[i]))
+                        i++;
+        if (strlen(&(str[i])) >= 2 && str[i] == '0' && (str[i+1] == 'x' || str[i+1] == 'X'))
+        {
+                tval = strtoul(str,endptr,16);
+        }
+        else
+        {
+                tval = strtoul(str,endptr,10);
+        }
+
+        return tval;
+}
+
+long long _Nclstrtoll(const char *str, char **endptr)
+{
+        long long tval;
+        int i = 0;
+
+        errno = ERANGE;
+
+        while (isspace(str[i]))
+                        i++;
+        if (strlen(&(str[i])) >= 2 && str[i] == '0' && (str[i+1] == 'x' || str[i+1] == 'X'))
+        {
+                errno = 0;
+                tval = local_strtoll(str,endptr,16);
+        }
+        else
+        {
+                errno = 0;
+                tval = local_strtoll(str,endptr,10);
+        }
+
+        return tval;
+}
+
+unsigned long long _Nclstrtoull(const char *str, char **endptr)
+{
+        unsigned long long tval;
+        int i = 0;
+
+        while (isspace(str[i]))
+                        i++;
+        if (strlen(&(str[i])) >= 2 && str[i] == '0' && (str[i+1] == 'x' || str[i+1] == 'X'))
+        {
+                tval = strtoull(str,endptr,16);
+        }
+        else
+        {
+                tval = strtoull(str,endptr,10);
+        }
+
+        return tval;
 }

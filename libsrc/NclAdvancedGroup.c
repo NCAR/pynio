@@ -16,7 +16,7 @@
 #include "NclVar.h"
 #include "NclFile.h"
 #include "NclAdvancedFile.h"
-#include "NclAdvancedGroup.h"
+#include "AdvancedFileSupport.h"
 #include "NclFileInterfaces.h"
 #include "DataSupport.h"
 #include "VarSupport.h"
@@ -28,6 +28,8 @@
 #include "FileSupport.h"
 #include "NclMdInc.h"
 #include "NclCoordVar.h"
+
+#define NUM_OPTIONS  (1 + Ncl_RECORD_MARKER_SIZE)
 
 #if 0
 void copyAttributes(NclFileAttInfoList **out, NclFileAttInfoList *in)
@@ -279,9 +281,8 @@ NclAdvancedFile _NclAdvancedGroupCreate(NclObj inst, NclObjClass theclass, NclOb
 {
     NclAdvancedFile thefile = (NclAdvancedFile) file_in;
     NclAdvancedFile group_out = NULL;
-    NhlErrorTypes ret= NhlNOERROR;
     NclObjClass class_ptr;
-    NclFileGrpNode *grpnode = NULL;
+    NclFileGrpNode *grpnode = NULL, *outgrpnode;
 
   /*
    *fprintf(stderr, "\nEnter _NclAdvancedGroupCreate, file: %s, line:%d\n", __FILE__, __LINE__);
@@ -300,7 +301,7 @@ NclAdvancedFile _NclAdvancedGroupCreate(NclObj inst, NclObjClass theclass, NclOb
 
     if(group_name == thefile->advancedfile.grpnode->name)
     {
-        return ((NclGroup *)thefile);
+        return ((NclAdvancedFile)thefile);
     }
 
     grpnode = _getGrpNodeFromNclFileGrpNode(thefile->advancedfile.grpnode, group_name);
@@ -315,6 +316,9 @@ NclAdvancedFile _NclAdvancedGroupCreate(NclObj inst, NclObjClass theclass, NclOb
 
         return NULL;
     }
+    outgrpnode = (NclFileGrpNode *)NclCalloc(1,sizeof(NclFileGrpNode));
+    memcpy(outgrpnode,grpnode,sizeof(NclFileGrpNode));
+    
 
     if(theclass == NULL)
     {
@@ -344,7 +348,7 @@ NclAdvancedFile _NclAdvancedGroupCreate(NclObj inst, NclObjClass theclass, NclOb
     group_out->advancedfile.format_funcs = _NclGetFormatFuncsWithAdvancedFileStructure(thefile->advancedfile.file_ext_q);
     group_out->file.advanced_file_structure = 1;
 
-    group_out->advancedfile.grpnode = grpnode;
+    group_out->advancedfile.grpnode = outgrpnode;
 
     group_out->advancedfile.grpnode->fid = thefile->advancedfile.grpnode->fid;
     group_out->advancedfile.grpnode->open = thefile->advancedfile.grpnode->open;
@@ -357,19 +361,7 @@ NclAdvancedFile _NclAdvancedGroupCreate(NclObj inst, NclObjClass theclass, NclOb
    *fprintf(stderr, "\tgrpnode->extension: <%s>\n", NrmQuarkToString(group_out->advancedfile.grpnode->extension));
    */
 
-    if(NULL == group_out->advancedfile.grpnode->options)
-    {
-        group_out->advancedfile.grpnode->n_options = thefile->advancedfile.grpnode->n_options;
-
-        if(thefile->advancedfile.grpnode->n_options)
-        {
-            group_out->advancedfile.grpnode->options = (NCLOptions *)NclCalloc(grpnode->n_options, sizeof(NCLOptions));
-            assert(group_out->advancedfile.grpnode->options);
-
-            memcpy(group_out->advancedfile.grpnode->options, thefile->advancedfile.grpnode->options,
-                   group_out->advancedfile.grpnode->n_options * sizeof(NCLOptions));
-        }
-    }
+    _NclCopyGroupOptions(group_out->advancedfile.grpnode, thefile->advancedfile.grpnode);
 
 #if 0
     UpdateAdvancedGroupDims(group_out, grpnode);

@@ -3433,10 +3433,8 @@ int time_unit;
 unsigned char *offset;
 #endif
 {
-	int cix,tix;
-
+	int cix = 0,tix = 0;
 	double c_factor = 1.0;
-
 	if (common_time_unit != time_unit) {
 		for (cix = 0; cix < NhlNumber(Unit_Code_Order); cix++) {
 			if (common_time_unit == Unit_Code_Order[cix])
@@ -4992,6 +4990,21 @@ Grib2ParamList *vstep;
 		if (vstep->gds != NULL) {
 			Grib2FreeGDS(vstep->gds);
 		}			
+ 		if (vstep->ensemble != NULL) {
+			_NclDestroyObj((NclObj)vstep->ensemble);
+		}
+ 		if (vstep->ens_indexes != NULL) {
+			_NclDestroyObj((NclObj)vstep->ens_indexes);
+		}
+ 		if (vstep->probability != NULL) {
+			_NclDestroyObj((NclObj)vstep->probability);
+		}
+ 		if (vstep->lower_probs != NULL) {
+			_NclDestroyObj((NclObj)vstep->lower_probs);
+		}
+ 		if (vstep->upper_probs != NULL) {
+			_NclDestroyObj((NclObj)vstep->upper_probs);
+		}
 
 		if (vstep->forecast_time != NULL) {
 			_NclDestroyObj((NclObj)vstep->forecast_time);
