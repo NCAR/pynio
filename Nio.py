@@ -159,11 +159,12 @@ _builtins = ['__class__', '__delattr__', '__doc__', '__getattribute__', '__hash_
             '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', \
             '__setattr__', '__str__', '__weakref__', '__getitem__', '__setitem__', '__len__' ]
 
-_localatts = ['attributes','_obj','variables','file','varname', 'groups',  \
+_localatts = ['open', 'attributes','_obj','variables','file','varname', 'groups', 'parent', \
               'cf_dimensions', 'cf2dims', 'ma_mode', 'explicit_fill_values', 'coordinates', \
               'mask_below_value', 'mask_above_value', 'set_option', 'create_variable', 'create_group', 'close', 'assign_value', 'get_value']    
 
 # The Proxy concept is adapted from Martelli, Ravenscroft, & Ascher, 'Python Cookbook' Second Edition, 6.6
+import weakref
 
 class _Proxy(object):
     ''' base class for all proxies '''
@@ -401,6 +402,7 @@ For array variables basic or extended selection syntax is more flexible.
 
     return
 
+import sys
 def close(self,history=""):
     '''
 Close a file, ensuring all modifications are up-to-date if open for writing.
@@ -412,18 +414,15 @@ already exist.
 Read or write access attempts on the file object after closing
 raise an exception.
     '''
-
-    self._obj.close(history)
-    # Delete the proxy variable and file references so that the objects can be freed.
-    # Note that the attributes cannot be deleted, but setting them to None accomplishes 
-    # the same objective.
-
-    self.variables = None
-    self.file = None
-
+    #print "in close"
+    #from pdb import set_trace;set_trace()
+    if not self.parent is None:
+        return
+    if self.open == 1:
+        self._obj.close(history)
+        self.open = 0
     return
 
-    
 
 def create_variable(self,name,type,dimensions):
     '''
@@ -455,7 +454,7 @@ dimensions -- a tuple of dimension names (strings), previously defined
     if not v is None:
         vp  = _proxy(v,'str','len',
                      __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
-        vp.file = self
+        vp.file = weakref.proxy(self)
         vp.varname = name
         vp.cf_dimensions = vp.dimensions
         self.variables[name] = vp
@@ -621,7 +620,46 @@ def set_option(self,option,value):
 
     return setattr(self,valid_opts[loption],lvalue)
 
+#for debugging only
+#import sys
 
+
+def __del__(self):
+    #print "in __del__ method"
+    if not self.parent is None:
+        return None
+    if hasattr(self,'open') and self.open == 1:
+        self.close()
+        self.open = 0
+    del(self)
+    return None
+
+'''
+    if self.groups is not None:
+        for gname in self.groups:
+            grp = self.groups[gname]
+            grp.variables.name = None
+            grp.variables.parent = None
+#            grp.variables._obj = None
+            grp.variables.file = None
+            grp.variables = None
+            grp.groups = None
+            grp.file = None
+            grp.parent = None
+    self.variables.name = None
+    self.variables.parent = None
+ #   self.variables._obj = None
+    self.variables.file = None
+    self.variables = None
+    self.groups.file = None
+    self.groups.parente = None
+    self.file = None
+    self.parent = None
+    
+    return None
+'''
+
+    
 def open_file(filename, mode = 'r', options=None, history='', format=''):
     '''
 Open a file containing data in a supported format for reading and/or writing.
@@ -664,9 +702,11 @@ Returns an NioFile object.
 
     file = _Nio.open_file(filename,mode,options,history,format)
 
-    file_proxy = _proxy(file, 'str', create_variable=create_variable,create_group=create_group,close=close)
+    file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
     setattr(file_proxy.__class__,'set_option',set_option)
     file_proxy.file = file
+    file_proxy.parent = None
+    file_proxy.open = 1
     if not (explicit_fill_values is None and mask_below_value is None and mask_above_value is None):
         file_proxy.ma_mode = 'maskedexplicit'
     else:
@@ -697,10 +737,13 @@ Returns an NioFile object.
     variable_proxies.path = '/'
     variable_proxies.topdict = None
     for var in file.variables.keys():
+        # print var, ": ", sys.getrefcount(file.variables[var])
         vp  = _proxy(file.variables[var],'str','len',
                      __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
-        vp.file = file_proxy
+        vp.file = weakref.proxy(file_proxy)
+#        vp.file = file_proxy
         vp.varname = var
+        vp.parent = None
         variable_proxies[var] = vp
         if use_axis_att:
             newdims = []
@@ -714,25 +757,32 @@ Returns an NioFile object.
             vp.cf_dimensions = tuple(newdims)
         else:
             vp.cf_dimensions = vp.dimensions
+        #print var, ": ", sys.getrefcount(file.variables[var])
     file_proxy.variables = variable_proxies
 
     group_proxies = nd.nioDict()
     group_proxies.path = '/'
     group_proxies.topdict = None
     for group in file.groups.keys():
+        # print group, ": ", sys.getrefcount(file.groups[group])
         gp = _proxy(file.groups[group], 'str')
-        gp.file = file
+        gp.file = weakref.proxy(file_proxy)
+        #gp.file = file_proxy
         group_proxies[group] = gp
 
         v_proxy_refs = nd.nioDict()
         v_proxy_refs.path = file.groups[group].path
-        v_proxy_refs.topdict = file_proxy.variables
+        v_proxy_refs.topdict = weakref.proxy(file_proxy.variables)
         for var in file.groups[group].variables.keys():
             #print file.groups[group].variables[var].path
             vp = file_proxy.variables[file.groups[group].variables[var].path]
             #print vp is file_proxy.variables[file.groups[group].variables[var].path]
-            v_proxy_refs[var] = vp
+            vp.parent = weakref.proxy(gp)
+            #vp.parent = gp
+            v_proxy_refs[var] = weakref.ref(vp)
+            #v_proxy_refs[var] = vp
         gp.variables = v_proxy_refs
+        #print group, ": ", sys.getrefcount(file.groups[group])
 
     file_proxy.groups = group_proxies
     # all the groups need proxies before we can do this
@@ -740,25 +790,58 @@ Returns an NioFile object.
     for group in file.groups.keys():
         g = file.groups[group]
         gp = file_proxy.groups[group]
+        sl = group.rfind('/')
+        if sl == -1:
+            gp.parent = weakref.proxy(file_proxy.groups['/'])
+            #gp.parent = file_proxy.groups['/']
+        elif sl == 0:
+            gp.parent = None
+        else:
+            gp.parent = weakref.proxy(file_proxy.groups[group[0:sl]])
+            #gp.parent = file_proxy.groups[group[0:sl]]
         g_proxy_refs = nd.nioDict()
         g_proxy_refs.path = g.path
-        g_proxy_refs.topdict = file_proxy.groups
+        g_proxy_refs.topdict = weakref.proxy(file_proxy.groups)
         for grp in g.groups.keys():
             grp_obj = g.groups[grp]
             #print grp_obj.path
             gproxy = file_proxy.groups[grp_obj.path]
             g_proxy_refs[grp] = gproxy
         gp.groups = g_proxy_refs
-    
-#    for var in file.variables.keys():
-#        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,var)
 
     #print file_proxy, file_proxy.variables
     return file_proxy
 
-#def _create_coordinates_attriibute(file,var):
-#    print "creating coordinates for ", var
-#    return {}
+'''
+    for var in file.variables.keys():
+        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,file_proxy.variables[var])
+'''
+
+
+
+def _create_coordinates_attriibute(file,var):
+    coords = nd.nioDict()
+    print "creating coordinates attribute for ", var.name
+    if var.attributes.has_key('coordinates'):
+        #print var.attributes['coordinates']
+        pass
+    if len(var.dimensions) == 1 and var.dimensions[0] == var.name:
+        coords[var.name] = var
+    else:
+        for d in var.dimensions:
+            if var.parent is None:
+                parent = file
+            else:
+                parent = var.parent
+            while not parent is None:
+                if d in parent.dimensions.keys():
+                    for v in parent.variables.values():
+                        if d == v.name and v.rank == 1:
+                            coords[d] = v
+                            break
+                parent = parent.parent
+
+    return coords
 
 
 def _get_cf_dims(file):

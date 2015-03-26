@@ -35,6 +35,7 @@ struct NioFileObjectStruct {
   PyObject *mode;         /* string */
   PyObject *type;         /* string */
   PyObject *full_path;    /* string */
+  PyObject *weakreflist;
   NioFileObject *parent;
   NioFileObject *top;       
   void *id;
@@ -42,6 +43,7 @@ struct NioFileObjectStruct {
   char open;
   char define;
   char write;
+  char being_destroyed;
   int recdim;
 };
 
