@@ -467,6 +467,7 @@ static char err_buf[256];
 
 #if 0
 int data_types[] = {-1,  /* not used */
+
 		    PyArray_SBYTE,  /* signed 8-bit int */
 		    PyArray_CHAR,   /* 8-bit character */
 		    PyArray_SHORT,  /* 16-bit signed int */
@@ -1990,6 +1991,7 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
   NioVariableObject *var;
   char **dimension_names;
   PyObject *item, *dim;
+  NclFile nfile = (NclFile) self->id;
   char *name;
   int ndim;
   char* type;
@@ -2002,13 +2004,25 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args)
 
   ltype = type[0];
   if (strlen(type) > 1) {
-	  if (type[0] == 'S' && type[1] == '1') {
-		  ltype  = 'S';
-	  }
+	  if (nfile->file.advanced_file_structure) {
+		  if (type[0] == 'S' && type[1] == '1') {
+			  ltype  = 'S';
+		  }
+		  else {
+			  sprintf (errbuf,"Cannot create variable (%s): string arrays not yet supported on write",name);
+			  PyErr_SetString(PyExc_TypeError, errbuf);
+			  return NULL;
+		  }
+	  } 
 	  else {
-		  sprintf (errbuf,"Cannot create variable (%s): string arrays not yet supported on write",name);
-		  PyErr_SetString(PyExc_TypeError, errbuf);
-		  return NULL;
+		  if (type[0] == 'S' && type[1] == '1') {
+			  ltype  = 'c';
+		  }
+		  else {
+			  sprintf (errbuf,"Cannot create variable (%s): string arrays not yet supported on write",name);
+			  PyErr_SetString(PyExc_TypeError, errbuf);
+			  return NULL;
+		  }
 	  }
   }
   ndim = PyTuple_Size(dim);
@@ -5384,8 +5398,13 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  else
 				  break;
 		  }
-		  if(NCL_char != varnode->type)
-		      array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
+		  if(nfile->file.advanced_file_structure) {
+			  if (NCL_char != varnode->type)
+				  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
+		  }
+		  else {
+			  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims + single_el_dim_count);
+		  }
 	  }
   }
   else {
