@@ -1,6 +1,8 @@
 #include <ctype.h>
 #include <limits.h>
 
+#include "niohlu.h"
+
 int _MachineIsBigEndian()
 {
     short int word = 0x0001;
@@ -149,5 +151,4 @@ local_strtoll(const char *nptr, char **endptr, int base)
 		*endptr = (char *) (any ? s - 1 : nptr);
 	return (acc);
 }
-
 
