@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 15249 2014-04-21 16:03:44Z huangwei $
+ *      $Id: NclAdvancedFile.h 16131 2015-03-30 15:06:00Z huangwei $
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h
@@ -87,6 +87,9 @@ typedef struct _NclAdvancedFilePart
     NclFileGrpNode *grpnode;
 
     struct _NclFormatFunctionRecord *format_funcs;
+
+    NclObjTypes     type;
+    NclQuark        gname;
 } NclAdvancedFilePart;
  
 struct _NclAdvancedFileClassRec

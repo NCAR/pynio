@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 16124 2015-03-25 17:28:52Z dbrown $
+ *      $Id: NclAdvancedFile.c 16138 2015-04-01 17:13:52Z huangwei $
  */
 
 #include "NclAdvancedFile.h"
@@ -320,6 +320,7 @@ NhlErrorTypes _NclAdvancedFilePrintSummary(NclObj self, FILE *fp)
     NclAdvancedFile thefile = (NclAdvancedFile)self;
     int ret = 0;
 
+    ret = nclfprintf(fp,"Type: file\n");
     ret = nclfprintf(fp,"File path\t:\t%s\n\n",NrmQuarkToString(thefile->advancedfile.fpath));
     if(ret < 0)
         return(NhlWARNING);
@@ -1185,6 +1186,15 @@ NhlErrorTypes AdvancedFilePrint(NclObj self, FILE *fp)
     NclAdvancedFile thefile = (NclAdvancedFile)self;
     NhlErrorTypes ret = NhlNOERROR;
 
+    if(Ncl_FileVar == thefile->advancedfile.type)
+        ret = nclfprintf(fp,"Type: file\n");
+    else if(Ncl_FileGroup == thefile->advancedfile.type)
+    {
+        ret = nclfprintf(fp,"Type: group\n");
+        nclfprintf(fp, "groupname:\t%s\n",NrmQuarkToString(thefile->advancedfile.gname));
+    }
+    else
+        ret = nclfprintf(fp,"Type: should be file or group, but not clear at this time.\n");
     nclfprintf(fp, "filename:\t%s\n",NrmQuarkToString(thefile->advancedfile.fname));
     nclfprintf(fp, "path:\t%s\n",NrmQuarkToString(thefile->advancedfile.fpath));
 
@@ -2260,9 +2270,11 @@ NclFileVarNode *_getVarNodeFromNclFileGrpNode_asCompound(NclFileGrpNode *grpnode
     if(NULL != component_name)
     {
         vn = NrmStringToQuark(struct_name);
-        free(component_name);
-        free(struct_name);
+        NclFree(component_name);
     }
+
+    if(NULL != struct_name)
+        NclFree(struct_name);
 
     if(NULL != grpnode->var_rec)
     {
@@ -2497,17 +2509,16 @@ void FileDestroyAttRecord(NclFileAttRecord *att_rec)
 		_NclDestroyObj(att);
 	    }
 	}
-        if(NULL != att_rec->att_node)
+        if((! has_att_obj) && (NULL != att_rec->att_node))
         {
           /*
            *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
            *fprintf(stderr, "n_atts: %d, max_atts: %d\n", att_rec->n_atts, att_rec->max_atts);
            */
-          /*for(n = 0; n < att_rec->n_atts; n++)*/
             for(n = 0; n < att_rec->max_atts; n++)
             {
                 attnode = &(att_rec->att_node[n]);
-                if((! has_att_obj) && NULL != attnode->value)
+                if(NULL != attnode->value)
                 {
                     NclFree(attnode->value);
                     attnode->value = NULL;
@@ -2560,10 +2571,22 @@ void FileDestroyDimRecord(NclFileDimRecord *dim_rec)
 
 void FileDestroyCompoundRecord(NclFileCompoundRecord *comprec)
 {
+    int n;
+    NclFileCompoundNode   *compnode;
+
     if(NULL != comprec)
     {
         if(NULL != comprec->compnode)
         {
+            for(n = 0; n < comprec->max_comps; ++n)
+            {
+                compnode = &(comprec->compnode[n]);
+                if(NULL != compnode->sides)
+                {
+                    NclFree(compnode->sides);
+                    compnode->sides = NULL;
+                }
+            }
             NclFree(comprec->compnode);
             comprec->compnode = NULL;
         }
@@ -2586,6 +2609,31 @@ void FileDestroyCoordVarRecord(NclFileCoordVarRecord *coord_rec)
     }
 }
 
+void FileDestroyUDTRecord(NclFileUDTRecord *udt_rec)
+{
+    int n;
+    NclFileUDTNode *udt_node;
+
+    if(NULL != udt_rec)
+    {
+        if(NULL != udt_rec->udt_node)
+        {
+            for(n = 0; n < udt_rec->max_udts; ++n)
+            {
+                udt_node = &(udt_rec->udt_node[n]);
+                if(NULL != udt_node->mem_name)
+                    NclFree(udt_node->mem_name);
+                if(NULL != udt_node->mem_type)
+                    NclFree(udt_node->mem_type);
+            }
+            NclFree(udt_rec->udt_node);
+            udt_rec->udt_node = NULL;
+        }
+        NclFree(udt_rec);
+        udt_rec = NULL;
+    }
+}
+
 void FileDestroyVarRecord(NclFileVarRecord *var_rec)
 {
     int n;
@@ -2599,7 +2647,6 @@ void FileDestroyVarRecord(NclFileVarRecord *var_rec)
            *fprintf(stderr, "file: %s, line: %d\n", __FILE__, __LINE__);
            *fprintf(stderr, "n_vars: %d, max_vars: %d\n", var_rec->n_vars, var_rec->max_vars);
            */
-          /*for(n = 0; n < var_rec->n_vars; n++)*/
             for(n = 0; n < var_rec->max_vars; n++)
             {
                 varnode = &(var_rec->var_node[n]);
@@ -2655,17 +2702,12 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
         grpnode->options = NULL;
 
         FileDestroyAttRecord(grpnode->att_rec);
-        grpnode->att_rec = NULL;
         FileDestroyDimRecord(grpnode->dim_rec);
-        grpnode->dim_rec = NULL;
         FileDestroyDimRecord(grpnode->chunk_dim_rec);
-        grpnode->chunk_dim_rec = NULL;
         FileDestroyDimRecord(grpnode->unlimit_dim_rec);
-        grpnode->unlimit_dim_rec = NULL;
         FileDestroyCoordVarRecord(grpnode->coord_var_rec);
-        grpnode->coord_var_rec = NULL;
         FileDestroyVarRecord(grpnode->var_rec);
-        grpnode->var_rec = NULL;
+        FileDestroyUDTRecord(grpnode->udt_rec);
 
         if(NULL != grpnode->parent)
             grpnode->parent = NULL;
@@ -2987,6 +3029,8 @@ NclFile _NclAdvancedFileCreate(NclObj inst, NclObjClass theclass, NclObjTypes ob
    */
     file_out->advancedfile.grpnode->path = path;
     file_out->advancedfile.grpnode->extension = file_ext_q;
+    file_out->advancedfile.gname = -1;
+    file_out->advancedfile.type = Ncl_FileVar;
 
     (void)_NclObjCreate((NclObj)file_out,class_ptr,obj_type,(obj_type_mask | Ncl_File),status);
 
@@ -6993,6 +7037,10 @@ static NhlErrorTypes MyAdvancedFileWriteVar(NclFile infile, NclQuark var,
                 has_missing = 1;
 
             if((Ncl_Typecompound == lhs_type) && ( Ncl_Typelist == rhs_type))
+            {
+                tmp_md = value;
+            }
+            else if((NCL_enum == varnode->type) && (Ncl_Typelist == lhs_type))
             {
                 tmp_md = value;
             }
