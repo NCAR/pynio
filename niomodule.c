@@ -914,7 +914,8 @@ NioFileObject_dealloc(NioFileObject *self)
 
   /* destroy the contents of all groups except the root ('/') group */
   keys = PyDict_Keys(self->groups);
-  for (i = 0; i < PyList_Size(keys); i++) {
+  if(NULL != keys) {
+      for (i = 0; i < PyList_Size(keys); i++) {
 	  key = PyList_GetItem(keys, i);
 	  NioFileObject *g = (NioFileObject *) PyDict_GetItem(self->groups,key);
 	  if (g != NULL && strcmp(PyString_AsString(g->name),"/")) {
@@ -931,9 +932,11 @@ NioFileObject_dealloc(NioFileObject *self)
 	  Py_XDECREF(g->mode);
 	  Py_XDECREF(g->type);
 	  PyDict_DelItem(self->groups,key);
+      }
+      Py_DECREF(keys);
   }
-  Py_DECREF(keys);
-  _NclDestroyObj((NclObj)self->id);
+  if(NULL != self->id)
+      _NclDestroyObj((NclObj)self->id);
 
   Py_CLEAR(self->variables);
   Py_CLEAR(self->dimensions);
