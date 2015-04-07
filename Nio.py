@@ -180,7 +180,6 @@ class _Proxy(object):
             self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
-
         if attrib in _localatts or attrib in _builtins:
             return super(_Proxy,self).__getattribute__(attrib)
         else:
@@ -763,6 +762,7 @@ Returns an NioFile object.
     group_proxies = nd.nioDict()
     group_proxies.path = '/'
     group_proxies.topdict = None
+    #from pdb import set_trace;set_trace()
     for group in file.groups.keys():
         # print group, ": ", sys.getrefcount(file.groups[group])
         gp = _proxy(file.groups[group], 'str')
@@ -773,13 +773,14 @@ Returns an NioFile object.
         v_proxy_refs = nd.nioDict()
         v_proxy_refs.path = file.groups[group].path
         v_proxy_refs.topdict = weakref.proxy(file_proxy.variables)
+        #v_proxy_refs.topdict = file_proxy.variables
         for var in file.groups[group].variables.keys():
             #print file.groups[group].variables[var].path
             vp = file_proxy.variables[file.groups[group].variables[var].path]
             #print vp is file_proxy.variables[file.groups[group].variables[var].path]
             vp.parent = weakref.proxy(gp)
             #vp.parent = gp
-            v_proxy_refs[var] = weakref.ref(vp)
+            v_proxy_refs[var] = weakref.proxy(vp)
             #v_proxy_refs[var] = vp
         gp.variables = v_proxy_refs
         #print group, ": ", sys.getrefcount(file.groups[group])
@@ -802,6 +803,7 @@ Returns an NioFile object.
         g_proxy_refs = nd.nioDict()
         g_proxy_refs.path = g.path
         g_proxy_refs.topdict = weakref.proxy(file_proxy.groups)
+        #g_proxy_refs.topdict = file_proxy.groups
         for grp in g.groups.keys():
             grp_obj = g.groups[grp]
             #print grp_obj.path
@@ -809,38 +811,63 @@ Returns an NioFile object.
             g_proxy_refs[grp] = gproxy
         gp.groups = g_proxy_refs
 
+
+
+#    for var in file.variables.keys():
+#        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,file_proxy.variables[var])
+
+    
+
     #print file_proxy, file_proxy.variables
     return file_proxy
 
-'''
-    for var in file.variables.keys():
-        file_proxy.variables[var].coordinates = _create_coordinates_attriibute(file_proxy,file_proxy.variables[var])
-'''
-
-
-
 def _create_coordinates_attriibute(file,var):
     coords = nd.nioDict()
-    print "creating coordinates attribute for ", var.name
-    if var.attributes.has_key('coordinates'):
-        #print var.attributes['coordinates']
-        pass
+    #print "creating coordinates attribute for ", var.name
     if len(var.dimensions) == 1 and var.dimensions[0] == var.name:
         coords[var.name] = var
-    else:
-        for d in var.dimensions:
-            if var.parent is None:
-                parent = file
-            else:
-                parent = var.parent
-            while not parent is None:
-                if d in parent.dimensions.keys():
-                    for v in parent.variables.values():
-                        if d == v.name and v.rank == 1:
-                            coords[d] = v
-                            break
-                parent = parent.parent
+        return coords
 
+    if var.parent is None:
+        parent = file
+    else:
+        parent = var.parent
+    
+    cnames = None
+    cdict = {}
+    if var.attributes.has_key('coordinates'):
+        s = var.attributes['coordinates'].replace(',',' ')
+        cnames = s.split()
+        #print var.attributes['coordinates']
+
+    dlist = []
+    if not cnames is None:
+        for c in cnames:
+            if c in parent.variables.keys():
+                cdict[c] = parent.variables[c]
+                if dlist.count(cdict[c].dimensions) == 0:
+                    dlist.append(cdict[c].dimensions)
+
+    #if len(cdict) > 0: print cdict, dlist
+    dims = []
+    if len(dlist) == 1:  # means there is only one set of coordinates involved 
+        cd = dlist[0] # cd is the dimension tuple
+        dims = list(var.dimensions)
+        for d in cd:
+            if d in dims:
+                dims.remove(d)
+        coords[cd] = tuple(cdict.values())
+                
+    for d in dims:
+        while not parent is None:
+            if d in parent.dimensions.keys():
+                for v in parent.variables.values():
+                    if d == v.name and v.rank == 1:
+                        coords[d] = v
+                        break
+            parent = parent.parent
+
+    print coords
     return coords
 
 

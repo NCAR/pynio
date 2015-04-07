@@ -38,8 +38,8 @@ struct NioFileObjectStruct {
   PyObject *weakreflist;
   NioFileObject *parent;
   NioFileObject *top;       
-  void *id;
-  void *gnode;
+  void *id;        /* this is a pointer to the NCL file record for the file */
+  void *gnode;     /* gnode is actually an advanced file structure that contains a groupnode -- it could be the top level grpnode (file) or else a group */
   char open;
   char define;
   char write;

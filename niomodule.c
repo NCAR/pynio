@@ -395,7 +395,7 @@ size_t NCLtotalVariables = 0;
 size_t NCLtotalGroups = 0;
 
 staticforward int nio_file_init(NioFileObject *self);
-staticforward NioFileObject* nio_read_group(NioFileObject* file, NclFileGrpNode* grpnode);
+staticforward NioFileObject* nio_read_group(NioFileObject* file, NclFileGrpNode *grpnode);
 staticforward NioFileObject* nio_create_group(NioFileObject* file, NrmQuark gname);
 staticforward NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
                                                             NclFileVarNode* varnode, int id);
@@ -1388,10 +1388,10 @@ nio_file_init(NioFileObject *self)
 		ngrps = 0;
 		ngattrs = 0;
 
-		self->gnode = advfile->advancedfile.grpnode;
+		self->gnode = advfile;
 		self->parent = NULL;
 		self->top = self;
-		group = nio_read_group(self, self->gnode);
+		group = nio_read_group(self, ((NclAdvancedFile)self->gnode)->advancedfile.grpnode);
 		group->id = self->id;
 		group->gnode = self->gnode;
 		PyDict_SetItemString((PyObject *)self->groups, name, (PyObject *)group);
@@ -1676,8 +1676,8 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj, NrmQuark q
     advfilegroup = _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0,
                                            TEMPORARY, nclfile, qname);
 
-    self->id = (void *) advfilegroup;
-    self->gnode = (void *) advfilegroup->advancedfile.grpnode;
+    self->id = (void *) nclfile;
+    self->gnode = (void *) advfilegroup;
     self->top = niofileobj->top;
 
     return self;
@@ -2776,11 +2776,13 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
 	  qstr = NrmStringToQuark(str);
 	  if(nfile->file.advanced_file_structure)
 	  {
+		  NclAdvancedFile adv_file;
 		  NclFileGrpNode* grpnode;
 		  NclFileDimRecord* dimrec;
 
 		  if (self->parent) {
-			  grpnode = (NclFileGrpNode*)self->gnode;
+			  adv_file = (NclAdvancedFile)self->gnode;
+			  grpnode = adv_file->advancedfile.grpnode;
 			  dimrec = grpnode->dim_rec;
 		  }
 		  else {
@@ -2801,7 +2803,8 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args)
 				  dimpath = "/";
 			  }
 			  grp = (NioFileObject *)PyDict_GetItemString(self->groups,dimpath);
-			  grpnode = grp->gnode;
+			  adv_file = (NclAdvancedFile) grp->gnode;
+			  grpnode = adv_file->advancedfile.grpnode;
 			  dimrec = grpnode->dim_rec;
 			  qstr = NrmStringToQuark(dimname);
 		  }
@@ -3721,7 +3724,7 @@ NioFileObject_str(NioFileObject *file)
 
 	if(nfile->file.advanced_file_structure)
 	{
-		NclFileGrpNode *grpnode = (NclFileGrpNode *) file->gnode;
+		NclFileGrpNode *grpnode = ((NclAdvancedFile) file->gnode)->advancedfile.grpnode;
 		char *name, *attname;
 		NioFileObject *group;
 
@@ -4181,7 +4184,7 @@ nio_variable_new(NioFileObject *file, char *name, int id,
 
 /* Create group object */
 
-statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNode* grpnode)
+statichere NioFileObject* nio_read_group(NioFileObject* niofileobj, NclFileGrpNode *grpnode)
 {
     NioFileObject *self;
     NclFile nclfile = (NclFile) niofileobj->id;
@@ -4352,7 +4355,7 @@ NioVariable_GetShape(NioVariableObject *var)
           NclFileVarNode*   varnode;
 	  NclFileGrpNode*   grpnode;
 
-	  grpnode = (NclFileGrpNode*)var->file->gnode;
+	  grpnode = ((NclAdvancedFile)var->file->gnode)->advancedfile.grpnode;
           grpdimrec = grpnode->dim_rec;
           varnode = getVarFromGroup(grpnode, NrmStringToQuark(var->name));
 
@@ -4361,7 +4364,7 @@ NioVariable_GetShape(NioVariableObject *var)
               dimrec = varnode->dim_rec;
               if(NULL != dimrec)
               {
-                  for(i = 0; i < dimrec->n_dims; ++i)
+		  for(i = 0; i < var->nd; ++i)
                   {
                       dimnode = &(dimrec->dim_node[i]);
                       var->dimensions[i] = (Py_ssize_t) dimnode->size;
@@ -4443,7 +4446,7 @@ NioVariable_GetSize(NioVariableObject *var)
           NclFileVarNode*   varnode;
 	  NclFileGrpNode*   grpnode;
 
-	  grpnode = (NclFileGrpNode*)var->file->gnode;
+	  grpnode = ((NclAdvancedFile)var->file->gnode)->advancedfile.grpnode;
           grpdimrec = grpnode->dim_rec;
           varnode = getVarFromGroup(grpnode, NrmStringToQuark(var->name));
 
@@ -4453,7 +4456,7 @@ NioVariable_GetSize(NioVariableObject *var)
               dimrec = varnode->dim_rec;
               if(NULL != dimrec)
               {
-                  for(i = 0; i < dimrec->n_dims; ++i)
+                  for(i = 0; i < var->nd; ++i)
                   {
                       dimnode = &(dimrec->dim_node[i]);
                       var->dimensions[i] = (Py_ssize_t) dimnode->size;
@@ -4969,7 +4972,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  	NclFileVarNode* varnode;
 				NclFileGrpNode* grpnode;
 
-				grpnode = (NclFileGrpNode*)self->file->gnode;
+				grpnode = ((NclAdvancedFile)self->file->gnode)->advancedfile.grpnode;
 				varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
 			  	if(NULL == varnode)
 					return NULL;
@@ -5279,7 +5282,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   {
       NclFileGrpNode*   grpnode;
 
-      grpnode = (NclFileGrpNode*)self->file->gnode;
+      grpnode = ((NclAdvancedFile)self->file->gnode)->advancedfile.grpnode;
       varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
       if(NULL != varnode)
       {
