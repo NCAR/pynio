@@ -473,7 +473,6 @@ name -- a string specifying the group name.
 
     #print 'in create group'
     g = self._obj.create_group(name)
-    import pdb; pdb.set_trace()
     if not g is None:
         gp  = _proxy(g,'str')
         gp.file = self.file

@@ -20,7 +20,8 @@ class nioDict (dict):
 
     def __repr__(self):
         dictrepr = dict.__repr__(self)
-        return '%s(%s)' % (type(self).__name__, dictrepr)
+        #return '%s(%s)' % (type(self).__name__, dictrepr)
+        return  dictrepr
 
     def update(self, *args, **kwargs):
         #print 'update', args, kwargs
