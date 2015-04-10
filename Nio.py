@@ -473,9 +473,14 @@ name -- a string specifying the group name.
 
     #print 'in create group'
     g = self._obj.create_group(name)
+    import pdb; pdb.set_trace()
     if not g is None:
         gp  = _proxy(g,'str')
-        gp.file = g
+        gp.file = self.file
+        if self.parent is None:
+            gp.parent = weakref.proxy(self.groups['/'])
+        else:
+            gp.parent = weakref.proxy(self)
         gp.ma_mode = self.ma_mode
         gp.groups = nd.nioDict()
         gp.groups.path = g.path
@@ -767,6 +772,7 @@ Returns an NioFile object.
         # print group, ": ", sys.getrefcount(file.groups[group])
         gp = _proxy(file.groups[group], 'str')
         gp.file = weakref.proxy(file_proxy)
+        gp.ma_mode = file_proxy.ma_mode
         #gp.file = file_proxy
         group_proxies[group] = gp
 
@@ -867,7 +873,7 @@ def _create_coordinates_attriibute(file,var):
                         break
             parent = parent.parent
 
-    print coords
+    #print coords
     return coords
 
 

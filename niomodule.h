@@ -33,12 +33,12 @@ struct NioFileObjectStruct {
   PyObject *ud_types;     /* dictionary */
   PyObject *name;         /* string */
   PyObject *mode;         /* string */
-  PyObject *type;         /* string */
-  PyObject *full_path;    /* string */
+  PyObject *type;         /* string  : file or group  */
+  PyObject *full_path;    /* string : path in the file system for the top-level file object ; otherwise the group hierarchy separated by slashes */
   PyObject *weakreflist;
-  NioFileObject *parent;
-  NioFileObject *top;       
-  void *id;        /* this is a pointer to the NCL file record for the file */
+  NioFileObject *parent;   /* this is the parent group -- the top-level file object has no parent; the root group has the top-level file object as a parent */
+  NioFileObject *top;       /* this is the top-level file object */
+  void *id;        /* this is a pointer to the NCL file object for the (top-level) file */
   void *gnode;     /* gnode is actually an advanced file structure that contains a groupnode -- it could be the top level grpnode (file) or else a group */
   char open;
   char define;
@@ -51,7 +51,7 @@ struct NioFileObjectStruct {
 
 typedef struct {
   PyObject_HEAD
-  NioFileObject *file;
+  NioFileObject *file;  /* this is a file or a group depending on the parent of the variable */
   PyObject *attributes;   /* dictionary */
   char *name;
   NrmQuark *qdims;
