@@ -49,7 +49,8 @@ forecasts = file.groups['forecasts']
 print "forecasts:\n"
 print forecasts
 
-temp = forecasts.variables['model1/temp'][:]
+mdl1 = forecasts.groups['model1']
+temp = mdl1.variables['temp'][:]
 
 print "temp:"
 print temp
