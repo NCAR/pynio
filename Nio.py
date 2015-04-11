@@ -472,10 +472,12 @@ name -- a string specifying the group name.
     '''
 
     #print 'in create group'
+    #import pdb; pdb.set_trace()
     g = self._obj.create_group(name)
     if not g is None:
         gp  = _proxy(g,'str')
-        gp.file = self.file
+        #gp.file = weakref.proxy(g)
+        gp.file = g
         if self.parent is None:
             gp.parent = weakref.proxy(self.groups['/'])
         else:
@@ -770,7 +772,7 @@ Returns an NioFile object.
     for group in file.groups.keys():
         # print group, ": ", sys.getrefcount(file.groups[group])
         gp = _proxy(file.groups[group], 'str')
-        gp.file = weakref.proxy(file_proxy)
+        gp.file = weakref.proxy(file.groups[group])
         gp.ma_mode = file_proxy.ma_mode
         #gp.file = file_proxy
         group_proxies[group] = gp
