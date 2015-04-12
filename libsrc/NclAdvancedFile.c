@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 16143 2015-04-02 14:31:43Z huangwei $
+ *      $Id: NclAdvancedFile.c 16177 2015-04-12 16:52:58Z huangwei $
  */
 
 #include "NclAdvancedFile.h"
@@ -2725,42 +2725,17 @@ void FileDestroyGrpNode(NclFileGrpNode *grpnode)
     }
 }
 
-void FileDestroyGrpVarNode(NclFileGrpNode *grpnode)
-{
-	int n;
-
-        if(NULL != grpnode->options)
-	{
-		for(n = 0; n < grpnode->n_options; ++n)
-			if(NULL != grpnode->options[n].values)
-				NclFree(grpnode->options[n].values);
-		NclFree(grpnode->options);
-	}
-
-        grpnode->options = NULL;
-
-        NclFree(grpnode);
-        grpnode = NULL;
-	return;
-}
-
 void AdvancedFileDestroy(NclObj self)
 {
     NclAdvancedFile thefile = (NclAdvancedFile) self;
     NclRefList *p, *pt;
 
     _NclUnRegisterObj((NclObj)self);
-#if 0
-    if(thefile->advancedfile.format_funcs->free_file_rec != NULL && thefile->advancedfile.grpnode->parent == NULL)
-#else
     if((NULL != thefile->advancedfile.format_funcs->free_file_rec) && (Ncl_FileVar == thefile->advancedfile.type))
-#endif
     {
 	    if(thefile->advancedfile.grpnode != NULL)
 		    (*thefile->advancedfile.format_funcs->free_file_rec)(thefile->advancedfile.grpnode);
     }
-    else
-        FileDestroyGrpVarNode(thefile->advancedfile.grpnode);
 
     if(thefile->obj.cblist != NULL)
     {

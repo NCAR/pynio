@@ -256,8 +256,8 @@ try:
       LIBRARIES.append('hdf5_hl')
       LIBRARIES.append('hdf5')
     try:
-      LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"lib"))
-      INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"include"))
+      LIB_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"hdfeos5/lib"))
+      INC_DIRS.append(os.path.join(os.environ["HDFEOS5_PREFIX"],"hdfeos5/include"))
     except:
       pass
   else:

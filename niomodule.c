@@ -1822,7 +1822,6 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
                                  int ndims, NrmQuark *qdims)
 {
     NioVariableObject *self;
-    NclAdvancedFile advfile = (NclAdvancedFile) file->id;
     NclFileGrpNode* grpnode = ((NclAdvancedFile)file->gnode)->advancedfile.grpnode;
     NclFileVarNode* varnode;
     NrmQuark qvar = NrmStringToQuark(name);

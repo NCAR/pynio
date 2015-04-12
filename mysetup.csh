@@ -35,21 +35,19 @@
           breaksw
      default:
           setenv ZLIB_PREFIX	/usr/local
-          setenv SZIP_PREFIX	/opt/local
+          setenv SZIP_PREFIX	/usr/local
           setenv HDF5_PREFIX	/usr/local
+
+	  setenv ZLIB_INCDIR	/usr/local/include
+	  setenv ZLIB_LIBDIR	/usr/local/lib
+	  setenv SZIP_INCDIR	/usr/local/include
+	  setenv SZIP_LIBDIR	/usr/local/lib
+	  setenv HDF5_INCDIR	/usr/local/include
+	  setenv HDF5_LIBDIR	/usr/local/lib
+	  setenv F2CLIBS_PREFIX	/opt/local/lib/gcc49
+	  setenv F2CLIBS	gfortran
+
+ 	  python setup.py install --prefix=/usr/local
           breaksw
  endsw
-
- setenv ZLIB_INCDIR	${PREFIX}/include
- setenv ZLIB_LIBDIR	${PREFIX}/lib
- setenv SZIP_INCDIR	${PREFIX}/include
- setenv SZIP_LIBDIR	${PREFIX}/lib
- setenv HDF5_INCDIR	${PREFIX}/include
- setenv HDF5_LIBDIR	${PREFIX}/lib
-
- setenv F2CLIBS_PREFIX	/opt/local/lib
- setenv F2CLIBS		gfortran
-
- python setup.py install \
-	--prefix=${PREFIX}
 
