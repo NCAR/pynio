@@ -88,7 +88,7 @@ static char *option_class_doc =
 "\n\
 NioOptions object\n\n\
 Set options by assigning attributes to this object and then passing the\n\
-object as the 3rd (optional) argument to Nio.open_file:\n\
+object as an optional argument to Nio.open_file:\n\
 opt.OptionName = value\n\
 All option names and string option values are handled case-insensitively.\n\
 \n\
@@ -128,7 +128,7 @@ NetCDF file options:\n\
             NetCDF data model).\n\
         'NetCDF4' -- NetCDF 4 file (uses HDF 5 as the underlying format).\n\
     CompressionLevel -- Specify the level of data compression on a scale\n\
-            of 0 - 9 (ignored unless Format is set to 'NetCDF4Classic').\n\
+            of 0 - 9 (ignored unless Format is set to 'NetCDF4Classic' or 'NetCDF4').\n\
     HeaderReserveSpace -- Reserve <int-value> extra bytes in the header\n\
         of a file open for writing. Used to subsequently add dimensions,\n\
         attributes, and variables to existing files efficiently.\n\
@@ -165,34 +165,35 @@ GRIB files options\n\
 static char *niofile_type_doc =
 "\n\
 NioFile object\n\n\
-If 'f' is file object variable, get summary of contents including all\n\
-dimensions, chunk_dimensions, ud_types, variables, groups, and attributes using:\n\
-    print f\n\
-Assign global file attributes to writable files using:\n\
+Given:\n\
+f = Nio.open_file(filepath, mode='r', options=None, history='',format='')\n\
+\n\
+To see summary of file contents, including all attributes:\n\
+   print f\n\
+Assign global attributes to writable files or groups using:\n\
     f.global_att = global_att_value\n\
-Attributes (do not modify):\n\
-    dimensions -- a dictionary with dimension names as keys and dimension.\n\
-        lengths as values.\n\
-    chunk_dimensions -- a dictionary with chunk_dimension names as keys and dimension.\n\
-        lengths as values.\n\
-    ud_types -- a dictionary with type names as keys and value.\n\
-        objects as values.\n\
-    variables -- a dictionary with variable names as keys and NioVariable.\n\
-        objects as values.\n\
-    groups -- a dictionary with group names as keys and NioFile.\n\
-        objects as values.\n\
-    attributes (or __dict__) -- a dictionary containing global attribute names and values.\n\
+Attributes:\n\
+   name -- the name of the file or group\n\
+   dimensions -- dictionary of dimension lengths with dimension name keys\n\
+   variables -- dictionary of variable objects with variable name keys\n\
+   attributes --  dictionary of global file or group attributes with attribute name keys\n\
+       (the following are applicable for advanced formats NetCDF4 and HDF5 only)\n\
+   groups -- dictionary of groups with group name keys\n\
+   ud_types -- dictionary of user-defined data type definitions with data type name keys\n\
+   chunk_dimensions -- dictionary of chunking dimension sizes with dimension name keys\n\
+   parent -- reference to the parent group, parent file for the root group, or None for a file\n\
+   path -- the path of a group relative to the root group ('/'), or the file path for a file\n\
 Methods:\n\
-    close([history]) -- close the file.\n\
-    create_dimension(name,length) -- create a dimension in the file.\n\
-    create_chunk_dimension(name,length) -- create a chunk dimension in the file.\n\
-    create_variable(name,type,dimensions) -- create a variable in the file.\n\
-    create_group(name) -- create a group in the file.\n\
-    create_vlen(name,type,dimensions) -- create a variable length array variable in the file.\n\
-    create_compound_type(name, type)  -- create a user-defined compound type; with member names, sizes\n\
+   close(history='') -- close the file\n\
+   create_dimension(name, length) -- create a dimension in the file\n\
+   create_variable(name, type, dimensions) -- create a variable in the file\n\
+   unlimited(dimension_name) -- returns True if dimension_name refers to an unlimited dimension; False otherwise\n\
+       (the following are applicable for advanced formats NetCDF4 and HDF5 only)\n\
+   create_group(name) -- create a group in the file or group.\n\
+   create_vlen(name,type,dimensions) -- create a variable length array variable in the file or group.\n\
+   create_compound(name,type,dimensions) -- create a compound variable with the given type and dimensions.\n\
+   create_compound_type(name, type)  -- create a user-defined compound type; with member names, sizes\n\
         and types as defined in the type sequence argument.\n\
-    create_compound(name,type,dimensions) -- create a compound variable with the given type and dimensions.\n\
-    unlimited(dimension_name) -- returns True if dimension_name refers to an unlimited dimension; False otherwise\n\n\
 ";
 
 /* NioFile object method doc strings */
@@ -302,21 +303,26 @@ name -- a string specifying the dimension name to be queried for the unlimited p
 static char *niovariable_type_doc =
 "\n\
 NioVariable object\n\n\
-Get summary of variable contents including all dimensions,\n\
-associated coordinate variables, and attributes using:\n\
-    print f.variables['varname']\n\
-Assign variable attributes for writable files using:\n\
-    f.variables['varname'].attname = attvalue\n\
-Get or assign variable values using Python slicing syntax:\n\
-    val = f.variables['varname'][:]\n\
-assigns the entire variable contents to variable 'val'.\n\
-Attributes:(do not modify)\n\
+Given \n\
+    v = f.variables['varname']\n\
+Get summary of variable contents using:\n\
+    print v\n\
+Assign variable attributes for writable files using, e.g:\n\
+    v.units = 'meters'\n\
+Get or assign variable values using slicing syntax:\n\
+    val = v[:]\n\
+assigns all elements of variable to 'val', retaining dimensionality;\n\
+    val = v[0,:]\n\
+assigns one element of the first dimension and all elements of the remaining dimensions.\n\
+Attributes:\n\
     rank -- a scalar value indicating the number of dimensions\n\
     shape -- a tuple containing the number of elements in each dimension\n\
-    size -- a scalar value indicating the size in bytes of the variable\n\
     dimensions -- a tuple containing the dimensions names in order\n\
-    chunk_dimensions -- a tuple containing the chunk_dimensions names in order\n\
-    attributes (or __dict__) -- a dictionary containing the variable attributes\n\
+    attributes -- a dictionary of variable attributes with attribute name keys\n\
+    size -- a scalar value indicating the size in bytes of the variable\n\
+    name -- the name of the variable\n\
+    parent -- reference to the group or file to which the variable belongs\n\
+    path -- the path of the variable relative to the root group ('/')\n\
 Methods:\n\
     assign_value(value) -- assign a value to a variable in the file.\n\
     get_value() -- retrieve the value of a variable in the file.\n\
@@ -1822,6 +1828,7 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
                                  int ndims, NrmQuark *qdims)
 {
     NioVariableObject *self;
+    NclAdvancedFile advfile = (NclAdvancedFile) file->id;
     NclFileGrpNode* grpnode = ((NclAdvancedFile)file->gnode)->advancedfile.grpnode;
     NclFileVarNode* varnode;
     NrmQuark qvar = NrmStringToQuark(name);
@@ -2107,7 +2114,7 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
 {
     NioVariableObject *variable;
     int i;
-    NclFile nfile = (NclFile) file->id;
+    NclFile nfile = (NclFile) file->gnode;
     NrmQuark *qdims = NULL; 
     NhlErrorTypes ret;
     NrmQuark qvar;

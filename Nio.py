@@ -12,17 +12,31 @@ Class NioFile:
 
 f = Nio.open_file(filepath, mode='r', options=None, history='',format='')
 
-To see summary of file contents, including all dimensions, attributes,
-and variables:
+To see summary of file contents, including all attributes :
    print f
 attributes:
-   dimensions -- dictionary with dimension names as keys and dimension lengths as values
-   variables -- dictionary with variable names as keys and variable objects as values
-   attributes (or __dict__) --  contains the global attributes associated with the file
+   name -- the name of the file or group
+   dimensions -- dictionary of dimension lengths with dimension name keys
+   variables -- dictionary of variable objects with variable name keys
+   attributes --  dictionary of global file or group attributes with attribute name keys
+       (the following are applicable for advanced formats NetCDF4 and HDF5 only)
+   groups -- dictionary of groups with group name keys
+   ud_types -- dictionary of user-defined data type definitions with data type name keys
+   chunk_dimensions -- dictionary of chunking dimension sizes with dimension name keys
+   parent -- reference to the parent group, parent file for the root group, or None for a file
+   path -- the path of a group relative to the root group ('/'), or the file path for a file
 methods:
    close(history='')
    create_dimension(name, length)
    create_variable(name, type, dimensions)
+   unlimited(dimension_name) -- returns True if dimension_name refers to an unlimited dimension; False otherwise
+       (the following are applicable for advanced formats NetCDF4 and HDF5 only)
+   create_group(name) -- create a group in the file or group.
+   create_vlen(name,type,dimensions) -- create a variable length array variable in the file or group.
+   create_compound(name,type,dimensions) -- create a compound variable with the given type and dimensions.
+   create_compound_type(name, type)  -- create a user-defined compound type; with member names, sizes
+        and types as defined in the type sequence argument.
+   
 For more detailed information:
     print f.__doc__
 
@@ -30,7 +44,7 @@ Class NioOptions
 
 opt = Nio.options()
 
-To set format-specific options assign option names and settings as attributes
+To set general or format-specific options assign option names and settings as attributes
 and values of 'opt'. Then pass 'opt' as the optional options argument to
 Nio.open_file.
 To see valid options:
@@ -45,10 +59,13 @@ associated coordinate variables, and attributes:
     print v 
 Attributes:
     rank -- a scalar value indicating the number of dimensions
-    size -- a scalar value indicating the size in bytes of the variable
     shape -- a tuple containing the number of elements in each dimension
     dimensions -- a tuple containing the dimensions names in order
-    attributes (or __dict__) -- a dictionary containing the variable attributes
+    attributes -- a dictionary of variable attributes with attribute name keys
+    size -- a scalar value indicating the size in bytes of the variable
+    name -- the name of the variable
+    parent -- reference to the group or file to which the variable belongs
+    path -- the path of the variable relative to the root group ('/')
 Methods:
     assign_value(value) -- assign a value to a variable in the file.
     get_value() -- retrieve the value of a variable in the file.
@@ -803,7 +820,7 @@ Returns an NioFile object.
             gp.parent = weakref.proxy(file_proxy.groups['/'])
             #gp.parent = file_proxy.groups['/']
         elif sl == 0:
-            gp.parent = None
+            gp.parent =  weakref.proxy(file_proxy)
         else:
             gp.parent = weakref.proxy(file_proxy.groups[group[0:sl]])
             #gp.parent = file_proxy.groups[group[0:sl]]
