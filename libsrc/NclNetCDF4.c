@@ -2169,6 +2169,8 @@ void _NC4_get_grpnode(int pid, int gid, NclQuark pn, NclFileGrpNode *parentgrpno
     grpnode->cache_nelems = parentgrpnode->cache_nelems;
     grpnode->cache_preemption = parentgrpnode->cache_preemption;
 
+    NC4InitializeOptions(grpnode);
+
 #if 0
     grpnode->chunk_dim_rec = parentgrpnode->chunk_dim_rec;
     grpnode->unlimit_dim_rec = parentgrpnode->unlimit_dim_rec;
