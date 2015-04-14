@@ -962,13 +962,24 @@ static int GetNioMode(char* filename,char *mode)
 {
 	struct stat buf;
 	int crw;
+	char *cp = NULL;
+	char *fbuf;
+	
+	fbuf = malloc(strlen(filename) +1);
+
+
+	strcpy(fbuf,filename);
+	cp = strrchr(fbuf,'.');
 
 	if (mode == NULL)
 		mode = "r";
 
 	switch (mode[0]) {
 	case 'a':
-		if (stat(_NGResolvePath(filename),&buf) < 0)
+		if (stat(_NGResolvePath(fbuf),&buf) < 0) {
+			if (cp) *cp = '\0';
+		}
+		if (stat(_NGResolvePath(fbuf),&buf) < 0)
 			crw = -1;
 		else 
 			crw = 0;
@@ -978,8 +989,11 @@ static int GetNioMode(char* filename,char *mode)
 		break;
 	case 'r':
 		if (strlen(mode) > 1 && (mode[1] == '+' || mode[1] == 'w')) {
-			if (stat(_NGResolvePath(filename),&buf) < 0)
-				crw = -1;
+			if (stat(_NGResolvePath(fbuf),&buf) < 0) {
+				if (cp) *cp = '\0';
+			}
+			if (stat(_NGResolvePath(fbuf),&buf) < 0)
+			        crw = -1;
 			else 
 				crw = 0;
 		}
@@ -987,7 +1001,10 @@ static int GetNioMode(char* filename,char *mode)
 			crw = 1;
 		break;
 	case 'w':
-		if (stat(_NGResolvePath(filename),&buf) < 0)
+		if (stat(_NGResolvePath(fbuf),&buf) < 0) {
+			if (cp) *cp = '\0';
+		}
+		if (stat(_NGResolvePath(fbuf),&buf) < 0)
 			crw = -1;
 		else
 			crw = 0;
@@ -995,6 +1012,7 @@ static int GetNioMode(char* filename,char *mode)
 	default:
 		crw = -2;
 	}
+	free(fbuf);
 	return crw;
 }
 
