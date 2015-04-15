@@ -1354,7 +1354,7 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
         }
         else
         {
-            PyObject *array;
+            PyObject *array = NULL;
             length = (npy_intp) attnode->n_elem;
             py_type = data_type(attnode->type);
 	    if (py_type == PyArray_REFERENCE) {
@@ -1366,8 +1366,8 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
             if (attnode->value == NULL) {
 		    length = 1;
 		    long value = 0;
+		    array = PyArray_SimpleNew(1, &length, PyArray_LONG);
 		    if (array != NULL) {
-			    array = PyArray_SimpleNew(1, &length, PyArray_LONG);
 			    memcpy(((PyArrayObject *)array)->data, &value,
 				   (size_t) sizeof(long));
 			    array = PyArray_Return((PyArrayObject *)array);
@@ -1864,7 +1864,6 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
                                  int ndims, NrmQuark *qdims)
 {
     NioVariableObject *self;
-    NclAdvancedFile advfile = (NclAdvancedFile) file->id;
     NclFileGrpNode* grpnode = ((NclAdvancedFile)file->gnode)->advancedfile.grpnode;
     NclFileVarNode* varnode;
     NrmQuark qvar = NrmStringToQuark(name);
