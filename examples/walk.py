@@ -5,8 +5,16 @@ def walktree(top):
      for value in top.groups.values():
          for children in walktree(value):
              yield children
+import sys
 import Nio
-f = Nio.open_file("tnested.nc") 
+
+if(len(sys.argv) > 1):
+    name = sys.argv[1]
+else:
+    print "Usage: %s filename" %(sys.argv[0])
+    exit(-1)
+
+f = Nio.open_file(name) 
 #print f
 print "-----------------------"
 print "all groups in the file:"
@@ -15,6 +23,9 @@ print f.groups
 print "--------------------------"
 print "traversing the group tree:"
 print "--------------------------"
+if len(f.groups) == 0:
+  print name, "contains no groups"
+  exit(0)
 rgroup = f.groups['/']
 print "root group:",repr( rgroup)
 print "\tgroup:",  rgroup.name, "contains", len(rgroup.groups), "groups", len(rgroup.variables), "variables,", len(rgroup.dimensions), "dimensions, and", len(rgroup.attributes), "group attributes"

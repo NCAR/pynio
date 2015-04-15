@@ -1357,14 +1357,32 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
             PyObject *array;
             length = (npy_intp) attnode->n_elem;
             py_type = data_type(attnode->type);
-            array = PyArray_SimpleNew(1, &length, py_type);
-            if(array != NULL)
-            {
-                memcpy(((PyArrayObject *)array)->data, attnode->value,
-                      (size_t) length * _NclSizeOf(attnode->type));
-                array = PyArray_Return((PyArrayObject *)array);
-                if (array != NULL)
-                {
+	    if (py_type == PyArray_REFERENCE) {
+		    py_type = PyArray_LONG;
+	    }
+	    if (py_type == PyArray_COMPOUND) {
+		    py_type = PyArray_LONG;
+	    }
+            if (attnode->value == NULL) {
+		    length = 1;
+		    long value = 0;
+		    if (array != NULL) {
+			    array = PyArray_SimpleNew(1, &length, PyArray_LONG);
+			    memcpy(((PyArrayObject *)array)->data, &value,
+				   (size_t) sizeof(long));
+			    array = PyArray_Return((PyArrayObject *)array);
+		    }
+	    }
+	    else {
+		    array = PyArray_SimpleNew(1, &length, py_type);
+		    if(array != NULL)
+		    {
+			    memcpy(((PyArrayObject *)array)->data, attnode->value,
+				   (size_t) length * _NclSizeOf(attnode->type));
+		    }
+		    array = PyArray_Return((PyArrayObject *)array);
+	    }
+            if (array != NULL) {
                     PyDict_SetItemString(attributes, name, array);
 		    if (path) {
 			    if (! strcmp(path,"/")) {
@@ -1379,8 +1397,8 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
 		    }
                     Py_DECREF(array);
                 }
-            }
-        }
+	}
+
     }
 }
 
@@ -6605,6 +6623,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 	ng_size_t len_dims = 1;
 	Py_ssize_t i;
 	NrmQuark qsafe_mode = NrmStringToQuark("safemode");
+	NrmQuark qfile_structure = NrmStringToQuark("filestructure");
 
 	for (i = 0; i < PySequence_Length(keys); i++) {
 
@@ -6656,6 +6675,16 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 			Py_DECREF(key);
 			Py_DECREF(value);
 			continue;
+		}
+		else if (_NclFormatEqual(extq,NrmStringToQuark("h5")) &&
+			 (_NclGetLower(qkeystr) == qfile_structure)) {
+			NrmQuark *qval;
+			qval = (NrmQuark *) malloc(sizeof(NrmQuark));
+			*qval = NrmStringToQuark("advanced");
+			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+						 (void*)qval,NULL,1,&len_dims,
+						 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
+			_NclFileSetOption(NULL,extq,NrmStringToQuark("FileStructure"),md);
 		}
 		else if (! _NclFileIsOption(extq,qkeystr)) {
 			if (options == option_defaults) { 

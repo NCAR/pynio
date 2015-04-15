@@ -431,7 +431,6 @@ Read or write access attempts on the file object after closing
 raise an exception.
     '''
     #print "in close"
-    #from pdb import set_trace;set_trace()
     if not self.parent is None:
         return
     if self.open == 1:
@@ -721,7 +720,7 @@ Returns an NioFile object.
     explicit_fill_values = _get_option_value(options,_Nio.option_defaults,'ExplicitFillValues')
     mask_below_value = _get_option_value(options,_Nio.option_defaults,'MaskBelowValue')
     mask_above_value = _get_option_value(options,_Nio.option_defaults,'MaskAboveValue')
-
+    
     file = _Nio.open_file(filename,mode,options,history,format)
 
     file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
@@ -785,7 +784,6 @@ Returns an NioFile object.
     group_proxies = nd.nioDict()
     group_proxies.path = '/'
     group_proxies.topdict = None
-    #from pdb import set_trace;set_trace()
     for group in file.groups.keys():
         # print group, ": ", sys.getrefcount(file.groups[group])
         gp = _proxy(file.groups[group], 'str')
