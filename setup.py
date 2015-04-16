@@ -201,8 +201,9 @@ try:
   HAS_GRIB2 = int(os.environ["HAS_GRIB2"])
   if HAS_GRIB2 > 0:
     LIBRARIES.append('grib2c')
-    LIBRARIES.append('jasper')   # png is needed again, b/c it 
-    LIBRARIES.append('png')      # must come after jasper
+    LIBRARIES.append('jasper')
+    LIBRARIES.append('jpeg')   # png is needed again, b/c it 
+    LIBRARIES.append('png')    # must come after jasper
     LIB_MACROS.append(('BuildGRIB2', None))
     # This should test whether the system is 64 bits or not
     if sys.maxint > 2**32:
@@ -275,8 +276,9 @@ try:
   if HAS_GDAL > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
-    LIBRARIES.append('iconv') 
+#   LIBRARIES.append('iconv') 
     LIBRARIES.append('jasper')   # png is needed again, b/c it 
+    LIBRARIES.append('jpeg')   # png is needed again, b/c it 
     LIBRARIES.append('png')      # must come after jasper
     LIB_MACROS.append(('BuildGDAL', None))
     try:
