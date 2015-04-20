@@ -111,9 +111,9 @@ def pyniopath_ncarg():
         trypath = os.path.join(path,"PyNIO","ncarg")
         if not os.path.exists(trypath):
             trypath = os.path.join(path,"ncarg")
-            if os.path.exists(trypath):
-               pynio_ncarg = trypath
-               return pynio_ncarg
+        if os.path.exists(trypath):
+            pynio_ncarg = trypath
+            return pynio_ncarg
 
     if pynio_ncarg == None:
         ncarg_dir = os.environ.get("NCARG_ROOT")
@@ -127,6 +127,7 @@ def pyniopath_ncarg():
         else:
             pynio_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
 
+    print pynio_ncarg
     return pynio_ncarg
 
 #
