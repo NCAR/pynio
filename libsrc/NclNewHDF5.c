@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 16149 2015-04-02 20:05:42Z huangwei $
+*ID: $Id: NclNewHDF5.c 16197 2015-04-15 18:18:33Z huangwei $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
