@@ -96,6 +96,8 @@ __array_module_version__ = pynio_version.array_module_version
 __formats__              = pynio_version.formats
 del pynio_version
 
+NioVariable = None
+NioFile = None
 __all__ = [ 'open_file', 'option_defaults', 'options' ]
 
 def pyniopath_ncarg():
@@ -138,7 +140,6 @@ def pyniopath_ncarg():
 import os
 os.environ["NCARG_NCARG"] = pyniopath_ncarg()
 del pyniopath_ncarg
-del os
 
 #
 # This part of the code creates the NioFile and NioVariable classes as
@@ -253,6 +254,8 @@ def _proxy(obj, *specials, **regulars):
     # instantiate and return the needed proxy
     instance = cls(obj)
     return instance
+
+
 
 def _fill_value_to_masked(self, a):
 
@@ -650,7 +653,7 @@ def set_option(self,option,value):
 
 def __del__(self):
     #print "in __del__ method"
-    if not self.parent is None:
+    if hasattr(self,"parent") and self.parent is not None:
         return None
     if hasattr(self,'open') and self.open == 1:
         self.close()
@@ -917,5 +920,35 @@ print opt.__doc__ to see valid options.
     opt = _Nio.options()
     return opt
 
+'''
+Since the NioVariable and NioFile types do not actually get created until a file is opened, 
+do a minimal file open here to create the types and make them public
+'''
+
+filepath = os.getenv("NCARG_NCARG")
+fname = 'hdf5/num-types.h5'
+if filepath:
+    filepath = os.path.join(filepath,"data",fname)
+  
+if os.access(filepath,os.R_OK):
+    file = _Nio.open_file(filepath)
+    file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
+    file_proxy.parent = None
+    var_proxy = _proxy(file.variables['double_data'],'str','len',
+                       __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
+
+    for cls in _known_proxy_classes.values():
+        if isinstance(file_proxy,cls):
+            NioFile = cls
+        elif isinstance(var_proxy,cls):
+            NioVariable = cls
+
+    __all__.append(NioFile)
+    __all__.append(NioVariable)
+    file.close()
+    del(file_proxy)
+    del(var_proxy)
+    del(file)
+    del os
 
  

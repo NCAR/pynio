@@ -759,6 +759,16 @@ collect_attributes(void *fileid, int varid, PyObject *attributes, int nattrs)
 		  PyObject *array;
 		  length = (npy_intp) md->multidval.totalelements;
 		  py_type = data_type(att->data_type);
+		  /* following three if clauses are temporary until these types are actually supported */
+		  if (py_type == PyArray_REFERENCE) {
+			  py_type = PyArray_LONG;
+		  }
+		  if (py_type == PyArray_COMPOUND) {
+			  py_type = PyArray_LONG;
+		  }
+		  if (py_type == PyArray_ENUM) {
+			  py_type = PyArray_LONG;
+		  }
 		  array = PyArray_SimpleNew(1, &length, py_type);
 		  if (array != NULL) {
 			  memcpy(((PyArrayObject *)array)->data,
@@ -1357,10 +1367,14 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
             PyObject *array = NULL;
             length = (npy_intp) attnode->n_elem;
             py_type = data_type(attnode->type);
+	    /* following three if clauses are temporary until these types are actually supported */
 	    if (py_type == PyArray_REFERENCE) {
 		    py_type = PyArray_LONG;
 	    }
 	    if (py_type == PyArray_COMPOUND) {
+		    py_type = PyArray_LONG;
+	    }
+	    if (py_type == PyArray_ENUM) {
 		    py_type = PyArray_LONG;
 	    }
             if (attnode->value == NULL) {
@@ -6578,7 +6592,7 @@ void InitializeNioOptions(NrmQuark extq, int mode)
 	logical *lval;
 	NrmQuark *qval;
 	NrmQuark qnc = NrmStringToQuark("nc");
-	NrmQuark qgrb = NrmStringToQuark("qgrb");
+	NrmQuark qgrb = NrmStringToQuark("grb");
 
 	if (_NclFormatEqual(extq,qnc)) {
 		_NclFileSetOptionDefaults(qnc,NrmNULLQUARK);
@@ -6622,11 +6636,10 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 	ng_size_t len_dims = 1;
 	Py_ssize_t i;
 	NrmQuark qsafe_mode = NrmStringToQuark("safemode");
-	NrmQuark qfile_structure = NrmStringToQuark("filestructure");
+	NrmQuark qnc = NrmStringToQuark("nc");
 
+		    
 	for (i = 0; i < PySequence_Length(keys); i++) {
-
-
 		PyObject *key = PySequence_GetItem(keys,i);
 		char *keystr = PyString_AsString(key);
 		NrmQuark qkeystr = NrmStringToQuark(keystr);
@@ -6674,16 +6687,6 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 			Py_DECREF(key);
 			Py_DECREF(value);
 			continue;
-		}
-		else if (_NclFormatEqual(extq,NrmStringToQuark("h5")) &&
-			 (_NclGetLower(qkeystr) == qfile_structure)) {
-			NrmQuark *qval;
-			qval = (NrmQuark *) malloc(sizeof(NrmQuark));
-			*qval = NrmStringToQuark("advanced");
-			md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
-						 (void*)qval,NULL,1,&len_dims,
-						 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
-			_NclFileSetOption(NULL,extq,NrmStringToQuark("FileStructure"),md);
 		}
 		else if (! _NclFileIsOption(extq,qkeystr)) {
 			if (options == option_defaults) { 
@@ -6761,6 +6764,22 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options, PyObject *option_
 		Py_DECREF(value);
 	}
 	Py_DECREF(keys);
+
+	if (options == option_defaults && ! PyDict_Contains(options,PyString_FromString("FileStructure"))) {
+		NrmQuark *qval;
+		qval = (NrmQuark *) malloc(sizeof(NrmQuark));
+		if (_NclFormatEqual(extq,NrmStringToQuark("h5")) ||
+		    _NclFormatEqual(extq,NrmStringToQuark("he5"))) {
+ 			*qval = NrmStringToQuark("advanced");
+		}
+		else {
+ 			*qval = NrmStringToQuark("standard");
+		}
+		md = _NclCreateMultiDVal(NULL,NULL,Ncl_MultiDValData,0,
+					 (void*)qval,NULL,1,&len_dims,
+					 TEMPORARY,NULL,(NclTypeClass)nclTypestringClass);
+		_NclFileSetOption(NULL,extq,NrmStringToQuark("FileStructure"),md);
+	}
 }
 	
 /* Creator for NioFile objects */
@@ -6916,11 +6935,14 @@ SetUpDefaultOptions( void )
 	PyDict_SetItem(dict,opt,val);
  	Py_DECREF(opt);
 	Py_DECREF(val);
+#if 0
+	/* we don't want to set a default value for the FileStructure option, but the user can set it if they like */
 	opt = PyString_FromString("FileStructure");
 	val = PyString_FromString("standard");
 	PyDict_SetItem(dict,opt,val);
  	Py_DECREF(opt);
 	Py_DECREF(val);
+#endif
 		
 	return dict;
 
