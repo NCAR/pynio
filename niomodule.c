@@ -5152,7 +5152,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  		}
 					else if(NCL_UDT_compound == varnode->udt_type)
                           		{
-                            			/*
+                            		       /*
                               			*fprintf(stderr, "\nFunction %s, in file: %s, line: %d\n",
                                                	*		__PRETTY_FUNCTION__, __FILE__, __LINE__);
                               			*fprintf(stderr, "\tNeed to work on read compound\n");
