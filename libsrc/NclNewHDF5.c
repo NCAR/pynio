@@ -4200,6 +4200,22 @@ void _getH5data(hid_t fid, NclFileVarNode *varnode,
    */
 }
 
+NclQuark* _splitAstring(char* in_str, int ns, int leng)
+{
+    int n = 0;
+    NclQuark* out_str_in_Quark = (NrmQuark *)NclCalloc(ns, sizeof(NrmQuark));
+    char *tmp_str = NULL;
+
+    for(n = 0; n < ns; ++n)
+    {
+	tmp_str = &in_str[n*leng];
+      /*fprintf(stderr, "\tout_str %d: <%s>", n, tmp_str);*/
+        out_str_in_Quark[n] = NrmStringToQuark(tmp_str);
+    }
+    
+    return out_str_in_Quark;
+}
+
 /*
  ***********************************************************************
  * Function:	*_getH5compoundAsList
@@ -4275,8 +4291,10 @@ void *_getH5compoundAsList(hid_t fid, NclFileVarNode *varnode)
             dimnames[n] = varnode->dim_rec->dim_node[n].name;
             dimsizes[n] = varnode->dim_rec->dim_node[n].size;
             size       *= varnode->dim_rec->dim_node[n].size;
-            fprintf(stderr, "\tdimname[%d]: <%s>, dimsizes[%d] = %d, size = %ld\n",
-                             n, NrmQuarkToString(dimnames[n]), n, dimsizes[n], size);
+	  /*
+           *fprintf(stderr, "\tdimname[%d]: <%s>, dimsizes[%d] = %d, size = %ld\n",
+           *                 n, NrmQuarkToString(dimnames[n]), n, dimsizes[n], size);
+           */
         }
     }
 
@@ -4290,16 +4308,25 @@ void *_getH5compoundAsList(hid_t fid, NclFileVarNode *varnode)
   /*
    *fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
    *fprintf(stderr, "\tsize = %ld, datasize = %ld\n", size, datasize);
-
-   *for(n = 0; n < varnode->comprec->n_comps; ++n)
-   *{
-   *    compnode = &(varnode->comprec->compnode[n]);
-   *    fprintf(stderr, "\tcompnode [%d] name: <%s>, compnode->size = %ld, compnode->offset = %ld\n",
-   *                     n, NrmQuarkToString(compnode->name), compnode->nvals, compnode->offset);
-   *}
    */
 
-    values = (void*)NclCalloc(size, datasize);
+    complength = 0;
+    for(n = 0; n < varnode->comprec->n_comps; ++n)
+    {
+        compnode = &(varnode->comprec->compnode[n]);
+	compnode->offset = complength;
+	if(NCL_string == compnode->type)
+	    complength += sizeof(NrmQuark);
+	else
+	    complength += (compnode->nvals * _NclSizeOf(compnode->type));
+
+      /*
+       *fprintf(stderr, "\tcompnode [%d] name: <%s>, compnode->size = %ld, compnode->offset = %ld\n",
+       *                 n, NrmQuarkToString(compnode->name), compnode->nvals, compnode->offset);
+       */
+    }
+
+    values = (void*)NclCalloc(size, complength);
 
     for(n = 0; n < varnode->comprec->n_comps; ++n)
     {
@@ -4308,24 +4335,17 @@ void *_getH5compoundAsList(hid_t fid, NclFileVarNode *varnode)
 
         if(NCL_string == compnode->type)
         {
-            char** strdata = NULL;
-            char** strdata2 = NULL;
-            NrmQuark strquark = NULL;
+            char* strdata = NULL;
+            NrmQuark* strquark = NULL;
 
-            strdata = (char **)NclCalloc(size, sizeof(char *));
-            strdata2 = (char **)NclCalloc(size, sizeof(char *));
-            for(i = 0; i < size; ++i)
-            {
-                strdata[i] = (char *)NclCalloc(compnode->nvals, sizeof(char));
-                strdata2[i] = (char *)NclCalloc(1+compnode->nvals, sizeof(char));
-            }
+            strdata = (char *)NclCalloc(size, compnode->nvals);
 
             str_type = H5Tcopy(H5T_C_S1);
             status += H5Tset_size(str_type, compnode->nvals);
             datatype_id = H5Tcreate(H5T_COMPOUND, compnode->nvals);
             H5Tinsert(datatype_id, component_name, 0, str_type);
 
-            /*status += H5Dread(did, datatype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, strdata);*/
+            status = H5Dread(did, datatype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, strdata);
 
             if(0 != status)
             {
@@ -4336,31 +4356,13 @@ void *_getH5compoundAsList(hid_t fid, NclFileVarNode *varnode)
                 return NULL;
             }
 
+	    strquark = _splitAstring(strdata, size, compnode->nvals);
+
             for(i = 0; i < size; ++i)
-            {
-                if(NULL != strdata[i])
-		{
-		    strncpy(strdata2[i], strdata[i], compnode->nvals);
-		    strdata2[i][compnode->nvals] = '\0';
-		    fprintf(stderr, "\tstrdata[%d]: <%s>\n", i, strdata2[i]);
-                    strquark = NrmStringToQuark(strdata2[i]);
-		}
-                else
-		{
-		    fprintf(stderr, "\tunknown strdata[%d]\n", i);
-                    strquark = -1;
-                    strquark = NrmStringToQuark("Did not read properly");
-		}
-
-                memcpy(values + i*complength + compnode->offset,
-		       &strquark, _NclSizeOf(compnode->type));
-
-                NclFree(strdata[i]);
-                NclFree(strdata2[i]);
-            }
+                memcpy(values + i*complength + compnode->offset, &strquark[i], sizeof(NrmQuark));
 
             NclFree(strdata);
-            NclFree(strdata2);
+            NclFree(strquark);
 
             H5Tclose(str_type);
             H5Tclose(datatype_id);

@@ -4923,6 +4923,15 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, 
                 pyobj = PyArray_ToString((PyArrayObject*)tmpobj, NPY_CORDER);
                 Py_DECREF(tmpobj);
             }
+            else if(NCL_string == compnode->type)
+            {
+                PyObject* tmpobj;
+                char* tmpstr = NrmQuarkToString(*(NrmQuark*)curval + compnode->offset);
+                length = strlen(tmpstr);
+                tmpobj = PyArray_SimpleNewFromData(1, &length, PyArray_CHAR, tmpstr);
+                pyobj = PyArray_ToString((PyArrayObject*)tmpobj, NPY_CORDER);
+                Py_DECREF(tmpobj);
+            }
             else
                 pyobj = PyArray_SimpleNewFromData(1, &length, data_type(compnode->type), curval + compnode->offset);
 
