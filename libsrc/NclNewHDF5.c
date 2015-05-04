@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 16197 2015-04-15 18:18:33Z huangwei $
+*ID: $Id: NclNewHDF5.c 16226 2015-05-04 16:28:36Z huangwei $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
@@ -5008,21 +5008,21 @@ void *_getH5vlen(hid_t fid, NclFileVarNode *varnode)
 
     char *typename = NULL;
 
-    NclList vlenlist;
-
     void *vlenvalues;
-
     NclVar vlenvar;
     NclBasicDataTypes vlentype;
 
     ng_size_t one = 1;
 
+    ng_size_t vlen_ndims;
+    ng_size_t vlen_dimsizes;
+    ng_size_t vlen_dimnames;
     ng_size_t dimsizes[H5S_MAX_RANK];
-    ng_size_t dimnames[H5S_MAX_RANK];
     char      buffer[MAX_NCL_NAME_LENGTH];
 
+    NclList vlenlist;
+    obj *listids = NULL;
     NclMultiDValData vlen_md;
-    int *id = (int *)NclMalloc(sizeof(int));
 
   /*
    *fprintf(stderr, "\nEnter _getH5vlen, file: %s, line: %d\n", __FILE__, __LINE__);
@@ -5049,7 +5049,6 @@ void *_getH5vlen(hid_t fid, NclFileVarNode *varnode)
         vlnum *= dims[n];
         dimsizes[n] = dims[n];
         sprintf(buffer, "%s_%3.3d", NrmQuarkToString(varnode->name), n);
-        dimnames[n] = NrmStringToQuark(buffer);
     }
 
     h5vl = (hvl_t *) NclMalloc(vlnum * sizeof(hvl_t));
@@ -5081,16 +5080,14 @@ void *_getH5vlen(hid_t fid, NclFileVarNode *varnode)
     typename = _getH5typeName(super, 15);
 
     vlentype = string2NclType(typename);
-    vlenlist = (NclList)_NclListCreate(NULL, NULL, Ncl_List, 0, NCL_FIFO);
-    assert(vlenlist);
-    _NclListSetType((NclObj)vlenlist, NCL_FIFO);
-    vlenlist->obj.obj_type = Ncl_List;
+    varnode->base_type = vlentype;
 
-    *id = vlenlist->obj.id;
-    vlen_md = _NclMultiDVallistDataCreate(NULL,NULL,Ncl_MultiDVallistData,0,id,
-                                          NULL,1,&one,TEMPORARY,NULL);
+    listids = (obj *)NclMalloc(vlnum * sizeof(obj));
+    assert(listids);
 
-    ndims = 1;
+    _NclBuildArrayOfList(listids, ndims, dimsizes);
+
+    vlen_ndims = 1;
     size = H5Tget_size(super);
 
   /*
@@ -5117,13 +5114,14 @@ void *_getH5vlen(hid_t fid, NclFileVarNode *varnode)
        */
 
         sprintf(buffer, "VLEN_%3.3d", n);
-        dimnames[0] = NrmStringToQuark(buffer);
-        dimsizes[0] = h5vl[n].len;
+        vlen_dimnames = NrmStringToQuark(buffer);
+        vlen_dimsizes = h5vl[n].len;
 
         sprintf(buffer, "%s_%3.3d", NrmQuarkToString(varnode->name), n);
         vlenvar = _NclCreateVlenVar(buffer, vlenvalues,
-                                    ndims, dimnames,
-                                    dimsizes, vlentype);
+                                    1, &vlen_dimnames,
+                                    &vlen_dimsizes, vlentype);
+        vlenlist = (NclList)_NclGetObj(listids[n]);
         _NclListAppend((NclObj)vlenlist, (NclObj)vlenvar);
     }
 
@@ -5134,6 +5132,9 @@ void *_getH5vlen(hid_t fid, NclFileVarNode *varnode)
 
     NclFree(typename);
     NclFree(h5vl);
+
+    vlen_md = _NclMultiDVallistDataCreate(NULL,NULL,Ncl_MultiDVallistData,0,listids,
+                                          NULL,ndims,dimsizes,TEMPORARY,NULL);
 
   /*
    *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
