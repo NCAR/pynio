@@ -6581,7 +6581,12 @@ static NrmQuark
 GetExtension ( char * filename)
 {
 	struct stat statbuf;
-	char *cp = strrchr(filename,'.');
+	char *cp;
+	if (! strncmp(filename,"http://",7))  {
+		/* OPeNDAP files are handled by the NetCDF module */
+		return NrmStringToQuark("nc");
+	}
+        cp  = strrchr(filename,'.');
 	if (cp == NULL || *(cp+1) == '\0')
 		return NrmNULLQUARK;
 
