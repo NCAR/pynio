@@ -1,7 +1,7 @@
 import numpy as np
 import Nio
 
-fn = "MSG3-SEVI-MSG15-0100-NA-20130521001244.164000000Z-1074164.hdf5"
+fn = "MSG3-SEVI-MSG15-0100-NA-20130521001244.164000000Z-1074164.h5"
 opt = Nio.options()
 opt.FileStructure = 'advanced'
 f = Nio.open_file(fn, "r", options=opt)

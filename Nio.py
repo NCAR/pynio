@@ -926,7 +926,7 @@ do a minimal file open here to create the types and make them public
 '''
 
 filepath = os.getenv("NCARG_NCARG")
-fname = 'hdf5/num-types.h5'
+fname = 'netcdf/pop.nc'
 if filepath:
     filepath = os.path.join(filepath,"data",fname)
   

@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 16232 2015-05-05 15:52:08Z huangwei $
+*ID: $Id: NclNewHDF5.c 16240 2015-05-07 17:16:46Z huangwei $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
@@ -1586,9 +1586,8 @@ herr_t _checkH5attribute(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo,
            */
             is_vlstr = H5Tis_variable_str(tmp_type);
 
-            tmpstr = (char *)NclMalloc(str_size + 1);
+            tmpstr = (char *)NclCalloc(str_size + 1, 1);
             assert(tmpstr);
-            tmpstr[str_size] = '\0';
 
             attnode->value = NclMalloc(attnode->n_elem * sizeof(NrmQuark));
             assert(attnode->value);
@@ -1626,6 +1625,7 @@ herr_t _checkH5attribute(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo,
 
                 for(i = 0; i < nelmts; ++i)
                 {
+                    memset(tmpstr, 0, str_size+1);
                     memcpy(tmpstr, cp + i * str_size, str_size);
                     qptr[i] = NrmStringToQuark(tmpstr);
                 }

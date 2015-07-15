@@ -276,7 +276,7 @@ try:
   if HAS_GDAL > 0:
     LIBRARIES.append('gdal')
     LIBRARIES.append('proj') 
-    #LIBRARIES.append('iconv') 
+    LIBRARIES.append('iconv') 
     LIBRARIES.append('jasper')   # png is needed again, b/c it 
     LIBRARIES.append('jpeg')   # png is needed again, b/c it 
     LIBRARIES.append('png')      # must come after jasper
