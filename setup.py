@@ -345,7 +345,7 @@ except:
 try:
   EXTRA_OBJECTS = [os.environ["EXTRA_OBJECTS"]]
 except:
-  EXTRA_OBJECTS = ""
+  EXTRA_OBJECTS = ''
 
 #
 # Done with environment variables.
@@ -477,8 +477,8 @@ def configuration(parent_package='',top_path=None):
     config.add_library('nio',sources,
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,
-                       extra_compiler_args = [ '-O0 -g', '-w' ]
-#                       extra_compiler_args = [ '-O2', '-w' ]
+#                       extra_compiler_args = [ '-O0 -g', '-w' ]
+                       extra_compiler_args = [ '-O2', '-w' ]
                        )
     
     sources = ['niomodule.c']
@@ -500,7 +500,7 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-data_files.append("ncarg/data/hdf5/num-types.h5")
+data_files.append("ncarg/data/netcdf/pop.nc")
 
 if os.environ.has_key('PYTHONPATH'):
   print "\n\n\nOld pkgs_pth = ", pkgs_pth
