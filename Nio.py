@@ -934,7 +934,7 @@ if os.access(filepath,os.R_OK):
     file = _Nio.open_file(filepath)
     file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
     file_proxy.parent = None
-    var_proxy = _proxy(file.variables['double_data'],'str','len',
+    var_proxy = _proxy(file.variables['t'],'str','len',
                        __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
 
     for cls in _known_proxy_classes.values():
