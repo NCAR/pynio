@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 16186 2015-04-14 22:30:52Z dbrown $
+ *      $Id: FileSupport.c 16250 2015-06-03 15:32:02Z dbrown $
  */
 /************************************************************************
 *									*
@@ -3376,7 +3376,7 @@ NclApiDataList *_NclGetFileInfo1(NclFile thefile)
         if(grpnode->var_rec->n_vars)
         {
             tmp->u.file->n_vars = grpnode->var_rec->n_vars;
-            tmp->u.file->var_names = (NclQuark*)NclMalloc(sizeof(NclQuark)*thefile->file.n_vars);
+            tmp->u.file->var_names = (NclQuark*)NclMalloc(sizeof(NclQuark)*grpnode->var_rec->n_vars);
             for(j = 0; j < grpnode->var_rec->n_vars; ++j)
                 tmp->u.file->var_names[j] = grpnode->var_rec->var_node[j].name;
         }
@@ -4314,10 +4314,10 @@ NclGroup *_NclCreateGroup(NclObj inst, NclObjClass theclass, NclObjTypes obj_typ
    */
 
     if(file_in->file.advanced_file_structure)
-        group_out = _NclAdvancedGroupCreate(inst, theclass, obj_type, obj_type_mask,
+	    group_out = (NclGroup *)_NclAdvancedGroupCreate(inst, theclass, obj_type, obj_type_mask,
                                             status, file_in, group_name);
     else
-        group_out = _NclGroupCreate(inst, theclass, obj_type, obj_type_mask,
+	    group_out = (NclGroup *)_NclGroupCreate(inst, theclass, obj_type, obj_type_mask,
                                     status, file_in, group_name);
 
   /*

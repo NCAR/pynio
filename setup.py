@@ -500,7 +500,10 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-data_files.append("ncarg/data/netcdf/pop.nc")
+ncarg_dirs    = os.path.join("ncarg","data")
+for root, dirs, files in os.walk(ncarg_dirs):
+   for name in files:
+        data_files.append(os.path.join(root,name))
 
 if os.environ.has_key('PYTHONPATH'):
   print "\n\n\nOld pkgs_pth = ", pkgs_pth

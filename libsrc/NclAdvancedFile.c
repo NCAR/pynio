@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.c 16204 2015-04-22 20:50:21Z huangwei $
+ *      $Id: NclAdvancedFile.c 16253 2015-06-06 00:20:06Z dbrown $
  */
 
 #include "NclAdvancedFile.h"
@@ -6255,18 +6255,19 @@ static NhlErrorTypes AdvancedFileWriteVarAtt(NclFile infile, NclQuark var, NclQu
         }
 
         tmp_att_md = _NclGetAtt(att_id,NrmQuarkToString(attname),NULL);
+	/* the value is stored in the att_rec as well (not a copy - it's a pointer to the value */
+	for (i = 0; i < varnode->att_rec->n_atts; i++) {
+		if (varnode->att_rec->att_node[i].name == attname) {
+			varnode->att_rec->att_node[i].value = tmp_att_md->multidval.val;
+			break;
+		}
+	}
         ret = (*thefile->advancedfile.format_funcs->write_var_att)(
                 thefile->advancedfile.grpnode,
                 var,
                 attname,
                 tmp_att_md->multidval.val
                 );
-	/* the value is stored in the att_rec as well (not a copy - it's a pointer to the value */
-	for (i = 0; i < varnode->att_rec->n_atts; i++) {
-		if (varnode->att_rec->att_node[i].name == attname) {
-			varnode->att_rec->att_node[i].value = tmp_att_md->multidval.val;
-		}
-	}
 
         if (ret < NhlNOERROR)
         {
