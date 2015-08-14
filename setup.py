@@ -468,7 +468,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration(pynio_pkg_name,parent_package, top_path)
 
     files  = os.listdir('libsrc')
-    sources = [ file for file in files if file.endswith('.c') or file.endswith('.f') ]
+    sources = [ file for file in files if not file.startswith('._') and (file.endswith('.c') or file.endswith('.f')) ]
 
     for file in LIB_EXCLUDE_SOURCES: 
       sources.remove(file)
@@ -500,10 +500,7 @@ if HAS_GRIB2 > 0:
 else:
   data_files = []
 
-ncarg_dirs    = os.path.join("ncarg","data")
-for root, dirs, files in os.walk(ncarg_dirs):
-   for name in files:
-        data_files.append(os.path.join(root,name))
+data_files.append("ncarg/data/netcdf/pop.nc")
 
 if os.environ.has_key('PYTHONPATH'):
   print "\n\n\nOld pkgs_pth = ", pkgs_pth
