@@ -268,6 +268,7 @@ try:
   HAS_GDAL = int(os.environ["HAS_GDAL"])
   if HAS_GDAL > 0:
     LIBRARIES.append('gdal')
+    LIBRARIES.append('iconv')
     LIBRARIES.append('proj') 
     LIB_MACROS.append(('BuildGDAL', None))
     try:
@@ -449,6 +450,7 @@ def configuration(parent_package='',top_path=None):
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,
 #                       extra_compiler_args = [ '-O2', '-w' ]
+                       extra_compiler_args = [ '-O0', '-g' ]
                        )
     
     sources = ['niomodule.c']
