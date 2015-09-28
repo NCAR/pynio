@@ -155,6 +155,7 @@ try:
     LIBRARIES.append('hdf5_hl')
     LIBRARIES.append('hdf5')
     LIB_MACROS.append(('USE_NETCDF4', None))
+    LIB_MACROS.append(('USE_NETCDF4_FEATURES', None))
     try:
       HAS_OPENDAP = int(os.environ["HAS_OPENDAP"])
     except:    
@@ -174,7 +175,7 @@ if HAS_NETCDF4 > 0:
     formats['opendap'] = HAS_OPENDAP
 
 try:
-  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"])
+  HAS_HDFEOS = int(os.environ["HAS_HDFEOS"]) and int(os.environ["HAS_HDF4"])
   if HAS_HDFEOS > 0:
     LIB_MACROS.append(('BuildHDFEOS', None))
     LIBRARIES.append('hdfeos')
@@ -243,7 +244,7 @@ except:
 formats['hdf5'] = HAS_HDF5
 
 try:
-  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"])
+  HAS_HDFEOS5 = int(os.environ["HAS_HDFEOS5"]) and int(os.environ["HAS_HDF5"])
   if HAS_HDFEOS5 > 0:
     LIB_MACROS.append(('BuildHDFEOS5', None))
     LIBRARIES.append('he5_hdfeos')

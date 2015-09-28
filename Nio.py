@@ -89,9 +89,11 @@ def pyniopath_ncarg():
     pynio_ncarg = None
     for path in sys.path:
         trypath = os.path.join(path,"PyNIO","ncarg")
+        if not os.path.exists(trypath):
+            trypath = os.path.join(path,"ncarg")
         if os.path.exists(trypath):
             pynio_ncarg = trypath
-            break
+            return pynio_ncarg
 
     if pynio_ncarg == None:
         ncarg_dir = os.environ.get("NCARG_ROOT")
