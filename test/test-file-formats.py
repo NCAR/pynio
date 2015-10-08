@@ -1,5 +1,14 @@
-
+import sys
 import Nio
+import os
+import cStringIO
+import difflib
+from numpy.testing import assert_equal
+
+initialize = 0
+if len(sys.argv) > 1 and sys.argv[1] == "-i":
+    initialize = 1
+
 
 testfiles = [
 '../ncarg/data/grib/ced1.lf00.t00z.eta.grb',
@@ -9,28 +18,54 @@ testfiles = [
 '../ncarg/data/hdfeos/MOD04_L2.A2001066.0000.004.2003078090622.hdfeos',
 '../ncarg/data/hdfeos5/OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t014811.he5',
 '../ncarg/data/hdf5/num-types.h5',
-'../ncarg/data/shapefile/states.shp' ]
+'../ncarg/data/shapefile/states.shp', 
+'../ncarg/data/netcdf/CCRC_NARCliM_Sydney_DAM_1990-1999_pracc.nc' ]
 
-formats = [ 'grib', 'netcdf', 'grib2', 'hdf4', 'hdfeos', 'hdfeos5', 'hdf5', 'shapefile' ]
+
+formats = [ 'grib', 'netcdf', 'grib2', 'hdf4', 'hdfeos', 'hdfeos5', 'hdf5', 'shapefile', 'netcdf4' ]
 
 format_dict = dict(zip(formats,testfiles))
-
 supported_formats = Nio.__formats__
-for format in format_dict:
-   if supported_formats.has_key(format) and not supported_formats[format]:
-       print '==========================='
-       print 'Optional format %s is not enabled in this version of PyNIO' % (format,)
-       print '==========================='
-       continue
-   try:
-       print '==========================='
-       print 'Format %s: opening and printing contents' % (format,)
-       print '==========================='
-       f = Nio.open_file(format_dict[format])
-       print f
-   except:
-       print '==========================='
-       print 'Format %s: failed to open and/or print  contents' % (format,)
-       print '==========================='
+
+def test_formats():
+    for format in format_dict:
+        if supported_formats.has_key(format) and not supported_formats[format]:
+            print '==========================='
+            print 'Optional format %s is not enabled in this version of PyNIO' % (format,)
+            print '==========================='
+            continue
+        try:
+            cmpname = "%s-base.txt" % (format_dict[format],)
+            print '==========================='
+            if initialize:
+                print "Format %s: creating comparison output" % format
+                if cmpname:
+		    os.system('mv %s %s.back' % (cmpname, cmpname))
+            else:
+                print 'Format %s: opening and comparing contents metadata to known contents' % (format,)
+
+            f = Nio.open_file(format_dict[format])
+            str_out = cStringIO.StringIO()
+            sys.stdout = str_out
+            print f
+            sys.stdout = sys.__stdout__
+            #print str_out.getvalue()
+            if initialize:
+                fout = open(cmpname,mode='w')
+                sys.stdout = fout
+                print str_out.getvalue()
+                sys.stdout = sys.__stdout__
+                fout.close()
+            else:
+                fin = open(cmpname,mode='r')
+                contents = fin.read()
+                assert_equal(contents.strip(),str_out.getvalue().strip())
+        except:
+            print '==========================='
+            print 'Format %s: failed to open and/or metadata contents do not match known contents' % (format,)
+            print '==========================='
+            assert False
        
+if __name__ == "__main__":
+    test_formats()
        
