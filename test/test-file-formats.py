@@ -11,7 +11,7 @@ if len(sys.argv) > 1 and sys.argv[1] == "-i":
 
 
 testfiles = [
-'../ncarg/data/grib/ced1.lf00.t00z.eta.grb',
+'../ncarg/data/grib/19580101.ice125.grb',
 '../ncarg/data/netcdf/pop.nc',
 '../ncarg/data/grib2/wafsgfs_L_t06z_intdsk60.grib2',
 '../ncarg/data/hdf/avhrr.hdf',
