@@ -15,7 +15,7 @@ if not Nio.__formats__['opendap']:
     sys.exit()
 
 url      = "http://test.opendap.org/opendap/data/nc/"
-filename = "123.nc"
+filename = "bears.nc"
  
 f = Nio.open_file(url + filename)
 variables = f.variables.keys()

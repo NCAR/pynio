@@ -19,7 +19,7 @@ testfiles = [
 '../ncarg/data/hdfeos5/OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t014811.he5',
 '../ncarg/data/hdf5/num-types.h5',
 '../ncarg/data/shapefile/states.shp', 
-'../ncarg/data/netcdf/CCRC_NARCliM_Sydney_DAM_1990-1999_pracc.nc' ]
+'../ncarg/data/netcdf/test_hgroups.nc' ]
 
 
 formats = [ 'grib', 'netcdf', 'grib2', 'hdf4', 'hdfeos', 'hdfeos5', 'hdf5', 'shapefile', 'netcdf4' ]
@@ -40,7 +40,7 @@ def test_formats():
             if initialize:
                 print "Format %s: creating comparison output" % format
                 if cmpname:
-		    os.system('mv %s %s.back' % (cmpname, cmpname))
+		    os.system('mv -f %s %s.back' % (cmpname, cmpname))
             else:
                 print 'Format %s: opening and comparing contents metadata to known contents' % (format,)
 

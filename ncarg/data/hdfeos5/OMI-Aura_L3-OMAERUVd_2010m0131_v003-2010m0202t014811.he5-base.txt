@@ -1,0 +1,99 @@
+Nio file:	OMI-Aura_L3-OMAERUVd_2010m0131_v003-2010m0202t014811.he5
+      OrbitNumber : [29485, 29486, 29487, 29488, 29489, 29490, 29491, 29492, 29493, 29494, 29495, 29496, 29497, 29498, 29499, 29500, 29501, 29502, 29503, 29504, 29505, 29506, 29507, 29508, 29509, 29510, 29511, 29512, 29513, 29514, 29515, 29516, 29517, 29518, 29519, 29520, 29521, 29522, 29523, 29524, 29525, 29526, 29527, 29528]
+      OrbitPeriod : [5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934, 5933, 5933, 5934, 5933, 5934, 5933, 5934]
+      InstrumentName : OMI
+      ProcessLevel : 3
+      GranuleMonth : 1
+      GranuleDay : 31
+      GranuleYear : 2010
+      GranuleDayOfYear : 31
+      TAI93At0zOfGranule : 539049607
+      PGEVersion : "0.9.50"
+      StartUTC : 2010-01-30T12:15:00.000000Z
+      EndUTC : 2010-02-01T11:45:00.000000Z
+      Period : Daily
+   dimensions:
+   variables:
+Nio group <Aerosol NearUV Grid>:	Aerosol NearUV Grid
+      GCTPProjectionCode : 0
+      Projection : Geographic
+      GridOrigin : Center
+      GridSpacing : (1.0,1.0)
+      GridSpacingUnit : deg
+      GridSpan : (-180,180,-90,90)
+      GridSpanUnit : deg
+      NumberOfLongitudesInGrid : 360
+      NumberOfLatitudesInGrid : 180
+   dimensions:
+      XDim = 360
+      YDim = 180
+   variables:
+   float FinalAerosolAbsOpticalDepth388 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Absorption Optical Depth at 388 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolAbsOpticalDepth388
+
+   float FinalAerosolExtOpticalDepth388 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Extinction Optical Depth at 388 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolExtOpticalDepth388
+
+   float FinalAerosolSingleScattAlb388 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Single Scattering Albedo at 388 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolSingleScattAlb388
+
+   float FinalAerosolAbsOpticalDepth500 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Absorption Optical Depth at 500 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolAbsOpticalDepth500
+
+   float FinalAerosolExtOpticalDepth500 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Extinction Optical Depth at 500 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolExtOpticalDepth500
+
+   float FinalAerosolSingleScattAlb500 [ YDim|180, XDim|360 ]	 
+      _FillValue : -1.267651e+30
+      Units : NoUnits
+      Title : Final Aerosol Single Scattering Albedo at 500 nm
+      UniqueFieldDefinition : OMI-Specific
+      ScaleFactor : 1
+      Offset : 0
+      MissingValue : -1.267651e+30
+      projection : Geographic
+      long_name : FinalAerosolSingleScattAlb500
+
+
+
+

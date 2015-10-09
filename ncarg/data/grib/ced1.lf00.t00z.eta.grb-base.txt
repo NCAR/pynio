@@ -1,0 +1,1091 @@
+Nio file:	ced1.lf00.t00z.eta.grb
+   global attributes:
+   dimensions:
+      gridx_6 = 45
+      gridy_6 = 53
+      gridx_101 = 91
+      gridy_101 = 113
+      gridx_105 = 83
+      gridy_105 = 83
+      lv_ISBL6 = 11
+      lv_ISBL7 = 14
+      lv_GPML8 = 6
+      lv_SIGL9 = 3
+      lv_ISBL10 = 6
+      lv_ISBL11 = 5
+      lv_ISBL12 = 10
+      lv_SIGY13 = 8
+      lv_SIGY14 = 3
+      lv_SIGY15 = 2
+   variables:
+      float PRES_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	1
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRES_101_SFC [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	1
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_6_MSL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	102
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	2
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_101_MSL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	102
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	2
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float PRMSL_105_MSL [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	102
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	2
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_0DEG [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	4
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float HGT_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	7
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_ISBL [ lv_ISBL7, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_SIGL [ lv_SIGL9, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TMP_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	11
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float POT_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Potential temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	13
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float DPT_6_ISBL [ lv_ISBL10, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Dew point temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	17
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float DPT_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Dew point temperature
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	17
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_HTGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	105
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	10
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float U_GRD_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	u-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	33
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_GPML [ lv_GPML8, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	103
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_HTGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	105
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	10
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_GRD_101_SIGL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	v-component of wind
+         units :	m/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	107
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	34
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float STRM_6_ISBL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Stream function
+         units :	m^2/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	35
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	500
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_6_ISBL [ lv_ISBL6, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	39
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	39
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_101_ISBL [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	100
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	39
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	700
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float V_VEL_105_ISBL [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Pressure vertical velocity
+         units :	Pa/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	100
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	39
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	700
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ABS_V_6_ISBL [ lv_ISBL11, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Absolute vorticity
+         units :	/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	41
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_ISBL [ lv_ISBL10, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float SPF_H_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Specific humidity
+         units :	kg/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	51
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[97, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_0DEG [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	4
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_ISBL [ lv_ISBL12, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_SIGL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	107
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	9823
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float R_H_6_SIGY [ lv_SIGY13, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	52
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float P_WAT_6_SIGY [ lv_SIGY14, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Precipitable water
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	54
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	61
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	61
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float A_PCP_105_SFC_acc [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Total precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	1
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	61
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float NCPCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Large scale precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	62
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float NCPCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Large scale precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	62
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ACPCP_6_SFC_acc [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	63
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float ACPCP_101_SFC_acc [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective precipitation
+         units :	kg/m^2
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	1
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	63
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MSLET_6_MSL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Mean sea level pressure (ETA model)
+         units :	Pa
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	102
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	130
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float LFT_X_6_ISBY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Surface lifted index
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	101
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	131
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[50, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float 4LFTX_6_SIGY [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Best (4-layer) lifted index
+         units :	K
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	132
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[84, 98]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_6_SIGY [ lv_SIGY15, gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	108
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	135
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_101_SIGY [ gridx_101, gridy_101 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_101 gridlon_101
+         level_indicator :	108
+         grid_number :	101
+         parameter_table_version :	1
+         parameter_number :	135
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[85, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float MCONV_105_SIGY [ gridx_105, gridy_105 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Horizontal moisture divergence
+         units :	kg/kg/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_105 gridlon_105
+         level_indicator :	108
+         grid_number :	105
+         parameter_table_version :	1
+         parameter_number :	135
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	[85, 100]
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float VW_SH_6_TRO [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Vertical speed shear
+         units :	1/s
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	7
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	136
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float CAPE_6_SFC [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Convective available. potential energy
+         units :	J/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	1
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	157
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      float TKE_6_ISBL [ gridx_6, gridy_6 ]
+         center :	US National Weather Service - NCEP (WMC)
+         long_name :	Turbulent kinetic energy
+         units :	J/kg
+         _FillValue :	1e+20
+         coordinates :	gridlat_6 gridlon_6
+         level_indicator :	100
+         grid_number :	6
+         parameter_table_version :	1
+         parameter_number :	158
+         model :	Non-hydrostatic Meso Model (NMM) (Currently 8 km)
+         level :	250
+         forecast_time :	0
+         forecast_time_units :	hours
+         initial_time :	10/24/1995 (00:00)
+      integer lv_SIGY15_l1 [ lv_SIGY15 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY15_l0 [ lv_SIGY15 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY14_l1 [ lv_SIGY14 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY14_l0 [ lv_SIGY14 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY13_l1 [ lv_SIGY13 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_SIGY13_l0 [ lv_SIGY13 ]
+         long_name :	layer between two sigma levels
+         units :	sigma
+      integer lv_ISBL12 [ lv_ISBL12 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL11 [ lv_ISBL11 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL10 [ lv_ISBL10 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_SIGL9 [ lv_SIGL9 ]
+         long_name :	sigma level
+         units :	sigma
+      integer lv_GPML8 [ lv_GPML8 ]
+         long_name :	fixed height level
+         units :	m
+      integer lv_ISBL7 [ lv_ISBL7 ]
+         long_name :	isobaric level
+         units :	hPa
+      integer lv_ISBL6 [ lv_ISBL6 ]
+         long_name :	isobaric level
+         units :	hPa
+      float gridrot_105 [ gridx_105, gridy_105 ]
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_105 [ gridx_105, gridy_105 ]
+         corners :	[17.52879, 16.80779, 53.77076, 56.13577]
+         long_name :	latitude
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	90754.64
+         Dx :	90754.64
+         Lov :	255
+         Lo1 :	230.704
+         La1 :	17.529
+      float gridlon_105 [ gridx_105, gridy_105 ]
+         corners :	[-129.2958, -79.09349, -22.37377, 172.9269]
+         long_name :	longitude
+         grid_description :	6889-point (83x83) N. Hemisphere polar stereographic grid oriented 105W; pole at  (40.5,88.5).  (U.S. area subset of NGM Super C grid, used by ETA model)
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	90754.64
+         Dx :	90754.64
+         Lov :	255
+         Lo1 :	230.704
+         La1 :	17.529
+      float gridrot_101 [ gridx_101, gridy_101 ]
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_101 [ gridx_101, gridy_101 ]
+         corners :	[10.528, 11.34911, 44.49488, 42.26546]
+         long_name :	latitude
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	91452
+         Dx :	91452
+         Lov :	255
+         Lo1 :	222.854
+         La1 :	10.528
+      float gridlon_101 [ gridx_101, gridy_101 ]
+         corners :	[-137.146, -74.2207, -16.57593, 166.4939]
+         long_name :	longitude
+         grid_description :	10283-point (91x113) N. Hemisphere polar stereographic grid oriented 105W; Pole at (58.5,92.5). (NGM "Big C-Grid")
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	91452
+         Dx :	91452
+         Lov :	255
+         Lo1 :	222.854
+         La1 :	10.528
+      float gridrot_6 [ gridx_6, gridy_6 ]
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         long_name :	vector rotation angle
+         units :	radians
+         formula_u :	Uearth = sin(rot)*Vgrid + cos(rot)*Ugrid
+         formula_v :	Vearth = cos(rot)*Vgrid - sin(rot)*Ugrid
+         note1 :	u and v components of vector quantities are resolved relative to grid
+         note2 :	apply formulas to derive u and v components relative to earth
+      float gridlat_6 [ gridx_6, gridy_6 ]
+         corners :	[7.647006, 7.647045, 44.28813, 44.28802]
+         long_name :	latitude
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         units :	degrees_north
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	190500
+         Dx :	190500
+         Lov :	255
+         Lo1 :	226.557
+         La1 :	7.647
+      float gridlon_6 [ gridx_6, gridy_6 ]
+         corners :	[-133.4429, -76.55713, -23.74609, 173.7461]
+         long_name :	longitude
+         grid_description :	2385-point (45x53) N. Hemisphere polar stereographic grid oriented 105W; Pole at (27,49). (LFM Forecast)
+         units :	degrees_east
+         mpCenterLatF :	90
+         mpCenterLonF :	255
+         mpProjection :	STEREOGRAPHIC
+         ProjectionCenter :	north
+         Dy :	190500
+         Dx :	190500
+         Lov :	255
+         Lo1 :	226.557
+         La1 :	7.647
+
+

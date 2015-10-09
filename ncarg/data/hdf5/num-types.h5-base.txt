@@ -1,0 +1,29 @@
+Nio file:	num-types.h5
+   dimensions:
+   variables:
+   byte c_data [ DIM_000|4, DIM_001|7 ]	 
+
+   double double_data [ DIM_000|4, DIM_001|7 ]	 
+
+   float float_data [ DIM_000|4, DIM_001|7 ]	 
+
+   integer i_data [ DIM_000|4, DIM_001|7 ]	 
+
+   integer l_data [ DIM_000|4, DIM_001|7 ]	 
+
+   int64 ll_data [ DIM_000|4, DIM_001|7 ]	 
+
+   short s_data [ DIM_000|4, DIM_001|7 ]	 
+
+   ubyte uc_data [ DIM_000|4, DIM_001|7 ]	 
+
+   uint ui_data [ DIM_000|4, DIM_001|7 ]	 
+
+   uint ul_data [ DIM_000|4, DIM_001|7 ]	 
+
+   uint64 ull_data [ DIM_000|4, DIM_001|7 ]	 
+
+   ushort us_data [ DIM_000|4, DIM_001|7 ]	 
+
+
+

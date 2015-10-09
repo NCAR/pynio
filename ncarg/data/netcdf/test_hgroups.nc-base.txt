@@ -1,0 +1,320 @@
+Nio file:	test_hgroups.nc
+   dimensions:
+      recNum = 74
+   variables:
+   string UTC_time [ recNum|74 ]	 
+      name : time
+      unit : none
+
+Nio group <mozaic_flight_2012030403540535_ascent>:	mozaic_flight_2012030403540535_ascent
+      airport_dep : TLV
+      flight : 2012030403540535
+      level : calibrated
+      airport_arr : FRA
+      mission : mozaic
+      time_dep : 2012-03-04 03:54:05
+      aircraft : 3
+      link : http://www.iagos.fr/extract
+      phase : ascent
+      time_arr : 2012-03-04 08:01:44
+   dimensions:
+   variables:
+   double air_press [ recNum|74 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ recNum|74 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ recNum|74 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ recNum|74 ]	 
+      name : barometric_altitude
+      unit : m
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030321335035_descent>:	mozaic_flight_2012030321335035_descent
+      airport_dep : FRA
+      flight : 2012030321335035
+      level : calibrated
+      airport_arr : TLV
+      mission : mozaic
+      time_dep : 2012-03-03 09:33:50
+      aircraft : 3
+      link : http://www.iagos.fr/extract
+      phase : descent
+      time_arr : 2012-03-04 01:05:08
+   dimensions:
+      air_press = 76
+   variables:
+   double air_press [ air_press|76 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|76 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|76 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|76 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|76 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030403540535_descent>:	mozaic_flight_2012030403540535_descent
+      airport_dep : TLV
+      flight : 2012030403540535
+      level : calibrated
+      airport_arr : FRA
+      mission : mozaic
+      time_dep : 2012-03-04 03:54:05
+      aircraft : 3
+      link : http://www.iagos.fr/extract
+      phase : descent
+      time_arr : 2012-03-04 08:01:44
+   dimensions:
+      air_press = 78
+   variables:
+   double air_press [ air_press|78 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|78 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|78 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|78 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|78 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030412545335_ascent>:	mozaic_flight_2012030412545335_ascent
+      airport_dep : FRA
+      flight : 2012030412545335
+      level : calibrated
+      airport_arr : NGO
+      mission : mozaic
+      time_dep : 2012-03-04 12:54:53
+      aircraft : 3
+      link : http://www.iagos.fr/extract
+      phase : ascent
+      time_arr : 2012-03-05 12:21:37
+   dimensions:
+      air_press = 60
+   variables:
+   double air_press [ air_press|60 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|60 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|60 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|60 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|60 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030419144751_ascent>:	mozaic_flight_2012030419144751_ascent
+      airport_dep : FRA
+      flight : 2012030419144751
+      level : calibrated
+      airport_arr : WDH
+      mission : mozaic
+      time_dep : 2012-03-04 07:14:47
+      aircraft : 2
+      link : http://www.iagos.fr/extract
+      phase : ascent
+      time_arr : 2012-03-05 04:49:45
+   dimensions:
+      air_press = 60
+   variables:
+   double air_press [ air_press|60 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|60 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|60 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|60 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|60 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030319051051_descent>:	mozaic_flight_2012030319051051_descent
+      airport_dep : WDH
+      flight : 2012030319051051
+      level : calibrated
+      airport_arr : FRA
+      mission : mozaic
+      time_dep : 2012-03-03 07:05:10
+      aircraft : 2
+      link : http://www.iagos.fr/extract
+      phase : descent
+      time_arr : 2012-03-04 04:46:40
+   dimensions:
+      air_press = 78
+   variables:
+   double air_press [ air_press|78 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|78 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|78 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|78 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|78 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+Nio group <mozaic_flight_2012030421382353_ascent>:	mozaic_flight_2012030421382353_ascent
+      airport_dep : FRA
+      flight : 2012030421382353
+      level : calibrated
+      airport_arr : TLV
+      mission : mozaic
+      time_dep : 2012-03-04 09:38:23
+      aircraft : 4
+      link : http://www.iagos.fr/extract
+      phase : ascent
+      time_arr : 2012-03-05 01:13:34
+   dimensions:
+      air_press = 75
+   variables:
+   double air_press [ air_press|75 ]	 
+      name : air_pressure
+      unit : Pa
+
+   double CO [ air_press|75 ]	 
+      name : mole_fraction_of_carbon_monoxide_in_air
+      unit : ppb
+
+   double O3 [ air_press|75 ]	 
+      name : mole_fraction_of_ozone_in_air
+      unit : ppb
+
+   double altitude [ air_press|75 ]	 
+      name : barometric_altitude
+      unit : m
+
+   string UTC_time [ air_press|75 ]	 
+      name : time
+      unit : none
+
+   double lat
+	 
+      standard_name : latitude
+      units : degree_north
+
+   double lon
+	 
+      standard_name : longitude
+      units : degree_east
+
+
+
+
