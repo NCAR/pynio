@@ -1,0 +1,43 @@
+Nio file:	../ncarg/data/shapefile/states.shp
+   global attributes:
+      layer_name : states
+      geometry_type : polygon
+      geom_segIndex : 0
+      geom_numSegs : 1
+      segs_xyzIndex : 0
+      segs_numPnts : 1
+   dimensions:
+      geometry = 2
+      segments = 2
+      num_features = 49 // unlimited
+      num_segments = 95
+      num_points = 11481
+   variables:
+      integer geometry [ num_features, geometry ]
+      integer segments [ num_segments, segments ]
+      double x [ num_points ]
+      double y [ num_points ]
+      string STATE_NAME [ num_features ]
+      string STATE_FIPS [ num_features ]
+      string SUB_REGION [ num_features ]
+      string STATE_ABBR [ num_features ]
+      double LAND_KM [ num_features ]
+      double WATER_KM [ num_features ]
+      double PERSONS [ num_features ]
+      double FAMILIES [ num_features ]
+      double HOUSHOLD [ num_features ]
+      double MALE [ num_features ]
+      double FEMALE [ num_features ]
+      double WORKERS [ num_features ]
+      double DRVALONE [ num_features ]
+      double CARPOOL [ num_features ]
+      double PUBTRANS [ num_features ]
+      double EMPLOYED [ num_features ]
+      double UNEMPLOY [ num_features ]
+      double SERVICE [ num_features ]
+      double MANUAL [ num_features ]
+      double P_MALE [ num_features ]
+      double P_FEMALE [ num_features ]
+      double SAMP_POP [ num_features ]
+
+

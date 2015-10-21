@@ -1,0 +1,41 @@
+Nio file:	../ncarg/data/netcdf/pop.nc
+   global attributes:
+   dimensions:
+      nlat = 384
+      nlon = 320
+   variables:
+      float urot [ nlat, nlon ]
+         missing_value :	9.96921e+36
+         _FillValue :	9.96921e+36
+         cell_methods :	time: mean
+         coordinates :	lat2d lon2d
+         units :	centimeter/s
+         long_name :	Zonal Velocity
+         time :	365031
+         z_t :	500.622
+      float vrot [ nlat, nlon ]
+         missing_value :	9.96921e+36
+         _FillValue :	9.96921e+36
+         cell_methods :	time: mean
+         coordinates :	lat2d lon2d
+         units :	centimeter/s
+         long_name :	Meridional Velocity
+         time :	365031
+         z_t :	500.622
+      float t [ nlat, nlon ]
+         z_t :	500.622
+         time :	365031
+         long_name :	Potential Temperature
+         units :	degC
+         coordinates :	lat2d lon2d
+         cell_methods :	time: mean
+         _FillValue :	9.96921e+36
+         missing_value :	9.96921e+36
+      float lat2d [ nlat, nlon ]
+         long_name :	array of u-grid latitudes
+         units :	degrees_north
+      float lon2d [ nlat, nlon ]
+         long_name :	array of u-grid longitudes
+         units :	degrees_east
+
+

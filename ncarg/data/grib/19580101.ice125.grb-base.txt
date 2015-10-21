@@ -1,0 +1,52 @@
+Nio file:	../ncarg/data/grib/19580101.ice125.grb
+   global attributes:
+   dimensions:
+      initial_time0_hours = 5
+      forecast_time1 = 2
+      g0_lat_2 = 145
+      g0_lon_3 = 288
+   variables:
+      float ICEC_GDS0_SFC [ initial_time0_hours, forecast_time1, g0_lat_2, g0_lon_3 ]
+         sub_center :	241
+         center :	Japanese Meteorological Agency - Tokyo (RSMC)
+         long_name :	Ice cover (1 = ice, 0 = no ice)
+         units :	Proportion
+         _FillValue :	1e+20
+         level_indicator :	1
+         gds_grid_type :	0
+         parameter_table_version :	200
+         parameter_number :	91
+      double initial_time0_hours [ initial_time0_hours ]
+         long_name :	initial time
+         units :	hours since 1800-01-01 00:00
+      double initial_time0_encoded [ initial_time0_hours ]
+         long_name :	initial time encoded as double
+         units :	yyyymmddhh.hh_frac
+      float g0_lat_2 [ g0_lat_2 ]
+         long_name :	latitude
+         GridType :	Cylindrical Equidistant Projection Grid
+         units :	degrees_north
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	-1.25
+         La2 :	-90
+         Lo1 :	0
+         La1 :	90
+      float g0_lon_3 [ g0_lon_3 ]
+         long_name :	longitude
+         GridType :	Cylindrical Equidistant Projection Grid
+         units :	degrees_east
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	-1.25
+         La2 :	-90
+         Lo1 :	0
+         La1 :	90
+      integer forecast_time1 [ forecast_time1 ]
+         long_name :	Forecast offset from initial time
+         units :	hours
+      string initial_time0 [ initial_time0_hours ]
+         long_name :	Initial time of first record
+         units :	mm/dd/yyyy (hh:mm)
+
+

@@ -1,0 +1,444 @@
+Nio file:	../ncarg/data/grib2/wafsgfs_L_t06z_intdsk60.grib2
+   global attributes:
+   dimensions:
+      lat_0 = 73
+      lon_0 = 73
+      lv_ISBL0 = 12
+      lv_ISBL1 = 11
+      lv_ISBL2 = 10
+   variables:
+      float TMP_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Specified height level above ground (m)
+         level :	2
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float TMP_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Temperature
+         units :	K
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Temperature
+         parameter_template_discipline_category_number :	[0, 0, 0, 0]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_L100_GLL0 [ lv_ISBL1, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Specified height level above ground (m)
+         level :	2
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float RH_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Relative humidity
+         units :	%
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[0, 0, 1, 1]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Specified height level above ground (m)
+         level :	10
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float UGRD_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	U-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 2]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_L103_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Specified height level above ground (m)
+         level :	10
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VGRD_P0_2L108_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	V-component of wind
+         units :	m s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 3]
+         level_type :	Level at specified pressure difference from ground to level (Pa)
+         level :	[3000, 0]
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float VVEL_P0_L100_GLL0 [ lv_ISBL2, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Vertical velocity (pressure)
+         units :	Pa s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 8]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float ABSV_P0_L100_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Absolute vorticity
+         units :	s-1
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Momentum
+         parameter_template_discipline_category_number :	[0, 0, 2, 10]
+         level_type :	Isobaric surface (Pa)
+         level :	50000
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L1_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Ground or water surface
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRES_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 0]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float PRMSL_P0_L101_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Pressure reduced to MSL
+         units :	Pa
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 1]
+         level_type :	Mean sea level (Pa)
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L6_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Maximum wind level
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L7_GLL0 [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Tropopause
+         level :	0
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float HGT_P0_L100_GLL0 [ lv_ISBL0, lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Geopotential height
+         units :	gpm
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Mass
+         parameter_template_discipline_category_number :	[0, 0, 3, 5]
+         level_type :	Isobaric surface (Pa)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float APCP_P8_L1_GLL0_acc6h [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Total precipitation
+         units :	kg m-2
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[8, 0, 1, 8]
+         level_type :	Ground or water surface
+         level :	0
+         type_of_statistical_processing :	Accumulation
+         statistical_process_duration :	6 hours (ending at forecast time)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float ACPCP_P8_L1_GLL0_acc6h [ lat_0, lon_0 ]
+         center :	US National Weather Service - NCEP (WMC)
+         production_status :	Operational products
+         long_name :	Convective precipitation
+         units :	kg m-2
+         _FillValue :	1e+20
+         grid_type :	Latitude/longitude (quasi-regular grid expanded by cubic interpolation)
+         parameter_discipline_and_category :	Meteorological products, Moisture
+         parameter_template_discipline_category_number :	[8, 0, 1, 10]
+         level_type :	Ground or water surface
+         level :	0
+         type_of_statistical_processing :	Accumulation
+         statistical_process_duration :	6 hours (ending at forecast time)
+         forecast_time :	60
+         forecast_time_units :	hours
+         initial_time :	01/10/2007 (06:00)
+      float lv_ISBL2 [ lv_ISBL2 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lv_ISBL1 [ lv_ISBL1 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lv_ISBL0 [ lv_ISBL0 ]
+         long_name :	Isobaric surface
+         units :	Pa
+      float lat_0 [ lat_0 ]
+         long_name :	latitude
+         grid_type :	Latitude/longitude Grid (Quasi-Regular)
+         units :	degrees_north
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	330
+         La2 :	90
+         Lo1 :	240
+         La1 :	0
+      float lon_0 [ lon_0 ]
+         long_name :	longitude
+         grid_type :	Latitude/longitude Grid (Quasi-Regular)
+         units :	degrees_east
+         Dj :	1.25
+         Di :	1.25
+         Lo2 :	330
+         La2 :	90
+         Lo1 :	240
+         La1 :	0
+
+

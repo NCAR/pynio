@@ -1,0 +1,20 @@
+Nio file:	../ncarg/data/hdf5/num-types.h5
+   global attributes:
+   dimensions:
+      DIM_000 = 4
+      DIM_001 = 7
+   variables:
+      byte c_data [ DIM_000, DIM_001 ]
+      double double_data [ DIM_000, DIM_001 ]
+      float float_data [ DIM_000, DIM_001 ]
+      integer i_data [ DIM_000, DIM_001 ]
+      integer l_data [ DIM_000, DIM_001 ]
+      int64 ll_data [ DIM_000, DIM_001 ]
+      short s_data [ DIM_000, DIM_001 ]
+      ubyte uc_data [ DIM_000, DIM_001 ]
+      uint ui_data [ DIM_000, DIM_001 ]
+      uint ul_data [ DIM_000, DIM_001 ]
+      uint64 ull_data [ DIM_000, DIM_001 ]
+      ushort us_data [ DIM_000, DIM_001 ]
+
+

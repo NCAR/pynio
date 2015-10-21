@@ -1,0 +1,25 @@
+Nio file:	../ncarg/data/hdf/avhrr.hdf
+   global attributes:
+   dimensions:
+      fakeDim0 = 180
+      fakeDim1 = 360
+   variables:
+      ubyte fakeDim0 [ fakeDim0 ]
+         hdf_name :	fakeDim0
+      ubyte fakeDim1 [ fakeDim1 ]
+         hdf_name :	fakeDim1
+      ubyte Data_Set_2 [ fakeDim0, fakeDim1 ]
+         coordsys :	Interrrupted Goode Homolosine
+         valid_max :	253
+         valid_min :	3
+         scale_factor :	0.008
+         scale_factor_err :	-9
+         add_offset :	128
+         add_offset_err :	-9
+         calibrated_nt :	21
+         long_name :	NDVI
+         units :	n/a
+         format :	 
+         hdf_name :	Data-Set-2
+
+
