@@ -136,9 +136,12 @@ def pyniopath_ncarg():
 # Set the NCARG_NCARG environment variable.
 # This should allow the grib2_codetables directory to be found without
 # requiring any environment variables to be set by the user
+# Also set NIO_GRIB2_CODETABLES if it is not set already
 
 import os
 os.environ["NCARG_NCARG"] = pyniopath_ncarg()
+if not os.getenv("NIO_GRIB2_CODETABLES"):
+    os.environ["NIO_GRIB2_CODETABLES"] = os.path.join(os.environ["NCARG_NCARG"],"grib2_codetables") 
 del pyniopath_ncarg
 
 #
