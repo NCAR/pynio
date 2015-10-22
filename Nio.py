@@ -116,6 +116,9 @@ def pyniopath_ncarg():
 
 import os
 os.environ["NCARG_NCARG"] = pyniopath_ncarg()
+# Also set NIO_GRIB2_CODETABLES if it is not set already
+if not os.getenv("NIO_GRIB2_CODETABLES"):
+    os.environ["NIO_GRIB2_CODETABLES"] = os.path.join(os.environ["NCARG_NCARG"],"grib2_codetables") 
 del pyniopath_ncarg
 del os
 
