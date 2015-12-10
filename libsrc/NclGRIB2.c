@@ -27,7 +27,6 @@
 #include "NclGRIB.h"
 #include "NclFile.h"
 
-# include <grib2.h>
 # include "NclGRIB2.h"
 
 static void Grib2FreeCodeTableRec(
@@ -3434,10 +3433,8 @@ int time_unit;
 unsigned char *offset;
 #endif
 {
-	int cix,tix;
-
+	int cix = 0,tix = 0;
 	double c_factor = 1.0;
-
 	if (common_time_unit != time_unit) {
 		for (cix = 0; cix < NhlNumber(Unit_Code_Order); cix++) {
 			if (common_time_unit == Unit_Code_Order[cix])
@@ -3449,10 +3446,15 @@ unsigned char *offset;
 		}
 		/* this condition must be met in order to do a valid conversion */
 		if (cix < NhlNumber(Unit_Code_Order) && tix < NhlNumber(Unit_Code_Order)) { 
-			c_factor = Unit_Convert[tix] / Unit_Convert[cix];
+				c_factor = Unit_Convert[tix] / Unit_Convert[cix];
 		}
 	}
-	return ((int)(time_offset * c_factor));
+	if (cix > 6 || tix > 6) { /* fuzzy number -- unit > day */
+		return ((int)(time_offset * c_factor + 0.5));
+	}
+	else { /* do it the way it's always been done */
+		return ((int)(time_offset * c_factor));
+	}
 }
 
 
@@ -3617,6 +3619,7 @@ int stat_type_only
 #endif
 {
 	char buffer[128];
+        int time_period;
 
 	strcpy(buffer,NrmQuarkToString(param->var_info.var_name_quark));
 
@@ -3662,45 +3665,47 @@ int stat_type_only
 		return;
 	}
 
+	time_period = abs(param->time_period);
+
 	switch (param->time_period_units) {
 	case 0:
-		sprintf(&(buffer[strlen(buffer)]),"%dmin",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dmin",time_period);
 		break;
 	case 1:
-		sprintf(&(buffer[strlen(buffer)]),"%dh",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dh",time_period);
 		break;
 	case 2:
-		sprintf(&(buffer[strlen(buffer)]),"%dd",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dd",time_period);
 		break;
 	case 3:
-		sprintf(&(buffer[strlen(buffer)]),"%dm",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dm",time_period);
 		break;
 	case 4:
-		sprintf(&(buffer[strlen(buffer)]),"%dy",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dy",time_period);
 		break;
 	case 5:
-		sprintf(&(buffer[strlen(buffer)]),"%dy",param->time_period * 10);
+		sprintf(&(buffer[strlen(buffer)]),"%dy",time_period * 10);
 		break;
 	case 6:
-		sprintf(&(buffer[strlen(buffer)]),"%dy",param->time_period * 30);
+		sprintf(&(buffer[strlen(buffer)]),"%dy",time_period * 30);
 		break;
 	case 7:
-		sprintf(&(buffer[strlen(buffer)]),"%dy",param->time_period * 100);
+		sprintf(&(buffer[strlen(buffer)]),"%dy",time_period * 100);
 		break;
 	case 10:
-		sprintf(&(buffer[strlen(buffer)]),"%dh",param->time_period * 3);
+		sprintf(&(buffer[strlen(buffer)]),"%dh",time_period * 3);
 		break;
 	case 11:
-		sprintf(&(buffer[strlen(buffer)]),"%dh",param->time_period * 6);
+		sprintf(&(buffer[strlen(buffer)]),"%dh",time_period * 6);
 		break;
 	case 12:
-		sprintf(&(buffer[strlen(buffer)]),"%dh",param->time_period * 12);
+		sprintf(&(buffer[strlen(buffer)]),"%dh",time_period * 12);
 		break;
 	case 13:
-		sprintf(&(buffer[strlen(buffer)]),"%dsec",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%dsec",time_period);
 		break;
 	default:
-		sprintf(&(buffer[strlen(buffer)]),"%d",param->time_period);
+		sprintf(&(buffer[strlen(buffer)]),"%d",time_period);
 		break;
 	}
 	param->var_info.var_name_quark = NrmStringToQuark(buffer);
@@ -3717,45 +3722,47 @@ int period;
 int indicator;
 #endif
 {
+	int lperiod = abs(period);
+
 	switch (indicator) {
 	case 0:
-		sprintf(buf,"%d minutes",period);
+		sprintf(buf,"%d minutes",lperiod);
 		return;
 	case  1:
-		sprintf(buf,"%d hours",period);
+		sprintf(buf,"%d hours",lperiod);
 		return;
 	case  2:
-		sprintf(buf,"%d days",period);
+		sprintf(buf,"%d days",lperiod);
 		return;
 	case  3:
-		sprintf(buf,"%d months",period);
+		sprintf(buf,"%d months",lperiod);
 		return;
 	case  4:
-		sprintf(buf,"%d years",period);
+		sprintf(buf,"%d years",lperiod);
 		return;
 	case  5:
-		sprintf(buf,"%d decades",period);
+		sprintf(buf,"%d decades",lperiod);
 		return;
 	case  6:
-		sprintf(buf,"%d decades",period * 3);
+		sprintf(buf,"%d decades",lperiod * 3);
 		return;
 	case  7:
-		sprintf(buf,"%d centuries",period);
+		sprintf(buf,"%d centuries",lperiod);
 		return;
 	case  10:
-		sprintf(buf,"%d hours",period * 3);
+		sprintf(buf,"%d hours",lperiod * 3);
 		return;
 	case  11:
-		sprintf(buf,"%d hours",period * 6);
+		sprintf(buf,"%d hours",lperiod * 6);
 		return;
 	case  12:
-		sprintf(buf,"%d hours",period * 12);
+		sprintf(buf,"%d hours",lperiod * 12);
 		return;
 	case  13:
-		sprintf(buf,"%d seconds",period);
+		sprintf(buf,"%d seconds",lperiod);
 		return;
 	default:
-		sprintf(buf,"%d (unknown units)",period);
+		sprintf(buf,"%d (unknown units)",lperiod);
 		return;
 	}
 
@@ -4988,6 +4995,21 @@ Grib2ParamList *vstep;
 		if (vstep->gds != NULL) {
 			Grib2FreeGDS(vstep->gds);
 		}			
+ 		if (vstep->ensemble != NULL) {
+			_NclDestroyObj((NclObj)vstep->ensemble);
+		}
+ 		if (vstep->ens_indexes != NULL) {
+			_NclDestroyObj((NclObj)vstep->ens_indexes);
+		}
+ 		if (vstep->probability != NULL) {
+			_NclDestroyObj((NclObj)vstep->probability);
+		}
+ 		if (vstep->lower_probs != NULL) {
+			_NclDestroyObj((NclObj)vstep->lower_probs);
+		}
+ 		if (vstep->upper_probs != NULL) {
+			_NclDestroyObj((NclObj)vstep->upper_probs);
+		}
 
 		if (vstep->forecast_time != NULL) {
 			_NclDestroyObj((NclObj)vstep->forecast_time);
@@ -5268,6 +5290,7 @@ Grib2RecordInqRec *grec;
 						   13, /* the time indicator for seconds */
 						   grec->overall_interval_seconds);
 		grec->time_offset = MIN(grec->time_offset, end_time);
+		/*grec->time_offset = MAX(grec->time_offset,grec->forecast_time);*/
 	}
 }
 
@@ -8804,9 +8827,9 @@ Grib2ParamList  *g2plist;
 	max_count = 10;
 	time_periods = NclMalloc(max_count * sizeof(int));
 	for (i = 0; i < max_count; i++) {
-		time_periods[i] = -999;
+		time_periods[i] = -9999999;
 	}
-	max_period = -999;
+	max_period = -9999999;
 
 	/* 
 	 * get the shortest time period units
@@ -9263,7 +9286,6 @@ static void *Grib2OpenFile
     int wr_status;
 # endif /* NhlNeedProto */
 {
-# define GBUFSZ_T   1024
     FILE    *fd;
     int err,
         i,
@@ -10177,59 +10199,98 @@ static void *Grib2OpenFile
                     return NULL;
             }
 
-	    if (g2rec[nrecs]->sec4[i]->pds_num > 14) { /* why is this ?? */
-		    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = 255;
-		    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = 255;
+            switch (g2rec[nrecs]->sec4[i]->pds_num) {
+		    int offset;
+	    case 20:
+	    case 30:
+	    case 31:
+	    case 254:
 		    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit_id = 1;
 		    g2rec[nrecs]->sec4[i]->prod_params->forecast_time = 0;
-	    }
-	    else {
+		    break;
+	    case 53:
+	    case 54:
+		    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit_id = 1;
+		    g2rec[nrecs]->sec4[i]->prod_params->forecast_time = 0;
+		    NhlPError(NhlWARNING, NhlEUNKNOWN, "NclGRIB2: Unsupported Product Definition Template.");
+		    break;
+	    default:
+		    switch (g2rec[nrecs]->sec4[i]->pds_num) {
+		    case 40:
+		    case 41:
+		    case 42:
+		    case 43:
+			    offset = 6;
+			    break;
+		    case 44:
+		    case 45:
+		    case 46:
+		    case 47:
+			    offset = 11;
+			    break;
+		    case 48:
+			    offset = 16;
+			    break;
+		    default:
+			    offset = 5;
+		    }
+			    
 		    if (g2fld->ipdtmpl != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->hrs_after_reftime_cutoff = g2fld->ipdtmpl[5];
-			    g2rec[nrecs]->sec4[i]->prod_params->min_after_reftime_cutoff = g2fld->ipdtmpl[6];
+			    g2rec[nrecs]->sec4[i]->prod_params->hrs_after_reftime_cutoff = g2fld->ipdtmpl[offset];
+			    g2rec[nrecs]->sec4[i]->prod_params->min_after_reftime_cutoff = g2fld->ipdtmpl[offset+1];
+			    /* table 4.4: Indicator of Unit of Time Range */
+			    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit_id = g2fld->ipdtmpl[offset+2];
+			    g2rec[nrecs]->sec4[i]->prod_params->forecast_time = g2fld->ipdtmpl[offset+3];
 		    } else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
 			    NhlFree(g2rec);
 			    return NULL;
 		    }
-
-
-		    /* table 4.4: Indicator of Unit of Time Range */
-		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit_id = g2fld->ipdtmpl[7];
-		    else {
-			    NhlPError(NhlFATAL, NhlEUNKNOWN,
-				      "NclGRIB2: Invalid Product Definition Template.");
-			    NhlFree(g2rec);
-			    return NULL;
-		    }
 		    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit = NULL;
-#if 0
-		    table = "4.4.table";
-		    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->time_range,-1, ct);
-		    if (cterr < NhlWARNING) {
-			    NhlFree(g2rec);
-			    return NULL;
-		    }
 
-		    g2rec[nrecs]->sec4[i]->prod_params->time_range_unit
-			    = NclMalloc(strlen(ct->descrip) + 1);
-		    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->time_range_unit, ct->descrip);
-#endif
-		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->forecast_time = g2fld->ipdtmpl[8];
-		    else {
-			    NhlPError(NhlFATAL, NhlEUNKNOWN,
-				      "NclGRIB2: Invalid Product Definition Template.");
-			    NhlFree(g2rec);
-			    return NULL;
+	    }
+	    
+            switch (g2rec[nrecs]->sec4[i]->pds_num) {
+		    int level_off;
+	    case 20:
+	    case 30:
+	    case 31:
+	    case 254:
+	    case 32:
+	    case 33:
+	    case 34:
+	    case 1000:
+	    case 1001:
+	    case 1002:
+		    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = 255;
+		    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = 255;
+		    break;
+	    default:
+		    switch (g2rec[nrecs]->sec4[i]->pds_num) {
+		    case 48:
+			    level_off = 20;
+			    break;
+		    case 47:
+		    case 46:
+		    case 45:
+		    case 44:
+			    level_off = 15;
+			    break;
+		    case 43:
+		    case 42:
+		    case 41:
+		    case 40:
+			    level_off = 10;
+			    break;
+		    default: 
+			    level_off = 9;
+			    break;
 		    }
 
 		    /* table 4.5: Fixed Surface Types and Units */
 		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = g2fld->ipdtmpl[9];
+			    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = g2fld->ipdtmpl[level_off];
 		    else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
@@ -10238,32 +10299,14 @@ static void *Grib2OpenFile
 		    }
 		    g2rec[nrecs]->sec4[i]->prod_params->first_fixed_sfc = NULL;
 		    g2rec[nrecs]->sec4[i]->prod_params->units_first_fixed_sfc = NULL;
-#if 0
-		    table = "4.5.table";
-		    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc,-1, ct);
-		    if (cterr < NhlWARNING) {
-			    NhlFree(g2rec);
-			    return NULL;
-		    }
 
-		    g2rec[nrecs]->sec4[i]->prod_params->first_fixed_sfc
-			    = NclMalloc(strlen(ct->descrip) + 1);
-		    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->first_fixed_sfc, ct->descrip);
-		    if (ct->units != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->units_first_fixed_sfc
-				    = NclMalloc(strlen(ct->units) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->units_first_fixed_sfc,
-					  ct->units);
-		    }
-#endif
                     if (g2fld->ipdtmpl != NULL) {
-                            g2rec[nrecs]->sec4[i]->prod_params->scale_factor_first_fixed_sfc = g2fld->ipdtmpl[10];
-	    	    	if (g2fld->ipdtmpl[10] == -127)
+                            g2rec[nrecs]->sec4[i]->prod_params->scale_factor_first_fixed_sfc = g2fld->ipdtmpl[level_off + 1];
+	    	    	if (g2fld->ipdtmpl[level_off + 1] == -127)
 		    		    g2rec[nrecs]->sec4[i]->prod_params->scaled_val_first_fixed_sfc = 0;
 		        	else
 			        	g2rec[nrecs]->sec4[i]->prod_params->scaled_val_first_fixed_sfc
-				        	= g2fld->ipdtmpl[11];
+				        	= g2fld->ipdtmpl[level_off + 2];
             	    } else {
                 	    NhlPError(NhlFATAL, NhlEUNKNOWN,
                     		"NclGRIB2: Invalid Product Definition Template.");
@@ -10272,7 +10315,7 @@ static void *Grib2OpenFile
             	    }
 
 		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = g2fld->ipdtmpl[12];
+			    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = g2fld->ipdtmpl[level_off +3];
 		    else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
@@ -10281,38 +10324,20 @@ static void *Grib2OpenFile
 		    }
 		    g2rec[nrecs]->sec4[i]->prod_params->second_fixed_sfc = NULL;
 		    g2rec[nrecs]->sec4[i]->prod_params->units_second_fixed_sfc = NULL;
-#if 0
-		    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc,-1,ct);
-		    if (cterr < NhlWARNING) {
-			    NhlFree(g2rec);
-			    return NULL;
-		    }
-
-		    g2rec[nrecs]->sec4[i]->prod_params->second_fixed_sfc
-			    = NclMalloc(strlen(ct->descrip) + 1);
-		    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->second_fixed_sfc, ct->descrip);
-		    if (ct->units != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->units_second_fixed_sfc
-				    = NclMalloc(strlen(ct->units) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->units_first_fixed_sfc,
-					  ct->units);
-		    }
-#endif
 		    if (g2fld->ipdtmpl != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->scale_factor_second_fixed_sfc = g2fld->ipdtmpl[13];
-			    if (g2fld->ipdtmpl[13] == -127)
+			    g2rec[nrecs]->sec4[i]->prod_params->scale_factor_second_fixed_sfc = g2fld->ipdtmpl[level_off + 4];
+			    if (g2fld->ipdtmpl[level_off +4] == -127)
 				    g2rec[nrecs]->sec4[i]->prod_params->scaled_val_second_fixed_sfc = 0;
 			    else
 				    g2rec[nrecs]->sec4[i]->prod_params->scaled_val_second_fixed_sfc
-					    = g2fld->ipdtmpl[14];
+					    = g2fld->ipdtmpl[level_off + 5];
 		    } else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
 			    NhlFree(g2rec);
 			    return NULL;
 		    }
-
+#if 0
 		    switch (g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc) {
 		    case 1: /* ground or water surface */
 		    case 9: /* sea bottom */
@@ -10335,6 +10360,7 @@ static void *Grib2OpenFile
 
 			    break;
 		    }
+#endif
 	    }
             /*
              * Depending on type of product, there may or may not be more info
