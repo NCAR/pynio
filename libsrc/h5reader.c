@@ -32,7 +32,8 @@ herr_t _NclHDF5check_obj(const char *filename, NclHDF5group_node_t **HDF5group)
 
     if(fid < 0)
     {
-        fprintf(stderr, "Unable to open file: <%s>, at line: %d\n", filename, __LINE__);
+        fprintf(stderr, "\nIn file: %s, at line: %d\n", __FILE__, __LINE__);
+        fprintf(stderr, "Unable to open file: <%s>\n", filename);
         H5close();
         return (FAILED);
     }
@@ -644,7 +645,7 @@ int _NclHDF5print_simple_dataset(hid_t dset, hid_t p_type, char *type_name)
  *
  ***********************************************************************
  */
-NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5group_node_t *HDF5group)
+NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5group_node_t *HDF5group, long *start, long *finish, long *stride)
 {
     NclHDF5data_t *NclHDF5data = NULL;
     unsigned char *uc_value;
@@ -718,55 +719,17 @@ NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5
                 {
                     for(i=0; i<NclHDF5data->ndims; i++)
                     {
-                        NclHDF5data->dims[i] = dataset->dims[i];
-                        NclHDF5data->nbytes *= dataset->dims[i];
+                        NclHDF5data->dims[i] = (ng_size_t)floor((finish[i] - start[i])/(double)stride[i]) + 1;
+                        NclHDF5data->nbytes *= NclHDF5data->dims[i];
                     }
                 }
 
-#if 0
-                curHDF5attr_list = dataset->attr_list;
-                while(curHDF5attr_list)
-                {
-                    if((0 == strcmp(curHDF5attr_list->attr_node->name, "Dimensions")) &&
-                       (0 == strcmp(curHDF5attr_list->attr_node->type_name, "string")))
-                    {
-                        char *tmpString = NULL;
-                        char *result = NULL;
-                        tmpString = strdup((char *)curHDF5attr_list->attr_node->value);
-                        fprintf(stderr, "\tdim_string: <%s>\n", tmpString);
-   
-                        result = strtok(tmpString, " ");
-                        i = 0;
-                        while(result != NULL)
-                        {
-                            fprintf(stderr, "\tdim_name[%d]: <%s>\n", i, result);
-                            strcpy(NclHDF5data->dim_name[i], result);
-                            fprintf(stderr, "\tdim_name[%d]: <%s>\n", i, NclHDF5data->dim_name[i]);
-                            result = strtok(NULL, " ");
-                            i++;
-                            if(i >= NclHDF5data->ndims)
-                                break;
-                        }
-
-                        free(tmpString);
-                        break;
-                    }
-
-                    curHDF5attr_list = curHDF5attr_list->next;
-                }
-
-                for(i = 0; i < NclHDF5data->ndims; i++)
-                {
-                    fprintf(stderr, "\tdims[%d] = %d\n", i, NclHDF5data->dims[i]);
-                    fprintf(stderr, "\tdim_name[%d]: <%s>\n", i, NclHDF5data->dim_name[i]);
-                }
-#endif
 
                 uc_value = _NclHDF5get_native_dataset(fid, dataset->name,
                                                       NclHDF5data->type,
                                                       &(dataset->compound),
                                                       component,
-                                                      &is_str);
+                                                      &is_str, start, finish, stride);
                 NclHDF5data->value = (void *) uc_value;
                 NclHDF5data->is_str = is_str;
 
@@ -789,7 +752,7 @@ NclHDF5data_t *_NclHDF5get_data_with_name(hid_t fid, char *dataset_name, NclHDF5
 
             if(curHDF5group_list->group_node)
             {
-                NclHDF5data = _NclHDF5get_data_with_name(fid, dataset_name, curHDF5group_list->group_node);
+		    NclHDF5data = _NclHDF5get_data_with_name(fid, dataset_name, curHDF5group_list->group_node, start, finish, stride);
                 if(NclHDF5data)
                     return NclHDF5data;
             }
@@ -992,9 +955,13 @@ void _NclHDF5free_data(NclHDF5data_t *NclHDF5data)
     if(NclHDF5data)
     {
         if(NclHDF5data->value)
+        {
             free(NclHDF5data->value);
+            NclHDF5data->value = NULL;
+	}
 
         free(NclHDF5data);
+	NclHDF5data = NULL;
     }
 }
 
@@ -1382,27 +1349,33 @@ unsigned long NclHDF5sizeof(const char *type)
 
 unsigned char *_NclHDF5get_native_dataset(hid_t fid, char *dataset_name, char *type,
                                           NclHDF5compound_t *compound,
-                                          const char *component, int *is_str)
+                                          const char *component, int *is_str,
+	                                  long *start, long *finish, long *stride)
 {
     hid_t       did;
     hid_t       h5type;
     hid_t       datatype, dataspace;
     hid_t       memspace;
     H5T_class_t t_class;               /* data type class */
-    H5T_order_t order;                 /* data order */
     size_t      datasize;              /* size of the data element stored in file */
     herr_t      status;
 
-    hsize_t     *count;              /* size of the hyperslab in the file */
-    hsize_t     *offset;             /* hyperslab offset in the file */
-    hsize_t     *count_out;          /* size of the hyperslab in memory */
-    hsize_t     *offset_out;         /* hyperslab offset in memory */
-    hsize_t     *dims_mem;              /* memory space dimensions */
-    hsize_t     *dims_out;           /* dataset dimensions */
+    hsize_t     *count = NULL;              /* size of the hyperslab in the file */
+    hsize_t     *offset = NULL;             /* hyperslab offset in the file */
+    hsize_t     *count_out = NULL;          /* size of the hyperslab in memory */
+    hsize_t     *offset_out = NULL;         /* hyperslab offset in memory */
+    hsize_t     *dims_mem = NULL;           /* memory space dimensions */
+    hsize_t     *dims_out = NULL;           /* dataset dimensions */
+    hsize_t     *stride_in = NULL;           /* dataset stride */
+    hsize_t     *stride_out = NULL;           /* memory strid */
+    hsize_t     *block = NULL;           /* memory strid */
+    hsize_t     *block_out = NULL;           /* memory strid */
     int          i, rank;
     int          status_n;
-    unsigned long length;
-    unsigned long nbytes;
+    int          nelems = 0;
+    int          nbytes = 0;
+    int          read_slab = 0;
+    H5S_class_t  class;
 
     void *value = NULL;
 
@@ -1424,52 +1397,64 @@ unsigned char *_NclHDF5get_native_dataset(hid_t fid, char *dataset_name, char *t
      * dataset class, order, size, rank and dimensions.
      */
     datatype  = H5Dget_type(did);     /* datatype handle */
-    t_class     = H5Tget_class(datatype);
+    t_class   = H5Tget_class(datatype);
 
     datasize  = H5Tget_size(datatype);
 
     dataspace = H5Dget_space(did);    /* dataspace handle */
     rank      = H5Sget_simple_extent_ndims(dataspace);
+    class =     H5Sget_simple_extent_type(dataspace);
+    memspace = H5S_ALL;
+    nelems = 1;
+    if (rank > 0) {
+	    count = NclCalloc(rank, sizeof(hsize_t));
+	    offset = NclCalloc(rank, sizeof(hsize_t));
+	    count_out = NclCalloc(rank, sizeof(hsize_t));
+	    offset_out = NclCalloc(rank, sizeof(hsize_t));
+	    dims_mem = NclCalloc(rank, sizeof(hsize_t));
+	    dims_out = NclCalloc(rank, sizeof(hsize_t));
+	    stride_in = NclCalloc(rank, sizeof(hsize_t));
+	    stride_out = NclCalloc(rank, sizeof(hsize_t));
+	    block = NclCalloc(rank, sizeof(hsize_t));
+	    block_out = NclCalloc(rank, sizeof(hsize_t));
+	    status_n  = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
 
-    count = NclCalloc(rank, sizeof(hsize_t));
-    offset = NclCalloc(rank, sizeof(hsize_t));
-    count_out = NclCalloc(rank, sizeof(hsize_t));
-    offset_out = NclCalloc(rank, sizeof(hsize_t));
-    dims_mem = NclCalloc(rank, sizeof(hsize_t));
-    dims_out = NclCalloc(rank, sizeof(hsize_t));
+	    for(i = 0; i < rank; i++)
+	    {
+		    count_out[i] = (ng_size_t)floor((finish[i] - start[i])/(double)stride[i]) + 1;
+		    if (count_out[i] != dims_out[i])
+			    read_slab = 1;
+		    nelems *= count_out[i];
+	    }
+	    memspace = H5Screate_simple(rank,count_out,NULL);
 
-    length = 1;
+	    for (i = 0; i < rank; i++)
+	    {
+		    offset[i] = start[i];
+		    stride_in[i] = stride[i];
+		    count[i] = count_out[i];
+		    block[i] = 1;
 
-    status_n  = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
+		    offset_out[i] = 0;
+		    stride_out[i] = 1;
+		    block_out[i] = 1;
+	    }
+	    /*
+	     * Define hyperslab in the dataset.
+	     */
+	    status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, stride_in,
+					 count, block);
 
-    for(i = 0; i < rank; i++)
-    {
-        offset[i] = 0;
-        offset_out[i] = 0;
-        count[i] = dims_out[i];
-        count_out[i] = dims_out[i];
-        dims_mem[i] = dims_out[i];
-
-        length *= dims_out[i];
+	    /*
+	     * Define the memory dataspace.
+	     */
+	    
+	    /*
+	     * Define memory hyperslab.
+	     */
+	    status = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, offset_out, stride_out,
+					 count_out, block_out);
     }
-
-    /*
-     * Define hyperslab in the dataset.
-     */
-    status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, NULL,
-                                 count, NULL);
-
-    /*
-     * Define the memory dataspace.
-     */
-    memspace = H5Screate_simple(rank,dims_mem,NULL);
-
-    /*
-     * Define memory hyperslab.
-     */
-    status = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, offset_out, NULL,
-                                 count_out, NULL);
-
     /*
      * Read data from hyperslab in the file into the hyperslab in
      * memory and display.
@@ -1540,7 +1525,8 @@ unsigned char *_NclHDF5get_native_dataset(hid_t fid, char *dataset_name, char *t
                 break;
             }
         }
-        nbytes = component_datasize * length;
+
+        nbytes = component_datasize * nelems;
         value = NclCalloc(nbytes, sizeof(char));
 
         status = H5Dread(did, datatype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, value);
@@ -1552,71 +1538,98 @@ unsigned char *_NclHDF5get_native_dataset(hid_t fid, char *dataset_name, char *t
     else if(H5T_STRING == h5type)
     {
         hid_t xfer_pid = H5Pcreate (H5P_DATASET_XFER);
-        char **tmp_char_array;
 
         hid_t       str_type;
+        size_t      str_size=0;
+        H5T_str_t   str_pad;
       /*
-       *size_t      str_size=0;
-       *H5T_str_t   str_pad;
        *H5T_cset_t  cset;
        */
         htri_t      is_vlstr=FALSE;
 
         str_type = H5Tcopy(datatype);
       /*
-       *str_size = H5Tget_size(str_type);
        *str_pad = H5Tget_strpad(str_type);
        *cset = H5Tget_cset(str_type);
        */
+        str_size = H5Tget_size(str_type);
+
         is_vlstr = H5Tis_variable_str(str_type);
 
         if(is_vlstr)
         {
-            char *cp[length];
-       
-            status = H5Dread(did, datatype, H5S_ALL, H5S_ALL, xfer_pid, cp);
+            char **cptrptr;
+            char **tmp_char_array;
 
-            tmp_char_array = NclMalloc(length * sizeof(char *));
+            cptrptr = (char **) NclCalloc(nelems, sizeof(char *));
+            assert(cptrptr);
+
+            tmp_char_array = (char **)NclCalloc(nelems, sizeof(char *));
             assert(tmp_char_array);
 
-            for(i = 0; i < length; i++)
+            status = H5Dread(did, datatype, memspace, dataspace, xfer_pid, cptrptr);
+
+            for(i = 0; i < nelems; i++)
             {
-                nbytes = strlen(cp[i]) + 1;
-                tmp_char_array[i] = NclMalloc(nbytes * sizeof(char));
+                nbytes = strlen(cptrptr[i]);
+                tmp_char_array[i] = NclCalloc(nbytes+1, sizeof(char));
                 assert(tmp_char_array[i]);
-                memcpy(tmp_char_array[i], cp[i], nbytes);
-                free(cp[i]);
+                memcpy(tmp_char_array[i], cptrptr[i], nbytes);
             }
-            *is_str = 2;
+	    status = H5Dvlen_reclaim (str_type, memspace, H5P_DEFAULT, cptrptr);
+            free(cptrptr);
+
+            *is_str = 3;
+
+            value = (void *) tmp_char_array;
         }
         else
         {
-            char cp[2048];
+            char *cptr;
+            char *tmp_char_array;
 
-            status = H5Dread(did, datatype, H5S_ALL, H5S_ALL, xfer_pid, &cp);
-            tmp_char_array = NclMalloc(length * sizeof(char *));
+            str_pad = H5Tget_strpad(str_type);
+            cptr = (char *) NclCalloc(nelems * str_size, sizeof(char));
+            assert(cptr);
+
+            tmp_char_array = (char *)NclCalloc(nelems * (str_size + 1), sizeof(char *));
             assert(tmp_char_array);
 
-            nbytes = strlen(cp) + 1;
-            tmp_char_array[0] = NclMalloc(nbytes * sizeof(char));
-            assert(tmp_char_array[0]);
-            memcpy(tmp_char_array[0], cp, nbytes);
-            *is_str = 1;
-        }
+            status = H5Dread(did, datatype, memspace, dataspace, xfer_pid, cptr);
 
-        value = (void *) tmp_char_array;
+	    nbytes = str_size;
+            for(i = 0; i < nelems; i++)
+            {
+		    char *cp = &tmp_char_array[i*(nbytes+1)];
+		    strncpy(cp, &cptr[i*nbytes], str_size);
+            }
+            free(cptr);
+
+            *is_str = (str_pad == H5T_STR_SPACEPAD) ? 2 : 1;
+
+	  /*
+           *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+           *fprintf(stderr, "\tnelems = %d\n", nelems);
+           *fprintf(stderr, "\tstr_size = %ld\n", str_size);
+           *fprintf(stderr, "\tstr: <%s>\n", tmp_char_array);
+           */
+
+            value = (void *) tmp_char_array;
+        }
     }
     else
     {
-        nbytes = datasize * length;
+        nbytes = datasize * nelems;
         value = NclCalloc(nbytes, sizeof(char));
         status = H5Dread(did, h5type, memspace, dataspace,
                          H5P_DEFAULT, value);
     }
 
     H5Tclose(datatype);
+    
     H5Sclose(dataspace);
-    H5Sclose(memspace);
+    if (memspace != H5S_ALL)
+	    H5Sclose(memspace);
     H5Dclose(did);
 
     if(count)
@@ -1631,6 +1644,14 @@ unsigned char *_NclHDF5get_native_dataset(hid_t fid, char *dataset_name, char *t
         free(dims_mem);
     if(dims_out)
         free(dims_out);
+    if(stride_in)
+        free(stride_in);
+    if(stride_out)
+        free(stride_out);
+    if(block)
+        free(block);
+    if(block_out)
+        free(block_out);
 
     return ((unsigned char *) value);
 }
@@ -1841,7 +1862,7 @@ void _NclPrint_HDF5attr_list(NclHDF5attr_list_t *NclHDF5attr_list)
             int i;
             for (i=0; i<attr_node->ndims; i++)
             {
-                fprintf(stderr, "\tdims[%ld] = %d\n", i, attr_node->dims[i]);
+                fprintf(stderr, "\tdims[%d] = %d\n", i, attr_node->dims[i]);
             }
         }
 
@@ -2166,11 +2187,16 @@ herr_t _NclHDF5dataset_info(hid_t dset, char *name, NclHDF5dataset_node_t *datas
     strcpy(dataset_node->name, name);
     dataset_node->space = space;
     dataset_node->space_type = space_type;
-    dataset_node->ndims = ndims;
-
-    for (i=0; i<ndims; i++)
-    {
-        dataset_node->dims[i] = cur_size[i];
+    if (dataset_node->space_type == H5S_SCALAR) {
+	    dataset_node->ndims = 1;
+	    dataset_node->dims[0] = 1;
+    }
+    else {
+	    dataset_node->ndims = ndims;
+	    for (i=0; i<ndims; i++)
+	    {
+		    dataset_node->dims[i] = cur_size[i];
+	    }
     }
 
     if (space_type==H5S_SCALAR)
@@ -2235,6 +2261,7 @@ herr_t _NclHDF5dataset_attr(hid_t dset, char *name, NclHDF5dataset_node_t *datas
     hid_t       type;           /* data type of dataset */
     hid_t       space;          /* data space of dataset */
     int         nf;             /* number of filters */
+#if 0
     unsigned    filt_flags;     /* filter flags */
     H5Z_filter_t filt_id;       /* filter identification number */
     unsigned    cd_values[20];  /* filter client data values */
@@ -2242,6 +2269,7 @@ herr_t _NclHDF5dataset_attr(hid_t dset, char *name, NclHDF5dataset_node_t *datas
     size_t      cd_num;         /* filter client data counter */
     char        f_name[256];    /* filter/file name */
     char        s[64];          /* temporary string buffer */
+#endif
     hsize_t     total, used;    /* total size or offset */
     double      utilization;    /* percent utilization of storage */
     int   i;
@@ -3023,8 +3051,7 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
  	                /*On SGI Altix(cobalt), wrong values were printed out with "value+i*dst_size"
  	                 *strangely, unless use another pointer "copy".*/
  	                copy = value+i*dst_size;
-                        fprintf(stderr,"%"H5_PRINTF_LL_WIDTH"d",
-                        *((long long*)((void*)copy)));
+                        fprintf(stderr,"%"H5_PRINTF_LL_WIDTH"d",*((long long*)((void*)copy)));
                     }
                 }
 
@@ -3134,9 +3161,10 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
         case H5T_REFERENCE:
             if (H5Tequal(type, H5T_STD_REF_OBJ))
             {
-#if 0
-                fprintf(stderr, "object reference, file: %s, line: %d\n\n", __FILE__, __LINE__);
-#endif
+              /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
+               *fprintf(stderr, "object reference, file: %s, line: %d\n\n", __FILE__, __LINE__);
+               */
                 strcpy(NclHDF5datatype->type_name, "object reference");
             }
             else if (H5Tequal(type, H5T_STD_REF_DSETREG))
@@ -3149,15 +3177,16 @@ NclHDF5datatype_t *_NclHDF5get_typename(hid_t type, int ind)
             }
             else
             {
-              /*
-               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
-               */
                 strcpy(NclHDF5datatype->type_name, "unknown reference");
               /*
+               *fprintf(stderr, "file: %s, line: %d\n\n", __FILE__, __LINE__);
                *fprintf(stderr, "%lu-byte unknown reference\n", (unsigned long)size);
                */
-                NclHDF5datatype->bit = (unsigned) (8*size);
             }
+
+            setHDF5endian(type, size, NclHDF5datatype);
+            strcpy(NclHDF5datatype->endian, NclHDF5datatype->endian);
+            NclHDF5datatype->bit = (unsigned) (8*size);
 
             return NclHDF5datatype;
             break;
@@ -3411,6 +3440,7 @@ herr_t _NclHDF5check_attr(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo
         case H5S_SCALAR:
             /* scalar dataspace */
             strcpy(attr_node->dataspace, "scalar");
+	    attr_node->dims[0] = 1;
             break;
         case H5S_SIMPLE:
             /* simple dataspace */
@@ -3489,13 +3519,14 @@ herr_t _NclHDF5check_attr(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo
             H5T_cset_t  cset;
             hid_t       tmp_type;
             htri_t      is_vlstr=FALSE;
-
+	    NclQuark *qp; 
 
             tmp_type = H5Tcopy(type);
             str_size = H5Tget_size(tmp_type);
             str_pad = H5Tget_strpad(tmp_type);
             cset = H5Tget_cset(tmp_type);
             is_vlstr = H5Tis_variable_str(tmp_type);
+	    qp = (NclQuark*) NclMalloc(attr_node->dims[0] * sizeof(NclQuark));
 
           /*
            *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -3504,33 +3535,44 @@ herr_t _NclHDF5check_attr(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo
            *fprintf(stderr, "\tis_vlstr=<%d>\n", is_vlstr);
            */
 
+	    /* variable length strings have the allocation done in the read routine */
+
             if(is_vlstr)
             {
-                char *cp;
-                status = H5Aread(attr_id, type, &cp);
+		    char **cpp = NclMalloc(attr_node->dims[0] * sizeof(char *));
+		    
+		    status = H5Aread(attr_id, tmp_type, cpp);
+		    for (i = 0; i < attr_node->dims[0]; i++) {
+			    qp[i] = NrmStringToQuark(cpp[i]);
+		    }
+		    attr_node->value = qp; 
+		    /*
+		     *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
+		     */
+		    status = H5Dvlen_reclaim (type, space, H5P_DEFAULT, cpp);
 
-                attr_node->nbytes = strlen(cp) + 1;
-                attr_node->value = NclMalloc(attr_node->nbytes);
-                assert(attr_node->value);
-
-                memcpy(attr_node->value, cp, attr_node->nbytes);
-              /*
-               *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
-               *fprintf(stderr, "\tvalue: <%s>\n", cp);
-               */
-                free(cp);
+		    free(cpp);
             }
             else
             {
-                char cp[1024*HDF5_BUF_SIZE];
-
+		char *cp = (char *) NclCalloc(str_size * attr_node->dims[0],sizeof(char));
+		char *tmpstr = (char *)NclCalloc(str_size + 1, sizeof(char));
+		char *rcp;
                 status = H5Aread(attr_id, tmp_type, cp);
-
-                attr_node->nbytes = strlen(cp) + 1;
-
-                attr_node->value = NclMalloc(attr_node->nbytes);
+		for(i = 0; i < attr_node->dims[0]; ++i)
+		{
+			memset(tmpstr, 0, str_size+1);
+			memcpy(tmpstr, cp + i * str_size, str_size);
+			if (str_pad == H5T_STR_SPACEPAD) {
+				rcp = &(tmpstr[str_size-1]);
+				while (*rcp == ' ')
+					*(rcp--) = '\0';
+			}
+			qp[i] = NrmStringToQuark(tmpstr);
+		}
+                attr_node->value = qp;
                 assert(attr_node->value);
-                memcpy(attr_node->value, cp, attr_node->nbytes);
+		NclFree(tmpstr);
               /*
                *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
                *fprintf(stderr, "\tattr_node->value: <%s>\n", (char *)attr_node->value);

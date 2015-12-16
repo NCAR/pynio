@@ -324,7 +324,7 @@ static char *nio_errors[] = {
 	"String match to name in use",
 	"Attribute not found",
 	"MAX_NC_ATTRS exceeded",
-	"Not a NIO data type",
+	"Not a currently supported NIO data type", /* 13 */
 	"Invalid dimension id",
 	"NC_UNLIMITED in the wrong index",
 	"MAX_NC_VARS exceeded",
@@ -1527,7 +1527,11 @@ NioFileObject_str(NioFileObject *file)
 			sprintf(tbuf,"         %s :\t", aname);
 			BUF_INSERT(tbuf);
 			att_val = PyDict_GetItemString(vobj->attributes,aname);
-			if (PyString_Check(att_val)) {
+			if (! att_val) {
+				BUF_INSERT("(null)");
+                                BUF_INSERT("\n");
+                        }
+			else if (PyString_Check(att_val)) {
 				BUF_INSERT(PyString_AsString(att_val));
 				BUF_INSERT("\n");
 			}
@@ -1793,11 +1797,39 @@ NioVariable_GetShape(NioVariableObject *var)
   else
 	  return NULL;
 }
+static Py_ssize_t
+NioVariable_GetSize(NioVariableObject *var)
+{
+  int i, j;
+  Py_ssize_t size = -1;
+  if (check_if_open(var->file, -1))
+  {
+      NclFile nfile = (NclFile) var->file->id;
+      int varid = _NclFileIsVar(nfile,NrmStringToQuark(var->name));
+      size = _NclSizeOf(nfile->file.var_info[varid]->data_type);
+      for (i = 0; i < var->nd; i++) {
+	      int dimid = _NclFileIsDim(nfile,var->qdims[i]);
+	      var->dimensions[i] = (Py_ssize_t) nfile->file.file_dim_info[dimid]->dim_size;
+	      size *= (Py_ssize_t) nfile->file.file_dim_info[dimid]->dim_size;
+	      if (dimid == var->file->recdim) {
+		      PyObject *size_ob = PyInt_FromSsize_t(var->dimensions[i]);
+		      PyDict_SetItemString(var->file->dimensions,NrmQuarkToString(var->qdims[i]),size_ob);
+		      Py_DECREF(size_ob);
+	      }
+      }
+      return size;
+  }
+
+  return -1;
+}
 
 static PyObject *
 NioVariable_GetAttribute(NioVariableObject *self, char *name)
 {
   PyObject *value;
+  if (strcmp(name, "name") == 0) {
+	  return( PyString_FromString(self->name));
+  }
   if (strcmp(name, "shape") == 0) {
     PyObject *tuple;
     int i;
@@ -1816,6 +1848,15 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name)
     if (check_if_open(self->file, -1)) {
       rank = NioVariable_GetRank(self);
       return Py_BuildValue("i",rank);
+    }
+    else
+      return NULL;
+  }
+  if (strcmp(name, "size") == 0) {
+    ng_size_t size;
+    if (check_if_open(self->file, -1)) {
+      size = NioVariable_GetSize(self);
+      return Py_BuildValue("L",size);
     }
     else
       return NULL;
@@ -1932,6 +1973,13 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
     free(indices);
     return NULL;
   }
+  if (self->type == PyArray_NOTYPE) {
+     nio_ncerr = 13;
+     free(indices);
+     nio_seterror();
+     return NULL;
+  }
+
   define_mode(self->file, 0);
   if (self->nd == 0)
     dims = NULL;
