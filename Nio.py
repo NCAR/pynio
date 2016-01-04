@@ -91,6 +91,8 @@ def pyniopath_ncarg():
         trypath = os.path.join(path,"PyNIO","ncarg")
         if not os.path.exists(trypath):
             trypath = os.path.join(path,"ncarg")
+            if not os.path.exists(os.path.join(trypath,"grib2_codetables")):
+                continue
         if os.path.exists(trypath):
             pynio_ncarg = trypath
             return pynio_ncarg
@@ -175,7 +177,8 @@ class _Proxy(object):
         super(_Proxy,self).__setattr__('_obj', obj)
         super(_Proxy,self).__setattr__('attributes',{})
         for key in obj.__dict__.keys():
-           super(_Proxy,self).__setattr__(key,obj.__dict__[key])
+	   if key != 'attributes':
+               super(_Proxy,self).__setattr__(key,obj.__dict__[key])
            self.attributes[key] = obj.__dict__[key]
 
     def __getattribute__(self, attrib):
