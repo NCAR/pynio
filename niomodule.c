@@ -1,5 +1,5 @@
 /*******************************************************
- * $Id$
+ * $Id: niomodule.c 16363 2016-01-07 18:52:13Z dbrown $
  *******************************************************/
 
 /*
@@ -1335,55 +1335,113 @@ static void collect_advancedfile_attributes(NioFileObject *self, NclFileAttRecor
     {
         attnode = &(attrec->att_node[i]);
         name = NrmQuarkToString(attnode->name);
+	length = (npy_intp) attnode->n_elem;
+	py_type = data_type(attnode->type);
 
-        if(attnode->type == NCL_string)
-        {
-            PyObject *astring = NULL;
-            char *satt = NrmQuarkToString(*((NrmQuark *)attnode->value));
-            if(satt != NULL)
-                astring = PyString_FromString(satt);
-            else
-                astring = PyString_FromString("");
+	/* the following is temporary until these types are actually supported */
+    	if (py_type == PyArray_REFERENCE || py_type == PyArray_COMPOUND 
+	    || py_type == PyArray_ENUM || py_type == PyArray_VLEN) {
+		PyObject *astring;
 
-            if(astring != NULL)
-            {
-                PyDict_SetItemString(attributes, name, astring);
-		if (path) {
-			if (! strcmp(path,"/")) {
-				attname = PyString_FromFormat("%s",name);
-				PyDict_SetItem(self->top->attributes,attname, astring);
-			}
-			else {
-				attname = PyString_FromFormat("%s/%s",path,name);
-				PyDict_SetItem(self->top->attributes,attname, astring);
-			}
-			Py_DECREF(attname);
+		switch (py_type) {
+		case PyArray_REFERENCE:
+			astring = PyString_FromFormat("ref_type [%d]",length);
+			break;
+		case PyArray_COMPOUND:
+			astring = PyString_FromFormat("compound_type [%d]",length);
+			break;
+		case PyArray_ENUM:
+			astring = PyString_FromFormat("enum_type [%d]",length);
+			break;
+		case PyArray_VLEN:
+			astring = PyString_FromFormat("vlen_type [%d]",length);
+			break;
 		}
-            }
-	    Py_DECREF(astring);
-        }
+		if(astring != NULL) {
+			PyDict_SetItemString(attributes, name, astring);
+			if (path) {
+				if (! strcmp(path,"/")) {
+					attname = PyString_FromFormat("%s",name);
+					PyDict_SetItem(self->top->attributes,attname, astring);
+				}
+				else {
+					attname = PyString_FromFormat("%s/%s",path,name);
+					PyDict_SetItem(self->top->attributes,attname, astring);
+				}
+				Py_DECREF(attname);
+			}
+			Py_DECREF(astring);
+		}
+	}
+        else if(attnode->type == NCL_string)
+        {
+		if (attnode->n_elem > 1) {
+			PyObject *array = NULL;
+			int j;
+			int maxlen = 0;
+			npy_intp n_elem = attnode->n_elem;
+			for (j = 0; j < n_elem; j++) {
+				int tlen = strlen(NrmQuarkToString(((NrmQuark *)attnode->value)[j]));
+				maxlen = maxlen < tlen ? tlen : maxlen;
+			}
+			array = (PyObject *)PyArray_New(&PyArray_Type, 1, &n_elem,
+							data_type(attnode->type), NULL,NULL,maxlen,0,NULL);      
+			if (array) {
+				PyObject *pystr;
+				PyArrayObject *pyarray = (PyArrayObject *)array;
+				for (j = 0; j < n_elem; j++) {
+					pystr = PyString_FromString(NrmQuarkToString(((NrmQuark*)attnode->value)[j]));
+					PyArray_SETITEM(array,pyarray->data + j * pyarray->descr->elsize,pystr);
+					Py_DECREF(pystr);
+				}
+				PyDict_SetItemString(attributes, name, array);
+				if (path) {
+					if (! strcmp(path,"/")) {
+						attname = PyString_FromFormat("%s",name);
+						PyDict_SetItem(self->top->attributes,attname, array);
+					}
+					else {
+						attname = PyString_FromFormat("%s/%s",path,name);
+						PyDict_SetItem(self->top->attributes,attname, array);
+					}
+					Py_DECREF(attname);
+				}
+			}
+		}
+		else {
+			PyObject *astring;
+			char *satt = NrmQuarkToString(*((NrmQuark *)attnode->value));
+			if(satt != NULL)
+				astring = PyString_FromString(satt);
+			else
+				astring = PyString_FromString("");
+			if(astring != NULL)
+			{
+				PyDict_SetItemString(attributes, name, astring);
+				if (path) {
+					if (! strcmp(path,"/")) {
+						attname = PyString_FromFormat("%s",name);
+						PyDict_SetItem(self->top->attributes,attname, astring);
+					}
+					else {
+						attname = PyString_FromFormat("%s/%s",path,name);
+						PyDict_SetItem(self->top->attributes,attname, astring);
+					}
+					Py_DECREF(attname);
+				}
+			}
+			Py_DECREF(astring);
+		}
+	}
         else
         {
             PyObject *array = NULL;
-            length = (npy_intp) attnode->n_elem;
-            py_type = data_type(attnode->type);
-	    /* following three if clauses are temporary until these types are actually supported */
-	    if (py_type == PyArray_REFERENCE) {
-		    py_type = PyArray_LONG;
-	    }
-	    if (py_type == PyArray_COMPOUND) {
-		    py_type = PyArray_LONG;
-	    }
-	    if (py_type == PyArray_ENUM) {
-		    py_type = PyArray_LONG;
-	    }
             if (attnode->value == NULL) {
-		    length = 1;
 		    long value = 0;
 		    array = PyArray_SimpleNew(1, &length, PyArray_LONG);
 		    if (array != NULL) {
-			    memcpy(((PyArrayObject *)array)->data, &value,
-				   (size_t) sizeof(long));
+			    memset(((PyArrayObject *)array)->data, 0,
+				   (size_t) sizeof(long) * length);
 			    array = PyArray_Return((PyArrayObject *)array);
 		    }
 	    }

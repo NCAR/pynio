@@ -1,5 +1,5 @@
 #!/bin/csh -f
-#$Id$
+#$Id: mysetup.csh 16178 2015-04-12 16:54:47Z huangwei $
 
  set echo
 

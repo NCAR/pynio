@@ -2572,7 +2572,6 @@ void FileDestroyAttRecord(NclFileAttRecord *att_rec)
 
 void FileDestroyDimRecord(NclFileDimRecord *dim_rec)
 {
-	int i;
 	if(NULL != dim_rec)
 	{
 		if(dim_rec->max_dims)

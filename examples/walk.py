@@ -36,6 +36,8 @@ for children,keys in walktree(f.groups['/']):
       print "\tgroup:",  child.name, "contains", len(child.groups), "groups", len(child.variables), "variables,", len(child.dimensions), "dimensions, and", len(child.attributes), "group attributes"
       
       #print child
+print "file contents ======="
+print f
 #lat = f.variables['lat'][:]
 #print lat
 #latb = lat > 0
