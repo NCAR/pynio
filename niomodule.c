@@ -2745,6 +2745,10 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
     if (PySlice_Check(index)) {
 	    Py_ssize_t slicelen;
 	    PySliceObject *slice = (PySliceObject *)index;
+            /* Python in general and PySlice_GetIndicesEx in particular clips slicing start and stop to the array 
+             * boundaries. This causes issues for unlimited dimensions, where an assignment is intended to grow
+             * the dimension size.
+             */
 	    if (PySlice_GetIndicesEx((PySliceObject *)index, self->dimensions[0],
 				   &indices->start, &indices->stop, &indices->stride, &slicelen) < 0) {
 	        PyErr_SetString(PyExc_TypeError, "error in subscript");
@@ -2753,8 +2757,13 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	    }
 	    if (slice->start == Py_None)
 		    indices->no_start = 1;
+	    else if (indices->unlimited)
+		    indices->start = PyInt_AsLong(slice->start);
 	    if (slice->stop == Py_None)
 		    indices->no_stop = 1;
+	    else if (indices->unlimited)
+		    indices->stop = PyInt_AsLong(slice->stop);
+
 	    return NioVariable_WriteArray(self, indices, value);
     }
     if (PyTuple_Check(index)) {
@@ -2783,8 +2792,12 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	    }
 	    if (slice->start == Py_None)
 		    indices[d].no_start = 1;
+	    else if (indices->unlimited)
+		    indices->start = PyInt_AsLong(slice->start);
 	    if (slice->stop == Py_None)
 		    indices[d].no_stop = 1;
+	    else if (indices->unlimited)
+		    indices->stop = PyInt_AsLong(slice->stop);
 	    d++;
 	  }
 	  else if (subscript == Py_Ellipsis) {
