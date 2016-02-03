@@ -1,3 +1,6 @@
 *.pyc
 build/*
 test/*.nc
+examples/*.nc
+*~
+test/test.*.py??

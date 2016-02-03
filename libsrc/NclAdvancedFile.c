@@ -5979,8 +5979,10 @@ static NhlErrorTypes AdvancedFileAddDim(NclFile infile, NclQuark dimname,
         {
             if(NULL != thefile->advancedfile.format_funcs->add_dim)
             {
+#if 0		    
                 if(ds < 1)
                     ds = 1;
+#endif
                 ret = (*thefile->advancedfile.format_funcs->add_dim)
                        (thefile->advancedfile.grpnode,
                         dimname, ds, is_unlimited);

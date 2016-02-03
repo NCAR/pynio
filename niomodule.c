@@ -23,6 +23,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
+#include <limits.h>				\
 
 /* Py_ssize_t for old Pythons */
 /* This code is as recommended by: */
@@ -4954,7 +4955,7 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, 
         comparray = (PyArrayObject*)PyArray_SimpleNew(1, &length, NPY_OBJECT);
         if(NULL == comparray)
             PyErr_SetString(PyExc_MemoryError,
-                           "Problem to create PyArray in NioVariable_ReadAsArray for compound data.");
+			    "Problem creating PyArray in NioVariable_ReadAsArray for compound data.");
 
         curval = md->multidval.val;
 
@@ -5120,6 +5121,7 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 	  if (! md) {
 		  nio_ncerr = 23;
 		  nio_seterror();
+		  array = NULL;
 	  }
 	  else {
 		  int maxlen = 0;
@@ -5153,15 +5155,18 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 		  if (! md) {
 			  nio_ncerr = 23;
 			  nio_seterror();
-			  Py_DECREF(array);
+			  PyErr_SetString(PyExc_MemoryError,
+					  "Problem reading variable data.");
 			  array = NULL;
 		  }
-		  array =(PyArrayObject *)
-			  PyArray_New(&PyArray_Type,d,
-				      dims,self->type,NULL,md->multidval.val,
-				      0,0,NULL);
-		  md->multidval.val = NULL;
-		  _NclDestroyObj((NclObj)md);
+		  else {
+			  array =(PyArrayObject *)
+				  PyArray_New(&PyArray_Type,d,
+					      dims,self->type,NULL,md->multidval.val,
+					      0,0,NULL);
+			  md->multidval.val = NULL;
+			  _NclDestroyObj((NclObj)md);
+		  }
 	  }
 	  else {
 		  NclSelectionRecord *sel_ptr;
@@ -5183,21 +5188,23 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 			  if (! md) {
 				  nio_ncerr = 23;
 				  nio_seterror();
-				  Py_DECREF(array);
+				  PyErr_SetString(PyExc_MemoryError,
+						  "Problem reading variable data.");
 				  array = NULL;
 			  }
-
-			  if(nfile->file.advanced_file_structure)
+			  else if(nfile->file.advanced_file_structure)
 			  {
 			  	NclFileVarNode* varnode;
 				NclFileGrpNode* grpnode;
 
 				grpnode = ((NclAdvancedFile)self->file->gnode)->advancedfile.grpnode;
 				varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
-			  	if(NULL == varnode)
-					return NULL;
-
-			  	if(NCL_list == md->multidval.data_type)
+			  	if(NULL == varnode) {
+					array =  NULL;
+					PyErr_SetString(PyExc_MemoryError,
+							"Problem reading variable information.");
+				}
+			  	else if(NCL_list == md->multidval.data_type)
 			  	{
 			  		if(NCL_UDT_vlen == varnode->udt_type)
 			  		{
@@ -5214,8 +5221,8 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
                               			if(NULL == array)
                                   			PyErr_SetString(PyExc_MemoryError,
                                                   			"Problem to create PyArray in NioVariable_ReadAsArray for vlen data.");
-
-                              			_convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
+						else 
+							_convertVLEN2Obj(array, (obj*)md->multidval.val, nitems);
 			  		}
 					else if(NCL_UDT_compound == varnode->udt_type)
                           		{
@@ -5232,14 +5239,14 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
                               			if(NULL == array)
                                   			PyErr_SetString(PyExc_MemoryError,
                                                   			"Problem to create PyArray in NioVariable_ReadAsArray for compound data.");
-
-                              			_convertCOMPOUND2Obj(array, (obj*)md->multidval.val, nitems, varnode);
+						else
+							_convertCOMPOUND2Obj(array, (obj*)md->multidval.val, nitems, varnode);
 			  		}
 			  		else
                           		{
                               			fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
                               			fprintf(stderr, "\tDo not know anything about varnode->type. Return NULL.\n");
-                              			return NULL;
+						array = NULL;
 			  		}
 			  	}
 			  	else
@@ -5265,11 +5272,13 @@ NioVariable_ReadAsArray(NioVariableObject *self,NioIndex *indices)
 		  }
 	  }
   }
-  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
-  if (!is_own) {
-	  array->flags |= NPY_OWNDATA;
+  if (array) {
+	  is_own = PyArray_CHKFLAGS(array,NPY_OWNDATA);
+	  if (!is_own) {
+		  array->flags |= NPY_OWNDATA;
+	  }
+	  array->flags |= NPY_CARRAY;
   }
-  array->flags |= NPY_CARRAY;
   free(dims);
   free(indices);
   return array;
@@ -5479,7 +5488,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   if (self->nd == 0) {
     dims = NULL;
     dirs = NULL;
-  }
+  } 
   else {
     dims = (ng_size_t *)malloc(self->nd*sizeof(ng_size_t));
     dirs = (int *)malloc(self->nd*sizeof(int));
@@ -5521,7 +5530,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		      (indices[i].no_start && indices[i].stride < 0))
 			  undefined_dim = i;
 	  }
-	  if (i != undefined_dim)
+	  if (i != undefined_dim && self->dimensions[i] > 0)
 		  var_el_count *= self->dimensions[i];
 	  error = error || (indices[i].stride == 0);
           if (error)
@@ -5543,7 +5552,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  indices[i].stop += self->dimensions[i];
 	  if (indices[i].stop < 0)
 		  indices[i].stop = 0;
-	  if (i > 0 || !self->unlimited) {
+	  if (! indices[i].unlimited) {
 		  if (indices[i].start > self->dimensions[i] -1)
 			  indices[i].start = self->dimensions[i] - 1;
 		  if (indices[i].stop > self->dimensions[i] - 1)
@@ -5562,16 +5571,16 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
 	  else {
 		  indices[i].stop = indices[i].start;
+		  dims[n_dims] = 1;
+		  dirs[n_dims] = dir;
 	  }
-
-	  if (indices[i].stop >= self->dimensions[i])
-	      indices[i].stop  = self->dimensions[i] - 1;
 
         /*
          *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
 	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
          *fprintf(stderr, "\tdims[%d] = %d\n", i, (int)dims[i]);
          */
+#if 0
           if(nfile->file.advanced_file_structure)
           {
               if(NULL != varnode)
@@ -5587,6 +5596,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                   }
               }
           }
+#endif
         /*
          *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
 	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
@@ -5686,15 +5696,12 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 			  if (fdims[i] == undefined_dim) {
 				  if (dirs[fdims[i]] == 1) {
 					  indices[fdims[i]].stop = indices[fdims[i]].start + (array->dimensions[adims[i]] - 1) * indices[fdims[i]].stride;
-					  var_el_count *= array->dimensions[adims[i]];
-					  undef_size = array->dimensions[adims[i]];
 				  }
 				  else {
 					  indices[fdims[i]].start = indices[fdims[i]].stop + (array->dimensions[adims[i]] - 1) * indices[fdims[i]].stride;
-					  var_el_count *= array->dimensions[adims[i]];
-					  undef_size = array->dimensions[adims[i]];
 				  }
 				  undef_size =  array->dimensions[adims[i]];
+				  var_el_count *= array->dimensions[adims[i]];
 			  }
 			  else {
 				  sprintf(err_buf,"Dimensional mismatch writing to variable (%s)",self->name);
@@ -5712,8 +5719,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   else {
 	  int var_dim = 0;
 #if 0
-          if (indices[var_dim].unlimited && dims[var_dim] == 0)
-#else
 	/*Added this paragraph to check the indices,
 	 *Where, the stop somehow become pretty wild, which has the INT64MAX.
 	 *Wei, April 7, 2014.
@@ -5768,7 +5773,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                       }
                   }
 
-                  indices[var_dim].stop = array->dimensions[var_dim] - 1;
+                  indices[var_dim].stop = indices[var_dim].start + array->dimensions[var_dim] - 1;
                   dims[var_dim] = array->dimensions[var_dim];
                   self->dimensions[var_dim] = array->dimensions[var_dim];
                   nitems = 1;
@@ -5778,6 +5783,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
                   }
               }
 	  }
+          if (indices[var_dim].unlimited && dims[var_dim] == 0)
 #endif		  
 	  i = 0;
 	  while (i < array->nd && array->dimensions[i] == 1)
@@ -5822,7 +5828,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
   }
 
-  if (nitems < var_el_count || self->unlimited)
+  if (nitems < var_el_count || self->unlimited) /* self->unlimited should be true if any dim is unlimited */
 	  select_all = 0;
   if (dirs != NULL) {
 	  for (i = 0; i < n_dims; i++) {
@@ -6035,12 +6041,19 @@ NioVariableObject_item(NioVariableObject *self, Py_ssize_t i)
     PyErr_SetString(PyExc_TypeError, "Not a sequence");
     return NULL;
   }
+  if (i >= self->dimensions[0] || i < - self->dimensions[0]) {
+	  PyErr_Format(PyExc_IndexError,
+		       "index %d is out of bounds for axis 0 with size %ld",
+		       i, self->dimensions[0]);
+	  return NULL;
+  }
+
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
-    indices[0].start = i;
-    indices[0].stop = i+1;
-    indices[0].item = 1;
-    return PyArray_Return(NioVariable_ReadAsArray(self, indices));
+	  indices[0].start = i;
+	  indices[0].stop = i+1;
+	  indices[0].item = 1;
+	  return PyArray_Return(NioVariable_ReadAsArray(self, indices));
   }
   return NULL;
 }
@@ -6101,6 +6114,13 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index)
 	  PyObject *subscript = PyTuple_GetItem(index, i);
 	  if (PyInt_Check(subscript)) {
 	    Py_ssize_t n = (Py_ssize_t)PyInt_AsLong(subscript);
+	    if (n >= self->dimensions[d] || n < - self->dimensions[d]) {
+		    PyErr_Format(PyExc_IndexError,
+				 "index %d is out of bounds for axis %d with size %ld",
+				 n, d, self->dimensions[d]);
+		    free(indices);
+		    return NULL;
+	    }
 	    indices[d].start = n;
 	    indices[d].stop = n+1;
 	    indices[d].item = 1;
@@ -6181,9 +6201,15 @@ NioVariableObject_ass_slice(NioVariableObject *self, Py_ssize_t low, Py_ssize_t 
   }
   indices = NioVariable_Indices(self);
   if (indices != NULL) {
-    indices[0].start = low;
-    indices[0].stop = high;
-    return NioVariable_WriteArray(self, indices, value);
+	  indices[0].stop = high;
+	  indices[0].start = low;
+	  if (indices[0].unlimited) {
+		  if (indices->start < PY_SSIZE_T_MIN * 100) 
+			  indices->no_start = 1;
+		  if (indices->stop > PY_SSIZE_T_MAX / 100) 
+			  indices->no_stop = 1;
+	  }
+	  return NioVariable_WriteArray(self, indices, value);
   }
   return -1;
 }
@@ -6192,6 +6218,7 @@ static int
 NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObject *value)
 {
   NioIndex *indices;
+
   if (PyInt_Check(index)) {
     Py_ssize_t i = (Py_ssize_t) PyInt_AsLong(index);
     return NioVariableObject_ass_item(self, i, value);
@@ -6215,10 +6242,23 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	        free(indices);
 	        return -1;
 	    }
+	    /* Python slicing truncates to the closest valid index -- but we don't want that when the
+	     * dimension is unlimited. So here we revert to the raw slice values.
+	     */
 	    if (slice->start == Py_None)
 		    indices->no_start = 1;
+	    else if (indices->unlimited) {
+		    indices->start = PyInt_AsLong(slice->start);
+		    if (indices->start < PY_SSIZE_T_MIN * 100) 
+			    indices->no_start = 1;
+	    }
 	    if (slice->stop == Py_None)
 		    indices->no_stop = 1;
+	    else if (indices->unlimited)  {
+		    indices->stop = PyInt_AsLong(slice->stop);
+		    if (indices->stop >PY_SSIZE_T_MAX / 100) 
+			    indices->no_stop = 1;
+	    }
 	    return NioVariable_WriteArray(self, indices, value);
     }
     if (PyTuple_Check(index)) {
@@ -6245,10 +6285,17 @@ NioVariableObject_ass_subscript(NioVariableObject *self, PyObject *index, PyObje
 	        free(indices);
 	        return -1;
 	    }
+	    /* Python slicing truncates to the closest valid index -- but we don't want that when the
+	     * dimension is unlimited. So here we revert to the raw slice values.
+	     */
 	    if (slice->start == Py_None)
 		    indices[d].no_start = 1;
+	    else if (indices[d].unlimited) 
+		    indices[d].start = PyInt_AsLong(slice->start);
 	    if (slice->stop == Py_None)
 		    indices[d].no_stop = 1;
+	    else if (indices[d].unlimited) 
+		    indices[d].stop = PyInt_AsLong(slice->stop);
 	    d++;
 	  }
 	  else if (subscript == Py_Ellipsis) {

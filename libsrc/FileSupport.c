@@ -1,6 +1,6 @@
 
 /*
- *      $Id: FileSupport.c 16350 2015-12-16 22:19:54Z dbrown $
+ *      $Id: FileSupport.c 16392 2016-02-01 18:46:30Z hallock $
  */
 /************************************************************************
 *									*
@@ -3666,7 +3666,7 @@ NclQuark _NclFindFileExt(NclQuark path, NclQuark *fname_q, NhlBoolean *is_http,
 	int n = -1;
 	int sizeofextlist = sizeof(ext_list) / sizeof(ext_list[0]);
 
-	if(strncmp(the_path,"http://",7))
+	if(strncmp(the_path,"http://",7) && strncmp(the_path,"https://",8))
 		*is_http = False;
 	else
 		*is_http = True;

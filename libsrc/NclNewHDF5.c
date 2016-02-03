@@ -1,5 +1,5 @@
 /************************************************************************
-*ID: $Id: NclNewHDF5.c 16360 2016-01-04 04:28:01Z dbrown $
+*ID: $Id: NclNewHDF5.c 16380 2016-01-27 23:39:38Z brownrig $
 *                                                                       *
 *                 Copyright (C)  2012                                   *
 *         University Corporation for Atmospheric Research               *
@@ -578,7 +578,7 @@ char *_getH5typeName(hid_t type, int ind)
     hsize_t     size;
     int         bit, usign;
 
-    attTypeName = (char *)NclMalloc(MAX_NCL_NAME_LENGTH);
+    attTypeName = (char *)NclMalloc(32);
     strcpy(attTypeName, "Bad Data Type");
     /* Bad data type */
     if(type < 0)
@@ -1118,7 +1118,6 @@ char *_getH5typeName(hid_t type, int ind)
                 }
 
                 /* Print parent type */
-                putchar(' ');
                 super = H5Tget_super(type);
                 attTypeName = _getH5typeName(super, ind+4);
                 H5Tclose(super);
@@ -1793,6 +1792,7 @@ herr_t _checkH5attribute(hid_t obj_id, char *attr_name, const H5A_info_t *ainfo,
 		t_size = H5Tget_size(super);
 		typename = _getH5typeName(super, 15);
 		vlentype = string2NclType(typename);
+		NclFree(typename);
 
           /*
            *fprintf(stderr, "\tfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -2891,7 +2891,7 @@ herr_t _readH5dataInfo(hid_t dset, char *name, NclFileVarNode **node)
    */
 
     varnode->type = string2NclType(typename);
-    free(typename);
+    NclFree(typename);
 
     if(NCL_compound == varnode->type)
     {
@@ -2949,13 +2949,13 @@ herr_t _readH5dataInfo(hid_t dset, char *name, NclFileVarNode **node)
             compnode->rank = i;
             compnode->sides = NULL;
             compnode->value = NULL;
-            free(typename);
-            H5Tclose(subtype);
 
           /*
            *fprintf(stderr, "\tcomponent no %d name: <%s>, offset = %d, type: <%s>, nvals = %d\n",
            *                   i, name, compnode->offset, typename, compnode->nvals);
            */
+            NclFree(typename);
+            H5Tclose(subtype);
         }
 
         varnode->comprec = comprec;
