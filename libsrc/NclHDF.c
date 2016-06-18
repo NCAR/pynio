@@ -1,5 +1,5 @@
 /*
- *      $Id: NclHDF.c 14663 2013-12-05 19:28:26Z haley $
+ *      $Id: NclHDF.c 16430 2016-03-07 08:34:54Z dbrown $
  */
 /************************************************************************
 *									*
@@ -675,7 +675,7 @@ static void *HDFInitializeFileRec
 (NclFileFormat *format)
 #else
 (format)
-NclFileFormatType *format;
+NclFileFormat *format;
 #endif
 {
 	HDFFileRecord *therec = NULL;

@@ -1,5 +1,5 @@
 /*
- *      $Id: DataSupport.c 16049 2015-03-06 18:48:20Z huangwei $
+ *      $Id: DataSupport.c 16525 2016-06-07 21:47:33Z dbrown $
  */
 /************************************************************************
 *									*
@@ -688,7 +688,6 @@ NclObjTypes _NclBasicDataTypeToObjType
         case NCL_ulong:
                 return(Ncl_Typeulong);
         case NCL_uint64:
-        case NCL_reference:
                 return(Ncl_Typeuint64);
         case NCL_ubyte:
                 return(Ncl_Typeubyte);
@@ -710,6 +709,8 @@ NclObjTypes _NclBasicDataTypeToObjType
 		return(Ncl_Typegroup);
 	case NCL_compound:
 		return(Ncl_Typecompound);
+        case NCL_reference:
+		return(Ncl_Typereference);
 	case NCL_list:
 	case NCL_vlen:
 		return(Ncl_Typelist);
@@ -1293,6 +1294,55 @@ NclBasicDataTypes totype;
                         return(1);
 		case NCL_string:
 			buffer[0] = *(byte*)from;
+			buffer[1] = '\0';
+			*(NclQuark*)to = NrmStringToQuark(buffer);
+			return(1);
+		default:
+			return(0);
+		}
+	case NCL_ubyte:
+		switch(totype) {
+		case NCL_byte:
+			*(byte*) to = *(ubyte*)from;
+			return(1);
+		case NCL_char:
+			*(char*) to = *(ubyte*)from;
+			return(1);
+		case NCL_float:
+			*(float*) to = *(ubyte*)from;
+			return(1);
+		case NCL_double:
+			*(double*) to = *(ubyte*)from;
+			return(1);
+		case NCL_long:
+			*(long*) to = *(ubyte*)from;
+			return(1);
+		case NCL_int64:
+			*(long long*) to = *(ubyte*)from;
+			return(1);
+                case NCL_ulong:
+                        *(unsigned long*) to = *(ubyte*)from;
+                        return(1);
+                case NCL_uint64:
+                        *(unsigned long long*) to = *(ubyte*)from;
+                        return(1);
+		case NCL_logical:
+			*(logical*)to = (logical)(*(ubyte*)from?1:0);
+			return(1);
+		case NCL_short:
+			*(short*) to = *(ubyte*)from;
+			return(1);
+		case NCL_int:
+			*(int*) to = *(ubyte*)from;
+			return(1);
+                case NCL_ushort:
+                        *(unsigned short*) to = *(ubyte*)from;
+                        return(1);
+                case NCL_uint:
+                        *(unsigned int*) to = *(ubyte*)from;
+                        return(1);
+		case NCL_string:
+			buffer[0] = *(ubyte*)from;
 			buffer[1] = '\0';
 			*(NclQuark*)to = NrmStringToQuark(buffer);
 			return(1);
@@ -1978,7 +2028,7 @@ NclBasicDataTypes totype;
 			*(logical*)to = (logical)_Nclstrtol(val, &end);
 			return(1);
 		case NCL_string:
-			*(NclQuark*)to = (NclQuark*)from;
+			*(NclQuark*)to = *(NclQuark*)from;
 			return(1);
 		default:
 			return(0);

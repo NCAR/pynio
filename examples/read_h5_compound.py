@@ -5,7 +5,8 @@ fn = "MSG3-SEVI-MSG15-0100-NA-20130521001244.164000000Z-1074164.h5"
 opt = Nio.options()
 opt.FileStructure = 'advanced'
 f = Nio.open_file(fn, "r", options=opt)
-#print f
+#f = Nio.open_file(fn)
+print f.variables.keys()
 
 #print f.groups
 #n = 0
@@ -13,15 +14,16 @@ f = Nio.open_file(fn, "r", options=opt)
 #    n += 1
 #    print "groun %d: <%s>" %(n, key)
 
-g = f.groups['U_MARF/MSG/Level1_5/DATA/Channel_07']
-#print g
+#g = f.groups['/U_MARF/MSG/Level1_5/DATA/Channel_07']
+g = f.groups['U-MARF/MSG/Level1.5/DATA/Channel 07']
+print g
 
-#palette = g.variables['Palette']
-#print palette
+palette = g.variables['Palette']
+print palette
 
 print "\nLineSideInfo_DESCR:"
 lsid = g.variables['LineSideInfo_DESCR'][:]
-print lsid
+print lsid[:]
 dims = lsid.shape
 for n in xrange(dims[0]):
     name = str(lsid[:][n][0])

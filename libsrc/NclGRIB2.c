@@ -5285,11 +5285,12 @@ Grib2RecordInqRec *grec;
 					     grec->time_period);
 		grec->time_offset = grec->time_offset + period;
 	}
+	/* the following does not seem to work for ARPEGE data at least -- not sure what the end of the overall time interval represents */
 	if (grec->overall_interval_seconds > 0) {
 		int end_time = _g2GetConvertedTime(g2plist->forecast_time_units,
 						   13, /* the time indicator for seconds */
 						   grec->overall_interval_seconds);
-		grec->time_offset = MIN(grec->time_offset, end_time);
+		/*grec->time_offset = MIN(grec->time_offset, end_time);*/
 		/*grec->time_offset = MAX(grec->time_offset,grec->forecast_time);*/
 	}
 }
@@ -6543,7 +6544,7 @@ static void _g2SetFileDimsAndCoordVars
     Grib2ParamList  *step,
                     *last,
                     *tmpstep;
-    char buffer[80];
+    char buffer[1024];
 
     NclQuark    ygrid_q,
                 lat_q;
@@ -6584,7 +6585,7 @@ static void _g2SetFileDimsAndCoordVars
     NhlErrorTypes is_err = NhlNOERROR;
 
     int tmp_file_dim_numbers[2];
-    char name_buffer[80];
+    char name_buffer[1024];
 
     Grib2AttInqRecList  *att_list_ptr = NULL;
     Grib2AttInqRecList  *tmp_att_list_ptr = NULL;
@@ -6652,7 +6653,14 @@ static void _g2SetFileDimsAndCoordVars
 			dstep = therec->probability_dims;
 			if (step->probability) { /* either a lower or an upper limit (but not both) */
 				for(i = 0; i < therec->n_probability_dims; i++) {
-					if(dstep->dim_inq->size == step->probability->multidval.dim_sizes[0]) {
+					char *cp;
+					strcpy(buffer,NrmQuarkToString(dstep->dim_inq->dim_name));
+					cp = strchr(buffer,'_');
+					if (cp) *cp = '\0';
+					if (NrmStringToQuark(buffer) != step->var_info.param_q) {
+						dstep = dstep->next;
+					}
+					else if(dstep->dim_inq->size == step->probability->multidval.dim_sizes[0]) {
 						tmp_md = _Grib2GetInternalVar(therec,dstep->dim_inq->dim_name,&test);
 						if(tmp_md != NULL) {
 							lhs_f = (float*)tmp_md->multidval.val;
@@ -8492,7 +8500,7 @@ static NhlErrorTypes Grib2ReadCodeTable
         ct->descrip = NULL;
         ct->shname = NULL;
         ct->units = NULL;
-        (void) fclose(fp);
+	(void) fclose(fp);
         NclFree(ctf);
         return err = NhlWARNING;
     }
@@ -8561,7 +8569,7 @@ static void *Grib2InitializeFileRec
 (NclFileFormat *format)
 #else
 (format)
-NclFileFormatType *format;
+NclFileFormat *format;
 #endif
 {
     Grib2FileRecord *g2rec = NULL;
@@ -9239,7 +9247,9 @@ void _g2_seekgb(FILE *lugb,size_t iseek,size_t mseek,size_t *lskip,g2int *lgrib)
 	size_t ipos;
 	int    end;
 	unsigned char *cbuf;
+	g2int  max_bytes;
 
+	max_bytes = *lgrib;
 	*lgrib=0;
 	cbuf=(unsigned char *)malloc(mseek);
 	nread=mseek;
@@ -9271,9 +9281,12 @@ void _g2_seekgb(FILE *lugb,size_t iseek,size_t mseek,size_t *lskip,g2int *lgrib)
 			}
 		}
 		ipos=ipos+lim;
+		if (ipos > max_bytes)
+			return;
 	}
 
 	free(cbuf);
+	return;
 }
 
 
@@ -9413,6 +9426,12 @@ static void *Grib2OpenFile
      */
     t_nrecs = nrecs;
     for (;;) {
+	/* lgrib is now in and out; setting it to 0 causes _g2_seekgb to
+	   look all the way through a file to find GRIB records. Setting it
+           to a positive value makes _g2_seekgb to return failure if more
+	   than that many bytes are read without finding a valid GRIB record. */
+
+	lgrib = 0;
 	_g2_seekgb(fd, seek, (size_t)32 * GBUFSZ_T, &lskip, &lgrib);
         /* EOF or other problem? */
         if (lgrib == 0)
@@ -10627,20 +10646,6 @@ static void *Grib2OpenFile
                     /* table 4.6: Type of Ensemble Forecast */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[15];
                     g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type = NULL;
-#if 0
-                    table = "4.6.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type,
-                            ct->descrip);
-#endif
                     
                     g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[16];
                     g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[17];
@@ -10672,78 +10677,22 @@ static void *Grib2OpenFile
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
                             = g2fld->ipdtmpl[26];
                     g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
-#if 0
-                    table = "4.10.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec4[i]->prod_params->stat_proc
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->stat_proc,
-                            ct->descrip);
-#endif
     
                     /* table 4.11: Type of Time Intervals */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
                             = g2fld->ipdtmpl[27];
                     g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
-#if 0
-                    table = "4.11.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields,
-                            ct->descrip);
-#endif
     
                     /* table 4.4: Indicator of Unit of Time Range */
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
                             = g2fld->ipdtmpl[28];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
-#if 0
-                    table = "4.4.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec4[i]->prod_params->itr_unit
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->itr_unit,
-                            ct->descrip);
-#endif
                     g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
                             = g2fld->ipdtmpl[29];
 
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
                             = g2fld->ipdtmpl[30];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
-#if 0
-                    table = "4.4.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit,
-                            ct->descrip);
-#endif
                     g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
                             = g2fld->ipdtmpl[31];
                     break;
@@ -10754,6 +10703,47 @@ static void *Grib2OpenFile
                      * horizontal level or in a horizontal layer, in a continuous
                      * or non-continuous time interval.
                      */
+		    valid_end_time_set = 1;
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
+                            = g2fld->ipdtmpl[17];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
+                            = g2fld->ipdtmpl[18];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
+                            = g2fld->ipdtmpl[19];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
+                            = g2fld->ipdtmpl[20];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
+                            = g2fld->ipdtmpl[21];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
+                            = g2fld->ipdtmpl[22];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                            = g2fld->ipdtmpl[23];
+
+                    g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
+                            = g2fld->ipdtmpl[24];
+
+                    /* table 4.10: Type of Statistical Processing */
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
+                            = g2fld->ipdtmpl[25];
+                    g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
+    
+                    /* table 4.11: Type of Time Intervals */
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
+                            = g2fld->ipdtmpl[26];
+                    g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
+    
+                    /* table 4.4: Indicator of Unit of Time Range */
+                    g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
+                            = g2fld->ipdtmpl[27];
+                    g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
+                    g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
+                            = g2fld->ipdtmpl[28];
+
+                    g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
+                            = g2fld->ipdtmpl[29];
+                    g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
+                    g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
+                            = g2fld->ipdtmpl[30];
                     break;
 
                 case 13:

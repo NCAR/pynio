@@ -1,5 +1,5 @@
 /*
- *      $Id: FileSupport.h 15249 2014-04-21 16:03:44Z huangwei $
+ *      $Id: FileSupport.h 16525 2016-06-07 21:47:33Z dbrown $
  */
 /************************************************************************
 *									*
@@ -406,7 +406,7 @@ NclQuark option /* if NULL set defaults for all options */
 #endif
 );
 
-extern NclFile _NclCreateFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
+extern NclFile _NclOpenFile(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
                               unsigned int obj_type_mask, NclStatus status,
                               NclQuark path, int rw_status);
 extern NclGroup *_NclCreateGroup(NclObj inst, NclObjClass theclass, NclObjTypes obj_type,
@@ -419,7 +419,6 @@ extern ng_size_t *_NclFileReadChunkSizes(NclFile thefile, int *nchunks);
 extern int _NclFileReadCompressionLevel(NclFile thefile);
 extern NclQuark _NclFileReadVersion(NclFile thefile);
 
-extern int _isNewFileStructure(NclFile thefile);
 extern void _NclInitFileClasses();
 
 #endif /*_FileSupport_h */

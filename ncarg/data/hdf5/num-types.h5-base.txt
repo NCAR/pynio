@@ -1,5 +1,7 @@
 Nio file:	num-types.h5
    dimensions:
+      DIM_000 = 4
+      DIM_001 = 7
    variables:
    byte c_data [ DIM_000|4, DIM_001|7 ]	 
 

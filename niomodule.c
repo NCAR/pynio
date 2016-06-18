@@ -1,5 +1,5 @@
 /*******************************************************
- * $Id: niomodule.c 16363 2016-01-07 18:52:13Z dbrown $
+ * $Id: niomodule.c 16535 2016-06-17 23:24:19Z dbrown $
  *******************************************************/
 
 /*
@@ -828,15 +828,17 @@ set_attribute(NioFileObject *file, int varid, PyObject *attributes,
           if (array) {
 	          n_dims = (array->nd == 0) ? 1 : array->nd;
 	          qtype = nio_type_from_code(array->descr->type);
-#if 0
 	          if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long")) {
                            PyArrayObject *array2 = (PyArrayObject *)
                                      PyArray_Cast(array, PyArray_INT);
                            Py_DECREF(array);
                            array = array2;
 			   qtype = NrmStringToQuark("integer");
+			   sprintf(err_buf,"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
+				   name);
+			   PyErr_SetString(NIOError, err_buf);
+			   PyErr_Print();
                   }
-#endif
                   if (array) {
 			   ng_size_t *dims;
 			   void *data;
@@ -1065,7 +1067,7 @@ NioFile_Open(char *filename, char *mode)
   self->weakreflist = NULL;
 
   crw = GetNioMode(filename,mode);
-  file = _NclCreateFile(NULL,NULL,Ncl_File,0,TEMPORARY,
+  file = _NclOpenFile(NULL,NULL,Ncl_File,0,TEMPORARY,
 			NrmStringToQuark(filename),crw);
   if (file) {
 	  self->id = (void *) file;
@@ -3286,15 +3288,18 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes, char *n
         {
             n_dims = (array->nd == 0) ? 1 : array->nd;
             qtype = nio_type_from_code(array->descr->type);
-#if 1
-            if (array->descr->elsize == 8 && qtype == NrmStringToQuark("long"))
+            if (nfile->file.advanced_file_structure && 
+		array->descr->elsize == 8 && qtype == NrmStringToQuark("long"))
             {
                  PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array, PyArray_INT);
                  Py_DECREF(array);
                  array = array2;
                  qtype = NrmStringToQuark("integer");
+		 sprintf(err_buf,"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
+			 name);
+		 PyErr_SetString(NIOError, err_buf);
+		 PyErr_Print();
             }
-#endif
             if(NrmStringToQuark("object") == qtype)
 	    {
 		fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
@@ -4985,7 +4990,7 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems, 
             else if(NCL_string == compnode->type)
             {
                 PyObject* tmpobj;
-                char* tmpstr = NrmQuarkToString(*(NrmQuark*)curval + compnode->offset);
+                char* tmpstr = NrmQuarkToString(*(NrmQuark*)((char*)curval + compnode->offset));
                 length = strlen(tmpstr);
                 tmpobj = PyArray_SimpleNewFromData(1, &length, PyArray_CHAR, tmpstr);
                 pyobj = PyArray_ToString((PyArrayObject*)tmpobj, NPY_CORDER);
@@ -5620,7 +5625,7 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 
 	  if ((! nfile->file.advanced_file_structure) && array->descr->type == 'l' && array->descr->elsize == 8) {
 		  PyArrayObject *array2 = (PyArrayObject *)  PyArray_Cast(array, PyArray_INT);
-		  sprintf(err_buf,"coercing 8-byte long data to 4-byte integer variable (%s): possible data loss due to overflow",
+		  sprintf(err_buf,"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
 			  self->name);
 		  PyErr_SetString(NIOError, err_buf);
 		  PyErr_Print();

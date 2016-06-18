@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 16131 2015-03-30 15:06:00Z huangwei $
+ *      $Id: NclAdvancedFile.h 16526 2016-06-08 19:11:34Z dbrown $
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h
@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <math.h>
+#include <alloca.h>
 #include "defs.h"
 #include "Symbol.h"
 #include "NclVar.h"

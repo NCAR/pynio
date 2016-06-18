@@ -516,7 +516,7 @@ static void *HE5InitializeFileRec
 (NclFileFormat *format)
 #else
 (format)
-NclFileFormatType *format;
+NclFileFormat *format;
 #endif
 {
     static int first = 1;
@@ -786,6 +786,7 @@ static void getHE5SwathData(NclFileGrpNode *parentgrpnode, NclQuark path)
         grpnode->fid = HE5_SWid;
         grpnode->pname = -1;
         grpnode->name = sw_hdf_names[i];
+        grpnode->real_name = sw_hdf_names[i];
         grpnode->define_mode = SWATH;
 
       /*global attributes from file*/
@@ -1757,6 +1758,7 @@ static void getHE5GridData(NclFileGrpNode *parentgrpnode, NclQuark path)
         grpnode->gid = HE5_GDid;
         grpnode->pname = -1;
         grpnode->name = gd_hdf_names[i];
+        grpnode->real_name = gd_hdf_names[i];
         grpnode->define_mode = GRID;
 
         status = HE5_GDprojinfo(HE5_GDid,&projcode,&zonecode,&spherecode,projparm);

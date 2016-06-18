@@ -445,11 +445,10 @@ static void *NC4CreateFile(void *rootgrp,NclQuark path)
     NclFileGrpNode *grpnode = (NclFileGrpNode *)rootgrp;
     int fid = 0;
     int nc_ret, mode;
-    int format = 4;
+    int format = 3;
 
-  /*
-   *NC4InitializeOptions(grpnode);
-   */
+    /* Note: in the header netcdf.h NETCDF4 is format 3 and NETCDF4_CLASSIC is format 4 */
+
 
     if (*(NrmQuark *)(grpnode->options[Ncl_FORMAT].values) == 
               NrmStringToQuark("classic"))
@@ -469,18 +468,28 @@ static void *NC4CreateFile(void *rootgrp,NclQuark path)
               NrmStringToQuark("netcdf4classic"))
     {
         mode = (NC_NOCLOBBER|NC_CLASSIC_MODEL);
-        format = 3;
+        format = 4;
     }
     else if (*(NrmQuark *)(grpnode->options[Ncl_FORMAT].values) == 
               NrmStringToQuark("netcdf4"))
     {
         mode = (NC_NETCDF4);
-        format = 4;
+        format = 3;
     }
+#ifdef NC_FORMAT_CDF5
+    else if ((*(NrmQuark *)(grpnode->options[Ncl_FORMAT].values) ==
+	      NrmStringToQuark("cdf5")) ||
+	     (*(NrmQuark*)(grpnode->options[Ncl_FORMAT].values) ==
+	      NrmStringToQuark("64bitdata")))
+    {
+	    mode = (NC_NOCLOBBER|NC_64BIT_DATA);
+	    format = 5;
+    }
+#endif
     else
     {
         mode = NC_NETCDF4;
-        format = 4;
+        format = 3;
     }
 
   /*
@@ -2580,18 +2589,11 @@ NclFileVarRecord *_NC4_get_vars(NclFileGrpNode *grpnode, int n_vars, int *has_sc
        *     A pointer to an array list of chunk sizes.
        *     The array must have one chunksize for each dimension in the variable. 
        */
+	nc_inq_var_deflate(gid, i, &(varnode->shuffle), &deflatep, &(varnode->compress_level));
         nc_inq_var_chunking(gid, i, &storage_in, chunksizes);
         varnode->is_chunked = 0;
         if(NC_CHUNKED == storage_in)
         {
-            nc_inq_var_deflate(gid, i, &(varnode->shuffle), &deflatep, &(varnode->compress_level));
-
-          /*
-           *fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
-           *fprintf(stderr, "\t\tvarnode->shuffle = %d, deflatep = %d, compress_level = %d\n",
-           *                     varnode->shuffle, deflatep, varnode->compress_level);
-           */
-
             varnode->is_chunked = 1;
             dimrec = _NclFileDimAlloc(n_dims);
             dimrec->gid = gid;
@@ -2600,7 +2602,7 @@ NclFileVarRecord *_NC4_get_vars(NclFileGrpNode *grpnode, int n_vars, int *has_sc
             for(j = 0; j < nc_dims; j++)
             {
                 dimrec->dim_node[j].id = nc_dim_id[j];
-                dimrec->dim_node[j].is_unlimited = (unlimited_dim_idx == nc_dim_id[j])?1:0;
+                dimrec->dim_node[j].is_unlimited = varnode->dim_rec->dim_node[j].is_unlimited;
                 dimrec->dim_node[j].name = varnode->dim_rec->dim_node[j].name;
                 dimrec->dim_node[j].size = chunksizes[j];
 
@@ -2728,8 +2730,8 @@ void *NC4OpenFile(void *rootgrp, NclQuark path, int status)
             if(grpnode->compress_level < varnode->compress_level)
                 grpnode->compress_level = varnode->compress_level;
 
-            if(varnode->dim_rec->n_dims < 2)
-                continue;
+            if(varnode->dim_rec->n_dims < 2 && varnode->dim_rec->dim_node->size == 1) /* no chunking for scalars */
+		    continue;
 
             if(varnode->is_chunked && (NULL != varnode->chunk_dim_rec))
             {
@@ -2769,6 +2771,11 @@ void *NC4OpenFile(void *rootgrp, NclQuark path, int status)
           case NC_FORMAT_64BIT:
                grpnode->kind = NrmStringToQuark("64BIT OFFSET");
                break;
+#ifdef NC_FORMAT_CDF5
+          case NC_FORMAT_64BIT_DATA:
+	       grpnode->kind = NrmStringToQuark("64BIT DATA"); /* aka CDF5 */
+               break;
+#endif
           case NC_FORMAT_CLASSIC:
                grpnode->kind = NrmStringToQuark("CLASSIC");
                break;
@@ -2816,6 +2823,8 @@ void *NC4OpenFile(void *rootgrp, NclQuark path, int status)
         grpnode->dim_rec->dim_node[n_dims].size = 1;
         grpnode->dim_rec->dim_node[n_dims].is_unlimited = 0;
         grpnode->dim_rec->dim_node[n_dims].name = NrmStringToQuark("ncl_scalar");
+	grpnode->dim_rec->max_dims = n_dims + 1;
+	grpnode->dim_rec->n_dims = n_dims + 1;
     }
     else
     {
@@ -2971,6 +2980,11 @@ void NC4GetDimVals(int ncid, NclFileGrpNode *grpnode)
     for(i = 0; i < grpnode->dim_rec->n_dims; i++)
     {
         dimnode = &(grpnode->dim_rec->dim_node[i]);
+#if 0
+	if (dimnode->is_unlimited) { /* don't cache unlimited dimension values */
+		continue;
+	}
+#endif
         varnode = _getVarNodeFromNclFileGrpNode(grpnode, dimnode->name);
 
         if(NULL == varnode)
@@ -2979,7 +2993,7 @@ void NC4GetDimVals(int ncid, NclFileGrpNode *grpnode)
         if(varnode->dim_rec->n_dims > 1)
             continue;
 
-        if(NULL == varnode->value)
+        if(NULL == varnode->value && ! dimnode->is_unlimited)
         {
             varnode->value = NclCalloc(nctypelen(varnode->the_nc_type) * dimnode->size, 1);
 
@@ -3113,6 +3127,11 @@ static void _checking_nc4_chunking(NclFileGrpNode *grpnode, int id)
         for(j = 0; j < grpnode->var_rec->n_vars; j++)
         {
             varnode = &(grpnode->var_rec->var_node[j]);
+	    if (varnode->dim_rec->n_dims == 1 && varnode->dim_rec->dim_node->name == NrmStringToQuark("ncl_scalar"))
+		    continue;
+
+	    if (! varnode->is_chunked)
+		    continue;
 
             if(NULL == varnode->chunk_dim_rec)
             {
@@ -3120,6 +3139,8 @@ static void _checking_nc4_chunking(NclFileGrpNode *grpnode, int id)
                 {
                     chunkdimnode = _getChunkDimNodeFromNclFileGrpNode(grpnode,
                                        varnode->dim_rec->dim_node[i].name);
+		    if (! chunkdimnode)
+			    continue;
                     _addNclDimNode(&(varnode->chunk_dim_rec),
                                    varnode->dim_rec->dim_node[i].name,
                                    chunkdimnode->size, chunkdimnode->id,
@@ -3133,6 +3154,8 @@ static void _checking_nc4_chunking(NclFileGrpNode *grpnode, int id)
                 {
                     chunkdimnode = _getChunkDimNodeFromNclFileGrpNode(grpnode,
                                        varnode->dim_rec->dim_node[i].name);
+		    if (! chunkdimnode)
+			    continue;
                     var_chunk_dims[i] = (size_t)chunkdimnode->size;
                 }
 	    }
@@ -4198,6 +4221,20 @@ static NhlErrorTypes NC4WriteVar(void *therec, NclQuark thevar, void *data,
                      NrmQuarkToString(thevar),NrmQuarkToString(grpnode->path));
                 return(NhlFATAL);
             }
+	    
+            for(i = 0; i < varnode->dim_rec->n_dims; i++)
+            {
+                dimnode = &(varnode->dim_rec->dim_node[i]);
+                if(dimnode->is_unlimited) {
+			int j;
+			for (j = 0; j < grpnode->dim_rec->n_dims; j++) {
+				if (dimnode->id == grpnode->dim_rec->dim_node[j].id) {
+					grpnode->dim_rec->dim_node[j].size = MAX(grpnode->dim_rec->dim_node[j].size,dimnode->size);
+				}
+			}
+		}
+	    }
+			
 
           /*
            *fprintf(stderr, "Leave NC4WriteVar, file: %s, line: %d\n\n", __FILE__, __LINE__);
@@ -4635,7 +4672,7 @@ static NhlErrorTypes NC4WriteVarAtt(void *therec, NclQuark thevar,
 
         if(ret == -1)
         {
-            if (theatt == NrmStringToQuark("_FillValue") && grpnode->format > 2)
+            if (theatt == NrmStringToQuark("_FillValue") && grpnode->format > 2 && grpnode->format < 5)
             {
                 NhlPError(NhlWARNING,NhlEUNKNOWN,
                     "NclNetCDF4: NetCDF 4 does not allow the _FillValue attribute to be modified after data written to variable (%s) in file (%s)",
@@ -5016,6 +5053,8 @@ static NhlErrorTypes NC4AddDim(void* therec, NclQuark thedim,
         else
         {
             _addNclDimNode(&(grpnode->dim_rec), thedim, dimidp, size, is_unlimited);
+	    if (grpnode->is_chunked) 
+		    _addNclDimNode(&(grpnode->chunk_dim_rec), thedim, dimidp, size, is_unlimited);
         }
       /*
        *nc_ret = grpnode->dim_rec->n_dims - 1;
@@ -5285,7 +5324,7 @@ static NhlErrorTypes NC4AddVar(void* therec, NclQuark thevar,
                 ret = nc_def_var(fid,NrmQuarkToString(thevar),
                          *the_data_type, n_dims, dim_ids, &var_id);
 
-                if((ret == NC_NOERR) && (grpnode->format > 2) && (deflate_level > 0))
+                if((ret == NC_NOERR) && (grpnode->format > 2 && grpnode->format < 5) && (deflate_level > 0))
                 {
                   /*
                    *fprintf(stderr, "\nfile: %s, line: %d\n", __FILE__, __LINE__);
@@ -5325,6 +5364,49 @@ static NhlErrorTypes NC4AddVar(void* therec, NclQuark thevar,
                *varnode->chunk_dim_rec->dim_node[i].id = dim_ids[i];
                */
             }
+	    {
+		    int    storage_in = -1;
+		    size_t chunksizes[MAX_VAR_DIMS];
+		    NclFileDimRecord *dimrec = NULL;
+		    NclFileDimNode *dimnode = NULL;
+		    NclFileDimNode *gdimnode = NULL;
+
+		    nc_inq_var_chunking(fid, var_id, &storage_in, chunksizes);
+		    varnode->is_chunked = storage_in == NC_CHUNKED ? 1 : 0;
+		    grpnode->is_chunked = varnode->is_chunked ? 1 : grpnode->is_chunked;
+		    if (varnode->is_chunked) {
+			    dimrec = _NclFileDimAlloc(n_dims);
+			    dimrec->gid = grpnode->gid;
+			    varnode->chunk_dim_rec = dimrec;
+
+			    for(j = 0; j < n_dims; j++)
+			    {
+				    dimnode = &(dimrec->dim_node[j]);
+				    dimnode->id = dim_ids[j];
+				    dimnode->is_unlimited = varnode->dim_rec->dim_node[j].is_unlimited;
+				    dimnode->name = varnode->dim_rec->dim_node[j].name;
+				    dimnode->size = chunksizes[j];
+				    if (! grpnode->chunk_dim_rec) {
+					    _addNclDimNode(&(grpnode->chunk_dim_rec), dimnode->name, dimnode->id,
+							   dimnode->size, dimnode->is_unlimited);
+				    }
+				    else {
+					    for (i = 0; i < grpnode->chunk_dim_rec->n_dims; i++) {
+						    gdimnode = &(grpnode->chunk_dim_rec->dim_node[i]);
+						    if (gdimnode->name != dimnode->name)
+							    continue;
+						    break;
+					    }
+					    if (i == grpnode->chunk_dim_rec->n_dims) {
+						    _addNclDimNode(&(grpnode->chunk_dim_rec), dimnode->name, dimnode->id,
+								   dimnode->size, dimnode->is_unlimited);
+					    }
+				    }	    
+
+			    }
+		    }
+			    
+	    }
 
             if(add_scalar_dim)
             {

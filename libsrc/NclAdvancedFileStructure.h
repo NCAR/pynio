@@ -72,7 +72,7 @@ typedef struct _NclFileAttNode
     ng_size_t         id;
     int               n_elem;
     void             *value;
-    nc_type           base_type;
+    NclBasicDataTypes base_type;
     nc_type           the_nc_type;
     int               is_virtual;
     int               is_compound;
@@ -173,6 +173,15 @@ typedef struct _NclFileVlenRecord
     void    *values;
 } NclFileVlenRecord;
 
+typedef struct _NclFileReferenceNode
+{
+    NclQuark obj_name;
+    int      obj_id;     /* cast to type hid_t */
+    int      obj_type;   /* cast to type H5O_type_t */
+    int      ref_type;   /* cast to type H5R_type_t  */
+    int      ref;
+} NclFileReferenceNode;
+
 typedef struct _NclFileVarNode
 {
     ng_size_t         id;
@@ -235,6 +244,7 @@ struct _NclFileGrpNode
     ng_size_t            pid;
     
     NclQuark             name;
+    NclQuark             name_an;   /* alphanumeric only version of name */
     NclQuark             pname;
     NclQuark             real_name;
 
@@ -344,9 +354,9 @@ NclFileCompoundRecord *get_nc4_compoundrec(int ncid, nc_type xtype, NrmQuark **c
 
 NclMultiDValData get_nc4_vlenlist(int ncid, int varid, nc_type xtype, NclBasicDataTypes* vlentype);
 
+void _printNclTypeValAligned(FILE *fp, NclBasicDataTypes type, void *val, int newline);
 void _printNclTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline);
-void _justPrintTypeVal(FILE *fp, NclBasicDataTypes type, void *val, int newline);
-void _justPrintTypeValAtPoint(FILE *fp, NclBasicDataTypes type, void *val,
+void _printNclTypeValIndexed(FILE *fp, NclBasicDataTypes type, void *val,
                               size_t np, int newline);
 
 NclFileEnumRecord *_NclFileEnumAlloc(int n_enums);

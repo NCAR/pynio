@@ -35,7 +35,7 @@
 
 extern int grib_version;
 
-extern short NCLadvancedFileStructure[_NclNumberOfFileFormats];
+extern short NCLadvancedFileStructure[_NioNumberOfFileStructOptions];
 
 typedef struct _NclFileRec NclFileRec;
 typedef struct _NclFileClassRec NclFileClassRec;
@@ -444,7 +444,7 @@ extern NclObjClass nclFileClass;
 
 extern NclFileClassRec nclFileClassRec;
 
-extern NclFile _NclCreateFile(
+extern NclFile _NclOpenFile(
 #if	NhlNeedProto
 	NclObj	/* inst */,
 	NclObjClass /*theclass*/,
