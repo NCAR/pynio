@@ -391,7 +391,7 @@ def idxsel2xsel(file, isel, dimensions, order):
             i = 0
             for axis in dimensions:
                 if xsel_size[axis] != 0:
-                    idx_shape = N.ones(ndim_ret)
+                    idx_shape = N.ones(ndim_ret,dtype="int32")
                     idx_shape[i] = dim_ret[i]
                     xsel[axis].shape = idx_shape
                     i += 1
@@ -401,7 +401,7 @@ def idxsel2xsel(file, isel, dimensions, order):
             for axis in dimensions:
                 if xsel_dims[axis] is None:
                     if xsel_size[axis] != 0:
-                        idx_shape = N.ones(ndim_ret)
+                        idx_shape = N.ones(ndim_ret,dtype="int32")
                         idx_shape[i] = dim_ret[i]
                         xsel[axis].shape = idx_shape
                         i += 1
