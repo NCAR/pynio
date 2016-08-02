@@ -2,39 +2,37 @@
 PyNIO ("pie-nee-oh") is a Python module that allows read and/or write
 access to a variety of scientific data formats (NetCDF 3/4, GRIB1,
 GRIB2, HDF4, HDF-EOS2, HDF-EOS5, shapefile, CCM History tape) using an
-interface modelled on NetCDF. 
+interface modelled on NetCDF.
 
 Use of this software implies agreement of the PyNIO source code
-license:
-
-  http://www.pyngl.ucar.edu/Licenses/PyNIO_source_license.shtml
+license, which can be found in the "LICENSE" file.
 
 You can import this package with:
 
   import Nio
 For inline documentation:
   print Nio.__doc__
- 
+
 Since building from source can be challenging and time-consuming, we
 recommend that you install this package using conda. Conda install packages
-are currently available for 64-bit Linux and Macintosh OSX systems. 
+are currently available for 64-bit Linux and Macintosh OSX systems.
 As a prerequisite, you will need to set up an anaconda or miniconda environment.
-See https://www.continuum.io/downloads for anaconda or 
+See https://www.continuum.io/downloads for anaconda or
 http://conda.pydata.org/miniconda.html for miniconda. Miniconda is a lighter
-weight version of anaconda. Both are easy to install -- anaconda just takes 
+weight version of anaconda. Both are easy to install -- anaconda just takes
 longer.
 
 Once your environment is up and runing, installing PyNIO is easy. All the necessary
-dependencies are installed automatically. Currently there are two versions: 
-PyNIO 1.4.3 and PyNIO 1.5.0-beta. PyNIO 1.4.3 uses a NetCDF3 type interface; it 
+dependencies are installed automatically. Currently there are two versions:
+PyNIO 1.4.3 and PyNIO 1.5.0-beta. PyNIO 1.4.3 uses a NetCDF3 type interface; it
 supports NetCDF4-Classic file features such as compression, but it does not read or
 write full NetCDF4 files. PyNIO 1.5.0-beta has still-evolving support for the full
-NetCDF4 and HDF5 data models with access to groups, user-defined compound data 
-types and variable length arrays. 
+NetCDF4 and HDF5 data models with access to groups, user-defined compound data
+types and variable length arrays.
 Install PyNIO 1.4.3 using:
 
   conda install -c ncar pynio
-  
+
 Install PyNIO 1.5.0-beta using:
 
   conda install -c dbrown pynio
@@ -67,6 +65,6 @@ Examples and tests:
 ---------
 
 There are some PyNIO tests in the "test" directory and examples in the "examples"
-directory. 
+directory.
 
 
