@@ -37,6 +37,7 @@ typedef int Py_ssize_t;
 #define _NIO_MODULE
 #include "niomodule.h"
 
+
 /* Python 2 to 3 helper macros */
 #if PY_MAJOR_VERSION >= 3
 #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
@@ -48,9 +49,25 @@ typedef int Py_ssize_t;
 
 /* Python 3.7 changes the unicode char* to const char* */
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7
-typedef char py3_char;
-#else
 typedef const char py3_char;
+#else
+typedef char py3_char;
+#endif
+
+
+#if PY_MAJOR_VERSION < 3
+static py3_char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size) {
+
+	*size =  PyUnicode_GET_DATA_SIZE(unicode);
+	return (py3_char*) PyUnicode_AS_DATA(unicode);
+
+}
+
+
+static PyObject* PyUnicode_AsUTF8(PyObject *unicode) {
+	return (py3_char*) PyUnicode_AS_DATA(unicode)
+
+}
 #endif
 
 /* all doc strings defined within the C interface */
@@ -736,9 +753,9 @@ static void collect_attributes(void *fileid, int varid, PyObject *attributes,
 			PyObject *string = NULL;
 			char *satt = NrmQuarkToString(*((NrmQuark *) md->multidval.val));
 			if (satt != NULL) {
-				string = PyUnicode_DecodeUTF8(satt);
+				string = PyUnicode_DecodeUTF8(satt, strlen(satt), "strict");
 			} else {
-				string = PyUnicode_DecodeUTF8("");
+				string = PyUnicode_DecodeUTF8("", 1, "strict");
 			}
 			if (string != NULL) {
 				DICT_SETITEMSTRING(attributes, name, string);
@@ -1011,7 +1028,7 @@ static int GetNioMode(char* filename, char *mode) {
 /* Create file object */
 
 NioFileObject *
-NioFile_Open(char *filename, char *mode) {
+NioFile_Open(py3_char *filename, py3_char *mode) {
 	NioFileObject *self = PyObject_NEW(NioFileObject, &NioFile_Type);
 	NclFile file = NULL;
 	int crw;
@@ -1034,7 +1051,7 @@ NioFile_Open(char *filename, char *mode) {
 	self->ud_types = NULL;
 	self->name = NULL;
 	self->mode = NULL;
-	self->type = PyUnicode_DecodeUTF8("file");
+	self->type = PyUnicode_DecodeUTF8("file", strlen("file"), "strict");
 	self->full_path = NULL;
 	self->parent = NULL;
 	self->top = NULL;
@@ -1054,13 +1071,13 @@ NioFile_Open(char *filename, char *mode) {
 		self->write = (crw != 1);
 		name = strrchr(filename, '/');
 		if (name && strlen(name) > 1) {
-			self->name = PyUnicode_DecodeUTF8(name + 1);
-			self->full_path = PyUnicode_DecodeUTF8(filename);
+			self->name = PyUnicode_DecodeUTF8(name + 1, strlen(name)-1, "strict");
+			self->full_path = PyUnicode_DecodeUTF8(filename, strlen(filename), "strict");
 		} else {
-			self->name = PyUnicode_DecodeUTF8(filename);
-			self->full_path = PyUnicode_DecodeUTF8(filename);
+			self->name = PyUnicode_DecodeUTF8(filename, strlen(filename), "strict");
+			self->full_path = PyUnicode_DecodeUTF8(filename, strlen(filename), "strict");
 		}
-		self->mode = PyUnicode_DecodeUTF8(mode);
+		self->mode = PyUnicode_DecodeUTF8(mode, strlen(mode), "strict");
 		nio_file_init(self);
 	} else {
 		NioFileObject_dealloc(self);
@@ -1360,9 +1377,8 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 					PyObject *pystr;
 					PyArrayObject *pyarray = (PyArrayObject *) array;
 					for (j = 0; j < n_elem; j++) {
-						pystr = PyUnicode_DecodeUTF8(
-								NrmQuarkToString(
-										((NrmQuark*) attnode->value)[j]));
+						py3_char *valstr = NrmQuarkToString(((NrmQuark*) attnode->value)[j])
+						pystr = PyUnicode_DecodeUTF8(valstr, strlen(valstr), "strict");
 						PyArray_SETITEM(array,
 								pyarray->data + j * pyarray->descr->elsize,
 								pystr);
@@ -1388,9 +1404,9 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 				PyObject *astring;
 				char *satt = NrmQuarkToString(*((NrmQuark *) attnode->value));
 				if (satt != NULL)
-					astring = PyUnicode_DecodeUTF8(satt);
+					astring = PyUnicode_DecodeUTF8(satt, strlen(satt), "strict");
 				else
-					astring = PyUnicode_DecodeUTF8("");
+					astring = PyUnicode_DecodeUTF8("", strlen(""), "strict");
 				if (astring != NULL) {
 					DICT_SETITEMSTRING(attributes, name, astring);
 					if (path) {
@@ -1758,19 +1774,19 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
 	self->open = niofileobj->open;
 	self->write = niofileobj->write;
 	self->define = niofileobj->define;
-	self->name = PyUnicode_DecodeUTF8(name);
+	self->name = PyUnicode_DecodeUTF8(name, strlen(name), "strict");
 	self->mode = niofileobj->mode;
-	self->type = PyUnicode_DecodeUTF8("group");
+	self->type = PyUnicode_DecodeUTF8("group", strlen("group"), "strict");
 	self->parent = niofileobj;
 	Py_INCREF(self->parent);
-
+/*FIXME: Not available in Python 2.7 */
 	path_buf = PyUnicode_AsUTF8AndSize(niofileobj->full_path, &len)
 	/*len = PyString_Size(niofileobj->full_path);*/
 	buf = malloc(len + 1);
 	strcpy(buf, path_buf)
 	/*strcpy(buf,PyUnicode_AsUTF8(niofileobj->full_path));*/
 	if (!strcmp(buf, "/")) {
-		self->full_path = PyUnicode_DecodeUTF8(name);
+		self->full_path = PyUnicode_DecodeUTF8(name, strlen(name), "strict");
 	} else {
 		self->full_path = PyUnicode_AsUTF8String(PyUnicode_FromFormat("%s/%s", path_buf, name));
 	}
@@ -3395,7 +3411,7 @@ int NioFile_SetAttribute(NioFileObject *self, char *name, PyObject *value) {
 }
 
 int NioFile_SetAttributeString(NioFileObject *self, char *name, char *value) {
-	PyObject *string = PyUnicode_DecodeUTF8(value);
+	PyObject *string = PyUnicode_DecodeUTF8(value, strlen(value), "strict");
 	if (string != NULL)
 		return NioFile_SetAttribute(self, name, string);
 	else
@@ -3405,21 +3421,43 @@ int NioFile_SetAttributeString(NioFileObject *self, char *name, char *value) {
 /*FIXME: I don't think the unicode object has the ob_sval attribute*/
 int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 	static char *history = "history";
-	int alloc, old, new, new_alloc;
-	PyUnicodeObject *new_string;
+	int oldlen, newlen;
+	py3_char *prev_history;
+	char *new_history;
+	PyObject *new_string = NULL;
 	PyObject *h = NioFile_GetAttribute(self, history);
+
 	if (h == NULL) {
 		PyErr_Clear();
-		alloc = 0;
-		old = 0;
-		new = strlen(text);
+		oldlen = 0;
+		newlen = strlen(text) + 1;
+		new_history = (char*) calloc(newlen, sizeof(char));
+		strcpy(new_history, text);
 	} else {
 		/*alloc = PyString_Size(h);
 		 old = strlen(PyUnicode_AsUTF8(h));*/
-		PyUnicode_AsUTF8AndSize(h, &alloc);
-		new = old + strlen(text) + 1;
+		prev_history = PyUnicode_AsUTF8AndSize(h, &oldlen);
+		newlen = oldlen + strlen(text) + 3; /* Need 2 nulls and 1 '\n' */
+		new_history = (char*) calloc(newlen, sizeof(char));
+		strcpy(new_history, prev_history);
+		strcat(new_history, '\n');
+		strcat(new_history, text);
 	}
-	new_alloc = (new <= alloc) ? alloc : new + 500;
+
+	new_string = PyUnicode_DecodeUTF8(new_history, newlen, "strict");
+	if (new_string) {
+		ret = NioFile_SetAttribute(self, history, new_string);
+	} else {
+		ret = -1;
+	}
+
+	Py_XDECREF(h);
+	Py_XDECREF(new_string);
+
+	return ret;
+
+
+	/*
 	new_string = (PyUnicodeObject *) PyUnicode_DecodeUTF8(NULL, new_alloc);
 	if (new_string) {
 		char *s = new_string->ob_sval;
@@ -3439,6 +3477,7 @@ int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 		return ret;
 	} else
 		return -1;
+		*/
 }
 
 /* Printed representation */
@@ -3448,7 +3487,7 @@ NioFileObject_repr(NioFileObject *file) {
 	sprintf(buf, "<%s NioFile object '%.256s', mode '%.10s' at %lx>",
 			file->open ? "open" : "closed", PyUnicode_AsUTF8(file->name),
 			PyUnicode_AsUTF8(file->mode), (long) file);
-	return PyUnicode_DecodeUTF8(buf);
+	return PyUnicode_DecodeUTF8(buf, strlen(buf), "strict");
 }
 
 #define BUF_INSERT(tbuf) \
@@ -3999,7 +4038,7 @@ NioFileObject_str(NioFileObject *file) {
 		}
 	}
 
-	pystr = PyUnicode_DecodeUTF8(buf);
+	pystr = PyUnicode_DecodeUTF8(buf, strlen(buf), "strict");
 	free(buf);
 
 	return pystr;
@@ -4289,10 +4328,10 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	self->open = niofileobj->open;
 	self->write = niofileobj->write;
 	self->define = niofileobj->define;
-	self->name = PyUnicode_DecodeUTF8(name);
+	self->name = PyUnicode_DecodeUTF8(name, strlen(name), "strict");
 	self->mode = niofileobj->mode;
 	Py_INCREF(self->mode);
-	self->type = PyUnicode_DecodeUTF8("group");
+	self->type = PyUnicode_DecodeUTF8("group", strlen("group"), "strict");
 
 	/*len = PyString_Size(niofileobj->full_path);*/
 	path_buf = PyUnicode_AsUTF8AndSize(niofileobj->full_path, &len)
@@ -4379,7 +4418,7 @@ NioVariableObject_typecode(NioVariableObject *self, PyObject *args) {
 	char *t;
 
 	t = typecode(self->type);
-	return PyUnicode_DecodeUTF8(t, strlen(t));
+	return PyUnicode_DecodeUTF8(t, strlen(t), "strict");
 }
 
 /* Method table */
@@ -4571,7 +4610,7 @@ static PyObject *
 NioVariable_GetAttribute(NioVariableObject *self, char *name) {
 	PyObject *value;
 	if (strcmp(name, "name") == 0) {
-		return (PyUnicode_DecodeUTF8(self->name));
+		return (PyUnicode_DecodeUTF8(self->name), strlen(self->name), "strict");
 	}
 	if (strcmp(name, "path") == 0) {
 		py3_char *path = PyUnicode_AsUTF8(self->file->full_path);
@@ -4621,14 +4660,14 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name) {
 			if (nfile->file.advanced_file_structure) {
 				for (i = 0; i < self->nd; i++) {
 					dname = NrmQuarkToString(self->qdims[i]);
-					PyTuple_SetItem(tuple, i, PyUnicode_DecodeUTF8(dname));
+					PyTuple_SetItem(tuple, i, PyUnicode_DecodeUTF8(dname, strlen(dname), "strict"));
 				}
 			} else {
 				for (i = 0; i < self->nd; i++) {
 					int dimid = _NclFileIsDim(nfile, self->qdims[i]);
 					dname = NrmQuarkToString(
 							nfile->file.file_dim_info[dimid]->dim_name_quark);
-					PyTuple_SetItem(tuple, i, PyUnicode_DecodeUTF8(dname));
+					PyTuple_SetItem(tuple, i, PyUnicode_DecodeUTF8(dname, strlen(dname), "strict"));
 				}
 			}
 			return tuple;
@@ -4673,7 +4712,7 @@ static int NioVariable_SetAttribute(NioVariableObject *self, char *name,
 
 int NioVariable_SetAttributeString(NioVariableObject *self, char *name,
 		char *value) {
-	PyObject *string = PyUnicode_DecodeUTF8(value);
+	PyObject *string = PyUnicode_DecodeUTF8(value, strlen(value), "strict");
 	if (string != NULL)
 		return NioVariable_SetAttribute(self, name, string);
 	else
@@ -4946,6 +4985,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 			int maxlen = 0;
 			int tlen;
 			NrmQuark qstr;
+			py3_char *pqstr;
 			PyObject *pystr;
 			/* find the maximum string length */
 			for (i = 0; i < nitems; i++) {
@@ -4959,7 +4999,8 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 			if (array) {
 				for (i = 0; i < nitems; i++) {
 					qstr = ((NrmQuark *) md->multidval.val)[i];
-					pystr = PyUnicode_DecodeUTF8(NrmQuarkToString(qstr));
+					pqstr = NrmQuarkToString(qstr);
+					pystr = PyUnicode_DecodeUTF8(pqstr, strlen(pqstr), "strict");
 					array->descr->f->setitem(pystr,
 							array->data + i * array->descr->elsize, array);
 				}
@@ -5121,7 +5162,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 		/* all we care about is the actual value */
 		tstr = NrmQuarkToString(*(NrmQuark *) md->multidval.val);
 		_NclDestroyObj((NclObj) md);
-		string = PyUnicode_DecodeUTF8(tstr);
+		string = PyUnicode_DecodeUTF8(tstr, strlen(tstr), "strict");
 		return (PyUnicodeObject *) string;
 	} else
 		return NULL;
@@ -6276,7 +6317,7 @@ NioVariableObject_str(NioVariableObject *var) {
 			return NULL;
 		}
 		buf = NioVarInfo2str(var, varnode);
-		pystr = PyUnicode_DecodeUTF8(buf);
+		pystr = PyUnicode_DecodeUTF8(buf, strlen(buf), "strict");
 		free(buf);
 		return pystr;
 	}
@@ -6432,7 +6473,7 @@ NioVariableObject_str(NioVariableObject *var) {
 		}
 		step = step->next;
 	}
-	pystr = PyUnicode_DecodeUTF8(buf);
+	pystr = PyUnicode_DecodeUTF8(buf, strlen(buf), "strict");
 	free(buf);
 	return pystr;
 }
@@ -6686,9 +6727,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 	}
 	Py_DECREF(keys);
 
-	if (options == option_defaults
-			&& !PyDict_Contains(options,
-					PyUnicode_DecodeUTF8("FileStructure"))) {
+	if (options == option_defaults && !PyDict_Contains(options, PyUnicode_DecodeUTF8("FileStructure"), strlen("FileStructure"), "strict")) {
 		NrmQuark *qval;
 		qval = (NrmQuark *) malloc(sizeof(NrmQuark));
 		if (_NclFormatEqual(extq, NrmStringToQuark("h5"))
@@ -6783,11 +6822,11 @@ static PyObject *
 NioFile_Options(PyObject *self, PyObject *args) {
 	PyObject *class;
 	PyObject *dict = PyDict_New();
-	PyObject *pystr = PyUnicode_DecodeUTF8("NioOptions");
-	PyObject *modstr = PyUnicode_DecodeUTF8("__module__");
-	PyObject *modval = PyUnicode_DecodeUTF8("_Nio");
-	PyObject *docstr = PyUnicode_DecodeUTF8("__doc__");
-	PyObject *docval = PyUnicode_DecodeUTF8(option_class_doc);
+	PyObject *pystr = PyUnicode_DecodeUTF8("NioOptions", strlen("NioOptions"), "strict");
+	PyObject *modstr = PyUnicode_DecodeUTF8("__module__", strlen("__module__"), "strict");
+	PyObject *modval = PyUnicode_DecodeUTF8("_Nio", strlen("_Nio"), "strict");
+	PyObject *docstr = PyUnicode_DecodeUTF8("__doc__", strlen("__doc__"), "strict");
+	PyObject *docval = PyUnicode_DecodeUTF8(option_class_doc, strlen(option_class_doc, "strict"));
 
 	PyDict_SetItem(dict, modstr, modval);
 	PyDict_SetItem(dict, docstr, docval);
@@ -6800,65 +6839,65 @@ SetUpDefaultOptions(void) {
 	PyObject *dict = PyDict_New();
 	PyObject *opt, *val;
 
-	opt = PyUnicode_DecodeUTF8("Format");
-	val = PyUnicode_DecodeUTF8("classic");
+	opt = PyUnicode_DecodeUTF8("Format", strlen("Format"), "stict");
+	val = PyUnicode_DecodeUTF8("classic", strlen("classic"), "strict");
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("HeaderReserveSpace");
+	opt = PyUnicode_DecodeUTF8("HeaderReserveSpace", strlen("HeaderReserveSpace"), "strict");
 	val = PyInt_FromLong(0);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("MissingToFillValue");
+	opt = PyUnicode_DecodeUTF8("MissingToFillValue", strlen("MissingToFillValue", "strict"));
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("PreFill");
+	opt = PyUnicode_DecodeUTF8("PreFill", strlen("PreFill"), "strict");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("SafeMode");
+	opt = PyUnicode_DecodeUTF8("SafeMode", strlen("SafeMode"), "strict");
 	val = PyBool_FromLong(0);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("CompressionLevel");
+	opt = PyUnicode_DecodeUTF8("CompressionLevel", strlen("CompressionLevel"), "strict");
 	val = PyInt_FromLong(-1);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("DefaultNCEPPtable");
-	val = PyUnicode_DecodeUTF8("operational");
+	opt = PyUnicode_DecodeUTF8("DefaultNCEPPtable", strlen("DefaultNCEPPtable"), "strict");
+	val = PyUnicode_DecodeUTF8("operational", strlen("operational"), "strict");
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("InitialTimeCoordinateType");
-	val = PyUnicode_DecodeUTF8("numeric");
+	opt = PyUnicode_DecodeUTF8("InitialTimeCoordinateType", strlen("InitialTimeCoordinateType"), "strict");
+	val = PyUnicode_DecodeUTF8("numeric", strlen("numeric"), "strict");
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("SingleElementDimensions");
-	val = PyUnicode_DecodeUTF8("none");
+	opt = PyUnicode_DecodeUTF8("SingleElementDimensions", strlen("SingleElementDimensions"), "strict");
+	val = PyUnicode_DecodeUTF8("none", strlen("none"), "strict");
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("ThinnedGridInterpolation");
-	val = PyUnicode_DecodeUTF8("cubic");
+	opt = PyUnicode_DecodeUTF8("ThinnedGridInterpolation", strlen("ThinnedGridInterpolation"), "strict");
+	val = PyUnicode_DecodeUTF8("cubic", strlen("cubic"), "strict");
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("TimePeriodSuffix");
+	opt = PyUnicode_DecodeUTF8("TimePeriodSuffix", strlen("TimePeriodSuffix"), "strict");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
 #if 0
 	/* we don't want to set a default value for the FileStructure option, but the user can set it if they like */
-	opt = PyUnicode_DecodeUTF8("FileStructure");
-	val = PyUnicode_DecodeUTF8("standard");
+	opt = PyUnicode_DecodeUTF8("FileStructure", strlen("FileStructure"), "strict");
+	val = PyUnicode_DecodeUTF8("standard", strlen("standard"), "strict");
 	PyDict_SetItem(dict,opt,val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
