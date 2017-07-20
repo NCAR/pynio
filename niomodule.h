@@ -237,10 +237,10 @@ typedef enum {
 /* Write string. Returns -1 if there was an error.  */
 #define NioVariable_WriteString_RET int
 #define NioVariable_WriteString_PROTO \
-	  Py_PROTO((NioVariableObject *var, PyStringObject *value))
+	  Py_PROTO((NioVariableObject *var, PyObject *value))
 
 /* Read string  */
-#define NioVariable_ReadAsString_RET PyStringObject *
+#define NioVariable_ReadAsString_RET PyUnicodeObject *
 #define NioVariable_ReadAsString_PROTO \
 	  Py_PROTO((NioVariableObject *var))
 

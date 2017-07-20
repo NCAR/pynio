@@ -15,6 +15,8 @@
 #define PYNIO
 #endif
 
+/*#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION*/
+
 #include "netcdf.h"
 #include "Python.h"
 #include "structmember.h"
@@ -23,7 +25,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
-#include <limits.h>				\
+#include <limits.h>
 
 /* Py_ssize_t for old Pythons */
 /* This code is as recommended by: */
@@ -60,7 +62,7 @@ typedef char py3_char;
  * */
 static PyObject* pystr_to_utf8(PyObject *ob) {
 	PyObject *bytes, *result;
-	Py_ssize_t = bytelen;
+	Py_ssize_t bytelen;
 	char *bytedata = NULL;
 	int bytes_new = 0;
 
@@ -92,7 +94,7 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 		bytes_new = 1;
 	}
 	else if (PyString_Check(ob)) {
-		bytes = unicode;
+		bytes = ob;
 		bytes_new = 0;
 	} else {
 		bytes = NULL;
@@ -119,7 +121,7 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 
 
 static py3_char* as_utf8_char_and_size(PyObject *ob, Py_ssize_t *size, int *dofree) {
-	char *result
+	char *result;
 
 #if PY_MAJOR_VERSION >= 3
 	*dofree = 0;
@@ -145,7 +147,7 @@ static py3_char* as_utf8_char_and_size(PyObject *ob, Py_ssize_t *size, int *dofr
 		if (result) {
 			strcpy(result, PyUnicode_AS_DATA(ob));
 		} else {
-			result = PyErr_NoMemory();
+			result = (char*) PyErr_NoMemory();
 		}
 
 		Py_XDECREF(utf8);
@@ -1291,7 +1293,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 	NioFileObject *group;
 
 	int i, do_free=0;
-	py3_char *path
+	py3_char *path;
 
 	if (NULL == grpnode)
 		return 0;
@@ -1304,7 +1306,7 @@ static int dimNvarInfofromGroup(NioFileObject *self, NclFileGrpNode* grpnode,
 	 *                  __PRETTY_FUNCTION__, __FILE__, __LINE__);
 	 */
 
-	path = as_utf_char(self->full_path, &do_free);
+	path = as_utf8_char(self->full_path, &do_free);
 	dimrec = grpnode->dim_rec;
 
 	if (NULL != dimrec) {
@@ -1507,7 +1509,7 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 					PyObject *pystr;
 					PyArrayObject *pyarray = (PyArrayObject *) array;
 					for (j = 0; j < n_elem; j++) {
-						py3_char *valstr = NrmQuarkToString(((NrmQuark*) attnode->value)[j])
+						py3_char *valstr = NrmQuarkToString(((NrmQuark*) attnode->value)[j]);
 						pystr = PyUnicode_DecodeUTF8(valstr, strlen(valstr), "strict");
 						PyArray_SETITEM(array,
 								pyarray->data + j * pyarray->descr->elsize,
@@ -1559,7 +1561,6 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 		} else {
 			PyObject *array = NULL;
 			if (attnode->value == NULL) {
-				long value = 0;
 				array = PyArray_SimpleNew(1, &length, NPY_LONG);
 				if (array != NULL) {
 					memset(((PyArrayObject *) array)->data, 0,
@@ -1601,7 +1602,7 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 
 static int nio_file_init(NioFileObject *self) {
 	NclFile file = (NclFile) self->id;
-	int ndims, nvars, ngrps, ngattrs;
+	int ndims, nvars, ngattrs;
 	int i, j;
 	int scalar_dim_ix = -1;
 	NrmQuark scalar_dim = NrmStringToQuark("ncl_scalar");
@@ -1620,7 +1621,6 @@ static int nio_file_init(NioFileObject *self) {
 
 		ndims = 0;
 		nvars = 0;
-		ngrps = 0;
 		ngattrs = 0;
 
 		self->gnode = advfile;
@@ -1640,7 +1640,6 @@ static int nio_file_init(NioFileObject *self) {
 	} else {
 		ndims = file->file.n_file_dims;
 		nvars = file->file.n_vars;
-		ngrps = 0;
 		ngattrs = file->file.n_file_atts;
 
 		for (i = 0; i < ndims; i++) {
@@ -1924,10 +1923,10 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
 	self->parent = niofileobj;
 	Py_INCREF(self->parent);
 
-	path_buf = as_utf8_char_and_size(niofileobj->full_path, &len, &do_free)
+	path_buf = as_utf8_char_and_size(niofileobj->full_path, &len, &do_free);
 	/*len = PyString_Size(niofileobj->full_path);*/
 	buf = malloc(len + 1);
-	strcpy(buf, path_buf)
+	strcpy(buf, path_buf);
 	/*strcpy(buf,PyUnicode_AsUTF8(niofileobj->full_path));*/
 	if (!strcmp(buf, "/")) {
 		self->full_path = PyUnicode_DecodeUTF8(name, strlen(name), "strict");
@@ -2013,7 +2012,7 @@ static NioFileObject* NioFileObject_new_group(NioFileObject *self,
 
 	if (group) {
 		int do_free = 0;
-		path = as_utf8_char(pgroup->full_pat, &do_free);
+		path = as_utf8_char(pgroup->full_path, &do_free);
 		DICT_SETITEMSTRING((PyObject * )pgroup->groups, name,
 				(PyObject * )group);
 		if (!strcmp(path, "/") || strlen(path) == 0) {
@@ -3058,7 +3057,7 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 	for (i = 0; i < ndim; ++i) {
 		item = PyTuple_GetItem(dim, i);
 		if (is_string_type(item)) {
-			dimension_names[i] = as_utf_char(item, &do_free);
+			dimension_names[i] = as_utf8_char(item, &do_free);
 		}
 		else {
 			PyErr_SetString(PyExc_TypeError, "dimension name must be a string");
@@ -3079,7 +3078,7 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 			free(memb_names[i]);
 		}
 
-		for (i = 0; i < ndims; ++i) {
+		for (i = 0; i < ndim; ++i) {
 			free(dimension_names[i]);
 		}
 	}
@@ -3654,14 +3653,14 @@ int NioFile_SetAttributeString(NioFileObject *self, char *name, char *value) {
 		return -1;
 }
 
-/*FIXME: I don't think the unicode object has the ob_sval attribute*/
 int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 	static char *history = "history";
-	int oldlen, newlen;
+	Py_ssize_t oldlen, newlen;
 	py3_char *prev_history;
 	char *new_history;
 	PyObject *new_string = NULL;
 	PyObject *h = NioFile_GetAttribute(self, history);
+	int result;
 
 	if (h == NULL) {
 		PyErr_Clear();
@@ -3678,7 +3677,7 @@ int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 		newlen = oldlen + strlen(text) + 3; /* Need 2 nulls and 1 '\n' */
 		new_history = (char*) calloc(newlen, sizeof(char));
 		strcpy(new_history, prev_history);
-		strcat(new_history, '\n');
+		strcat(new_history, "\n");
 		strcat(new_history, text);
 		if (do_free) {
 			free(prev_history);
@@ -3687,15 +3686,15 @@ int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 
 	new_string = PyUnicode_DecodeUTF8(new_history, newlen, "strict");
 	if (new_string) {
-		ret = NioFile_SetAttribute(self, history, new_string);
+		result = NioFile_SetAttribute(self, history, new_string);
 	} else {
-		ret = -1;
+		result = -1;
 	}
 
 	Py_XDECREF(h);
 	Py_XDECREF(new_string);
 
-	return ret;
+	return result;
 
 
 	/*
@@ -3750,6 +3749,10 @@ NioFileObject_repr(NioFileObject *file) {
 
 void format_object(char *buf, PyObject *obj, int code) {
 
+	int do_free = 0;
+	PyObject *utf8;
+	py3_char *utf8_char;
+
 	switch (code) {
 	case 'i':
 		sprintf(buf, "%d", (int) PyInt_AsLong(obj));
@@ -3764,9 +3767,8 @@ void format_object(char *buf, PyObject *obj, int code) {
 		sprintf(buf, "%.16g", PyFloat_AsDouble(obj));
 		break;
 	default:
-		int do_free = 0;
-		PyObject *utf8 = pystr_to_utf8(PyObject_Str(obj));
-		py3_char *utf8_char = as_utf8_char(utf8, &do_free);
+		utf8 = pystr_to_utf8(PyObject_Str(obj));
+		utf8_char = as_utf8_char(utf8, &do_free);
 
 		sprintf(buf, "%s", utf8_char);
 
@@ -4909,27 +4911,25 @@ static PyObject *
 NioVariable_GetAttribute(NioVariableObject *self, char *name) {
 	PyObject *value;
 	if (strcmp(name, "name") == 0) {
-		return (PyUnicode_DecodeUTF8(self->name), strlen(self->name), "strict");
+		return (PyUnicode_DecodeUTF8(self->name, strlen(self->name), "strict"));
 	}
 
 	if (strcmp(name, "path") == 0) {
 		int do_free = 0;
 		py3_char *path_char = as_utf8_char(self->file->full_path, &do_free);
-		py3_char *name_char = as_utf8_char(self->name, &do_free);
 		PyObject *result = NULL;
 
-		if (!strcmp(path, "") || !strcmp(path, "/")) {
+		if (!strcmp(path_char, "") || !strcmp(path_char, "/")) {
 			/*return (PyString_FromFormat("/%s", self->name));*/
-			result = pystr_to_utf8(PyUnicode_FromFormat("/%s", name_char));
+			result = pystr_to_utf8(PyUnicode_FromFormat("/%s", self->name));
 		}
 		else {
 			/*return (PyString_FromFormat("%s/%s", path, self->name));*/
-			result = pystr_to_utf8(PyUnicode_FromFormat("%s/%s", path, name_char));
+			result = pystr_to_utf8(PyUnicode_FromFormat("%s/%s", path_char, self->name));
 		}
 
 		if (do_free) {
 			free(path_char);
-			free(name_char);
 		}
 
 		return result;
@@ -5637,9 +5637,12 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 	Py_ssize_t array_el_count = 1;
 	int undefined_dim = -1, dim_undef = -1;
 
-	NclFileDimRecord* dimrec = NULL;
-	NclFileDimNode* dimnode = NULL;
 	NclFileVarNode* varnode = NULL;
+	NclFileDimRecord* dimrec = NULL;
+
+#if 0
+	NclFileDimNode* dimnode = NULL;
+#endif
 
 	/* this code assumes ng_size_t and Py_ssize_t are basically equivalent */
 	/* update shape */
@@ -7350,6 +7353,7 @@ MOD_INIT(nio) {
 	PyNIO_API[NioVariable_SetAttributeString_NUM] =
 			(void *) &NioVariable_SetAttributeString;
 	PyNIO_API[NioFile_AddHistoryLine_NUM] = (void *) &NioFile_AddHistoryLine;
+
 	DICT_SETITEMSTRING(d, "_C_API", PyCapsule_New((void * )PyNIO_API, NULL, NULL));
 
 	PyNIO_API[NioFile_CreateVLEN_NUM] = (void *) &NioFile_CreateVLEN;
