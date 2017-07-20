@@ -1895,6 +1895,7 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
 	char* name;
 	char* buf;
 	Py_ssize_t len;
+	int do_free = 0;
 
 	name = NrmQuarkToString(qname);
 
@@ -1922,8 +1923,8 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
 	self->type = PyUnicode_DecodeUTF8("group", strlen("group"), "strict");
 	self->parent = niofileobj;
 	Py_INCREF(self->parent);
-/*FIXME: Not available in Python 2.7 */
-	path_buf = PyUnicode_AsUTF8AndSize(niofileobj->full_path, &len)
+
+	path_buf = as_utf8_char_and_size(niofileobj->full_path, &len, &do_free)
 	/*len = PyString_Size(niofileobj->full_path);*/
 	buf = malloc(len + 1);
 	strcpy(buf, path_buf)
@@ -1932,6 +1933,9 @@ statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
 		self->full_path = PyUnicode_DecodeUTF8(name, strlen(name), "strict");
 	} else {
 		self->full_path = pystr_to_utf8(PyUnicode_FromFormat("%s/%s", path_buf, name));
+	}
+	if (do_free) {
+		free(path_buf);
 	}
 	free(buf);
 	/*printf("path is %s\n",PyUnicode_AsUTF8(self->full_path));*/
@@ -3668,12 +3672,17 @@ int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 	} else {
 		/*alloc = PyString_Size(h);
 		 old = strlen(PyUnicode_AsUTF8(h));*/
-		prev_history = PyUnicode_AsUTF8AndSize(h, &oldlen);
+		int do_free = 0;
+		prev_history = as_utf8_char_and_size(h, &oldlen, &do_free);
+
 		newlen = oldlen + strlen(text) + 3; /* Need 2 nulls and 1 '\n' */
 		new_history = (char*) calloc(newlen, sizeof(char));
 		strcpy(new_history, prev_history);
 		strcat(new_history, '\n');
 		strcat(new_history, text);
+		if (do_free) {
+			free(prev_history);
+		}
 	}
 
 	new_string = PyUnicode_DecodeUTF8(new_history, newlen, "strict");
@@ -4617,7 +4626,7 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	self->type = PyUnicode_DecodeUTF8("group", strlen("group"), "strict");
 
 	/*len = PyString_Size(niofileobj->full_path);*/
-	path_buf = PyUnicode_AsUTF8AndSize(niofileobj->full_path, &len)
+	path_buf = as_utf8_char_and_size(niofileobj->full_path, &len, &do_free);
 	buf = malloc(len + 1);
 	strcpy(buf, path_buf);
 	len = strlen(buf);
@@ -4630,6 +4639,9 @@ statichere NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	} else {
 		/*self->full_path = PyString_FromFormat("%s/%s", buf, name);*/
 		self->full_path = pystr_to_utf8(PyUnicode_FromFormat("%s/%s", buf, name));
+	}
+	if (do_free) {
+		free(path_buf);
 	}
 	free(buf);
 	/*printf("path is %s\n",PyUnicode_AsUTF8(self->full_path));*/
@@ -6147,23 +6159,25 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 static int NioVariable_WriteString(NioVariableObject *self,
 		PyObject *value) {
 	long len;
-	py3_char str;
+	py3_char value_char;
+	int do_free = 0;
 
 	if (self->type != NPY_CHAR || self->nd != 1) {
 		PyErr_SetString(NIOError, "not a string variable");
 		return -1;
 	}
 	/*len = PyString_Size((PyObject *) value);*/
-	str = PyUnicode_AsUTF8AndSize((PyObject *) value, &len);
+	value_char = as_utf8_char_and_size(value, &len, &do_free);
 	if (len > self->dimensions[0]) {
 		PyErr_SetString(PyExc_ValueError, "string too long");
+		if (do_free) {
+			free(str);
+		}
 		return -1;
 	}
 	if (self->dimensions[0] > len)
 		len++;
 	if (check_if_open(self->file, 1)) {
-		int do_free = 0;
-		py3_char *value_char = as_utf8_char(value, &do_free);
 		NclFile nfile = (NclFile) self->file->id;
 		NclMultiDValData md;
 		NhlErrorTypes nret;
@@ -7336,9 +7350,7 @@ MOD_INIT(nio) {
 	PyNIO_API[NioVariable_SetAttributeString_NUM] =
 			(void *) &NioVariable_SetAttributeString;
 	PyNIO_API[NioFile_AddHistoryLine_NUM] = (void *) &NioFile_AddHistoryLine;
-	/* FIXME:  Change to use the Capsules API */
-	DICT_SETITEMSTRING(d, "_C_API",
-			PyCObject_FromVoidPtr((void * )PyNIO_API, NULL));
+	DICT_SETITEMSTRING(d, "_C_API", PyCapsule_New((void * )PyNIO_API, NULL, NULL));
 
 	PyNIO_API[NioFile_CreateVLEN_NUM] = (void *) &NioFile_CreateVLEN;
 	PyNIO_API[NioFile_CreateCOMPOUND_NUM] = (void *) &NioFile_CreateCOMPOUND;
