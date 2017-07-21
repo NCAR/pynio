@@ -43,8 +43,12 @@ typedef int Py_ssize_t;
 /* Python 2 to 3 helper macros */
 #if PY_MAJOR_VERSION >= 3
 #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
+#define staticfuncdec static
+#define TYPE_INIT PyVarObject_HEAD_INIT(NULL, 0)
 #else
 #define MOD_INIT(name) PyMODINIT_FUNC init##name(void)
+#define staticfuncdec statichere
+#define TYPE_INIT PyObject_HEAD_INIT(NULL)
 #endif
 
 #define DICT_SETITEMSTRING(d, key, val) PyDict_SetItem(d, PyUnicode_DecodeUTF8(key, strlen(key), "strict"), val)
@@ -1884,7 +1888,7 @@ static PyObject *NioFileObject_new_chunk_dimension(NioFileObject *self,
 
 /* Create group */
 
-statichere NioFileObject* nio_create_group(NioFileObject* niofileobj,
+staticfuncdec NioFileObject* nio_create_group(NioFileObject* niofileobj,
 		NrmQuark qname) {
 	NioFileObject *self;
 	NclFile nclfile = (NclFile) niofileobj->id;
@@ -2039,7 +2043,7 @@ static NioFileObject* NioFileObject_new_group(NioFileObject *self,
 
 /* Create ud_type */
 
-statichere NioVariableObject*
+staticfuncdec NioVariableObject*
 nio_create_advancedfile_ud_type(NioFileObject *file, char *name) {
 	NioVariableObject *self;
 	NclAdvancedFile advfile = (NclAdvancedFile) file->id;
@@ -2079,7 +2083,7 @@ nio_create_advancedfile_ud_type(NioFileObject *file, char *name) {
 
 /* Create variable */
 
-statichere NioVariableObject*
+staticfuncdec NioVariableObject*
 nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
 		int ndims, NrmQuark *qdims) {
 	NioVariableObject *self;
@@ -2163,7 +2167,7 @@ NioFile_CreateVariable(NioFileObject *file, char *name, int typecode,
 		NrmQuark qtype;
 		int ncl_ndims = ndim;
 		char *path;
-		NioFileObject *pgroup;
+		NioFileObject *pgroup=NULL;
 
 		define_mode(file, 1);
 
@@ -3096,7 +3100,7 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 static int advfile_is_unlimited(NioFileObject *self, char *name) {
 	NclAdvancedFile adv_file;
 	NclFileGrpNode* grpnode;
-	NclFileDimRecord* dimrec;
+	NclFileDimRecord* dimrec = NULL;
 	NioFileObject *parent = self;
 	NrmQuark qstr = NrmStringToQuark(name);
 
@@ -3142,6 +3146,7 @@ static int advfile_is_unlimited(NioFileObject *self, char *name) {
 			if (alloc_dimpath)
 				free(alloc_dimpath);
 		}
+
 		if (dimrec) {
 			NclFileDimNode* dimnode;
 			int i;
@@ -4339,9 +4344,9 @@ NioFileObject_str(NioFileObject *file) {
 
 /* Type definition */
 
-statichere PyTypeObject NioFile_Type =
+staticfuncdec PyTypeObject NioFile_Type =
 {
-	PyObject_HEAD_INIT(NULL)
+	TYPE_INIT
 	0, /*ob_size*/
 	"_Nio._NioFile", /*tp_name*/
 	sizeof(NioFileObject), /*tp_basicsize*/
@@ -4419,7 +4424,7 @@ static void NioVariableObject_dealloc(NioVariableObject *self) {
 
 /* Create variable object */
 
-statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
+staticfuncdec NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
 		NclFileVarNode* varnode, int id) {
 	NioVariableObject *self;
 	NclFileDimRecord* dimrec = varnode->dim_rec;
@@ -4492,7 +4497,7 @@ statichere NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
 	return self;
 }
 
-statichere NioVariableObject *
+staticfuncdec NioVariableObject *
 nio_variable_new(NioFileObject *file, char *name, int id, int type, int ndims,
 		NrmQuark *qdims, int nattrs) {
 	NioVariableObject *self;
@@ -4575,7 +4580,7 @@ nio_variable_new(NioFileObject *file, char *name, int id, int type, int ndims,
 
 /* Create group object */
 
-statichere NioFileObject* nio_read_group(NioFileObject* niofileobj,
+staticfuncdec NioFileObject* nio_read_group(NioFileObject* niofileobj,
 		NclFileGrpNode *grpnode) {
 	NioFileObject *self;
 	NclFile nclfile = (NclFile) niofileobj->id;
@@ -6162,7 +6167,7 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 static int NioVariable_WriteString(NioVariableObject *self,
 		PyObject *value) {
 	long len;
-	py3_char value_char;
+	py3_char *value_char;
 	int do_free = 0;
 
 	if (self->type != NPY_CHAR || self->nd != 1) {
@@ -6174,7 +6179,7 @@ static int NioVariable_WriteString(NioVariableObject *self,
 	if (len > self->dimensions[0]) {
 		PyErr_SetString(PyExc_ValueError, "string too long");
 		if (do_free) {
-			free(str);
+			free(value_char);
 		}
 		return -1;
 	}
@@ -6186,7 +6191,7 @@ static int NioVariable_WriteString(NioVariableObject *self,
 		NhlErrorTypes nret;
 		ng_size_t str_dim_size = 1;
 
-		NrmQuark qstr = NrmStringToQuark(value_char));
+		NrmQuark qstr = NrmStringToQuark(value_char);
 		if (do_free) {
 			free(value_char);
 		}
@@ -6219,7 +6224,7 @@ NioVariableObject_item(NioVariableObject *self, Py_ssize_t i) {
 	}
 	if (i >= self->dimensions[0] || i < -self->dimensions[0]) {
 		PyErr_Format(PyExc_IndexError,
-				"index %d is out of bounds for axis 0 with size %ld", i,
+				"index %d is out of bounds for axis 0 with size %ld", (int) i,
 				self->dimensions[0]);
 		return NULL;
 	}
@@ -6294,7 +6299,7 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index) {
 								|| n < -self->dimensions[d]) {
 							PyErr_Format(PyExc_IndexError,
 									"index %d is out of bounds for axis %d with size %ld",
-									n, d, self->dimensions[d]);
+									(int) n, d, self->dimensions[d]);
 							free(indices);
 							return NULL;
 						}
@@ -6377,6 +6382,7 @@ static int NioVariableObject_ass_slice(NioVariableObject *self, Py_ssize_t low,
 	if (indices != NULL) {
 		indices[0].stop = high;
 		indices[0].start = low;
+		/* FIXME:  This is an overflow expression */
 		if (indices[0].unlimited) {
 			if (indices->start < PY_SSIZE_T_MIN * 100)
 				indices->no_start = 1;
@@ -6812,9 +6818,9 @@ NioVariableObject_str(NioVariableObject *var) {
 	return pystr;
 }
 
-statichere PyTypeObject NioVariable_Type =
+staticfuncdec PyTypeObject NioVariable_Type =
 {
-	PyObject_HEAD_INIT(NULL)
+	TYPE_INIT
 	0, /*ob_size*/
 	"_Nio._NioVariable", /*tp_name*/
 	sizeof(NioVariableObject), /*tp_basicsize*/
@@ -6937,7 +6943,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 	ng_size_t len_dims = 1;
 	Py_ssize_t i;
 	NrmQuark qsafe_mode = NrmStringToQuark("safemode");
-	NrmQuark qnc = NrmStringToQuark("nc");
+	/*NrmQuark qnc = NrmStringToQuark("nc"); Not used...*/
 
 	for (i = 0; i < PySequence_Length(keys); i++) {
 		int do_free = 0;
@@ -7071,7 +7077,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 	}
 	Py_DECREF(keys);
 
-	if (options == option_defaults && !PyDict_Contains(options, PyUnicode_DecodeUTF8("FileStructure"), strlen("FileStructure"), "strict")) {
+	if (options == option_defaults && !PyDict_Contains(options, PyUnicode_DecodeUTF8("FileStructure", strlen("FileStructure"), "strict"))) {
 		NrmQuark *qval;
 		qval = (NrmQuark *) malloc(sizeof(NrmQuark));
 		if (_NclFormatEqual(extq, NrmStringToQuark("h5"))
@@ -7170,7 +7176,7 @@ NioFile_Options(PyObject *self, PyObject *args) {
 	PyObject *modstr = PyUnicode_DecodeUTF8("__module__", strlen("__module__"), "strict");
 	PyObject *modval = PyUnicode_DecodeUTF8("_Nio", strlen("_Nio"), "strict");
 	PyObject *docstr = PyUnicode_DecodeUTF8("__doc__", strlen("__doc__"), "strict");
-	PyObject *docval = PyUnicode_DecodeUTF8(option_class_doc, strlen(option_class_doc, "strict"));
+	PyObject *docval = PyUnicode_DecodeUTF8(option_class_doc, strlen(option_class_doc), "strict");
 
 	PyDict_SetItem(dict, modstr, modval);
 	PyDict_SetItem(dict, docstr, docval);
@@ -7193,7 +7199,7 @@ SetUpDefaultOptions(void) {
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
 	Py_DECREF(val);
-	opt = PyUnicode_DecodeUTF8("MissingToFillValue", strlen("MissingToFillValue", "strict"));
+	opt = PyUnicode_DecodeUTF8("MissingToFillValue", strlen("MissingToFillValue"), "strict");
 	val = PyBool_FromLong(1);
 	PyDict_SetItem(dict, opt, val);
 	Py_DECREF(opt);
@@ -7310,8 +7316,10 @@ MOD_INIT(nio) {
 	DICT_SETITEMSTRING(d, "NIOError", NIOError);
 
 	/* make NioFile, NioGroup and NioVariable visible to the module for subclassing */
+	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioFile_Type);
 	PyModule_AddObject(m, "_NioFile", (PyObject *) &NioFile_Type);
+	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioVariable_Type);
 	PyModule_AddObject(m, "_NioVariable", (PyObject *) &NioVariable_Type);
 	Py_INCREF(m);
