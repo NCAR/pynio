@@ -114,6 +114,13 @@ typedef enum {
 	PyNIO_API_pointers /* Total number of C API pointers */
 } NioFileGroupVariableNUM;
 
+#if PY_MAJOR_VERSION >= 3
+#define static_h static
+#define Py_PROTO(x) x
+#else
+#define static_h staticforward
+#endif
+
 /* Type definitions */
 /* Open a NIO file (i.e. create a new file object) */
 #define NioFile_Open_RET NioFileObject *
@@ -246,15 +253,9 @@ typedef enum {
 
 #ifdef _NIO_MODULE
 
-#if PY_MAJOR_VERSION >= 3
-#define staticdec static
-#else
-#define staticdec staticforward
-#endif
-
 /* Type object declarations */
-staticdec PyTypeObject NioFile_Type;
-staticdec PyTypeObject NioVariable_Type;
+static_h PyTypeObject NioFile_Type;
+static_h PyTypeObject NioVariable_Type;
 
 /* Type check macros */
 #define NioFile_Check(op) ((op)->ob_type == &NioFile_Type)
@@ -392,8 +393,8 @@ static void **PyNIO_API;
   if (module != NULL) { \
     PyObject *module_dict = PyModule_GetDict(module); \
     PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \
-    if (PyCObject_Check(c_api_object)) { \
-      PyNIO_API = (void **)PyCObject_AsVoidPtr(c_api_object); \
+    if (PyCapsule_CheckExact(c_api_object)) { \
+      PyNIO_API = (void **)PyCapsule_GetPointer(c_api_object, NULL); \
     } \
   } \
 }
