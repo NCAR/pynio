@@ -4347,8 +4347,50 @@ NioFileObject_str(NioFileObject *file) {
 	return pystr;
 }
 
+/* TODO: Implement cyclic garbage collection */
+/*
+static int
+NioFileObject_traverse(NioFileObject *self, visitproc visit, void *arg)
+{
+	Py_VISIT(self->groups);
+	Py_VISIT(self->dimensions);
+	Py_VISIT(self->chunk_dimensions);
+	Py_VISIT(self->variables);
+	Py_VISIT(self->attributes);
+	Py_VISIT(self->ud_types);
+	Py_VISIT(self->name);
+	Py_VISIT(self->mode);
+	Py_VISIT(self->type);
+	Py_VISIT(self->full_path);
+	Py_VISIT((PyObject*)self->parent);
+	Py_VISIT((PyObject*)self->top);
+
+    return 0;
+}
+
+static int
+NioFileObject_clear(Noddy *self)
+{
+	Py_CLEAR(self->groups);
+	Py_CLEAR(self->dimensions);
+	Py_CLEAR(self->chunk_dimensions);
+	Py_CLEAR(self->variables);
+	Py_CLEAR(self->attributes);
+	Py_CLEAR(self->ud_types);
+	Py_CLEAR(self->name);
+	Py_CLEAR(self->mode);
+	Py_CLEAR(self->type);
+	Py_CLEAR(self->full_path);
+	Py_CLEAR((PyObject*)self->parent);
+	Py_CLEAR((PyObject*)self->top);
+
+    return 0;
+}
+*/
+
 /* Type definition */
 
+#if PY_MAJOR_VERSION < 3
 static_c PyTypeObject NioFile_Type =
 {
 	PyVarObject_HEAD_INIT(NULL, 0)
@@ -4404,6 +4446,8 @@ static_c PyTypeObject NioFile_Type =
 	0, /* tp_subclasses */
 	0 /* tp_weaklist */
 };
+
+#endif
 
 /*
  * NIOVariable object
@@ -4621,9 +4665,9 @@ static_c NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	self->variables = PyDict_New();
 	self->groups = PyDict_New();
 	self->parent = niofileobj;
-	Py_INCREF(niofileobj);
+	Py_INCREF((PyObject*) niofileobj);
 	self->top = niofileobj->top;
-	Py_INCREF(self->top);
+	Py_INCREF((PyObject*) self->top);
 	self->attributes = PyDict_New();
 	self->weakreflist = NULL;
 	self->recdim = -1; /* for now */
@@ -6829,6 +6873,7 @@ NioVariableObject_str(NioVariableObject *var) {
 	return pystr;
 }
 
+#if PY_MAJOR_VERSION < 3
 static_c PyTypeObject NioVariable_Type =
 {
 	PyVarObject_HEAD_INIT(NULL, 0)
@@ -6884,6 +6929,8 @@ static_c PyTypeObject NioVariable_Type =
 	0, /* tp_subclasses */
 	0 /* tp_weaklist */
 };
+
+#endif
 
 static NrmQuark GetExtension(char * filename) {
 	struct stat statbuf;
@@ -7154,8 +7201,9 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 	SetNioOptions(extq, crw, option_defaults, option_defaults);
 	if (options != Py_None) {
 		PyObject *options_dict;
-		if (!(PyInstance_Check(options)
-				&& PyObject_HasAttrString(options, "__dict__"))) {
+		/* FIXME: PyInstance_* is gone in python 3 */
+		if (!(/*PyInstance_Check(options)
+				&&*/ PyObject_HasAttrString(options, "__dict__"))) {
 			PyErr_SetString(NIOError,
 					"options argument must be an NioOptions class instance");
 		}
@@ -7203,13 +7251,14 @@ NioFile_Options(PyObject *self, PyObject *args) {
 	class = PyObject_CallFunctionObjArgs((PyObject *) &PyType_Type, pystr, bases, dict, NULL);
 	result = PyObject_CallObject((PyObject *) &class, NULL);
 
-	Py_CLEAR(dict);
-	Py_CLEAR(pystr);
-	Py_CLEAR(bases);
-	Py_CLEAR(modstr);
-	Py_CLEAR(modval);
-	Py_CLEAR(docstr);
-	Py_CLEAR(docval);
+	Py_XDECREF(dict);
+	Py_XDECREF(pystr);
+	Py_XDECREF(bases);
+	Py_XDECREF(modstr);
+	Py_XDECREF(modval);
+	Py_XDECREF(docstr);
+	Py_XDECREF(docval);
+	Py_XDECREF(class);
 
 	return result;
 
@@ -7290,17 +7339,86 @@ SetUpDefaultOptions(void) {
 
 /* Table of functions defined in the module */
 
-static PyMethodDef nio_methods[] = { { "open_file", (PyCFunction) NioFile,
-		METH_KEYWORDS, NULL }, { "options", (PyCFunction) NioFile_Options,
+static PyMethodDef nio_methods[] = { { "open_file", (PyCFunctionWithKeywords) NioFile,
+		METH_KEYWORDS | METH_VARARGS, NULL }, { "options", (PyCFunction) NioFile_Options,
 		METH_NOARGS }, { NULL, NULL } /* sentinel */
 };
 
+
+struct nio_state {
+	PyObject *NioError;
+	PyObject *NioFile_Type;
+	PyObject *NioVariable_Type;
+	PyObject *defaults;
+	PyObject *c_api;
+	void *pynio_api[PyNIO_API_pointers];
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define GETSTATE(m) ((struct nio_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct nio_state _state;
+#endif
+
+
+#if PY_MAJOR_VERSION >= 3
+static int nio_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->NioError);
+    Py_VISIT(GETSTATE(m)->NioFile_Type);
+    Py_VISIT(GETSTATE(m)->NioVariable_Type);
+    Py_VISIT(GETSTATE(m)->defaults);
+    Py_VISIT(GETSTATE(m)->c_api);
+    return 0;
+}
+
+static int nio_clear(PyObject *m) {
+	Py_CLEAR(GETSTATE(m)->NioError);
+    Py_CLEAR(GETSTATE(m)->NioFile_Type);
+    Py_CLEAR(GETSTATE(m)->NioVariable_Type);
+    Py_CLEAR(GETSTATE(m)->defaults);
+    Py_CLEAR(GETSTATE(m)->c_api);
+    return 0;
+}
+
+
+static struct PyModuleDef nio_def = {
+        PyModuleDef_HEAD_INIT,
+        "nio",
+        NULL,
+        sizeof(struct nio_state),
+		nio_methods,
+		NULL,
+        (traverseproc)nio_traverse,
+        (inquiry)nio_clear,
+		NULL
+};
+
+#define INITERROR return NULL
+#else
+#define INITERROR return
+#endif
+
 /* Module initialization */
 
-MOD_INIT(nio) {
+#if PY_MAJOR_VERSION < 3
+void initnio(void) {
 	PyObject *m, *d;
 	PyObject *def_opt_dict;
 	static void *PyNIO_API[PyNIO_API_pointers];
+
+	if (PyType_Ready(&(NioFile_Type)) < 0)
+		INITERROR;
+	if (PyType_Ready(&(NioVariable_Type)) < 0)
+		INITERROR;
+
+	/* Create the module and add the functions */
+	m = Py_InitModule("nio", nio_methods);
+	if (m == NULL) {
+		INITERROR;
+	}
+
+	Niomodule = m;
 
 	/* Initialize type object headers */
 	NioFile_Type.tp_doc = niofile_type_doc;
@@ -7322,14 +7440,6 @@ MOD_INIT(nio) {
 	NioVariableObject_methods[1].ml_doc = get_value_doc;
 	NioVariableObject_methods[2].ml_doc = typecode_doc;
 
-	if (PyType_Ready(&NioFile_Type) < 0)
-		return;
-	if (PyType_Ready(&NioVariable_Type) < 0)
-		return;
-
-	/* Create the module and add the functions */
-	m = Py_InitModule("nio", nio_methods);
-	Niomodule = m;
 
 	/* Initialize the NIO library */
 
@@ -7402,7 +7512,176 @@ MOD_INIT(nio) {
 	PyNIO_API[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;
 
 	/* Check for errors */
-	if (PyErr_Occurred())
+	if (PyErr_Occurred()) {
 		Py_FatalError("can't initialize module nio");
+		INITERROR;
+	}
 }
+#else
+PyMODINIT_FUNC PyInit_nio(void) {
+	PyObject *m /*, *d*/;
+	/*PyObject *def_opt_dict;*/
+	struct nio_state *module_state;
+	/*static void *PyNIO_API[PyNIO_API_pointers];*/
+
+/*	if (PyType_Ready(&(NioFile_Type)) < 0)
+		INITERROR;
+	if (PyType_Ready(&(NioVariable_Type)) < 0)
+		INITERROR;
+*/
+	/* Create the module and add the functions */
+	m = PyModule_Create(&nio_def);
+
+	if (m == NULL) {
+		INITERROR;
+	}
+
+	/* these cannot be initialized statically */
+	nio_methods[0].ml_doc = open_file_doc;
+	nio_methods[1].ml_doc = options_doc;
+
+	NioFileObject_methods[0].ml_doc = close_doc;
+	NioFileObject_methods[1].ml_doc = create_dimension_doc;
+	NioFileObject_methods[2].ml_doc = create_chunk_dimension_doc;
+	NioFileObject_methods[3].ml_doc = create_variable_doc;
+	NioFileObject_methods[4].ml_doc = create_group_doc;
+	NioFileObject_methods[5].ml_doc = create_vlen_doc;
+	NioFileObject_methods[6].ml_doc = create_compound_type_doc;
+	NioFileObject_methods[7].ml_doc = create_compound_doc;
+	NioFileObject_methods[8].ml_doc = unlimited_doc;
+	NioVariableObject_methods[0].ml_doc = assign_value_doc;
+	NioVariableObject_methods[1].ml_doc = get_value_doc;
+	NioVariableObject_methods[2].ml_doc = typecode_doc;
+
+	module_state = GETSTATE(m);
+
+	PyType_Slot niofile_slots[] = {
+			{ Py_tp_dealloc, (destructor)NioFileObject_dealloc },
+			{ Py_tp_getattr, (getattrfunc)NioFile_GetAttribute },
+			{ Py_tp_setattr, (setattrfunc)NioFile_SetAttribute },
+			{ Py_tp_repr, (reprfunc)NioFileObject_repr },
+			{ Py_tp_str, (reprfunc)NioFileObject_str },
+			/* FIXME:  Needs to be set during initialization */
+			/*{ Py_tp_weaklistoffset, offsetof(NioFileObject,weakreflist) }, */
+			{ Py_tp_methods, NioFileObject_methods },
+			{ Py_tp_members, NioFileObject_members },
+			{ 0 },
+		};
+
+	PyType_Spec niofile_spec = { "_Nio._NioFile", sizeof(NioFileObject), 0,
+						  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, niofile_slots };
+
+	module_state->NioFile_Type = PyType_FromSpec(&niofile_spec);
+
+	((PyTypeObject*)module_state->NioFile_Type)->tp_weaklistoffset = offsetof(NioFileObject, weakreflist);
+
+	PyType_Slot niovar_slots[] = {
+		{ Py_tp_dealloc, (destructor)NioVariableObject_dealloc },
+		{ Py_tp_getattr, (getattrfunc)NioVariable_GetAttribute },
+		{ Py_tp_setattr, (setattrfunc)NioVariable_SetAttribute },
+		{ Py_tp_str, (reprfunc)NioVariableObject_str },
+		{ Py_tp_methods, NioVariableObject_methods },
+		{ 0 },
+	};
+
+	PyType_Spec niovar_spec = { "_Nio._NioVariable", sizeof(NioVariableObject), 0,
+						  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, niovar_slots };
+
+	module_state->NioVariable_Type = PyType_FromSpec(&niovar_spec);
+
+	((PyTypeObject*)module_state->NioVariable_Type)->tp_as_sequence = &NioVariableObject_as_sequence;
+	((PyTypeObject*)module_state->NioVariable_Type)->tp_as_mapping = &NioVariableObject_as_mapping;
+
+	/* Initialize type object headers */
+	((PyTypeObject*)module_state->NioFile_Type)->tp_doc = niofile_type_doc;
+	((PyTypeObject*)module_state->NioVariable_Type)->tp_doc = niovariable_type_doc;
+
+
+	/* Initialize the NIO library */
+
+	NioInitialize();
+
+	/* Import the array module */
+	/*#ifdef import_array*/
+	import_array();
+	/*#endif*/
+
+	/* Add error object to the module */
+	/*d = PyModule_GetDict(m);*/
+	/*NIOError = PyUnicode_DecodeUTF8("NIOError");*/
+	module_state->NioError = PyErr_NewException("Nio.NIOError", NULL, NULL);
+	/*DICT_SETITEMSTRING(d, "NIOError", NIOError);*/
+	Py_INCREF(module_state->NioError);
+	PyModule_AddObject(m, "NIOError", module_state->NioError);
+
+	/* make NioFile, NioGroup and NioVariable visible to the module for subclassing */
+	/* PyModule_AddObject steals a reference, so need to bump the ref count here */
+	Py_INCREF(module_state->NioFile_Type);
+	PyModule_AddObject(m, "_NioFile", module_state->NioFile_Type);
+	Py_INCREF(module_state->NioVariable_Type);
+	PyModule_AddObject(m, "_NioVariable", module_state->NioVariable_Type);
+	/* TODO: Redo the module/type naming so that this step is no longer needed */
+	Py_INCREF(m);
+	PyModule_AddObject(m, "_Nio", (PyObject *) m);
+
+	module_state->defaults = SetUpDefaultOptions();
+	Py_INCREF(module_state->defaults);
+	PyModule_AddObject(m, "option_defaults", module_state->defaults);
+
+	/* Initialize C API pointer array and store in module */
+	module_state->pynio_api[NioFile_Type_NUM] = (void *) &(module_state->NioFile_Type);
+	module_state->pynio_api[NioVariable_Type_NUM] = (void *) &(module_state->NioVariable_Type);
+	module_state->pynio_api[NioFile_Open_NUM] = (void *) &NioFile_Open;
+	module_state->pynio_api[NioFile_Close_NUM] = (void *) &NioFile_Close;
+	/*
+	 module_state->pynio_api[NioFile_Sync_NUM] = (void *)&NioFile_Sync;
+	 */
+	module_state->pynio_api[NioFile_CreateDimension_NUM] = (void *) &NioFile_CreateDimension;
+	module_state->pynio_api[NioFile_CreateChunkDimension_NUM] =
+			(void *) &NioFile_CreateChunkDimension;
+	module_state->pynio_api[NioFile_CreateVariable_NUM] = (void *) &NioFile_CreateVariable;
+	module_state->pynio_api[NioFile_GetVariable_NUM] = (void *) &NioFile_GetVariable;
+	module_state->pynio_api[NioVariable_GetRank_NUM] = (void *) &NioVariable_GetRank;
+	module_state->pynio_api[NioVariable_GetShape_NUM] = (void *) &NioVariable_GetShape;
+	module_state->pynio_api[NioVariable_Indices_NUM] = (void *) &NioVariable_Indices;
+	module_state->pynio_api[NioVariable_ReadAsArray_NUM] = (void *) &NioVariable_ReadAsArray;
+	module_state->pynio_api[NioVariable_ReadAsString_NUM] =
+			(void *) &NioVariable_ReadAsString;
+	module_state->pynio_api[NioVariable_WriteArray_NUM] = (void *) &NioVariable_WriteArray;
+	module_state->pynio_api[NioVariable_WriteString_NUM] = (void *) &NioVariable_WriteString;
+	module_state->pynio_api[NioFile_GetAttribute_NUM] = (void *) &NioFile_GetAttribute;
+	module_state->pynio_api[NioFile_SetAttribute_NUM] = (void *) &NioFile_SetAttribute;
+	module_state->pynio_api[NioFile_SetAttributeString_NUM] =
+			(void *) &NioFile_SetAttributeString;
+	module_state->pynio_api[NioVariable_GetAttribute_NUM] =
+			(void *) &NioVariable_GetAttribute;
+	module_state->pynio_api[NioVariable_SetAttribute_NUM] =
+			(void *) &NioVariable_SetAttribute;
+	module_state->pynio_api[NioVariable_SetAttributeString_NUM] =
+			(void *) &NioVariable_SetAttributeString;
+	module_state->pynio_api[NioFile_AddHistoryLine_NUM] = (void *) &NioFile_AddHistoryLine;
+
+	module_state->pynio_api[NioFile_CreateVLEN_NUM] = (void *) &NioFile_CreateVLEN;
+	module_state->pynio_api[NioFile_CreateCOMPOUND_NUM] = (void *) &NioFile_CreateCOMPOUND;
+	module_state->pynio_api[NioFile_CreateCOMPOUNDtype_NUM] =
+			(void *) &NioFile_CreateCOMPOUNDtype;
+	module_state->pynio_api[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;
+
+	/*DICT_SETITEMSTRING(d, "_C_API", PyCapsule_New((void * )PyNIO_API, "_Nio._C_API", NULL));*/
+
+	module_state->c_api = PyCapsule_New((void * )module_state->pynio_api, "_Nio._C_API", NULL);
+	Py_INCREF(module_state->c_api);
+	PyModule_AddObject(m, "_Nio._C_API", module_state->c_api);
+
+
+	/* Check for errors */
+	if (PyErr_Occurred()) {
+		Py_FatalError("can't initialize module nio");
+		INITERROR;
+	}
+
+	return m;
+}
+
+#endif
 
