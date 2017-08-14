@@ -254,12 +254,15 @@ typedef enum {
 #ifdef _NIO_MODULE
 
 /* Type object declarations */
+#if PY_MAJOR_VERSION < 3
 static_h PyTypeObject NioFile_Type;
 static_h PyTypeObject NioVariable_Type;
+
 
 /* Type check macros */
 #define NioFile_Check(op) ((op)->ob_type == &NioFile_Type)
 #define NioVariable_Check(op) ((op)->ob_type == &NioVariable_Type)
+#endif
 
 /* C API function declarations */
 static NioFile_Open_RET NioFile_Open NioFile_Open_PROTO;

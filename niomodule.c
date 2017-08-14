@@ -58,6 +58,12 @@ typedef const char py3_char;
 typedef char py3_char;
 #endif
 
+static PyObject* get_NioError(void);
+static PyObject* get_NioFileType(void);
+static PyObject* get_NioVariableType(void);
+static PyObject* get_Niomodule(void);
+static char* get_errbuf(void);
+
 
 /* Converts unicode, bytes, or str to UTF8 unicode object.
  * The ob argument can be unicode, bytes, or str;
@@ -562,11 +568,13 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids,
 		NclFileCompoundRecord *comprec, ng_size_t n_dims, ng_size_t curdim,
 		ng_usize_t* counter);
 
+#if PY_MAJOR_VERSION < 3
 static PyObject *Niomodule; /* the Nio Module object */
 
 /* Error object and error messages for nio-specific errors */
 
 static PyObject *NIOError;
+#endif
 
 static char *nio_errors[] = { "No Error", /* 0 */
 
@@ -585,8 +593,11 @@ static char *nio_errors[] = { "No Error", /* 0 */
 		"invalid mode specification", "", "", "", "", "", "", "XDR error" /* 32 */
 };
 
+/*
+#if PY_MAJOR_VERSION < 3
 static int nio_ncerr = 0;
 /* Set error string */
+/*
 static void nio_seterror(void) {
 	if (nio_ncerr != 0) {
 		char *error = "Unknown error";
@@ -595,8 +606,23 @@ static void nio_seterror(void) {
 		PyErr_SetString(NIOError, error);
 	}
 }
+#else
+*/
 
+static void nio_seterror(int nio_ncerr) {
+	if (nio_ncerr != 0) {
+		char *error = "Unknown error";
+
+		if (nio_ncerr > 0 && nio_ncerr <= 32)
+			error = nio_errors[nio_ncerr];
+
+		PyErr_SetString(get_NioError(), error);
+	}
+}
+
+#if PY_MAJOR_VERSION < 3
 static char err_buf[256];
+#endif
 
 /*
  * Python equivalents to NIO data types
@@ -856,7 +882,7 @@ static void collect_attributes(void *fileid, int varid, PyObject *attributes,
 			name = NrmQuarkToString(att->att_name_quark);
 			md = _NclFileReadAtt(file, att->att_name_quark, NULL);
 		} else if (!(att_list && fvar)) {
-			PyErr_SetString(NIOError,
+			PyErr_SetString(get_NioError(),
 					"internal attribute or file variable error");
 			return;
 		} else {
@@ -961,10 +987,10 @@ static int set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 				Py_DECREF(array);
 				array = array2;
 				qtype = NrmStringToQuark("integer");
-				sprintf(err_buf,
+				sprintf(get_errbuf(),
 						"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
 						name);
-				PyErr_SetString(NIOError, err_buf);
+				PyErr_SetString(get_NioError(), get_errbuf());
 				PyErr_Print();
 			}
 			if (array) {
@@ -986,8 +1012,7 @@ static int set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 		}
 	}
 	if (!md) {
-		nio_ncerr = 23;
-		nio_seterror();
+		nio_seterror(23);
 		return -1;
 	}
 
@@ -1014,11 +1039,11 @@ static int check_if_open(NioFileObject *file, int mode) {
 		if (mode != 1 || file->write) {
 			return 1;
 		} else {
-			PyErr_SetString(NIOError, "write access to read-only file");
+			PyErr_SetString(get_NioError(), "write access to read-only file");
 			return 0;
 		}
 	} else {
-		PyErr_SetString(NIOError, "file has been closed");
+		PyErr_SetString(get_NioError(), "file has been closed");
 		return 0;
 	}
 }
@@ -1160,7 +1185,7 @@ static int GetNioMode(char* filename, char *mode) {
 
 NioFileObject *
 NioFile_Open(py3_char *filename, py3_char *mode) {
-	NioFileObject *self = PyObject_NEW(NioFileObject, &NioFile_Type);
+	NioFileObject *self = PyObject_New(NioFileObject, (PyTypeObject*) get_NioFileType());
 	NclFile file = NULL;
 	int crw;
 	char *name;
@@ -1170,7 +1195,7 @@ NioFile_Open(py3_char *filename, py3_char *mode) {
 	 *	           __PRETTY_FUNCTION__, __FILE__, __LINE__);
 	 */
 
-	nio_ncerr = 0;
+	/*nio_ncerr = 0;*/
 
 	if (self == NULL)
 		return NULL;
@@ -1212,7 +1237,7 @@ NioFile_Open(py3_char *filename, py3_char *mode) {
 		nio_file_init(self);
 	} else {
 		NioFileObject_dealloc(self);
-		PyErr_SetString(NIOError, "Unable to open file");
+		PyErr_SetString(get_NioError(), "Unable to open file");
 		return NULL;
 	}
 	return self;
@@ -1458,7 +1483,7 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 		/* the following is temporary until these types are actually supported */
 		if (py_type == NPY_REFERENCE || py_type == NPY_COMPOUND
 				|| py_type == NPY_ENUM || py_type == NPY_VLEN) {
-			PyObject *astring;
+			PyObject *astring = NULL;
 
 			switch (py_type) {
 			case NPY_REFERENCE:
@@ -1724,7 +1749,7 @@ int NioFile_CreateDimension(NioFileObject *file, char *name, Py_ssize_t size) {
 		}
 		if (size == 0 && file->recdim != -1) {
 			if (!nfile->file.advanced_file_structure) {
-				PyErr_SetString(NIOError,
+				PyErr_SetString(get_NioError(),
 						"there is already an unlimited dimension");
 				return -1;
 			}
@@ -1903,7 +1928,7 @@ static_c NioFileObject* nio_create_group(NioFileObject* niofileobj,
 	if (!check_if_open(niofileobj, -1))
 		return NULL;
 
-	self = PyObject_NEW(NioFileObject, &NioFile_Type);
+	self = PyObject_New(NioFileObject, (PyTypeObject*)get_NioFileType());
 	if (self == NULL)
 		return NULL;
 
@@ -1948,9 +1973,9 @@ static_c NioFileObject* nio_create_group(NioFileObject* niofileobj,
 
 	ret = _NclFileAddGrp(niofileobj->gnode, qname);
 	if (NhlNOERROR != ret) {
-		sprintf(err_buf, "Can not add group (%s) to file",
+		sprintf(get_errbuf(), "Can not add group (%s) to file",
 				NrmQuarkToString(qname));
-		PyErr_SetString(NIOError, err_buf);
+		PyErr_SetString(get_NioError(), get_errbuf());
 	}
 
 	advfilegroup = _NclAdvancedGroupCreate(NULL, NULL, Ncl_File, 0, TEMPORARY,
@@ -1977,12 +2002,12 @@ static NioFileObject* NioFileObject_new_group(NioFileObject *self,
 
 	/*printf("in NioFileObject_new_group\n");*/
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		PyErr_SetString(NIOError, "invalid argument to create_group method");
+		PyErr_SetString(get_NioError(), "invalid argument to create_group method");
 		return NULL;
 	}
 
 	if (!nfile->file.advanced_file_structure) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"invalid operation: file format does not support groups");
 		return NULL;
 	}
@@ -2053,7 +2078,7 @@ nio_create_advancedfile_ud_type(NioFileObject *file, char *name) {
 	if (!check_if_open(file, -1))
 		return NULL;
 
-	self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
+	self = PyObject_New(NioVariableObject, (PyTypeObject*) get_NioVariableType());
 	if (self == NULL)
 		return NULL;
 
@@ -2094,7 +2119,7 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
 	if (!check_if_open(file, -1))
 		return NULL;
 
-	self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
+	self = PyObject_New(NioVariableObject, (PyTypeObject*) get_NioVariableType());
 	if (self == NULL)
 		return NULL;
 
@@ -2134,9 +2159,9 @@ nio_create_advancedfile_variable(NioFileObject *file, char *name, int id,
 				}
 
 				if (0 > dimid) {
-					sprintf(err_buf, "Dimension (%s) not found",
+					sprintf(get_errbuf(), "Dimension (%s) not found",
 							NrmQuarkToString(qdims[i]));
-					PyErr_SetString(NIOError, err_buf);
+					PyErr_SetString(get_NioError(), get_errbuf());
 					return NULL;
 				}
 			}
@@ -2197,9 +2222,9 @@ NioFile_CreateVariable(NioFileObject *file, char *name, int typecode,
 				qdims[i] = NrmStringToQuark(dimension_names[i]);
 				dimid = _NclFileIsDim(file->gnode, qdims[i]);
 				if (dimid == -1) {
-					sprintf(err_buf, "Dimension (%s) not found",
+					sprintf(get_errbuf(), "Dimension (%s) not found",
 							dimension_names[i]);
-					PyErr_SetString(NIOError, err_buf);
+					PyErr_SetString(get_NioError(), get_errbuf());
 					if (qdims != NULL)
 						free(qdims);
 					return NULL;
@@ -2223,8 +2248,8 @@ NioFile_CreateVariable(NioFileObject *file, char *name, int typecode,
 				variable = nio_create_advancedfile_variable(pgroup, name, id,
 						ndim, qdims);
 			} else {
-				sprintf(err_buf, "Error creating variable (%s)", name);
-				PyErr_SetString(NIOError, err_buf);
+				sprintf(get_errbuf(), "Error creating variable (%s)", name);
+				PyErr_SetString(get_NioError(), get_errbuf());
 				if (qdims != NULL)
 					free(qdims);
 				return NULL;
@@ -2245,9 +2270,9 @@ NioFile_CreateVariable(NioFileObject *file, char *name, int typecode,
 				qdims[i] = NrmStringToQuark(dimension_names[i]);
 				dimid = _NclFileIsDim(nfile, qdims[i]);
 				if (dimid == -1) {
-					sprintf(err_buf, "Dimension (%s) not found",
+					sprintf(get_errbuf(), "Dimension (%s) not found",
 							dimension_names[i]);
-					PyErr_SetString(NIOError, err_buf);
+					PyErr_SetString(get_NioError(), get_errbuf());
 					if (qdims != NULL)
 						free(qdims);
 					return NULL;
@@ -2260,8 +2285,8 @@ NioFile_CreateVariable(NioFileObject *file, char *name, int typecode,
 						data_type(nfile->file.var_info[id]->data_type), ndim,
 						qdims, 0);
 			} else {
-				sprintf(err_buf, "Error creating variable (%s)", name);
-				PyErr_SetString(NIOError, err_buf);
+				sprintf(get_errbuf(), "Error creating variable (%s)", name);
+				PyErr_SetString(get_NioError(), get_errbuf());
 				if (qdims != NULL)
 					free(qdims);
 				return NULL;
@@ -2359,8 +2384,8 @@ NioFileObject_new_variable(NioFileObject *self, PyObject *args) {
 	var = NioFile_CreateVariable(self, name, (int) ltype, dimension_names,
 			ndim);
 	if (!var) {
-		sprintf(err_buf, "Failed to create variable (%s)", name);
-		PyErr_SetString(NIOError, err_buf);
+		sprintf(get_errbuf(), "Failed to create variable (%s)", name);
+		PyErr_SetString(get_NioError(), get_errbuf());
 	}
 
 	/* if dimension names contains strings that need to be freed, do that here */
@@ -2447,8 +2472,8 @@ NioVariableObject *NioFile_CreateVLEN(NioFileObject *file, char *name,
 		}
 		return variable;
 	} else {
-		sprintf(err_buf, "Error creating variable (%s)", name);
-		PyErr_SetString(NIOError, err_buf);
+		sprintf(get_errbuf(), "Error creating variable (%s)", name);
+		PyErr_SetString(get_NioError(), get_errbuf());
 		if (qdims != NULL)
 			free(qdims);
 		return NULL;
@@ -2472,11 +2497,11 @@ static PyObject *NioFileObject_new_vlen(NioFileObject *self, PyObject *args) {
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "ssO!", &name, &type, &PyTuple_Type, &dim)) {
-		PyErr_SetString(NIOError, "invalid argument to create_vlen method");
+		PyErr_SetString(get_NioError(), "invalid argument to create_vlen method");
 		return NULL;
 	}
 	if (!nfile->file.advanced_file_structure) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"invalid operation: file format does not support variable length arrays");
 		return NULL;
 	}
@@ -2519,8 +2544,8 @@ static PyObject *NioFileObject_new_vlen(NioFileObject *self, PyObject *args) {
 
 	var = NioFile_CreateVLEN(self, name, (int) ltype, dimension_names, ndim);
 	if (!var) {
-		sprintf(err_buf, "Failed to create vlen (%s)", name);
-		PyErr_SetString(NIOError, err_buf);
+		sprintf(get_errbuf(), "Failed to create vlen (%s)", name);
+		PyErr_SetString(get_NioError(), get_errbuf());
 	}
 
 	if (do_free) {
@@ -2589,8 +2614,8 @@ NioVariableObject *NioFile_CreateCOMPOUNDtype(NioFileObject *file, char *name,
 		DICT_SETITEMSTRING(file->ud_types, name, (PyObject * )variable);
 		return variable;
 	} else {
-		sprintf(err_buf, "Error creating ud_type (%s)", name);
-		PyErr_SetString(NIOError, err_buf);
+		sprintf(get_errbuf(), "Error creating ud_type (%s)", name);
+		PyErr_SetString(get_NioError(), get_errbuf());
 		return NULL;
 	}
 }
@@ -2693,8 +2718,8 @@ NioVariableObject *NioFile_CreateCOMPOUND(NioFileObject *file, char *name,
 		}
 		return variable;
 	} else {
-		sprintf(err_buf, "Error creating variable (%s)", name);
-		PyErr_SetString(NIOError, err_buf);
+		sprintf(get_errbuf(), "Error creating variable (%s)", name);
+		PyErr_SetString(get_NioError(), get_errbuf());
 		if (qdims != NULL)
 			free(qdims);
 		return NULL;
@@ -2729,13 +2754,13 @@ static PyObject *NioFileObject_new_compound_type(NioFileObject *self,
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "sO", &name, &type)) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"invalid argument to create_compound_type method");
 		return NULL;
 	}
 
 	if (!nfile->file.advanced_file_structure) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"invalid operation: file format does not support user-defined data types");
 		return NULL;
 	}
@@ -2865,7 +2890,7 @@ static PyObject *NioFileObject_new_compound_type(NioFileObject *self,
 			memb_sizes, nmemb);
 	if (!var) {
 		sprintf(errbuf, "Failed to create compound (%s)", name);
-		PyErr_SetString(NIOError, errbuf);
+		PyErr_SetString(get_NioError(), errbuf);
 	}
 
 	if (do_free) {
@@ -2913,11 +2938,11 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 	 */
 
 	if (!PyArg_ParseTuple(args, "sOO!", &name, &type, &PyTuple_Type, &dim)) {
-		PyErr_SetString(NIOError, "invalid argument to create_compound method");
+		PyErr_SetString(get_NioError(), "invalid argument to create_compound method");
 		return NULL;
 	}
 	if (!nfile->file.advanced_file_structure) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"invalid operation: file format does not support compound data types");
 		return NULL;
 	}
@@ -3072,7 +3097,7 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 			memb_types, memb_sizes, nmemb);
 	if (!var) {
 		sprintf(errbuf, "Failed to create compound (%s)", name);
-		PyErr_SetString(NIOError, errbuf);
+		PyErr_SetString(get_NioError(), errbuf);
 	}
 
 	if (do_free) {
@@ -3185,7 +3210,7 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args) {
 				free(str);
 			}
 			if (result < 0) {
-				PyErr_SetString(NIOError,
+				PyErr_SetString(get_NioError(),
 						self->parent == NULL ?
 								"dimension name not found in file" :
 								"dimension name not found in group hierarchy");
@@ -3204,7 +3229,7 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args) {
 						Py_False : Py_True);
 
 			}
-			PyErr_SetString(NIOError, "dimension name not found in file");
+			PyErr_SetString(get_NioError(), "dimension name not found in file");
 			return NULL;
 		}
 	}
@@ -3231,7 +3256,7 @@ NioFile_Sync(NioFileObject *file)
 		define_mode(file, 0);
 		if (ncsync(file->id) == -1)
 		{
-			nio_seterror();
+			nio_seterror(23);
 			return -1;
 		}
 		else
@@ -3457,10 +3482,10 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes,
 				Py_DECREF(array);
 				array = array2;
 				qtype = NrmStringToQuark("integer");
-				sprintf(err_buf,
+				sprintf(get_errbuf(),
 						"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
 						name);
-				PyErr_SetString(NIOError, err_buf);
+				PyErr_SetString(get_NioError(), get_errbuf());
 				PyErr_Print();
 			}
 			if (NrmStringToQuark("object") == qtype) {
@@ -3559,8 +3584,7 @@ static int set_advanced_file_attribute(NioFileObject *file,
 	md = createAttMD(nfile, attributes, name, value);
 
 	if (!md) {
-		nio_ncerr = 23;
-		nio_seterror();
+		nio_seterror(23);
 		return -1;
 	}
 
@@ -3604,8 +3628,7 @@ static int set_advanced_variable_attribute(NioFileObject *file,
 	md = createAttMD(nfile, attributes, name, value);
 
 	if (!md) {
-		nio_ncerr = 23;
-		nio_seterror();
+		nio_seterror(23);
 		return -1;
 	}
 
@@ -3633,7 +3656,7 @@ static int set_advanced_variable_attribute(NioFileObject *file,
 
 int NioFile_SetAttribute(NioFileObject *self, char *name, PyObject *value) {
 	NclFile nfile = (NclFile) self->id;
-	nio_ncerr = 0;
+	/*nio_ncerr = 0;*/
 	if (check_if_open(self, 1)) {
 		if (strcmp(name, "dimensions") == 0
 				|| strcmp(name, "chunk_dimensions") == 0
@@ -4485,7 +4508,7 @@ static_c NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
 	if (!check_if_open(file, -1))
 		return NULL;
 
-	self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
+	self = PyObject_New(NioVariableObject, (PyTypeObject*) get_NioVariableType());
 	if (self == NULL)
 		return NULL;
 
@@ -4528,9 +4551,9 @@ static_c NioVariableObject* nio_read_advanced_variable(NioFileObject* file,
 	for (i = 0; i < dimrec->n_dims; ++i) {
 		dimnode = &(dimrec->dim_node[i]);
 		if (dimnode->id < 0) {
-			sprintf(err_buf, "Dimension (%s) not found",
+			sprintf(get_errbuf(), "Dimension (%s) not found",
 					NrmQuarkToString(qdims[i]));
-			PyErr_SetString(NIOError, err_buf);
+			PyErr_SetString(get_NioError(), get_errbuf());
 			return self;
 		}
 		qdims[i] = dimnode->name;
@@ -4555,7 +4578,7 @@ nio_variable_new(NioFileObject *file, char *name, int id, int type, int ndims,
 	int i;
 
 	if (check_if_open(file, -1)) {
-		self = PyObject_NEW(NioVariableObject, &NioVariable_Type);
+		self = PyObject_New(NioVariableObject, (PyTypeObject*) get_NioVariableType());
 		if (self == NULL)
 			return NULL;
 		self->file = file;
@@ -4591,9 +4614,9 @@ nio_variable_new(NioFileObject *file, char *name, int id, int type, int ndims,
 					for (i = 0; i < ndims; i++) {
 						int dimid = _NclFileIsDim(nfile, qdims[i]);
 						if (dimid < 0) {
-							sprintf(err_buf, "Dimension (%s) not found",
+							sprintf(get_errbuf(), "Dimension (%s) not found",
 									NrmQuarkToString(qdims[i]));
-							PyErr_SetString(NIOError, err_buf);
+							PyErr_SetString(get_NioError(), get_errbuf());
 							return NULL;
 						}
 						self->dimensions[i] =
@@ -4655,7 +4678,7 @@ static_c NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	if (NULL == grpnode)
 		return NULL;
 
-	self = PyObject_NEW(NioFileObject, &NioFile_Type);
+	self = PyObject_New(NioFileObject, (PyTypeObject*) get_NioFileType());
 	if (self == NULL)
 		return NULL;
 
@@ -5068,7 +5091,7 @@ NioVariable_GetAttribute(NioVariableObject *self, char *name) {
 static int NioVariable_SetAttribute(NioVariableObject *self, char *name,
 		PyObject *value) {
 	NclFile nfile = (NclFile) self->file->id;
-	nio_ncerr = 0;
+	/*nio_ncerr = 0;*/
 	if (check_if_open(self->file, 1)) {
 		if (strcmp(name, "shape") == 0 || strcmp(name, "dimensions") == 0
 				|| strcmp(name, "__dict__") == 0 || strcmp(name, "rank") == 0) {
@@ -5260,7 +5283,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 
 	d = 0;
 	nitems = 1;
-	nio_ncerr = 0;
+	/*nio_ncerr = 0;*/
 
 	ndims = self->nd;
 
@@ -5355,8 +5378,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 		}
 		md = _NclFileReadVarValue(nfile, NrmStringToQuark(self->name), sel_ptr);
 		if (!md) {
-			nio_ncerr = 23;
-			nio_seterror();
+			nio_seterror(23);
 			array = NULL;
 		} else {
 			int maxlen = 0;
@@ -5390,8 +5412,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 			NclMultiDValData md = _NclFileReadVarValue(nfile,
 					NrmStringToQuark(self->name), NULL);
 			if (!md) {
-				nio_ncerr = 23;
-				nio_seterror();
+				nio_seterror(23);
 				PyErr_SetString(PyExc_MemoryError,
 						"Problem reading variable data.");
 				array = NULL;
@@ -5419,8 +5440,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 				md = _NclFileReadVarValue(nfile, NrmStringToQuark(self->name),
 						sel_ptr);
 				if (!md) {
-					nio_ncerr = 23;
-					nio_seterror();
+					nio_seterror(23);
 					PyErr_SetString(PyExc_MemoryError,
 							"Problem reading variable data.");
 					array = NULL;
@@ -5519,7 +5539,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 {
 	NclFile nfile = self->file->id;
 	if (self->type != NPY_CHAR || self->nd != 1) {
-		PyErr_SetString(NIOError, "not a string variable");
+		PyErr_SetString(get_NioError(), "not a string variable");
 		return NULL;
 	}
 
@@ -5533,7 +5553,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 		NclMultiDValData md = _NclFileReadVarValue(nfile,
 				NrmStringToQuark(self->name), NULL);
 		if (!md) {
-			nio_seterror();
+			nio_seterror(23);
 			return NULL;
 		}
 		/* all we care about is the actual value */
@@ -5847,10 +5867,10 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 				&& array->descr->elsize == 8) {
 			PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array,
 					NPY_INT);
-			sprintf(err_buf,
+			sprintf(get_errbuf(),
 					"output format does not support 8-byte integers; converting to 4-byte integer variable (%s): possible data loss due to overflow",
 					self->name);
-			PyErr_SetString(NIOError, err_buf);
+			PyErr_SetString(get_NioError(), get_errbuf());
 			PyErr_Print();
 			array = (PyArrayObject *) PyArray_ContiguousFromAny(
 					(PyObject*) array2, self->type, 0, n_dims);
@@ -5882,10 +5902,10 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 	}
 
 	if (array == NULL) {
-		sprintf(err_buf,
+		sprintf(get_errbuf(),
 				"type or dimensional mismatch writing to variable (%s)",
 				self->name);
-		PyErr_SetString(NIOError, err_buf);
+		PyErr_SetString(get_NioError(), get_errbuf());
 		ret = -1;
 		goto err_ret;
 	}
@@ -5935,10 +5955,10 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 					undef_size = array->dimensions[adims[i]];
 					var_el_count *= array->dimensions[adims[i]];
 				} else {
-					sprintf(err_buf,
+					sprintf(get_errbuf(),
 							"Dimensional mismatch writing to variable (%s)",
 							self->name);
-					PyErr_SetString(NIOError, err_buf);
+					PyErr_SetString(get_NioError(), get_errbuf());
 					ret = -1;
 					goto err_ret;
 				}
@@ -6032,10 +6052,10 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 					i++;
 					continue;
 				}
-				sprintf(err_buf,
+				sprintf(get_errbuf(),
 						"Dimensional mismatch writing to variable (%s)",
 						self->name);
-				PyErr_SetString(NIOError, err_buf);
+				PyErr_SetString(get_NioError(), get_errbuf());
 				ret = -1;
 				goto err_ret;
 			}
@@ -6046,9 +6066,9 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 		while (var_dim < n_dims && dims[var_dim] == 1)
 			var_dim++;
 		if (var_dim != n_dims) {
-			sprintf(err_buf, "Dimensional mismatch writing to variable (%s)",
+			sprintf(get_errbuf(), "Dimensional mismatch writing to variable (%s)",
 					self->name);
-			PyErr_SetString(NIOError, err_buf);
+			PyErr_SetString(get_NioError(), get_errbuf());
 			ret = -1;
 			goto err_ret;
 		}
@@ -6056,10 +6076,10 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 			/*
 			 * This test should be redundant, but just in case.
 			 */
-			sprintf(err_buf,
+			sprintf(get_errbuf(),
 					"Not enough elements supplied for write to variable (%s)",
 					self->name);
-			PyErr_SetString(NIOError, err_buf);
+			PyErr_SetString(get_NioError(), get_errbuf());
 			ret = -1;
 			goto err_ret;
 		}
@@ -6226,7 +6246,7 @@ static int NioVariable_WriteString(NioVariableObject *self,
 	int do_free = 0;
 
 	if (self->type != NPY_CHAR || self->nd != 1) {
-		PyErr_SetString(NIOError, "not a string variable");
+		PyErr_SetString(get_NioError(), "not a string variable");
 		return -1;
 	}
 	/*len = PyString_Size((PyObject *) value);*/
@@ -6261,7 +6281,7 @@ static int NioVariable_WriteString(NioVariableObject *self,
 					NULL);
 		}
 		if (nret < NhlWARNING) {
-			nio_seterror();
+			nio_seterror(23);
 			return -1;
 		}
 		return 0;
@@ -6690,7 +6710,7 @@ NioVariableObject_str(NioVariableObject *var) {
 	NrmQuark qncl_scalar;
 
 	if (!check_if_open(file, -1)) {
-		PyErr_SetString(NIOError,
+		PyErr_SetString(get_NioError(),
 				"file has been closed: variable no longer valid");
 		return NULL;
 	}
@@ -6702,7 +6722,7 @@ NioVariableObject_str(NioVariableObject *var) {
 
 		varnode = getVarFromGroup(advfile->advancedfile.grpnode, varq);
 		if (NULL == varnode) {
-			PyErr_SetString(NIOError, "variable not found");
+			PyErr_SetString(get_NioError(), "variable not found");
 			return NULL;
 		}
 		buf = NioVarInfo2str(var, varnode);
@@ -6720,7 +6740,7 @@ NioVariableObject_str(NioVariableObject *var) {
 		break;
 	}
 	if (!vname) {
-		PyErr_SetString(NIOError, "variable not found");
+		PyErr_SetString(get_NioError(), "variable not found");
 		return NULL;
 	}
 	vobj = (NioVariableObject *) PyDict_GetItemString(file->variables, vname);
@@ -7029,7 +7049,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 				if (do_free) {
 					free(keystr);
 				}
-				PyErr_SetString(NIOError, s);
+				PyErr_SetString(get_NioError(), s);
 				Py_DECREF(key);
 				Py_DECREF(value);
 				continue;
@@ -7074,7 +7094,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 			char s[256] = "";
 			strncat(s, keystr, 255);
 			strncat(s, " is not a valid option for this file format", 255);
-			PyErr_SetString(NIOError, s);
+			PyErr_SetString(get_NioError(), s);
 			Py_DECREF(key);
 			continue;
 		}
@@ -7119,7 +7139,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 			char s[256] = "";
 			strncat(s, keystr, 255);
 			strncat(s, " value is an invalid type for option", 255);
-			PyErr_SetString(NIOError, s);
+			PyErr_SetString(get_NioError(), s);
 			Py_DECREF(key);
 			Py_DECREF(value);
 			continue;
@@ -7178,14 +7198,13 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 	extq = GetExtension(filepath);
 
 	if (extq == NrmNULLQUARK) {
-		PyErr_SetString(NIOError, "invalid extension or invalid file type");
+		PyErr_SetString(get_NioError(), "invalid extension or invalid file type");
 		return NULL;
 	}
 
 	crw = GetNioMode(filepath, mode);
 	if (crw < -1) {
-		nio_ncerr = 25;
-		nio_seterror();
+		nio_seterror(25);
 		return NULL;
 	}
 	/*
@@ -7197,14 +7216,14 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 
 	InitializeNioOptions(extq, crw);
 
-	option_defaults = PyObject_GetAttrString(Niomodule, "option_defaults");
+	option_defaults = PyObject_GetAttrString(get_Niomodule(), "option_defaults");
 	SetNioOptions(extq, crw, option_defaults, option_defaults);
 	if (options != Py_None) {
 		PyObject *options_dict;
 		/* FIXME: PyInstance_* is gone in python 3 */
 		if (!(/*PyInstance_Check(options)
 				&&*/ PyObject_HasAttrString(options, "__dict__"))) {
-			PyErr_SetString(NIOError,
+			PyErr_SetString(get_NioError(),
 					"options argument must be an NioOptions class instance");
 		}
 		options_dict = PyObject_GetAttrString(options, "__dict__");
@@ -7215,7 +7234,7 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 
 	file = NioFile_Open(filepath, mode);
 	if (file == NULL) {
-		nio_seterror();
+		nio_seterror(33); /* setting unknown error here */
 		return NULL;
 	}
 	if (strlen(history) > 0) {
@@ -7350,17 +7369,19 @@ struct nio_state {
 	PyObject *NioFile_Type;
 	PyObject *NioVariable_Type;
 	PyObject *defaults;
-	PyObject *c_api;
-	void *pynio_api[PyNIO_API_pointers];
+	char err_buf[256];
+	/*PyObject *c_api;*/
+	/*void *pynio_api[PyNIO_API_pointers];*/
 };
 
 #if PY_MAJOR_VERSION >= 3
+#define INITERROR return NULL
 #define GETSTATE(m) ((struct nio_state*)PyModule_GetState(m))
 #else
-#define GETSTATE(m) (&_state)
 static struct nio_state _state;
+#define GETSTATE(m) (&_state)
+#define INITERROR return
 #endif
-
 
 #if PY_MAJOR_VERSION >= 3
 static int nio_traverse(PyObject *m, visitproc visit, void *arg) {
@@ -7368,7 +7389,7 @@ static int nio_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(GETSTATE(m)->NioFile_Type);
     Py_VISIT(GETSTATE(m)->NioVariable_Type);
     Py_VISIT(GETSTATE(m)->defaults);
-    Py_VISIT(GETSTATE(m)->c_api);
+    /*Py_VISIT(GETSTATE(m)->c_api);*/
     return 0;
 }
 
@@ -7377,7 +7398,7 @@ static int nio_clear(PyObject *m) {
     Py_CLEAR(GETSTATE(m)->NioFile_Type);
     Py_CLEAR(GETSTATE(m)->NioVariable_Type);
     Py_CLEAR(GETSTATE(m)->defaults);
-    Py_CLEAR(GETSTATE(m)->c_api);
+    /*Py_CLEAR(GETSTATE(m)->c_api);*/
     return 0;
 }
 
@@ -7393,11 +7414,52 @@ static struct PyModuleDef nio_def = {
         (inquiry)nio_clear,
 		NULL
 };
-
-#define INITERROR return NULL
-#else
-#define INITERROR return
 #endif
+
+static PyObject* get_NioError(void) {
+#if PY_MAJOR_VERSION < 3
+	return &NIOError;
+#else
+	PyObject *m = PyState_FindModule(&nio_def);
+	return GETSTATE(m)->NioError;
+#endif
+}
+
+static PyObject* get_NioFileType(void) {
+#if PY_MAJOR_VERSION < 3
+	return &NioFile_Type;
+#else
+	PyObject *m = PyState_FindModule(&nio_def);
+	return GETSTATE(m)->NioFile_Type;
+#endif
+}
+
+static PyObject* get_NioVariableType(void) {
+#if PY_MAJOR_VERSION < 3
+	return &NioVariable_Type;
+#else
+	PyObject *m = PyState_FindModule(&nio_def);
+	return GETSTATE(m)->NioVariable_Type;
+#endif
+}
+
+static char* get_errbuf(void) {
+#if PY_MAJOR_VERSION < 3
+	return err_buf;
+#else
+	PyObject *m = PyState_FindModule(&nio_def);
+	return GETSTATE(m)->err_buf;
+#endif
+}
+
+static PyObject* get_Niomodule(void) {
+#if PY_MAJOR_VERSION < 3
+	return Niomodule;
+#else
+	return PyState_FindModule(&nio_def);
+#endif
+}
+
 
 /* Module initialization */
 
@@ -7405,7 +7467,7 @@ static struct PyModuleDef nio_def = {
 void initnio(void) {
 	PyObject *m, *d;
 	PyObject *def_opt_dict;
-	static void *PyNIO_API[PyNIO_API_pointers];
+	/*static void *PyNIO_API[PyNIO_API_pointers];*/
 
 	if (PyType_Ready(&(NioFile_Type)) < 0)
 		INITERROR;
@@ -7471,14 +7533,14 @@ void initnio(void) {
 	PyModule_AddObject(m, "option_defaults", (PyObject *) def_opt_dict);
 
 	/* Initialize C API pointer array and store in module */
-	PyNIO_API[NioFile_Type_NUM] = (void *) &NioFile_Type;
+	/*PyNIO_API[NioFile_Type_NUM] = (void *) &NioFile_Type;
 	PyNIO_API[NioVariable_Type_NUM] = (void *) &NioVariable_Type;
 	PyNIO_API[NioFile_Open_NUM] = (void *) &NioFile_Open;
-	PyNIO_API[NioFile_Close_NUM] = (void *) &NioFile_Close;
+	PyNIO_API[NioFile_Close_NUM] = (void *) &NioFile_Close;*/
 	/*
 	 PyNIO_API[NioFile_Sync_NUM] = (void *)&NioFile_Sync;
 	 */
-	PyNIO_API[NioFile_CreateDimension_NUM] = (void *) &NioFile_CreateDimension;
+	/*PyNIO_API[NioFile_CreateDimension_NUM] = (void *) &NioFile_CreateDimension;
 	PyNIO_API[NioFile_CreateChunkDimension_NUM] =
 			(void *) &NioFile_CreateChunkDimension;
 	PyNIO_API[NioFile_CreateVariable_NUM] = (void *) &NioFile_CreateVariable;
@@ -7509,7 +7571,7 @@ void initnio(void) {
 	PyNIO_API[NioFile_CreateCOMPOUND_NUM] = (void *) &NioFile_CreateCOMPOUND;
 	PyNIO_API[NioFile_CreateCOMPOUNDtype_NUM] =
 			(void *) &NioFile_CreateCOMPOUNDtype;
-	PyNIO_API[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;
+	PyNIO_API[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;*/
 
 	/* Check for errors */
 	if (PyErr_Occurred()) {
@@ -7629,14 +7691,14 @@ PyMODINIT_FUNC PyInit_nio(void) {
 	PyModule_AddObject(m, "option_defaults", module_state->defaults);
 
 	/* Initialize C API pointer array and store in module */
-	module_state->pynio_api[NioFile_Type_NUM] = (void *) &(module_state->NioFile_Type);
+	/*module_state->pynio_api[NioFile_Type_NUM] = (void *) &(module_state->NioFile_Type);
 	module_state->pynio_api[NioVariable_Type_NUM] = (void *) &(module_state->NioVariable_Type);
 	module_state->pynio_api[NioFile_Open_NUM] = (void *) &NioFile_Open;
-	module_state->pynio_api[NioFile_Close_NUM] = (void *) &NioFile_Close;
+	module_state->pynio_api[NioFile_Close_NUM] = (void *) &NioFile_Close;*/
 	/*
 	 module_state->pynio_api[NioFile_Sync_NUM] = (void *)&NioFile_Sync;
 	 */
-	module_state->pynio_api[NioFile_CreateDimension_NUM] = (void *) &NioFile_CreateDimension;
+	/*module_state->pynio_api[NioFile_CreateDimension_NUM] = (void *) &NioFile_CreateDimension;
 	module_state->pynio_api[NioFile_CreateChunkDimension_NUM] =
 			(void *) &NioFile_CreateChunkDimension;
 	module_state->pynio_api[NioFile_CreateVariable_NUM] = (void *) &NioFile_CreateVariable;
@@ -7665,13 +7727,13 @@ PyMODINIT_FUNC PyInit_nio(void) {
 	module_state->pynio_api[NioFile_CreateCOMPOUND_NUM] = (void *) &NioFile_CreateCOMPOUND;
 	module_state->pynio_api[NioFile_CreateCOMPOUNDtype_NUM] =
 			(void *) &NioFile_CreateCOMPOUNDtype;
-	module_state->pynio_api[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;
+	module_state->pynio_api[NioVariable_GetSize_NUM] = (void *) &NioVariable_GetSize;*/
 
 	/*DICT_SETITEMSTRING(d, "_C_API", PyCapsule_New((void * )PyNIO_API, "_Nio._C_API", NULL));*/
 
-	module_state->c_api = PyCapsule_New((void * )module_state->pynio_api, "_Nio._C_API", NULL);
+	/*module_state->c_api = PyCapsule_New((void * )module_state->pynio_api, "_Nio._C_API", NULL);
 	Py_INCREF(module_state->c_api);
-	PyModule_AddObject(m, "_Nio._C_API", module_state->c_api);
+	PyModule_AddObject(m, "_Nio._C_API", module_state->c_api);*/
 
 
 	/* Check for errors */
