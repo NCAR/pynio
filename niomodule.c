@@ -115,6 +115,7 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 		bytedata = PyString_AsString(bytes);
 
 		result = PyUnicode_DecodeUTF8(bytedata, bytelen, "strict");
+
 	} else {
 		result = NULL;
 	}
@@ -136,29 +137,37 @@ static py3_char* as_utf8_char_and_size(PyObject *ob, Py_ssize_t *size, int *dofr
 	result = (char*) PyUnicode_AsUTF8AndSize(ob, size);
 #else
 	Py_ssize_t local_size;
-	PyObject *utf8;
+	PyObject *ucode;
 
 	*dofree = 0;
 
-	/* First, need to convert the unicode object to UTF8 object */
-	utf8 = pystr_to_utf8(ob);
+	/* First, need to convert the object to UTF8 unicode object */
+	if (!PyUnicode_Check(ob)) {
+		ucode = pystr_to_utf8(ob);
+	} else {
+		Py_XINCREF(ob);
+		ucode = ob;
+	}
+
 
 	/* Copy the UTF8 buffer in to a new string and return.  The user MUST free
 	 * the returned string.
 	 */
-	if (utf8){
-		local_size = PyUnicode_GET_DATA_SIZE(utf8);
+
+	if (ucode){
+		char *charstr = PyString_AsString(PyUnicode_AsUTF8String(ucode));
+		local_size = strlen(charstr);
 		if (size) {
 			*size = local_size;
 		}
 		result = calloc(local_size+1, sizeof(char));
 		if (result) {
-			strcpy(result, PyUnicode_AS_DATA(ob));
+			strcpy(result, charstr);
 		} else {
 			result = (char*) PyErr_NoMemory();
 		}
 
-		Py_XDECREF(utf8);
+		Py_XDECREF(ucode);
 
 	} else {
 		result = NULL;
@@ -592,22 +601,6 @@ static char *nio_errors[] = { "No Error", /* 0 */
 		"Memory allocation error", "attempt to set read-only attributes",
 		"invalid mode specification", "", "", "", "", "", "", "XDR error" /* 32 */
 };
-
-/*
-#if PY_MAJOR_VERSION < 3
-static int nio_ncerr = 0;
-/* Set error string */
-/*
-static void nio_seterror(void) {
-	if (nio_ncerr != 0) {
-		char *error = "Unknown error";
-		if (nio_ncerr > 0 && nio_ncerr <= 32)
-			error = nio_errors[nio_ncerr];
-		PyErr_SetString(NIOError, error);
-	}
-}
-#else
-*/
 
 static void nio_seterror(int nio_ncerr) {
 	if (nio_ncerr != 0) {
@@ -1240,6 +1233,7 @@ NioFile_Open(py3_char *filename, py3_char *mode) {
 		PyErr_SetString(get_NioError(), "Unable to open file");
 		return NULL;
 	}
+
 	return self;
 }
 
@@ -7197,6 +7191,7 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 	}
 	extq = GetExtension(filepath);
 
+
 	if (extq == NrmNULLQUARK) {
 		PyErr_SetString(get_NioError(), "invalid extension or invalid file type");
 		return NULL;
@@ -7217,12 +7212,12 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 	InitializeNioOptions(extq, crw);
 
 	option_defaults = PyObject_GetAttrString(get_Niomodule(), "option_defaults");
+
 	SetNioOptions(extq, crw, option_defaults, option_defaults);
+
 	if (options != Py_None) {
 		PyObject *options_dict;
-		/* FIXME: PyInstance_* is gone in python 3 */
-		if (!(/*PyInstance_Check(options)
-				&&*/ PyObject_HasAttrString(options, "__dict__"))) {
+		if (!PyObject_HasAttrString(options, "__dict__")) {
 			PyErr_SetString(get_NioError(),
 					"options argument must be an NioOptions class instance");
 		}
@@ -7242,6 +7237,7 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 			NioFile_AddHistoryLine(file, history);
 		}
 	}
+
 	return (PyObject *) file;
 }
 
@@ -7378,8 +7374,8 @@ struct nio_state {
 #define INITERROR return NULL
 #define GETSTATE(m) ((struct nio_state*)PyModule_GetState(m))
 #else
-static struct nio_state _state;
-#define GETSTATE(m) (&_state)
+/*static struct nio_state _state;
+#define GETSTATE(m) (&_state)*/
 #define INITERROR return
 #endif
 
