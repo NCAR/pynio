@@ -255,8 +255,8 @@ typedef enum {
 
 /* Type object declarations */
 #if PY_MAJOR_VERSION < 3
-static_h PyTypeObject NioFile_Type;
-static_h PyTypeObject NioVariable_Type;
+static PyTypeObject NioFile_Type;
+static PyTypeObject NioVariable_Type;
 
 
 /* Type check macros */

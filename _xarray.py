@@ -133,7 +133,7 @@ def _intp(ar, sltup):
     if not isinstance(sltup, tuple):
         sltup = (sltup,)
     if len(sltup) != ar.ndim:
-        raise ValueError, 'length of selection tuple does not match array dimension'
+        raise ValueError('length of selection tuple does not match array dimension')
 
     # determine first axis which requires interpolation
     axis = None
@@ -162,7 +162,7 @@ def _intp(ar, sltup):
                     axis_mask = n
             sltup = tuple(sltup)
             r = ar[sltup]
-            #print "r.shape, mask.shape:", r.shape, mask.shape, axis_mask
+            #print ("r.shape, mask.shape:", r.shape, mask.shape, axis_mask)
             if axis_mask > 0:
                 new_mask = N.zeros(r.shape, dtype='bool')
                 sl = (None,)*axis_mask + (slice(None),)
@@ -367,4 +367,3 @@ def ismasked_tuple(sltup):
 #@-others
 #@-node:schmidli.20080321230001.1:@thin xarray.py
 #@-leo
-

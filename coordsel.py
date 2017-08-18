@@ -131,7 +131,7 @@ class crdSelect(dict):
                 for item in inpv:
                     itemv = item.split('|')
                     if len(itemv) < 2:
-                        raise ValueError, "Invalid input format"
+                        raise ValueError("Invalid input format")
                     key = itemv[0]
                     value = '|'.join(itemv[1:])
                     if dimensions is not None:
@@ -146,7 +146,7 @@ class crdSelect(dict):
                         self.names.append(key)
             else:               # positional input
                 if dimensions is None:
-                    raise TypeError, "Invalid type for dimensions"
+                    raise TypeError("Invalid type for dimensions")
                 if len(inpv) > len(dimensions):
                     inpv = inpv[:len(dimensions)]
                 for i in range(len(inpv)):
@@ -161,7 +161,7 @@ class crdSelect(dict):
 
             dict.__init__(self, data)
         else:
-            raise TypeError, "Invalid input type"
+            raise TypeError("Invalid input type")
     #@-node:schmidli.20080322120238.5:__init__
     #@+node:schmidli.20080322120238.6:__str__
     def __str__(self):
@@ -191,7 +191,7 @@ class idxSelect(dict):
         """ idxSelect(dimensions) """
 
         if not isinstance(dimensions, list):
-            raise TypeError, "Invalid argument type"
+            raise TypeError("Invalid argument type")
         data = {}
         for key in dimensions:
             data[key] = axisSelect('i:')
@@ -257,7 +257,7 @@ class xSelect(tuple):
         """ Subtract the bounding box (bb) from the current selection object. """
         rsel = list(self)
         if len(rsel) != len(bb):
-            raise ValueError, "Incompatible operands"
+            raise ValueError("Incompatible operands")
         for i in range(len(rsel)):
             if isinstance(self[i], slice):
                 rsel[i] = slice(self[i].start-bb[i].start, \
@@ -294,7 +294,7 @@ def crdsel2idxsel(file, csel):
             mdcrdname[axis] = csel[axis].mdcrd
 
     if len(mdcrdname) > 1:
-        raise NotImplementedError, "More than one multi-dimensional coordinate are not yet supported"
+        raise NotImplementedError("More than one multi-dimensional coordinate are not yet supported")
 
     for axis in mdcrdname.keys():
         isel[axis] = csel[axis].toindex(file, axis, mdcrd=mdcrdname[axis], 
@@ -307,7 +307,7 @@ def idxsel2xsel(file, isel, dimensions, order):
     """
 
     if not isinstance(isel, idxSelect):
-        raise TypeError, 'wrong argument type'
+        raise TypeError('wrong argument type')
 
     xsel = {}
     xsel_size = {}
@@ -358,7 +358,7 @@ def idxsel2xsel(file, isel, dimensions, order):
                             if val > i:
                                 order[order.index(val)] = val - 1
                                 inc_i = False
-        except KeyError, e:
+        except KeyError:
             dimsize = file.cf_dimensions[axis]
             xsel[axis] = (slice(0, dimsize, 1))
             xsel_dims[axis] = None
@@ -455,7 +455,7 @@ def numpy2xsel(isel):
     do_convert = True
 
     if not isinstance(isel, tuple):
-        raise TypeError, "wrong argument type"
+        raise TypeError("wrong argument type")
 
     for idx in isel:
         if isinstance(idx, slice):
@@ -557,9 +557,9 @@ class axisSelect(object):
         """
 
         if not isinstance(inp, str):
-            raise TypeError, "Invalid argument type"
+            raise TypeError("Invalid argument type")
         if len(inp) == 0:
-            raise ValueError, "Empty string is not a valid input"
+            raise ValueError("Empty string is not a valid input")
 
         # default settings
         self.type = 'slice'
@@ -590,7 +590,7 @@ class axisSelect(object):
             inp = inp[:-1]
 
         if len(inp) == 0:
-            raise ValueError, "Invalid input string"   
+            raise ValueError("Invalid input string")   
 
         # check for multi-dimensional coordinate name
         inpv = inp.split('|')
@@ -614,7 +614,7 @@ class axisSelect(object):
         if len(inpv) > 1 and len(inpv) <= 3:
             self.type = 'slice'
         elif len(inpv) > 3:
-            raise NotImplementedError, "eslice is not yet implemented"
+            raise NotImplementedError("eslice is not yet implemented")
         else:
             inpv = inp.split(',')
             if len(inpv) > 1:
@@ -654,10 +654,10 @@ class axisSelect(object):
                 data = [data[0], data[1]]
             if self.mdcrd is not None:
                 if data[0] is None or data[1] is None or self.__step is None:
-                    raise ValueError, "must specify a complete slice for multidimensional coordinates"
+                    raise ValueError("must specify a complete slice for multidimensional coordinates")
             if self.interp:
                 if data[0] is None or data[1] is None or self.__step is None:
-                    raise ValueError, "must specify a complete slice in interpolation mode"
+                    raise ValueError("must specify a complete slice in interpolation mode")
         self.__data = data
     #@-node:schmidli.20080322120238.18:__init__
     #@+node:schmidli.20080322120238.19:__str__
@@ -681,7 +681,7 @@ class axisSelect(object):
         if self.type == 'vector':
             return self.__data[index]
         else:
-            raise LookupError, "Not valid method for "+self.type+"."
+            raise LookupError("Not valid method for "+self.type+".")
     #@-node:schmidli.20080322120238.20:__getitem__
     #@+node:schmidli.20080322120238.21:__len__
     def __len__(self):
@@ -725,7 +725,7 @@ class axisSelect(object):
                 axfile = file.cf2dims[axis]
             else:
                 axfile = axis
-            if not file.file.variables.has_key(axfile):
+            if not axfile in file.file.variables:
                 self.iscrd = False
         if self.iscrd:
             if mdcrd is None:
@@ -745,12 +745,12 @@ class axisSelect(object):
                     if isel[axis2].type == 'scalar' and axis2 != axis: 
                         try:
                             dims.remove(axis2)
-                        except ValueError, e:
+                        except ValueError:
                             pass
                 axis_no = dims.index(axis)
                 if self.type == 'scalar': dims.remove(axis)
                 if var.rank < 2:
-                    raise ValueError, "Coordinate variable "+self.mdcrd+ " is not multidimensional"
+                    raise ValueError("Coordinate variable "+self.mdcrd+ " is not multidimensional")
         else:
             dimsize = file.cf_dimensions[axis]
             crd = None
@@ -831,7 +831,7 @@ class axisSelect(object):
                             idx.step = N.round(idx.step).astype(N.int)
                         # step size less than spacing is treated as default step (pos or neg)
                         if idx.step == 0: 
-			    if dir == 1: 
+                            if dir == 1: 
                                 idx.step = 1
                             else: 
                                 idx.step = -1 
@@ -849,7 +849,7 @@ class axisSelect(object):
                                 data[i] = N.ceil(data[i]).astype(N.int) - 1
                                 if data[i] == -1: data[i] = None
             else:
-                if crd is None: raise ValueError, "Missing coordinate variable"
+                if crd is None: raise ValueError("Missing coordinate variable")
                 if cidx.type == 'scalar':
                     data[0] = _rindex(crd, data[0], axis=axis_no, round=round_, clip=clip, ep=ep)
                 else:
@@ -897,7 +897,7 @@ class axisSelect(object):
                 # since later processing (xSelect.bndbox) does not handle index space values less than 0
                 # convert them here.
                 if data < -dimsize or data >= dimsize:    
-                    raise IndexError, axis + " axis index out of range"
+                    raise IndexError(axis + " axis index out of range")
                 elif data < 0:
                     data += dimsize
         if idx.type != 'slice': 
@@ -914,7 +914,7 @@ class axisSelect(object):
         if self.type == 'slice':
             return self.__data[0]
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.24:getstart
     #@+node:schmidli.20080322120238.25:setstart
     def setstart(self, value):
@@ -923,7 +923,7 @@ class axisSelect(object):
         if self.type == 'slice':
             self.__data[0] = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.25:setstart
     #@+node:schmidli.20080322120238.26:getstop
     start = property(getstart, setstart)
@@ -933,7 +933,7 @@ class axisSelect(object):
         if self.type == 'slice':
             return self.__data[1]
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.26:getstop
     #@+node:schmidli.20080322120238.27:setstop
     def setstop(self, value):
@@ -942,7 +942,7 @@ class axisSelect(object):
         if self.type == 'slice':
             self.__data[1] = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.27:setstop
     #@+node:schmidli.20080322120238.28:getstep
     stop = property(getstop, setstop)
@@ -952,7 +952,7 @@ class axisSelect(object):
         if self.type == 'slice':
             return self.__step
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.28:getstep
     #@+node:schmidli.20080322120238.29:setstep
     def setstep(self, value):
@@ -961,7 +961,7 @@ class axisSelect(object):
         if self.type == 'slice':
             self.__step = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.29:setstep
     #@+node:schmidli.20080322120238.30:getvalue
     step = property(getstep, setstep)
@@ -1053,7 +1053,7 @@ class axisIdxSelect(object):
             self.__data = [cidx.start, cidx.stop]
             self.__step = cidx.step
         else:
-            raise TypeError, "Invalid argument type"
+            raise TypeError("Invalid argument type")
     #@-node:schmidli.20080322120238.36:__init__
     #@+node:schmidli.20080322120238.37:__str__
     def __str__(self):
@@ -1075,7 +1075,7 @@ class axisIdxSelect(object):
         if self.type == 'vector':
             return self.__data[index]
         else:
-            raise LookupError, "Not valid method for "+self.type+"."
+            raise LookupError("Not valid method for "+self.type+".")
     #@-node:schmidli.20080322120238.38:__getitem__
     #@+node:schmidli.20080322120238.39:getstart
     def getstart(self):
@@ -1084,7 +1084,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             return self.__data[0]
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.39:getstart
     #@+node:schmidli.20080322120238.40:setstart
     def setstart(self, value):
@@ -1093,7 +1093,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             self.__data[0] = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.40:setstart
     #@+node:schmidli.20080322120238.41:getstop
     start = property(getstart, setstart)
@@ -1103,7 +1103,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             return self.__data[1]
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.41:getstop
     #@+node:schmidli.20080322120238.42:setstop
     def setstop(self, value):
@@ -1112,7 +1112,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             self.__data[1] = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.42:setstop
     #@+node:schmidli.20080322120238.43:getstep
     stop = property(getstop, setstop)
@@ -1122,7 +1122,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             return self.__step
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.43:getstep
     #@+node:schmidli.20080322120238.44:setstep
     def setstep(self, value):
@@ -1131,7 +1131,7 @@ class axisIdxSelect(object):
         if self.type == 'slice':
             self.__step = value
         else:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
     #@-node:schmidli.20080322120238.44:setstep
     #@+node:schmidli.20080322120238.45:getvalue
     step = property(getstep, setstep)
@@ -1152,7 +1152,7 @@ class axisIdxSelect(object):
         elif self.type == 'vector':
             self.__data = value
         else:
-            raise AttributeError, "Not valid operation for type=slice"
+            raise AttributeError("Not valid operation for type=slice")
     #@-node:schmidli.20080322120238.46:setvalue
     #@+node:schmidli.20080322120238.47:setdata
     v = property(getvalue, setvalue)
@@ -1172,7 +1172,7 @@ class axisIdxSelect(object):
     isarray = property(is_array)
     def ndim_(self):
         if not self.isarray:
-            raise AttributeError, "Not valid attribute for "+self.type+"."
+            raise AttributeError("Not valid attribute for "+self.type+".")
         return self.__data.ndim
     #@-node:schmidli.20080322120238.49:ndim_
     #@+node:schmidli.20080322120238.50:axlen_
@@ -1282,7 +1282,7 @@ def str2datetime(inp, isend=False, templ=None):
         month = int(date[-4:-2])
         day = int(date[-2:])
     else:
-        raise ValueError, 'Invalid date format'
+        raise ValueError('Invalid date format')
 
     # parse time
     if len(time) == 0:
@@ -1297,7 +1297,7 @@ def str2datetime(inp, isend=False, templ=None):
         min = int(time[2:4])
         sec = int(time[4:])
     else:
-        raise ValueError, 'Invalid time format'
+        raise ValueError('Invalid time format')
 
     ret = datetime.datetime(year, month, day, hour, min, sec)
     return ret
@@ -1305,7 +1305,7 @@ def str2datetime(inp, isend=False, templ=None):
 #@+node:schmidli.20080322120238.58:get_refdate
 def get_refdate(inp):
     if not hasattr(inp, 'units'):
-        raise ValueError, 'Missing units attribute for time coordinate variable: ' + str(inp)
+        raise ValueError('Missing units attribute for time coordinate variable: ' + str(inp))
     tunits = inp.units.split(' ')
     tunits = tunits[2]+' '+tunits[3]
     ret = datetime.datetime(*time.strptime(tunits, "%Y-%m-%d %H:%M:%S")[:5])

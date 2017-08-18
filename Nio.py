@@ -80,8 +80,7 @@ For complete documentation see:
         http://www.pyngl.ucar.edu/Nio.html
 '''
 
-from nio import *
-from nio import _C_API
+from _nio import *
 
 #
 #  Get version number and flag for NumPy compatibility.
@@ -126,12 +125,12 @@ def pyniopath_ncarg():
             if not __formats__['grib2']:
                 return ""
             else:
-                print "No path found to PyNIO/ncarg data directory and no usable NCARG installation found"
+                print ("No path found to PyNIO/ncarg data directory and no usable NCARG installation found")
                 sys.exit()
         else:
             pynio_ncarg = os.path.join(ncarg_dir,"lib","ncarg")
 
-    print pynio_ncarg
+    print (pynio_ncarg)
     return pynio_ncarg
 
 #
@@ -153,7 +152,7 @@ del pyniopath_ncarg
 # code
 
 
-from nio import _Nio
+import _nio
 import numpy as np
 from numpy import ma
 from coordsel import get_variable, inp2csel, inp2isel, inp2xsel, idxsel2xsel, \
@@ -161,11 +160,11 @@ from coordsel import get_variable, inp2csel, inp2isel, inp2xsel, idxsel2xsel, \
 import coordsel as cs
 import niodict  as nd
 
-_Nio.option_defaults['UseAxisAttribute'] = False
-_Nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
-_Nio.option_defaults['ExplicitFillValues'] = None
-_Nio.option_defaults['MaskBelowValue'] = None
-_Nio.option_defaults['MaskAboveValue'] = None
+_nio.option_defaults['UseAxisAttribute'] = False
+_nio.option_defaults['MaskedArrayMode'] = 'MaskedIfFillAtt'
+_nio.option_defaults['ExplicitFillValues'] = None
+_nio.option_defaults['MaskBelowValue'] = None
+_nio.option_defaults['MaskAboveValue'] = None
 
 def get_integer_version(strversion):
     ''' converts string version number into an integer '''
@@ -213,7 +212,7 @@ class _Proxy(object):
 
     def __setattr__(self, attrib, value):
         if attrib in _builtins:
-            raise AttributeError, "Attempt to modify read only attribute"
+            raise AttributeError("Attempt to modify read only attribute")
         elif attrib in _localatts:
             super(_Proxy,self).__setattr__(attrib,value)
         else:
@@ -222,7 +221,7 @@ class _Proxy(object):
 
     def __delattr__(self, attrib):
         if attrib in _localatts or attrib in _builtins:
-            raise AttributeError, "Attempt to delete read only attribute"
+            raise AttributeError("Attempt to delete read only attribute")
         else:
             delattr(self._obj,attrib)
             del(self.attributes[attrib])
@@ -249,7 +248,7 @@ def _proxy(obj, *specials, **regulars):
         name = obj_cls.__name__[1:] 
         cls = type(name, (_Proxy,), cls_dict)
         for name in specials:
-            name = '__%s__' % name
+            name = '__{}__'.format(name)
             unbound_method = getattr(obj_cls, name)
             setattr(cls, name, _make_binder(unbound_method))
         # also cache it for the future
@@ -302,14 +301,14 @@ def _fill_value_to_masked(self, a):
 
     elif self.file.ma_mode == 'maskediffillattandvalue':
         # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
-        if self.__dict__.has_key('_FillValue'):
+        if '_FillValue' in self.__dict__:
             if a.__contains__(self.__dict__['_FillValue']):
                 if np.isscalar(a):
                     a = ma.masked_where(a == self.__dict__['_FillValue'][0],a,copy=0)
                 else:
                     a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
                 a.set_fill_value(self.__dict__['_FillValue'])
-        elif self.__dict__.has_key('missing_value'):
+        elif 'missing_value' in self.__dict__:
             if a.__contains__(self.__dict__['missing_value']):
                 if np.isscalar(a):
                     a = ma.masked_where(a == self.__dict__['missing_value'][0],a,copy=0)
@@ -318,13 +317,13 @@ def _fill_value_to_masked(self, a):
                 a.set_fill_value(self.__dict__['missing_value'])
     else: 
         # Handles MaskedIfFillAtt and MaskedAlways
-        if self.__dict__.has_key('_FillValue'):
+        if '_FillValue' in self.__dict__:
             if np.isscalar(a):
                 a = ma.masked_where(a == self.__dict__['_FillValue'][0],a,copy=0)
             else:
                  a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
             a.set_fill_value(self.__dict__['_FillValue'])
-        elif self.__dict__.has_key('missing_value'):
+        elif 'missing_value' in self.__dict__:
             if np.isscalar(a):
                 a = ma.masked_where(a == self.__dict__['missing_value'][0],a,copy=0)
             else:
@@ -383,10 +382,10 @@ def _masked_to_fill_value(self,value):
         # If there is an existing fill value in the file, make it conform to that type (??)
         # Otherwise use the type of the numpy array value
         #
-        if self.__dict__.has_key('_FillValue'):
+        if '_FillValue' in self.__dict__:
             fval = self.__dict__['_FillValue']
             fill_value = np.array(fval,dtype=fval.dtype)
-        elif self.__dict__.has_key('missing_value'):
+        elif 'missing_value' in self.__dict__:
             fval = self.__dict__['missing_value']
             fill_value = np.array(fval,dtype=fval.dtype)
         elif _is_new_ma:
@@ -453,7 +452,7 @@ already exist.
 Read or write access attempts on the file object after closing
 raise an exception.
     '''
-    #print "in close"
+    #print ("in close")
     if not self.parent is None:
         return
     if self.open == 1:
@@ -487,7 +486,7 @@ type -- a type identifier. The following are currently supported:
 dimensions -- a tuple of dimension names (strings), previously defined
     '''
 
-    #print 'in create variable'
+    #print ('in create variable')
     v = self._obj.create_variable(name,type,dimensions)
     if not v is None:
         vp  = _proxy(v,'str','len',
@@ -510,7 +509,7 @@ f.create_group(name)
 name -- a string specifying the group name.
     '''
 
-    #print 'in create group'
+    #print ('in create group')
     #import pdb; pdb.set_trace()
     g = self._obj.create_group(name)
     if not g is None:
@@ -571,10 +570,10 @@ def _get_masked_array_mode(options,option_defaults):
             val = options.__dict__[key]
             lval = val.lower()
             if optvals.count(lval) == 0:
-                raise ValueError, 'Invalid value for MaskArrayMode option'
+                raise ValueError('Invalid value for MaskArrayMode option')
             return  lval
 
-    if option_defaults.has_key('MaskedArrayMode'):
+    if 'MaskedArrayMode' in option_defaults:
         return option_defaults['MaskedArrayMode'].lower()
     else:
         return 'maskediffillatt'
@@ -582,7 +581,7 @@ def _get_masked_array_mode(options,option_defaults):
 def _get_axis_att(options,option_defaults):
     ''' Get a value for the UseAxisAttribute option '''
     if options == None:
-        if option_defaults.has_key('UseAxisAttribute'):
+        if 'UseAxisAttribute' in option_defaults:
             return option_defaults['UseAxisAttribute']
         else:
             return False
@@ -614,7 +613,7 @@ def _get_option_value(options,option_defaults,name):
                 return val
             return None
 
-    if option_defaults.has_key(name):
+    if name in option_defaults:
         return option_defaults[name]
     else:
         return None
@@ -651,8 +650,8 @@ def set_option(self,option,value):
         loption = option.lower()
     else:
         loption = option
-    if not valid_opts.has_key(loption):
-        raise KeyError, "Option %s invalid or cannot be set on open NioFile" % (option,)
+    if not loption in valid_opts:
+        raise KeyError("Option {} invalid or cannot be set on open NioFile".format(option))
         
     if hasattr(value,'lower'):
         lvalue = value.lower()
@@ -669,7 +668,7 @@ def set_option(self,option,value):
 
 
 def __del__(self):
-    #print "in __del__ method"
+    #print ("in __del__ method")
     if hasattr(self,"parent") and self.parent is not None:
         return None
     if hasattr(self,'open') and self.open == 1:
@@ -738,13 +737,13 @@ same as the extensions listed above without the initial period (.).
 Returns an NioFile object.
     '''
 
-    ma_mode  = _get_masked_array_mode(options,_Nio.option_defaults)
-    use_axis_att = _get_axis_att(options,_Nio.option_defaults)
-    explicit_fill_values = _get_option_value(options,_Nio.option_defaults,'ExplicitFillValues')
-    mask_below_value = _get_option_value(options,_Nio.option_defaults,'MaskBelowValue')
-    mask_above_value = _get_option_value(options,_Nio.option_defaults,'MaskAboveValue')
+    ma_mode  = _get_masked_array_mode(options,_nio.option_defaults)
+    use_axis_att = _get_axis_att(options,_nio.option_defaults)
+    explicit_fill_values = _get_option_value(options,_nio.option_defaults,'ExplicitFillValues')
+    mask_below_value = _get_option_value(options,_nio.option_defaults,'MaskBelowValue')
+    mask_above_value = _get_option_value(options,_nio.option_defaults,'MaskAboveValue')
     
-    file = _Nio.open_file(filename,mode,options,history,format)
+    file = _nio.open_file(filename,mode,options,history,format)
 
     file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
     setattr(file_proxy.__class__,'set_option',set_option)
@@ -781,7 +780,7 @@ Returns an NioFile object.
     variable_proxies.path = '/'
     variable_proxies.topdict = None
     for var in file.variables.keys():
-        # print var, ": ", sys.getrefcount(file.variables[var])
+        # print( var, ": ", sys.getrefcount(file.variables[var]))
         vp  = _proxy(file.variables[var],'str','len',
                      __setitem__=__setitem__,__getitem__=__getitem__,get_value=get_value,assign_value=assign_value)
         vp.file = weakref.proxy(file_proxy)
@@ -801,14 +800,14 @@ Returns an NioFile object.
             vp.cf_dimensions = tuple(newdims)
         else:
             vp.cf_dimensions = vp.dimensions
-        #print var, ": ", sys.getrefcount(file.variables[var])
+        #print (var, ": ", sys.getrefcount(file.variables[var]))
     file_proxy.variables = variable_proxies
 
     group_proxies = nd.nioDict()
     group_proxies.path = '/'
     group_proxies.topdict = None
     for group in file.groups.keys():
-        # print group, ": ", sys.getrefcount(file.groups[group])
+        # print (group, ": ", sys.getrefcount(file.groups[group]))
         gp = _proxy(file.groups[group], 'str')
         gp.file = weakref.proxy(file.groups[group])
         gp.ma_mode = file_proxy.ma_mode
@@ -880,7 +879,7 @@ def _create_coordinates_attriibute(file,var):
     
     cnames = None
     cdict = {}
-    if var.attributes.has_key('coordinates'):
+    if 'coordinates' in var.attributes:
         s = var.attributes['coordinates'].replace(',',' ')
         cnames = s.split()
         #print var.attributes['coordinates']
@@ -934,7 +933,7 @@ opt = Nio.options()
 Assign 'opt' as the third (optional) argument to Nio.open_file.
 print opt.__doc__ to see valid options.
     '''
-    opt = _Nio.options()
+    opt = _nio.options()
     return opt
 
 '''
@@ -948,7 +947,7 @@ if filepath:
     filepath = os.path.join(filepath,"data",fname)
   
 if os.access(filepath,os.R_OK):
-    file = _Nio.open_file(filepath)
+    file = _nio.open_file(filepath)
     file_proxy = _proxy(file, 'str', __del__=__del__,create_variable=create_variable,create_group=create_group,close=close)
     file_proxy.parent = None
     var_proxy = _proxy(file.variables['t'],'str','len',

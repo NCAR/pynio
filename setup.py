@@ -494,7 +494,7 @@ def configuration(parent_package='',top_path=None):
     
     sources = ['niomodule.c']
 
-    config.add_extension('nio',
+    config.add_extension('_nio',
                          sources=sources,
                          libraries=LIBRARIES,
                          include_dirs=INC_DIRS,
