@@ -15,7 +15,7 @@
 #define PYNIO
 #endif
 
-/*#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION*/
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include "netcdf.h"
 #include "Python.h"
@@ -4402,7 +4402,7 @@ NioFileObject_clear(Noddy *self)
 static PyTypeObject NioFile_Type =
 {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"_Nio._NioFile", /*tp_name*/
+	"_nio._NioFile", /*tp_name*/
 	sizeof(NioFileObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -4466,7 +4466,7 @@ static PyType_Slot niofile_slots[] = {
 			{ 0 },
 		};
 
-static PyType_Spec niofile_spec = { "NioFile", sizeof(NioFileObject), 0,
+static PyType_Spec niofile_spec = { "_nio._NioFile", sizeof(NioFileObject), 0,
 		  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, niofile_slots };
 #endif
 
@@ -6895,7 +6895,7 @@ NioVariableObject_str(NioVariableObject *var) {
 static PyTypeObject NioVariable_Type =
 {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"_Nio._NioVariable", /*tp_name*/
+	"_nio._NioVariable", /*tp_name*/
 	sizeof(NioVariableObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -6990,7 +6990,7 @@ static PyType_Slot niovar_slots[] = {
 		{ 0 },
 	};
 
-static PyType_Spec niovar_spec = { "NioVariable", sizeof(NioVariableObject), 0,
+static PyType_Spec niovar_spec = { "_nio._NioVariable", sizeof(NioVariableObject), 0,
 		  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, niovar_slots };
 
 #endif
@@ -7298,7 +7298,7 @@ NioFile_Options(PyObject *self, PyObject *args) {
 	PyObject *pystr = PyUnicode_DecodeUTF8("NioOptions", strlen("NioOptions"), "strict");
 	PyObject *bases = PyTuple_New(0);
 	PyObject *modstr = PyUnicode_DecodeUTF8("__module__", strlen("__module__"), "strict");
-	PyObject *modval = PyUnicode_DecodeUTF8("_Nio", strlen("_Nio"), "strict");
+	PyObject *modval = PyUnicode_DecodeUTF8("_nio", strlen("_nio"), "strict");
 	PyObject *docstr = PyUnicode_DecodeUTF8("__doc__", strlen("__doc__"), "strict");
 	PyObject *docval = PyUnicode_DecodeUTF8(option_class_doc, strlen(option_class_doc), "strict");
 
@@ -7573,10 +7573,10 @@ void init_nio(void) {
 	/* make NioFile, NioGroup and NioVariable visible to the module for subclassing */
 	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioFile_Type);
-	PyModule_AddObject(m, "NioFile", (PyObject *) &NioFile_Type);
+	PyModule_AddObject(m, "_NioFile", (PyObject *) &NioFile_Type);
 	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioVariable_Type);
-	PyModule_AddObject(m, "NioVariable", (PyObject *) &NioVariable_Type);
+	PyModule_AddObject(m, "_NioVariable", (PyObject *) &NioVariable_Type);
 
 	def_opt_dict = SetUpDefaultOptions();
 
@@ -7652,9 +7652,9 @@ PyMODINIT_FUNC PyInit__nio(void) {
 	/* PyModule_AddObject steals a reference, so need to bump the ref count here */
 
 	Py_INCREF(module_state->NioFile_Type);
-	PyModule_AddObject(m, "NioFile", module_state->NioFile_Type);
+	PyModule_AddObject(m, "_NioFile", module_state->NioFile_Type);
 	Py_INCREF(module_state->NioVariable_Type);
-	PyModule_AddObject(m, "NioVariable", module_state->NioVariable_Type);
+	PyModule_AddObject(m, "_NioVariable", module_state->NioVariable_Type);
 
 	module_state->defaults = SetUpDefaultOptions();
 	Py_INCREF(module_state->defaults);
