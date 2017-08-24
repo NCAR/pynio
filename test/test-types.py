@@ -57,7 +57,7 @@ file.version = 45
 #
 file.create_dimension("array",    3)
 #file.create_dimension("strlen",    6)
-file.create_dimension("strlen",    1)
+file.create_dimension("strlen",    10)
 file.create_dimension("dim1", 2)
 file.create_dimension("dim2", 1)
 file.create_dimension("dim3",4)
@@ -120,11 +120,11 @@ v66.assign_value([42,43,44])
 
 print "creating and assigning array char"
 v77 = file.create_variable("v77", 'S1', ('array','strlen'))
-#v77.assign_value(['bcdef ','uvwxyz','ijklmn'])
+v77.assign_value(['bcdef','uvwxyz','ijklmnopqr'])
 #v77.assign_value(['ab','uv','ij'])
-v77.assign_value(['a','u','i'])
+#v77.assign_value(['a','u','i'])
 
-v77[1] = v77[1,::-1]
+#v77[1] = v77[1,::-1]
 
 print v77[:]
 

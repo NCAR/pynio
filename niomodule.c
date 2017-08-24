@@ -5579,34 +5579,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  dims[n_dims] = 1;
 		  dirs[n_dims] = dir;
 	  }
-
-        /*
-         *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
-         *fprintf(stderr, "\tdims[%d] = %d\n", i, (int)dims[i]);
-         */
-#if 0
-          if(nfile->file.advanced_file_structure)
-          {
-              if(NULL != varnode)
-              {
-                  if(NULL != dimrec)
-                  {
-                      dimnode = &(dimrec->dim_node[i]);
-		      if(dims[i] != dimnode->size)
-                      {
-		         dims[i] = dimnode->size;
-		         indices[i].stop = dims[i] - 1;
-                      }
-                  }
-              }
-          }
-#endif
-        /*
-         *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-	 *          __PRETTY_FUNCTION__, __FILE__, __LINE__);
-         *fprintf(stderr, "\tdims[%d] = %d\n", i, (int)dims[i]);
-         */
   }
 
   if (error) {
@@ -5643,8 +5615,18 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  pdims.ptr = dims;
 		  pdims.len = n_dims;
 		  array2 = (PyArrayObject *)PyArray_View(array,&tdescr,NULL);
-		  array3 = (PyArrayObject *) PyArray_Newshape(array2,&pdims,NPY_CORDER);
-		  array = (PyArrayObject *)PyArray_FromArray((PyArrayObject*)array3,&tdescr,0);
+		  if (array2) {
+			  if (*array2->dimensions != nitems) {
+				  sprintf(err_buf,"size of final dimension of character array variable (%s) must match length of longest string supplied as input",self->name);
+				  PyErr_SetString(NIOError, err_buf);
+				  ret = -1;
+				  goto err_ret;
+			  }
+			  array3 = (PyArrayObject *) PyArray_Newshape(array2,&pdims,NPY_CORDER);
+			  if (array3) {
+				  array = (PyArrayObject *)PyArray_FromArray((PyArrayObject*)array3,&tdescr,0);
+			  }
+		  }
 		  /*Py_DECREF(array2);*/
 		  /*Py_DECREF(array3);*/
 	  }
@@ -5671,31 +5653,45 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
   }
   else {
-	  int ret;
-	  PyArray_Descr *dtype = NULL;
-	  int tndim = 0;
-	  npy_intp tdims[NPY_MAXDIMS];
 
-	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,18,0,n_dims);
-	  /*ret = (PyArrayObject *)PyArray_GetArrayParamsFromObject(value,NULL,0,&dtype,
-								  &tndim, tdims, &array, NULL);
-	  if (ret > 0) {
-		  sprintf(err_buf,"could not convert input to writable form (%s)",self->name);
-	  }
-	  else if (! array) {
-		  if (! strcmp(typecode(self->type),"c") &&  dtype->type == 'S' && dtype->elsize > 1) {
-			  dtype->type = 'c';
-			  dtype->elsize = 1;
-			  dtype->type_num = self->type;
-			  array =  (PyArrayObject *)PyArray_FromAny(value,dtype,0,tndim+1,0,NULL);
+	  if (! strcmp(typecode(self->type),"c"))
+		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,NPY_STRING,0,n_dims);
+	  else
+		  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
+
+	  if (array && ! strcmp(typecode(self->type),"c") &&  array->descr->type == 'S' && array->descr->elsize > 1) { 
+		  PyArray_Descr tdescr;
+		  int tndim = 0;
+		  npy_intp tdims[NPY_MAXDIMS];
+		  PyArrayObject *array2,*array3,*array4;
+		  PyArray_Dims pdims;
+		  memcpy(&tdescr,array->descr,sizeof(PyArray_Descr));
+		  tdescr.type = 'c';
+		  tdescr.elsize = 1;
+		  tdescr.type_num = self->type;
+		  pdims.ptr = dims;
+		  pdims.len = n_dims;
+		  array2 = (PyArrayObject *)PyArray_View(array,&tdescr,NULL);
+		  if (array2) {
+			  if (*array2->dimensions != nitems) {
+				  sprintf(err_buf,"size of final dimension of character array variable (%s) must match length of longest string supplied as input",self->name);
+				  PyErr_SetString(NIOError, err_buf);
+				  ret = -1;
+				  goto err_ret;
+			  }
+			  array3 = (PyArrayObject *) PyArray_Newshape(array2,&pdims,NPY_CORDER);
+			  if (array3) {
+				  array4 = (PyArrayObject *)PyArray_FromArray((PyArrayObject*)array3,&tdescr,0);
+			  }
+		  }
+		  if (array4) {
+			  Py_DECREF(array);
+			  array = array4;
 		  }
 		  else {
-			  sprintf(err_buf,"could not convert input to writable form (%s)",self->name);
+			  Py_DECREF(array);
+			  array = NULL;
 		  }
-		  }*/
-	  if (array && ! strcmp(typecode(self->type),"c") &&  array->descr->type == 'S' && array->descr->elsize > 1) { 
-		  
-		  printf("here\n");
 	  }
   }
 
@@ -5764,73 +5760,6 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
   }
   else {
 	  int var_dim = 0;
-#if 0
-	/*Added this paragraph to check the indices,
-	 *Where, the stop somehow become pretty wild, which has the INT64MAX.
-	 *Wei, April 7, 2014.
-	 */
-          if(indices[var_dim].unlimited)
-	  {
-              if((indices[var_dim].stop >= array->dimensions[var_dim]) ||
-                 (indices[var_dim].stop != (array->dimensions[var_dim] - 1)))
-              {
-                  NclFile nfile = (NclFile) self->file->id;
-                  if(nfile->file.advanced_file_structure)
-                  {
-                      NclFileDimRecord* grpdimrec;
-                      NclFileDimNode*   grpdimnode;
-                      NclFileDimRecord* dimrec;
-                      NclFileDimNode*   dimnode;
-                      NclFileVarNode*   varnode;
-		      NclFileGrpNode*   grpnode;
-                      grpnode = ((NclAdvancedFile)self->file->gnode)->advancedfile.grpnode;
-                      varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
-                      if(NULL != varnode)
-                      {
-                          dimrec = varnode->dim_rec;
-                          if(NULL != dimrec)
-                          {
-                            /*
-                             *fprintf(stderr, "\nEnter %s, in file: %s, line: %d\n",
-                             *                 __PRETTY_FUNCTION__, __FILE__, __LINE__);
-                             */
-                              dimnode = &(dimrec->dim_node[var_dim]);
-                            /*
-                             *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
-                             *                   (int)var_dim, NrmQuarkToString(dimnode->name), (int)dimnode->size);
-                             */
-                              dimnode->size = (ng_size_t) array->dimensions[var_dim];
-                            /*
-                             *fprintf(stderr, "\tDim %d, name: %s, size: %d\n",
-                             *                   (int)var_dim, NrmQuarkToString(dimnode->name), (int)dimnode->size);
-                             */
-
-                              grpdimrec = grpnode->dim_rec;
-	                      for(i = 0; i < grpdimrec->n_dims; ++i)
-	                      {
-	                          grpdimnode = &(grpdimrec->dim_node[i]);
-                                  if(grpdimnode->name == dimnode->name)
-                                  {
-                                      if(grpdimnode->size != dimnode->size)
-                                         grpdimnode->size = dimnode->size;
-	                          }
-	                      }
-                          }
-                      }
-                  }
-
-                  indices[var_dim].stop = indices[var_dim].start + array->dimensions[var_dim] - 1;
-                  dims[var_dim] = array->dimensions[var_dim];
-                  self->dimensions[var_dim] = array->dimensions[var_dim];
-                  nitems = 1;
-	          for(i = 0; i < self->nd; ++i)
-                  {
-	              nitems *= self->dimensions[i];
-                  }
-              }
-	  }
-          if (indices[var_dim].unlimited && dims[var_dim] == 0)
-#endif		  
 	  i = 0;
 	  while (i < array->nd && array->dimensions[i] == 1)
 		  i++;
