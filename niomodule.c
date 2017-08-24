@@ -613,7 +613,7 @@ typecode(int type)
 	  break;
 #else
   case PyArray_CHAR:
-	  strcpy(buf,"S1");
+	  buf[0] = PyArray_CHARLTR;
 	  break;
 #endif
   case PyArray_VLEN:
@@ -652,6 +652,9 @@ nio_type_from_code(int code)
   case 'c':
 	  type = NrmStringToQuark("character");
 	  break;
+  case 'S':
+	  type = NrmStringToQuark("string");
+	  break;
   case '1':
   case 'b':
 	  type = NrmStringToQuark("byte");
@@ -688,9 +691,6 @@ nio_type_from_code(int code)
 	  break;
   case 'd':
 	  type = NrmStringToQuark("double");
-	  break;
-  case 'S':
-	  type = NrmStringToQuark("string");
 	  break;
   case '?':
 	  type = NrmStringToQuark("logical");
@@ -5632,6 +5632,22 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  array = (PyArrayObject *)PyArray_ContiguousFromAny((PyObject*)array2,self->type,0,n_dims);
 		  Py_DECREF(array2);
 	  }
+	  else if (! strcmp(typecode(self->type),"c") &&  array->descr->type == 'S' && array->descr->elsize > 1) {
+		  PyArray_Descr tdescr;
+		  PyArrayObject *array2,*array3;
+		  PyArray_Dims pdims;
+		  memcpy(&tdescr,array->descr,sizeof(PyArray_Descr));
+		  tdescr.type = 'c';
+		  tdescr.elsize = 1;
+		  tdescr.type_num = self->type;
+		  pdims.ptr = dims;
+		  pdims.len = n_dims;
+		  array2 = (PyArrayObject *)PyArray_View(array,&tdescr,NULL);
+		  array3 = (PyArrayObject *) PyArray_Newshape(array2,&pdims,NPY_CORDER);
+		  array = (PyArrayObject *)PyArray_FromArray((PyArrayObject*)array3,&tdescr,0);
+		  /*Py_DECREF(array2);*/
+		  /*Py_DECREF(array3);*/
+	  }
 	  else
           {
 		  int single_el_dim_count = 0;
@@ -5655,7 +5671,32 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 	  }
   }
   else {
-	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,self->type,0,n_dims);
+	  int ret;
+	  PyArray_Descr *dtype = NULL;
+	  int tndim = 0;
+	  npy_intp tdims[NPY_MAXDIMS];
+
+	  array = (PyArrayObject *)PyArray_ContiguousFromAny(value,18,0,n_dims);
+	  /*ret = (PyArrayObject *)PyArray_GetArrayParamsFromObject(value,NULL,0,&dtype,
+								  &tndim, tdims, &array, NULL);
+	  if (ret > 0) {
+		  sprintf(err_buf,"could not convert input to writable form (%s)",self->name);
+	  }
+	  else if (! array) {
+		  if (! strcmp(typecode(self->type),"c") &&  dtype->type == 'S' && dtype->elsize > 1) {
+			  dtype->type = 'c';
+			  dtype->elsize = 1;
+			  dtype->type_num = self->type;
+			  array =  (PyArrayObject *)PyArray_FromAny(value,dtype,0,tndim+1,0,NULL);
+		  }
+		  else {
+			  sprintf(err_buf,"could not convert input to writable form (%s)",self->name);
+		  }
+		  }*/
+	  if (array && ! strcmp(typecode(self->type),"c") &&  array->descr->type == 'S' && array->descr->elsize > 1) { 
+		  
+		  printf("here\n");
+	  }
   }
 
   if (array == NULL) {
@@ -5843,7 +5884,11 @@ NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices, PyObject *val
 		  }
 	  }
   }
-  qtype = nio_type_from_code(array->descr->type);
+  if (array->descr->type == 'S' && array->descr->elsize == 1)
+	  qtype = NrmStringToQuark("character");
+  else
+	  qtype = nio_type_from_code(array->descr->type);
+ 
 
   if(nfile->file.advanced_file_structure)
   {

@@ -19,6 +19,8 @@
  * Description:    
  */
 
+#define H5_USE_18_API
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
