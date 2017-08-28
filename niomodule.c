@@ -904,7 +904,7 @@ static void collect_attributes(void *fileid, int varid, PyObject *attributes,
 			}
 			array = PyArray_SimpleNew(1, &length, py_type);
 			if (array != NULL) {
-				memcpy(((PyArrayObject *) array)->data, md->multidval.val,
+				memcpy(PyArray_BYTES((PyArrayObject *) array), md->multidval.val,
 						(size_t) length * md->multidval.type->type_class.size);
 				array = PyArray_Return((PyArrayObject *) array);
 				if (array != NULL) {
@@ -957,14 +957,14 @@ static int set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 		PyArrayObject *tmparray = (PyArrayObject *) PyDict_GetItemString(
 				attributes, name);
 		if (tmparray != NULL) {
-			pyarray_type = tmparray->descr->type_num;
+			pyarray_type = PyArray_TYPE(tmparray);
 		}
 		array = (PyArrayObject *) PyArray_ContiguousFromAny(value, pyarray_type,
 				0, 1);
 		if (array) {
-			n_dims = (array->nd == 0) ? 1 : array->nd;
-			qtype = nio_type_from_code(array->descr->type);
-			if (array->descr->elsize == 8
+			n_dims = (PyArray_NDIM(array) == 0) ? 1 : PyArray_NDIM(array);
+			qtype = nio_type_from_code(PyArray_DTYPE(array)->type);
+			if (PyArray_ITEMSIZE(array) == 8
 					&& qtype == NrmStringToQuark("long")) {
 				PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array,
 						NPY_INT);
@@ -980,10 +980,11 @@ static int set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 			if (array) {
 				ng_size_t *dims;
 				void *data;
-				if (array->nd == 0) {
+				if (PyArray_NDIM(array) == 0) {
 					dims = &dim_sizes;
 				} else {
-					dims = (ng_size_t *) array->dimensions;
+					/* TODO:  Make sure these pointers are the same in new api */
+					dims = (ng_size_t *) PyArray_DIMS(array);
 				}
 				data = malloc(PyArray_NBYTES(array));
 				memcpy(data, PyArray_DATA(array), PyArray_NBYTES(array));
@@ -1523,8 +1524,8 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 					for (j = 0; j < n_elem; j++) {
 						py3_char *valstr = NrmQuarkToString(((NrmQuark*) attnode->value)[j]);
 						pystr = PyUnicode_DecodeUTF8(valstr, strlen(valstr), "strict");
-						PyArray_SETITEM(array,
-								pyarray->data + j * pyarray->descr->elsize,
+						PyArray_SETITEM(pyarray,
+								PyArray_BYTES(pyarray) + j * PyArray_ITEMSIZE(pyarray),
 								pystr);
 						Py_DECREF(pystr);
 					}
@@ -1575,14 +1576,14 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 			if (attnode->value == NULL) {
 				array = PyArray_SimpleNew(1, &length, NPY_LONG);
 				if (array != NULL) {
-					memset(((PyArrayObject *) array)->data, 0,
+					memset(PyArray_BYTES((PyArrayObject *) array), 0,
 							(size_t) sizeof(long) * length);
 					array = PyArray_Return((PyArrayObject *) array);
 				}
 			} else {
 				array = PyArray_SimpleNew(1, &length, py_type);
 				if (array != NULL) {
-					memcpy(((PyArrayObject *) array)->data, attnode->value,
+					memcpy(PyArray_BYTES((PyArrayObject *) array), attnode->value,
 							(size_t) length * _NclSizeOf(attnode->type));
 				}
 				array = PyArray_Return((PyArrayObject *) array);
@@ -3453,14 +3454,14 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes,
 		PyArrayObject *tmparray = (PyArrayObject *) PyDict_GetItemString(
 				attributes, name);
 		if (tmparray != NULL)
-			pyarray_type = tmparray->descr->type_num;
+			pyarray_type = PyArray_TYPE(tmparray);
 
 		array = (PyArrayObject *) PyArray_ContiguousFromAny(value, pyarray_type,
 				0, 1);
 		if (array) {
-			n_dims = (array->nd == 0) ? 1 : array->nd;
-			qtype = nio_type_from_code(array->descr->type);
-			if (nfile->file.advanced_file_structure && array->descr->elsize == 8
+			n_dims = (PyArray_NDIM(array) == 0) ? 1 : PyArray_NDIM(array);
+			qtype = nio_type_from_code(PyArray_DTYPE(array)->type);
+			if (nfile->file.advanced_file_structure && PyArray_ITEMSIZE(array) == 8
 					&& qtype == NrmStringToQuark("long")) {
 				PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array,
 						NPY_INT);
@@ -3495,11 +3496,11 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes,
 					if (array) {
 						NclObjTypes the_obj_type = Ncl_Typelist;
 
-						n_dims = (ng_size_t) array->nd;
+						n_dims = (ng_size_t) PyArray_NDIM(array);
 						dims = (ng_size_t*) malloc(n_dims * sizeof(ng_size_t));
 						assert(dims);
 						for (n = 0; n < n_dims; ++n) {
-							dims[n] = (ng_size_t) array->dimensions[n];
+							dims[n] = (ng_size_t) PyArray_DIMS(array)[n];
 							nitems *= dims[n];
 						}
 
@@ -3534,10 +3535,10 @@ static NclMultiDValData createAttMD(NclFile nfile, PyObject *attributes,
 			} else if (array) {
 				ng_size_t *dims;
 				void *data;
-				if (array->nd == 0) {
+				if (PyArray_NDIM(array) == 0) {
 					dims = &dim_sizes;
 				} else {
-					dims = (ng_size_t *) array->dimensions;
+					dims = (ng_size_t *) PyArray_DIMS(array);
 				}
 				data = malloc(PyArray_NBYTES(array));
 				memcpy(data, PyArray_DATA(array), PyArray_NBYTES(array));
@@ -3584,7 +3585,7 @@ static int set_advanced_file_attribute(NioFileObject *file,
 			PyArrayObject *tmparray = (PyArrayObject *) PyDict_GetItemString(
 					attributes, name);
 			if (tmparray != NULL)
-				pyarray_type = tmparray->descr->type_num;
+				pyarray_type = PyArray_TYPE(tmparray);
 			array = (PyArrayObject *) PyArray_ContiguousFromAny(value,
 					pyarray_type, 0, 1);
 			DICT_SETITEMSTRING(attributes, name, (PyObject * )array);
@@ -3629,7 +3630,7 @@ static int set_advanced_variable_attribute(NioFileObject *file,
 			PyArrayObject *tmparray = (PyArrayObject *) PyDict_GetItemString(
 					attributes, name);
 			if (tmparray != NULL)
-				pyarray_type = tmparray->descr->type_num;
+				pyarray_type = PyArray_TYPE(tmparray);
 			array = (PyArrayObject *) PyArray_ContiguousFromAny(value,
 					pyarray_type, 0, 1);
 			DICT_SETITEMSTRING(attributes, name, (PyObject * )array);
@@ -3860,22 +3861,19 @@ static void attrec2buf(PyObject *attributes, NclFileAttRecord* attrec,
 		} else {
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *) att_val;
-			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-				PyObject *att = att_arr_val->descr->f->getitem(
-						PyArray_DATA(att_val), att_val);
+			if (PyArray_NDIM(att_arr_val) == 0 || PyArray_DIM(att_arr_val, 0) == 1) {
+				PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_DATA(att_arr_val));
 
-				format_object(tbuf, att, att_arr_val->descr->type);
+				format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 				insert2buf(tbuf, buf, bufpos, buflen, bufinc);
 				insert2buf("\n", buf, bufpos, buflen, bufinc);
 			} else {
 				insert2buf("[", buf, bufpos, buflen, bufinc);
-				for (k = 0; k < att_arr_val->dimensions[0]; ++k) {
-					PyObject *att = att_arr_val->descr->f->getitem(
-							att_arr_val->data + k * att_arr_val->descr->elsize,
-							att_val);
-					format_object(tbuf, att, att_arr_val->descr->type);
+				for (k = 0; k < PyArray_DIM(att_arr_val, 0); ++k) {
+					PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_BYTES(att_arr_val) + k * PyArray_ITEMSIZE(att_arr_val));
+					format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 					insert2buf(tbuf, buf, bufpos, buflen, bufinc);
-					if (k < att_arr_val->dimensions[0] - 1)
+					if (k < PyArray_DIM(att_arr_val, 0) - 1)
 						sprintf(tbuf, ", ");
 					else
 						sprintf(tbuf, "]\n");
@@ -4209,24 +4207,20 @@ NioFileObject_str(NioFileObject *file) {
 			} else {
 				int k;
 				PyArrayObject *att_arr_val = (PyArrayObject *) att_val;
-				if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-					PyObject *att = att_arr_val->descr->f->getitem(
-							PyArray_DATA(att_val), att_val);
+				if (PyArray_NDIM(att_arr_val) == 0 || PyArray_DIM(att_arr_val, 0) == 1) {
+					PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_DATA(att_arr_val));
 
-					format_object(tbuf, att, att_arr_val->descr->type);
+					format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 					BUF_INSERT(tbuf);
 					BUF_INSERT("\n");
 				} else {
 					sprintf(tbuf, "[");
 					BUF_INSERT(tbuf);
-					for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-						PyObject *att = att_arr_val->descr->f->getitem(
-								att_arr_val->data
-										+ k * att_arr_val->descr->elsize,
-								att_val);
-						format_object(tbuf, att, att_arr_val->descr->type);
+					for (k = 0; k < PyArray_DIM(att_arr_val, 0); k++) {
+						PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_BYTES(att_arr_val) + k * PyArray_ITEMSIZE(att_arr_val));
+						format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 						BUF_INSERT(tbuf);
-						if (k < att_arr_val->dimensions[0] - 1) {
+						if (k < PyArray_DIM(att_arr_val, 0) - 1) {
 							sprintf(tbuf, ", ");
 						} else {
 							sprintf(tbuf, "]\n");
@@ -4315,27 +4309,23 @@ NioFileObject_str(NioFileObject *file) {
 				} else {
 					int k;
 					PyArrayObject *att_arr_val = (PyArrayObject *) att_val;
-					if (att_arr_val->nd == 0
-							|| att_arr_val->dimensions[0] == 1) {
-						PyObject *att = att_arr_val->descr->f->getitem(
-								PyArray_DATA(att_val), att_val);
-						format_object(tbuf, att, att_arr_val->descr->type);
+					if (PyArray_NDIM(att_arr_val) == 0
+							|| PyArray_DIM(att_arr_val, 0) == 1) {
+						PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_DATA(att_arr_val));
+						format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 						/*sprintf(tbuf,"%s\n",PyUnicode_AsUTF8(PyObject_Str(att)));*/
 						BUF_INSERT(tbuf);
 						BUF_INSERT("\n");
 					} else {
 						sprintf(tbuf, "[");
 						BUF_INSERT(tbuf);
-						for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-							PyObject *att = att_arr_val->descr->f->getitem(
-									att_arr_val->data
-											+ k * att_arr_val->descr->elsize,
-									att_val);
+						for (k = 0; k < PyArray_DIM(att_arr_val, 0); k++) {
+							PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_BYTES(att_arr_val) + k * PyArray_ITEMSIZE(att_arr_val));
 
-							format_object(tbuf, att, att_arr_val->descr->type);
+							format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 							/*sprintf(tbuf,"%s",PyUnicode_AsUTF8(PyObject_Str(att)));*/
 							BUF_INSERT(tbuf);
-							if (k < att_arr_val->dimensions[0] - 1) {
+							if (k < PyArray_DIM(att_arr_val, 0) - 1) {
 								sprintf(tbuf, ", ");
 							} else {
 								sprintf(tbuf, "]\n");
@@ -5170,7 +5160,7 @@ void _convertVLEN2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems) {
 		pyobj = PyArray_SimpleNewFromData(1, &length,
 				data_type(md->multidval.data_type), md->multidval.val);
 
-		PyArray_SETITEM(array, array->data + i * itemsize, pyobj);
+		PyArray_SETITEM(array, PyArray_BYTES(array) + i * itemsize, pyobj);
 
 		Py_DECREF(pyobj);
 	}
@@ -5253,12 +5243,12 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems,
 				pyobj = PyArray_SimpleNewFromData(1, &length,
 						data_type(compnode->type), curval + compnode->offset);
 
-			PyArray_SETITEM(comparray, comparray->data + n * itemsize, pyobj);
+			PyArray_SETITEM(comparray, PyArray_BYTES(comparray) + n * itemsize, pyobj);
 
 			Py_DECREF(pyobj);
 		}
 
-		PyArray_SETITEM(array, array->data + i * itemsize, comparray);
+		PyArray_SETITEM(array, PyArray_BYTES(array) + i * itemsize, comparray);
 
 		Py_DECREF(comparray);
 	}
@@ -5398,8 +5388,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 					qstr = ((NrmQuark *) md->multidval.val)[i];
 					pqstr = NrmQuarkToString(qstr);
 					pystr = PyUnicode_DecodeUTF8(pqstr, strlen(pqstr), "strict");
-					array->descr->f->setitem(pystr,
-							array->data + i * array->descr->elsize, array);
+					PyArray_SETITEM(array, PyArray_BYTES(array) + i * PyArray_ITEMSIZE(array), pystr);
 				}
 			}
 		}
@@ -5520,11 +5509,11 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 		}
 	}
 	if (array) {
-		is_own = PyArray_CHKFLAGS(array, NPY_OWNDATA);
+		is_own = PyArray_CHKFLAGS(array, NPY_ARRAY_OWNDATA);
 		if (!is_own) {
-			array->flags |= NPY_OWNDATA;
+			PyArray_ENABLEFLAGS(array, NPY_ARRAY_OWNDATA);
 		}
-		array->flags |= NPY_CARRAY;
+		PyArray_ENABLEFLAGS(array, NPY_ARRAY_C_CONTIGUOUS);
 	}
 	free(dims);
 	free(indices);
@@ -5585,10 +5574,10 @@ void _convertObj2VLEN(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
 		if (processingdim == n_dims) {
 			array = (PyArrayObject *) PyArray_ContiguousFromAny(item,
 					data_type(type), 0, 1);
-			dimsize = array->dimensions[0];
+			dimsize = PyArray_DIM(array, 0);
 			sprintf(buffer, "list_%6.6d", (int) (*counter));
 			dimname = NrmStringToQuark(buffer);
-			var = _NclCreateVlenVar(buffer, (void *) array->data, 1, &dimname,
+			var = _NclCreateVlenVar(buffer, PyArray_DATA(array), 1, &dimname,
 					&dimsize, type);
 			thelist = _NclGetObj(listids[*counter]);
 			_NclListAppend((NclObj) thelist, (NclObj) var);
@@ -5670,7 +5659,7 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids,
 					array = (PyArrayObject *) PyArray_ContiguousFromAny(item2,
 							NPY_STRING, 0, 1);
 					dimsize = compnode->nvals;
-					strcpy(tmpv, (char*) array->data);
+					strcpy(tmpv, PyArray_BYTES(array));
 					var = _NclCreateVlenVar(buffer, (void *) tmpv, 1, &dimname,
 							&dimsize, compnode->type);
 					/*
@@ -5680,8 +5669,8 @@ void _convertObj2COMPOUND(PyObject* pyobj, obj* listids,
 				} else {
 					array = (PyArrayObject *) PyArray_ContiguousFromAny(item2,
 							data_type(compnode->type), 0, 1);
-					dimsize = array->dimensions[0];
-					var = _NclCreateVlenVar(buffer, (void *) array->data, 1,
+					dimsize = PyArray_DIM(array, 0);
+					var = _NclCreateVlenVar(buffer, PyArray_DATA(array), 1,
 							&dimname, &dimsize, compnode->type);
 				}
 				thelist = _NclGetObj(listids[*counter]);
@@ -5861,8 +5850,8 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 			|| !strcmp(value->ob_type->tp_name, "array")) {
 		array = (PyArrayObject *) value;
 
-		if ((!nfile->file.advanced_file_structure) && array->descr->type == 'l'
-				&& array->descr->elsize == 8) {
+		if ((!nfile->file.advanced_file_structure) && PyArray_DTYPE(array)->type == 'l'
+				&& PyArray_ITEMSIZE(array) == 8) {
 			PyArrayObject *array2 = (PyArrayObject *) PyArray_Cast(array,
 					NPY_INT);
 			sprintf(get_errbuf(),
@@ -5879,8 +5868,8 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 			 * Use numpy semantics.
 			 * Numpy allows single element 'slow' dimensions to be discarded on assignment
 			 */
-			for (i = 0; i < array->nd; i++) {
-				if (array->dimensions[i] == 1)
+			for (i = 0; i < PyArray_NDIM(array); i++) {
+				if (PyArray_DIM(array, i) == 1)
 					single_el_dim_count++;
 				else
 					break;
@@ -5915,16 +5904,16 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 	 * variable or in the assigned array.
 	 */
 
-	if (array->nd == 0) {
+	if (PyArray_NDIM(array) == 0) {
 		n_dims = 1;
 	} else if (undefined_dim >= 0) {
 		int adim_count = 0;
 		int fdim_count = 0;
 		int *adims, *fdims;
-		adims = malloc(array->nd * sizeof(int));
+		adims = malloc(PyArray_NDIM(array) * sizeof(int));
 		fdims = malloc(self->nd * sizeof(int));
-		for (i = 0; i < array->nd; i++) {
-			if (array->dimensions[i] > 1) {
+		for (i = 0; i < PyArray_NDIM(array); i++) {
+			if (PyArray_DIMS(array)[i] > 1) {
 				adims[adim_count] = i;
 				adim_count++;
 			}
@@ -5938,20 +5927,20 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 		if (fdim_count == adim_count) {
 			ng_size_t undef_size = 0;
 			for (i = 0; i < fdim_count; i++) {
-				if (dims[fdims[i]] == array->dimensions[adims[i]])
+				if (dims[fdims[i]] == PyArray_DIM(array, adims[i]))
 					continue;
 				if (fdims[i] == undefined_dim) {
 					if (dirs[fdims[i]] == 1) {
 						indices[fdims[i]].stop = indices[fdims[i]].start
-								+ (array->dimensions[adims[i]] - 1)
+								+ (PyArray_DIM(array, adims[i]) - 1)
 										* indices[fdims[i]].stride;
 					} else {
 						indices[fdims[i]].start = indices[fdims[i]].stop
-								+ (array->dimensions[adims[i]] - 1)
+								+ (PyArray_DIM(array, adims[i]) - 1)
 										* indices[fdims[i]].stride;
 					}
-					undef_size = array->dimensions[adims[i]];
-					var_el_count *= array->dimensions[adims[i]];
+					undef_size = PyArray_DIM(array, adims[i]);
+					var_el_count *= PyArray_DIM(array, adims[i]);
 				} else {
 					sprintf(get_errbuf(),
 							"Dimensional mismatch writing to variable (%s)",
@@ -6036,17 +6025,17 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 		if (indices[var_dim].unlimited && dims[var_dim] == 0)
 #endif		  
 		i = 0;
-		while (i < array->nd && array->dimensions[i] == 1)
+		while (i < PyArray_NDIM(array) && PyArray_DIMS(array)[i] == 1)
 			i++;
 		while (var_dim < n_dims && dims[var_dim] == 1)
 			var_dim++;
-		for (; i < array->nd;) {
-			if (array->dimensions[i] != dims[var_dim]) {
+		for (; i < PyArray_NDIM(array);) {
+			if (PyArray_DIMS(array)[i] != dims[var_dim]) {
 				if (dims[var_dim] == 1) {
 					var_dim++;
 					continue;
 				}
-				if (array->dimensions[i] == 1) {
+				if (PyArray_DIMS(array)[i] == 1) {
 					i++;
 					continue;
 				}
@@ -6057,7 +6046,7 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 				ret = -1;
 				goto err_ret;
 			}
-			array_el_count *= array->dimensions[i];
+			array_el_count *= PyArray_DIMS(array)[i];
 			var_dim++;
 			i++;
 		}
@@ -6093,7 +6082,7 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 			}
 		}
 	}
-	qtype = nio_type_from_code(array->descr->type);
+	qtype = nio_type_from_code(PyArray_DTYPE(array)->type);
 
 	if (nfile->file.advanced_file_structure) {
 		if (NULL != varnode) {
@@ -6171,26 +6160,26 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 				/*
 				 qval[0] = NrmStringToQuark((char*)array->data);
 				 */
-				cptr = (char*) array->data;
+				cptr = PyArray_BYTES(array);
 				for (i = 0; i < n_items; i++) {
-					cval = cptr + i * array->descr->elsize;
+					cval = cptr + i * PyArray_ITEMSIZE(array);
 					/*fprintf(stderr, "\tcval[%ld] = %s\n", i, cval);*/
 					qval[i] = NrmStringToQuark(cval);
 				}
 
 				md = _NclCreateMultiDVal(NULL, NULL, Ncl_MultiDValData, 0, qval,
-						NULL, n_dims, array->nd == 0 ? &scalar_size : dims,
+						NULL, n_dims, PyArray_NDIM(array) == 0 ? &scalar_size : dims,
 						TEMPORARY, NULL, _NclNameToTypeClass(qtype));
 			} else
 				md = _NclCreateMultiDVal(NULL, NULL, Ncl_MultiDValData, 0,
-						(void*) array->data, NULL, n_dims,
-						array->nd == 0 ? &scalar_size : dims, TEMPORARY, NULL,
+						PyArray_DATA(array), NULL, n_dims,
+						PyArray_NDIM(array) == 0 ? &scalar_size : dims, TEMPORARY, NULL,
 						_NclNameToTypeClass(qtype));
 		}
 	} else
 		md = _NclCreateMultiDVal(NULL, NULL, Ncl_MultiDValData, 0,
-				(void*) array->data, NULL, n_dims,
-				array->nd == 0 ? &scalar_size : dims, TEMPORARY, NULL,
+				PyArray_DATA(array), NULL, n_dims,
+				PyArray_NDIM(array) == 0 ? &scalar_size : dims, TEMPORARY, NULL,
 				_NclNameToTypeClass(qtype));
 	if (nfile->file.advanced_file_structure)
 		nfile = (NclFile) self->file->gnode;
@@ -6858,24 +6847,21 @@ NioVariableObject_str(NioVariableObject *var) {
 		} else {
 			int k;
 			PyArrayObject *att_arr_val = (PyArrayObject *) att_val;
-			if (att_arr_val->nd == 0 || att_arr_val->dimensions[0] == 1) {
-				PyObject *att = att_arr_val->descr->f->getitem(
-						PyArray_DATA(att_val), att_val);
-				format_object(tbuf, att, att_arr_val->descr->type);
+			if (PyArray_NDIM(att_arr_val) == 0 || PyArray_DIM(att_arr_val, 0) == 1) {
+				PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_DATA(att_arr_val));
+				format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 				BUF_INSERT(tbuf);
 				BUF_INSERT("\n");
 				/*sprintf(tbuf,"%s\n",PyUnicode_AsUTF8(PyObject_Str(att)));*/
 			} else {
 				sprintf(tbuf, "[");
 				BUF_INSERT(tbuf);
-				for (k = 0; k < att_arr_val->dimensions[0]; k++) {
-					PyObject *att = att_arr_val->descr->f->getitem(
-							att_arr_val->data + k * att_arr_val->descr->elsize,
-							att_val);
-					format_object(tbuf, att, att_arr_val->descr->type);
+				for (k = 0; k < PyArray_DIM(att_arr_val, 0); k++) {
+					PyObject *att = PyArray_GETITEM(att_arr_val, PyArray_BYTES(att_arr_val) + k * PyArray_ITEMSIZE(att_arr_val));
+					format_object(tbuf, att, PyArray_DTYPE(att_arr_val)->type);
 					/*sprintf(tbuf,"%s",PyUnicode_AsUTF8(PyObject_Str(att)));*/
 					BUF_INSERT(tbuf);
-					if (k < att_arr_val->dimensions[0] - 1) {
+					if (k < PyArray_DIM(att_arr_val, 0) - 1) {
 						sprintf(tbuf, ", ");
 					} else {
 						sprintf(tbuf, "]\n");
@@ -7304,10 +7290,6 @@ NioFile_Options(PyObject *self, PyObject *args) {
 
 	PyDict_SetItem(dict, modstr, modval);
 	PyDict_SetItem(dict, docstr, docval);
-    /* The old style way
-	class = PyClass_New(NULL, dict, pystr);
-	return PyInstance_New(class, NULL, NULL);
-	*/
 
 	/* Creating this instance dynamically by calling the C equivalent
 	 * to 'type(class_name, bases, dict)' in Python with bases being (object,)
@@ -7419,18 +7401,13 @@ struct nio_state {
 };
 
 #if PY_MAJOR_VERSION >= 3
-
 #define INITERROR return NULL
 #define GETSTATE(m) ((struct nio_state*)PyModule_GetState(m))
-/*static struct nio_state _state;
-#define GETSTATE(m) (&_state)*/
-
 #else
-/*static struct nio_state _state;
-#define GETSTATE(m) (&_state)*/
 #define INITERROR return
 #endif
 
+/*
 #if PY_MAJOR_VERSION >= 3
 static int nio_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(GETSTATE(m)->NioError);
@@ -7449,7 +7426,7 @@ static int nio_clear(PyObject *m) {
 
     return 0;
 }
-
+*/
 
 static struct PyModuleDef nio_def = {
         PyModuleDef_HEAD_INIT,
