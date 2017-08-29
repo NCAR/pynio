@@ -276,8 +276,7 @@ static NioFile_CreateChunkDimension_RET NioFile_CreateChunkDimension
 NioFile_CreateChunkDimension_PROTO;
 static NioFile_CreateVariable_RET NioFile_CreateVariable
 NioFile_CreateVariable_PROTO;
-static NioFile_GetVariable_RET NioFile_GetVariable
-NioFile_GetVariable_PROTO;
+
 static NioVariable_GetRank_RET NioVariable_GetRank
 NioVariable_GetRank_PROTO;
 static NioVariable_GetShape_RET NioVariable_GetShape
@@ -286,30 +285,45 @@ static NioVariable_Indices_RET NioVariable_Indices
 NioVariable_Indices_PROTO;
 static NioVariable_ReadAsArray_RET NioVariable_ReadAsArray
 NioVariable_ReadAsArray_PROTO;
-static NioVariable_ReadAsString_RET NioVariable_ReadAsString
-NioVariable_ReadAsString_PROTO;
+
 static NioVariable_WriteArray_RET NioVariable_WriteArray
 NioVariable_WriteArray_PROTO;
-static NioVariable_WriteString_RET NioVariable_WriteString
-NioVariable_WriteString_PROTO;
+
 static NioFile_GetAttribute_RET NioFile_GetAttribute
 NioFile_GetAttribute_PROTO;
 static NioFile_SetAttribute_RET NioFile_SetAttribute
 NioFile_SetAttribute_PROTO;
-static NioFile_SetAttributeString_RET NioFile_SetAttributeString
-NioFile_SetAttributeString_PROTO;
+
 static NioVariable_GetAttribute_RET NioVariable_GetAttribute
 NioVariable_GetAttribute_PROTO;
 static NioVariable_SetAttribute_RET NioVariable_SetAttribute
 NioVariable_SetAttribute_PROTO;
-static NioVariable_SetAttributeString_RET
-NioVariable_SetAttributeString
-NioVariable_SetAttributeString_PROTO;
+
 static NioFile_AddHistoryLine_RET NioFile_AddHistoryLine
 NioFile_AddHistoryLine_PROTO;
 static NioFile_CreateVLEN_RET NioFile_CreateVLEN NioFile_CreateVLEN_PROTO;
 static NioFile_CreateCOMPOUND_RET NioFile_CreateCOMPOUND NioFile_CreateCOMPOUND_PROTO;
 static NioFile_CreateCOMPOUNDtype_RET NioFile_CreateCOMPOUNDtype NioFile_CreateCOMPOUNDtype_PROTO;
+
+/* Prototypes not currently used */
+#if 0
+static NioFile_GetVariable_RET NioFile_GetVariable
+NioFile_GetVariable_PROTO;
+
+static NioVariable_ReadAsString_RET NioVariable_ReadAsString
+NioVariable_ReadAsString_PROTO;
+
+static NioVariable_WriteString_RET NioVariable_WriteString
+NioVariable_WriteString_PROTO;
+
+static NioFile_SetAttributeString_RET NioFile_SetAttributeString
+NioFile_SetAttributeString_PROTO;
+
+static NioVariable_SetAttributeString_RET
+NioVariable_SetAttributeString
+NioVariable_SetAttributeString_PROTO;
+
+#endif
 
 #else
 

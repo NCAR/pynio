@@ -1238,7 +1238,7 @@ static NclFileVarNode* getVarFromGroup(NclFileGrpNode* grpnode, NrmQuark vname) 
 	int i;
 
 	varrec = grpnode->var_rec;
-	if (NULL != varrec) {
+	if (varrec != NULL) {
 		for (i = 0; i < varrec->n_vars; ++i) {
 			varnode = &(varrec->var_node[i]);
 			if ((vname == varnode->name) || (vname == varnode->real_name))
@@ -1247,10 +1247,10 @@ static NclFileVarNode* getVarFromGroup(NclFileGrpNode* grpnode, NrmQuark vname) 
 	}
 
 	grprec = grpnode->grp_rec;
-	if (NULL != grprec) {
+	if (grprec != NULL) {
 		for (i = 0; i < grprec->n_grps; ++i) {
 			varnode = getVarFromGroup(grprec->grp_node[i], vname);
-			if (NULL != varnode)
+			if (varnode != NULL)
 				return varnode;
 		}
 	}
@@ -3225,10 +3225,13 @@ NioFileObject_Unlimited(NioFileObject *self, PyObject *args) {
 
 /* Return a variable object referring to an existing variable */
 
+/* Not used */
+#if 0
 static NioVariableObject *
 NioFile_GetVariable(NioFileObject *file, char *name) {
 	return (NioVariableObject *) PyDict_GetItemString(file->variables, name);
 }
+#endif
 
 /* Synchronize output */
 
@@ -3664,6 +3667,8 @@ int NioFile_SetAttribute(NioFileObject *self, char *name, PyObject *value) {
 		return -1;
 }
 
+/* Not actually used */
+#if 0
 int NioFile_SetAttributeString(NioFileObject *self, char *name, char *value) {
 	PyObject *string = PyUnicode_DecodeUTF8(value, strlen(value), "strict");
 	if (string != NULL)
@@ -3671,6 +3676,7 @@ int NioFile_SetAttributeString(NioFileObject *self, char *name, char *value) {
 	else
 		return -1;
 }
+#endif
 
 int NioFile_AddHistoryLine(NioFileObject *self, char *text) {
 	static char *history = "history";
@@ -5098,6 +5104,8 @@ static int NioVariable_SetAttribute(NioVariableObject *self, char *name,
 		return -1;
 }
 
+/* Not actually used */
+#if 0
 int NioVariable_SetAttributeString(NioVariableObject *self, char *name,
 		char *value) {
 	PyObject *string = PyUnicode_DecodeUTF8(value, strlen(value), "strict");
@@ -5106,6 +5114,7 @@ int NioVariable_SetAttributeString(NioVariableObject *self, char *name,
 	else
 		return -1;
 }
+#endif
 
 /* Subscripting */
 
@@ -5248,7 +5257,7 @@ void _convertCOMPOUND2Obj(PyArrayObject* array, obj* listids, ng_size_t nitems,
 			Py_DECREF(pyobj);
 		}
 
-		PyArray_SETITEM(array, PyArray_BYTES(array) + i * itemsize, comparray);
+		PyArray_SETITEM(array, PyArray_BYTES(array) + i * itemsize, (PyObject*) comparray);
 
 		Py_DECREF(comparray);
 	}
@@ -5520,6 +5529,8 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 	return array;
 }
 
+/* Defined but not used */
+#if 0
 static PyUnicodeObject *
 NioVariable_ReadAsString(NioVariableObject *self)
 
@@ -5551,6 +5562,7 @@ NioVariable_ReadAsString(NioVariableObject *self)
 	} else
 		return NULL;
 }
+#endif
 
 void _convertObj2VLEN(PyObject* pyobj, obj* listids, NclBasicDataTypes type,
 		ng_size_t n_dims, ng_size_t curdim, ng_usize_t* counter) {
@@ -5752,7 +5764,7 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 
 		grpnode = ((NclAdvancedFile) self->file->gnode)->advancedfile.grpnode;
 		varnode = getVarFromGroup(grpnode, NrmStringToQuark(self->name));
-		if (NULL != varnode) {
+		if (varnode != NULL) {
 			dimrec = varnode->dim_rec;
 		}
 	}
@@ -6226,6 +6238,8 @@ static int NioVariable_WriteArray(NioVariableObject *self, NioIndex *indices,
 	return ret;
 }
 
+/* Not actually used */
+#if 0
 static int NioVariable_WriteString(NioVariableObject *self,
 		PyObject *value) {
 	long len;
@@ -6276,6 +6290,7 @@ static int NioVariable_WriteString(NioVariableObject *self,
 		return -1;
 	}
 }
+#endif
 
 static PyObject *
 NioVariableObject_item(NioVariableObject *self, Py_ssize_t i) {
@@ -6334,7 +6349,11 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index) {
 		if (PySlice_Check(index)) {
 			Py_ssize_t slicelen;
 			PySliceObject *slice = (PySliceObject *) index;
+#if PY_MAJOR_VERSION < 3
 			if (PySlice_GetIndicesEx((PySliceObject *) index,
+#else
+			if (PySlice_GetIndicesEx(index,
+#endif
 					self->dimensions[0], &indices->start, &indices->stop,
 					&indices->stride, &slicelen) < 0) {
 				PyErr_SetString(PyExc_TypeError, "error in subscript");
@@ -6372,7 +6391,11 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index) {
 					} else if (PySlice_Check(subscript)) {
 						Py_ssize_t slicelen;
 						PySliceObject *slice = (PySliceObject *) subscript;
+#if PY_MAJOR_VERSION < 3
 						if (PySlice_GetIndicesEx((PySliceObject *) subscript,
+#else
+						if (PySlice_GetIndicesEx(subscript,
+#endif
 								self->dimensions[d], &indices[d].start,
 								&indices[d].stop, &indices[d].stride, &slicelen)
 								< 0) {
@@ -6477,7 +6500,11 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 		if (PySlice_Check(index)) {
 			Py_ssize_t slicelen;
 			PySliceObject *slice = (PySliceObject *) index;
+#if PY_MAJOR_VERSION < 3
 			if (PySlice_GetIndicesEx((PySliceObject *) index,
+#else
+			if (PySlice_GetIndicesEx(index,
+#endif
 					self->dimensions[0], &indices->start, &indices->stop,
 					&indices->stride, &slicelen) < 0) {
 				PyErr_SetString(PyExc_TypeError, "error in subscript");
@@ -6519,7 +6546,11 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 					} else if (PySlice_Check(subscript)) {
 						Py_ssize_t slicelen;
 						PySliceObject *slice = (PySliceObject *) subscript;
+#if PY_MAJOR_VERSION < 3
 						if (PySlice_GetIndicesEx((PySliceObject *) subscript,
+#else
+						if (PySlice_GetIndicesEx(subscript,
+#endif
 								self->dimensions[d], &indices[d].start,
 								&indices[d].stop, &indices[d].stride, &slicelen)
 								< 0) {
@@ -6969,10 +7000,6 @@ static PyType_Slot niovar_slots[] = {
 		{ Py_sq_repeat, (ssizeargfunc)NioVariableObject_error2 },
 		{ Py_sq_item, (ssizeargfunc)NioVariableObject_item },
 		{ Py_sq_ass_item, (ssizeobjargproc)NioVariableObject_ass_item },
-		/*{ Py_sq_contains, },
-		{ Py_sq_inplace_concat, },
-		{ Py_sq_inplace_repeat, },*/
-
 		{ 0 },
 	};
 
@@ -7201,7 +7228,7 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 
 /* Creator for NioFile objects */
 
-static PyObject *
+static PyObject*
 NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 	char *filepath;
 	char *mode = "r";
@@ -7273,7 +7300,7 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 		}
 	}
 
-	return (PyObject *) file;
+	return (PyObject*) file;
 }
 
 static PyObject *
@@ -7385,9 +7412,10 @@ SetUpDefaultOptions(void) {
 
 /* Table of functions defined in the module */
 
-static PyMethodDef nio_methods[] = { { "open_file", (PyCFunctionWithKeywords) NioFile,
-		METH_KEYWORDS | METH_VARARGS, NULL }, { "options", (PyCFunction) NioFile_Options,
-		METH_NOARGS }, { NULL, NULL } /* sentinel */
+static PyMethodDef nio_methods[] = {
+		{ "open_file", (PyCFunction) NioFile, METH_KEYWORDS | METH_VARARGS, NULL },
+		{ "options", (PyCFunction) NioFile_Options, METH_NOARGS, NULL },
+		{ NULL, NULL } /* sentinel */
 };
 
 
@@ -7407,8 +7435,8 @@ struct nio_state {
 #define INITERROR return
 #endif
 
-/*
 #if PY_MAJOR_VERSION >= 3
+/*
 static int nio_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(GETSTATE(m)->NioError);
     Py_VISIT(GETSTATE(m)->NioFile_Type);
@@ -7447,7 +7475,7 @@ static struct PyModuleDef nio_def = {
 
 static PyObject* get_NioError(void) {
 #if PY_MAJOR_VERSION < 3
-	return &NIOError;
+	return (PyObject*) &NIOError;
 #else
 	PyObject *m = PyState_FindModule(&nio_def);
 	return GETSTATE(m)->NioError;
@@ -7456,7 +7484,7 @@ static PyObject* get_NioError(void) {
 
 static PyObject* get_NioFileType(void) {
 #if PY_MAJOR_VERSION < 3
-	return &NioFile_Type;
+	return (PyObject*) &NioFile_Type;
 #else
 	PyObject *m = PyState_FindModule(&nio_def);
 	return GETSTATE(m)->NioFile_Type;
@@ -7465,7 +7493,7 @@ static PyObject* get_NioFileType(void) {
 
 static PyObject* get_NioVariableType(void) {
 #if PY_MAJOR_VERSION < 3
-	return &NioVariable_Type;
+	return (PyObject*) &NioVariable_Type;
 #else
 	PyObject *m = PyState_FindModule(&nio_def);
 	return GETSTATE(m)->NioVariable_Type;
@@ -7483,7 +7511,7 @@ static char* get_errbuf(void) {
 
 static PyObject* get_Niomodule(void) {
 #if PY_MAJOR_VERSION < 3
-	return Niomodule;
+	return (PyObject*) Niomodule;
 #else
 	return PyState_FindModule(&nio_def);
 #endif
