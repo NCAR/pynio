@@ -516,7 +516,7 @@ static void _setpid(NclFileGrpNode *grpnode)
     }
 }
 
-static int _getH5grpID(NclFileGrpNode *grpnode)
+static hid_t  _getH5grpID(NclFileGrpNode *grpnode)
 {
     hid_t id = -1;
 
@@ -554,7 +554,7 @@ static int _getH5grpID(NclFileGrpNode *grpnode)
    *fprintf(stderr, "Leaving _getH5grpID, at file: %s, line: %d\n\n", __FILE__, __LINE__);
    */
 
-    return (int)id;
+    return id;
 }
 
 /*
@@ -5802,7 +5802,7 @@ static void *H5ReadVar(void *therec, NclQuark thevar,
     NclFileGrpNode *grpnode = (NclFileGrpNode *) therec;
     NclFileVarNode *varnode;
     ng_size_t n_elem = 1;
-    int fid = -1;
+    hid_t fid = -1;
     int i;
     ng_size_t count[MAX_NC_DIMS];
 

@@ -304,19 +304,31 @@ def _fill_value_to_masked(self, a):
         # MaskedIfFillAttAndValue -- return a masked array only if there are actual fill values
         if self.__dict__.has_key('_FillValue'):
             if a.__contains__(self.__dict__['_FillValue']):
-                a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
+                if np.isscalar(a):
+                    a = ma.masked_where(a == self.__dict__['_FillValue'][0],a,copy=0)
+                else:
+                    a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
                 a.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
             if a.__contains__(self.__dict__['missing_value']):
-                a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
+                if np.isscalar(a):
+                    a = ma.masked_where(a == self.__dict__['missing_value'][0],a,copy=0)
+                else:
+                    a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
                 a.set_fill_value(self.__dict__['missing_value'])
     else: 
         # Handles MaskedIfFillAtt and MaskedAlways
         if self.__dict__.has_key('_FillValue'):
-            a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
+            if np.isscalar(a):
+                a = ma.masked_where(a == self.__dict__['_FillValue'][0],a,copy=0)
+            else:
+                 a = ma.masked_where(a == self.__dict__['_FillValue'],a,copy=0)
             a.set_fill_value(self.__dict__['_FillValue'])
         elif self.__dict__.has_key('missing_value'):
-            a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
+            if np.isscalar(a):
+                a = ma.masked_where(a == self.__dict__['missing_value'][0],a,copy=0)
+            else:
+                a = ma.masked_where(a == self.__dict__['missing_value'],a,copy=0)
             a.set_fill_value(self.__dict__['missing_value'])
         elif self.file.ma_mode == 'maskedalways':
             # supply a mask of all False, but just allow the fill_value to default
