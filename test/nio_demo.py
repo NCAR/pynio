@@ -1,17 +1,17 @@
 from numpy import *
 import Nio
-import time, os
+import time
+import os
+import pwd
 
 
 def getUserName():
-    try:
-	import os, pwd, string
-    except ImportError:
-	return 'unknown user'
     pwd_entry = pwd.getpwuid(os.getuid())
-    name = string.strip(string.splitfields(pwd_entry[4], ',')[0])
+    raw_name = pwd_entry[4]
+    name = raw_name.split(",")[0].strip()
     if name == '':
-	name = pwd_entry[0]
+        name = pwd_entry[0]
+        
     return name
 
 #
@@ -19,14 +19,15 @@ def getUserName():
 #
 ncfile = 'test.nc'
 if (os.path.exists(ncfile)):
-  os.system("/bin/rm -f " + ncfile)
+    os.system("/bin/rm -f " + ncfile)
 file = Nio.open_file(ncfile, 'w', None, 'Created ' + time.ctime(time.time())
-		  + ' by ' + getUserName())
-
+          + ' by ' + getUserName())
 file.title = "Just some useless junk"
 #if "series" in file.__dict__:
-#	del file.__dict__['series']
+#    del file.__dict__['series']
+
 file.series = [ 1, 2, 3, 4, 5,6 ]
+
 file.version = 45
 #del file.version
 
@@ -39,22 +40,22 @@ foo[:,:] = 0.
 foo[0,:] = [42., 42.1, 42.2]
 foo[:,1] = 1.
 foo.units = "arbitrary"
-print foo[0]
-print foo.dimensions
+print((foo[0]))
+print(foo.dimensions)
 
 bar = file.create_variable('bar', "i", ('t', 'n'))
 for i in range(10):
     bar[i] = i
-print bar.shape
+print(bar.shape)
 
-print file
-print file.dimensions
-print file.variables.keys()
-print foo, bar
+print(file)
+print(file.dimensions)
+print(list(file.variables.keys()))
+print(foo, bar)
 
 # check unlimited status
-for dim in file.dimensions.keys():
-  print dim, " unlimited: ",file.unlimited(dim)
+for dim in list(file.dimensions.keys()):
+  print(dim, " unlimited: ",file.unlimited(dim))
 
 file.close()
 
@@ -63,17 +64,17 @@ file.close()
 #
 file = Nio.open_file(ncfile, 'r')
 
-print file.dimensions
-print file.variables.keys()
-print file
+print(file.dimensions)
+print(list(file.variables.keys()))
+print(file)
 
 foo = file.variables['foo']
-print foo
+print(foo)
 foo_array = foo[:]
 foo_units = foo.units
-print foo[0]
+print(foo[0])
 # check unlimited status
-for dim in file.dimensions.keys():
-  print dim, " unlimited: ",file.unlimited(dim)
+for dim in list(file.dimensions.keys()):
+  print(dim, " unlimited: ",file.unlimited(dim))
 
 file.close()
