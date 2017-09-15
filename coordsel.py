@@ -20,6 +20,7 @@ import datetime
 import time
 import numpy as N
 import Nio
+import collections
 from _xarray import _intp, _rindex, _xArray
 
 __version__ = '0.1.0'
@@ -44,7 +45,7 @@ def get_variable(file, varname, xsel):
             tdims = list(dims) 
             for name in xsel.names:
                 order.append(tdims.index(name))
-            for i in xrange(len(order)-1):
+            for i in range(len(order)-1):
                 if order[i] > order[i+1]:
                     do_transpose = True
             if not do_transpose:
@@ -190,7 +191,7 @@ class idxSelect(dict):
     def __init__(self, dimensions):
         """ idxSelect(dimensions) """
 
-        if not isinstance(dimensions, list):
+        if not isinstance(dimensions, collections.Iterable):
             raise TypeError("Invalid argument type")
         data = {}
         for key in dimensions:
@@ -477,18 +478,18 @@ def numpy2xsel(isel):
     # convert selection objects to compatible _intp arrays if necessary
     if isarray and not multidim:
         # convert slices to 1d-arrays
-        for i in xrange(len(xsel)):
+        for i in range(len(xsel)):
             if isinstance(xsel[i], slice):
                 xsel[i] = N.arange(xsel[i].start, xsel[i].stop, xsel[i].step)
                 xsel_size[i] = len(xsel[i])
         dim_ret = []
-        for i in xrange(len(xsel)):
+        for i in range(len(xsel)):
             if not N.isscalar(xsel[i]):
                 if xsel[i].ndim > 0:
                     dim_ret.append(len(xsel[i]))
         ndim_ret = len(dim_ret)
         j = 0
-        for i in xrange(len(xsel)):
+        for i in range(len(xsel)):
             if not N.isscalar(xsel[i]):
                 idx_shape = N.ones(ndim_ret)
                 idx_shape[j] = dim_ret[i]
@@ -776,7 +777,7 @@ class axisSelect(object):
 
         # convert datetime to seconds since a reference date
         if cidx.fmt == 'datetime':
-            for i in xrange(len(data)):
+            for i in range(len(data)):
                 if data[i] is not None:
                     data[i] = data[i] - refdate
                     data[i] = data[i].days*86400. + data[i].seconds
@@ -837,7 +838,7 @@ class axisSelect(object):
                                 idx.step = -1 
                     else:
                         idx.step = None
-                for i in xrange(len(data)):
+                for i in range(len(data)):
                     if data[i] is not None: 
                         data[i] = _rindex(crd, data[i], axis=axis_no, round=False, clip=clip, ep=ep)
                         if dir == 1:
@@ -886,7 +887,7 @@ class axisSelect(object):
                                 data[1] += dimsize
                 else: 
                 # not a slice
-                    for i in xrange(len(data)):
+                    for i in range(len(data)):
                         data[i] = N.round(data[i]).astype(N.int)
                         if data[i] < 0: data[i] += dimsize
 

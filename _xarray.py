@@ -16,6 +16,7 @@ in addition to numpy's basic slicing and advanced selection mechanisms.
 #@nl
 #@<< xarray declarations >>
 #@+node:schmidli.20080321230001.2:<< xarray declarations >>
+from __future__ import division
 import numpy as N
 from numpy import asarray
 
@@ -225,7 +226,7 @@ print _rindex(N.arange(10), [2,4.5])
     # ar[nj,ni] and val[nv]
     ar_shape = list(ar.shape)
     nj = ar_shape[0]
-    ni = ar.size/nj
+    ni = ar.size//nj
     ar.shape = (nj,ni)
     is_scalar = N.isscalar(val)
     val_ndim = N.array(val).ndim

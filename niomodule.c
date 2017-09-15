@@ -75,9 +75,9 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 		bytes = ob;
 		del_bytes = 0;
 	} else {
-		bytes = NULL;
 		del_bytes = 0;
 		PyErr_SetString(PyExc_ValueError, "argument is not a string type");
+		return NULL;
 	}
 
 	if (bytes) {
@@ -86,8 +86,8 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 
 		result = PyUnicode_DecodeUTF8(bytedata, bytelen, "strict");
 	} else {
-		result = NULL;
-		PyErr_SetString(PyExc_ValueError, "creation of bytes failed");
+		PyErr_SetString(PyExc_MemoryError, "creation of bytes failed");
+		return NULL;
 	}
 #else
 	del_bytes = 0;
@@ -107,8 +107,8 @@ static PyObject* pystr_to_utf8(PyObject *ob) {
 	if (bytes) {
 		result = bytes;
 	} else {
-		result = NULL;
-		PyErr_SetString(PyExc_ValueError, "creation of bytes failed");
+		PyErr_SetString(PyExc_MemoryError, "creation of bytes failed");
+		return NULL;
 	}
 #endif
 
@@ -136,19 +136,19 @@ static py3_char* as_utf8_char_and_size(PyObject *ob, Py_ssize_t *size) {
 	if (PyUnicode_Check(ob) || PyString_Check(ob)) {
 		pystr = pystr_to_utf8(ob);
 	} else {
-		pystr = NULL;
+		PyErr_SetString(PyExc_ValueError, "argument is not a string type");
+		return NULL;
 	}
 
 	if (pystr) {
 		tempstr = PyString_AsString(pystr);
 		local_size = strlen(tempstr);
 	} else {
-		result = NULL;
 		if (size) {
 			*size = 0;
 		}
-
-		return result;
+		PyErr_SetString(PyExc_ValueError, "creation of string failed");
+		return NULL;
 	}
 #endif
 
@@ -161,7 +161,7 @@ static py3_char* as_utf8_char_and_size(PyObject *ob, Py_ssize_t *size) {
 	}
 
 	if (size) {
-		*size = 0;
+		*size = local_size;
 	}
 
 	if (pystr) {
@@ -175,7 +175,10 @@ static py3_char* as_utf8_char(PyObject *ob) {
 	return as_utf8_char_and_size(ob, NULL);
 }
 
-static PyObject* pystr_from_format(const char *format, ...);
+/* Converts a char* to a python string
+ *
+ * A new reference is always returned.
+ */
 static PyObject* char_to_pystr(const char *s, Py_ssize_t len) {
 	PyObject *result = NULL;
 
@@ -184,6 +187,7 @@ static PyObject* char_to_pystr(const char *s, Py_ssize_t len) {
 #else
 	result = PyString_FromStringAndSize(s, len);
 #endif
+
 	return result;
 }
 
@@ -1133,6 +1137,7 @@ static void NioFileObject_dealloc(NioFileObject *self) {
 
 	/* The name and mode components are kept around for the benefit of the repr method */
 	self->being_destroyed = 1; /* indicates file is closed and data structures have been mostly torn down */
+
 	return;
 }
 
@@ -1233,6 +1238,7 @@ NioFile_Open(py3_char *filename, py3_char *mode) {
 	crw = GetNioMode(filename, mode);
 	file = _NclOpenFile(NULL, NULL, Ncl_File, 0, TEMPORARY,
 			NrmStringToQuark(filename), crw);
+
 	if (file) {
 		self->id = (void *) file;
 		self->define = 1;
@@ -4699,6 +4705,7 @@ static NioFileObject* nio_read_group(NioFileObject* niofileobj,
 	while (--len >= 0 && buf[len] == '/') {
 		buf[len] = '\0';
 	}
+
 	if (!strcmp(name, "/") || strlen(buf) == 0) {
 		self->full_path = pystr_from_format("%s", name);
 	} else {
