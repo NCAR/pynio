@@ -5,9 +5,9 @@ import sys, Nio
 # PyNIO has OPenDAP capabilities built in.
 
 if not Nio.__formats__['opendap']:
-    print '==========================='
-    print 'Optional format OPeNDAP is not enabled in this version of PyNIO'
-    print '==========================='
+    print('===========================')
+    print('Optional format OPeNDAP is not enabled in this version of PyNIO')
+    print('===========================')
     sys.exit()
 
 #
@@ -20,8 +20,7 @@ url      = "http://apdrc.soest.hawaii.edu:80/dods/public_data/ERA-40/"
 filename = "daily-surface"
  
 f = Nio.open_file(url + filename)
-variables = f.variables.keys()
+variables = list(f.variables.keys())
 variables.sort()
-print "variables",variables
-
+print("variables",variables)
 
