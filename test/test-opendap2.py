@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 # 
 # This is a test for OPeNDAP. It will only work on systems in which NCL
 # has OPenDAP capabilities built in.

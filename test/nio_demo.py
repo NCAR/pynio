@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 from numpy import *
 import Nio
 import time

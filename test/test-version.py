@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import Nio, os, sys
 from distutils.sysconfig import get_python_lib
 

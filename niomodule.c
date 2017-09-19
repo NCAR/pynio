@@ -632,8 +632,9 @@ static void nio_seterror(int nio_ncerr) {
 	if (nio_ncerr != 0) {
 		char *error = "Unknown error";
 
-		if (nio_ncerr > 0 && nio_ncerr <= 32)
+		if (nio_ncerr > 0 && nio_ncerr <= 32) {
 			error = nio_errors[nio_ncerr];
+		}
 
 		PyErr_SetString(get_NioError(), error);
 	}
@@ -7351,7 +7352,7 @@ NioFile(PyObject *self, PyObject *args, PyObject *kwds) {
 
 	file = NioFile_Open(filepath, mode);
 	if (file == NULL) {
-		nio_seterror(33); /* setting unknown error here */
+		nio_seterror(0); /* setting unknown error here */
 		return NULL;
 	}
 	if (strlen(history) > 0) {

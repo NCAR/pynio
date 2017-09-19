@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import numpy 
 import Nio 
 import time, os
@@ -5,7 +6,7 @@ import time, os
 opt = Nio.options()
 opt.Format = 'NetCDF4'
 
-print opt.Format
+print(opt.Format)
 
 #create a file
 hatt = "Created at " + time.ctime(time.time())
@@ -34,8 +35,8 @@ nlevels = 10
 nlats = 73
 nlons = 144
 
-print "fmdl1:\n"
-print fmdl1
+print("fmdl1:\n")
+print(fmdl1)
 
 #Create some dimensions.
 fmdl1.create_dimension("time", None)
@@ -43,15 +44,15 @@ fmdl1.create_dimension("level", None)
 fmdl1.create_dimension("lat", nlats)
 fmdl1.create_dimension("lon", nlons)
 
-print "fmdl1:\n"
-print fmdl1
+print("fmdl1:\n")
+print(fmdl1)
 
 mtimes = 1
-mlevels = (nlevels+1)/2
-mlats = (nlats+1)/2
-mlons = (nlons+1)/2
+mlevels = (nlevels+1)//2
+mlats = (nlats+1)//2
+mlons = (nlons+1)//2
 
-print "mtimes: %d, mlevels: %d, mlats: %d, mlons: %d" %(mtimes, mlevels, mlats, mlons)
+print("mtimes: %d, mlevels: %d, mlats: %d, mlons: %d" %(mtimes, mlevels, mlats, mlons))
 
 #Create chunk dimensions.
 fmdl1.create_chunk_dimension("time", mtimes)
@@ -81,15 +82,15 @@ time[:] = [0.0, 12.0, 24.0, 36.0, 48.0]
 level[:] =  [1000, 850, 700, 500, 300, 250, 200, 150, 100, 50]
 latvalues = numpy.arange(-90, 91, 2.5, 'float32')
 lonvalues = numpy.arange(-180, 180, 2.5, 'float32')
-print('lat =\n',latvalues[:])
+print(('lat =\n',latvalues[:]))
 #print('lon =\n',lonvalues[:])
 
 #print('time shape = ', time.shape)
 #print('level shape = ', level.shape)
 tshape = time.shape
 lshape = level.shape
-print('time shape = ', tshape[0])
-print('level shape = ', lshape[0])
+print(('time shape = ', tshape[0]))
+print(('level shape = ', lshape[0]))
 
 #fmdl1.set_dimension("time", tshape[0])
 #fmdl1.set_dimension("level", lshape[0])
@@ -104,21 +105,21 @@ ftempvalues = numpy.ndarray(shape=(ntimes, nlevels, nlats, nlons), dtype=numpy.f
 #ftempvalues = tempvalues.view('float32')
 #ftempvalues = tempvalues
 
-print('ftemp dtype = ', ftempvalues.dtype)
+print(('ftemp dtype = ', ftempvalues.dtype))
 
 ftempvalues[:,:,:,:] = tempvalues[:,:,:,:]
 
-print('ftemp shape = ', ftempvalues.shape)
-print('ftemp dtype = ', ftempvalues.dtype)
-print "max: %f, min: %f" %(numpy.amax(tempvalues), numpy.amin(tempvalues))
-print "max: %f, min: %f" %(numpy.amax(ftempvalues), numpy.amin(ftempvalues))
+print(('ftemp shape = ', ftempvalues.shape))
+print(('ftemp dtype = ', ftempvalues.dtype))
+print("max: %f, min: %f" %(numpy.amax(tempvalues), numpy.amin(tempvalues)))
+print("max: %f, min: %f" %(numpy.amax(ftempvalues), numpy.amin(ftempvalues)))
 
-print file.variables
-print file.groups
-print fmdl1.variables
+print(file.variables)
+print(file.groups)
+print(fmdl1.variables)
 #import pdb; pdb.set_trace()
-print fmdl1.variables['time'][:]
-print "writing lat"
+print(fmdl1.variables['time'][:])
+print("writing lat")
 lat[:] = latvalues
 lon[:] = lonvalues
 temp[:] = ftempvalues

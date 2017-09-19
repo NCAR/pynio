@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import unittest as ut
 from numpy.testing import assert_equal
 

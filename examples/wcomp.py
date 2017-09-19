@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import numpy
 import Nio
 import time, os
@@ -5,7 +6,7 @@ import time, os
 opt = Nio.options()
 opt.Format = 'NetCDF4'
 
-print opt.Format
+print(opt.Format)
 
 #create a file
 hatt = "Created at " + time.ctime(time.time())
@@ -19,18 +20,18 @@ file.source   = "Nio created NetCDF4 compound variable"
 #setattr(file, 'source', "Nio test file")
 file.history = "Created " + time.ctime(time.time())
 
-print "file after add attributes:"
-print file
+print("file after add attributes:")
+print(file)
 
 #create an unlimited  dimension call 'station'
 station = file.create_dimension('station', None)
 nstations = 10
 
-print "station:"
-print  station
+print("station:")
+print(station)
 
-print "nstations:"
-print  nstations
+print("nstations:")
+print(nstations)
 
 #define a compound data type (can contain arrays, or nested compound types).
 NUMCHARS = 80 # number of characters to use in fixed-length strings.
@@ -42,9 +43,9 @@ station_datatype = numpy.array([['latitude', 'f'],
                                 ['temp_sounding', 'f', 10],
                                 ['press_sounding', 'i', 10]])
 
-print "len(station_datatype) = ", len(station_datatype)
-print "station_datatype:"
-print  station_datatype
+print("len(station_datatype) = ", len(station_datatype))
+print("station_datatype:")
+print(station_datatype)
 
 #now that station_datatype is defined, create the station data type.
 station_data = file.create_compound('station_data', station_datatype, ('station',))
@@ -71,7 +72,7 @@ data['location_name'] = "Boulder, Colorado, USA'"
 data['speed'] = 12.5
 data['direction'] = 270
 data['temp_sounding'] = [280.3,272.,270.,269.,266.,258.,254.1,250.,245.5,240.]
-data['press_sounding'] = range(800,300,-50)
+data['press_sounding'] = list(range(800,300,-50))
 
 station = numpy.empty(2, object)
 
@@ -84,12 +85,12 @@ station[0] = [[40.],[-105.],
               ["Boulder, Colorado, USA"],
               [12.5],[270],
               [280.3,272.,270.,269.,266.,258.,254.1,250.,245.5,240.],
-              range(800,300,-50)]
+              list(range(800,300,-50))]
 station[1] = [[40.78],[-73.99],
               ["New York, New York, USA"],
               [-12.5],[90],
               [290.2,282.5,279.,277.9,276.,266.,264.1,260.,255.5,243.],
-              range(900,400,-50)]
+              list(range(900,400,-50))]
 #print(f.cmptypes)
 #windunits = numpy.empty(1,winddtype_units)
 #stationobs_units = numpy.empty(1,statdtype_units)
@@ -105,11 +106,11 @@ station[1] = [[40.78],[-73.99],
 
 station_data[:] = station
 
-print "file after add compounden:"
-print file
+print("file after add compounden:")
+print(file)
 
-print "station_data:"
-print  station
+print("station_data:")
+print(station)
 
 file.close()
 
