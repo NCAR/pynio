@@ -14,7 +14,7 @@
         index space selection object (correct dimensionality; xsel)
         a basic numpy slice object
 """
-
+from __future__ import print_function
 import copy
 import datetime
 import time

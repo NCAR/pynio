@@ -37,7 +37,8 @@ print(nstations)
 NUMCHARS = 80 # number of characters to use in fixed-length strings.
 station_datatype = numpy.array([['latitude', 'f'],
                                 ['longitude', 'f'],
-                                ['location_name', 'S1', NUMCHARS],
+                                #['location_name', 'S1', NUMCHARS],
+                                ['location_name', 'c', NUMCHARS],
                                 ['speed', 'f'],
                                 ['direction', 'i'],
                                 ['temp_sounding', 'f', 10],
@@ -46,6 +47,7 @@ station_datatype = numpy.array([['latitude', 'f'],
 print("len(station_datatype) = ", len(station_datatype))
 print("station_datatype:")
 print(station_datatype)
+
 
 #now that station_datatype is defined, create the station data type.
 station_data = file.create_compound('station_data', station_datatype, ('station',))
@@ -74,7 +76,7 @@ data['direction'] = 270
 data['temp_sounding'] = [280.3,272.,270.,269.,266.,258.,254.1,250.,245.5,240.]
 data['press_sounding'] = list(range(800,300,-50))
 
-station = numpy.empty(2, object)
+station = numpy.empty(2, "object")
 
 #assign structured array to variable slice.
 #station[0] = data
@@ -103,7 +105,7 @@ station[1] = [[40.78],[-73.99],
 #stationobs_units['temp_sounding'] = stringtoarr('Kelvin',NUMCHARS)
 #stationobs_units['press_sounding'] = stringtoarr('hPa',NUMCHARS)
 #statdat.units = stationobs_units
-
+print (station)
 station_data[:] = station
 
 print("file after add compounden:")

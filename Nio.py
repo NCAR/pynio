@@ -79,7 +79,7 @@ For complete documentation see:
 
         http://www.pyngl.ucar.edu/Nio.html
 '''
-
+from __future__ import print_function
 from _nio import *
 
 #

@@ -16,7 +16,7 @@ in addition to numpy's basic slicing and advanced selection mechanisms.
 #@nl
 #@<< xarray declarations >>
 #@+node:schmidli.20080321230001.2:<< xarray declarations >>
-from __future__ import division
+from __future__ import division, print_function
 import numpy as N
 from numpy import asarray
 

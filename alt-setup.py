@@ -3,11 +3,13 @@
 # may be required. See the following comments.
 #
 
+from __future__ import print_function
+
 # Test to make sure we actually have NumPy.
 try:
   import numpy
 except ImportError:
-  print "Error: Cannot import NumPy. Can't continue."
+  print ("Error: Cannot import NumPy. Can't continue.")
   sys.exit()
 
 #
@@ -74,14 +76,14 @@ except ImportError:
 #  F2CLIBS_PREFIX /sw/lib
 #
 
-import os, sys, commands
+import os, sys, subprocess
 
 #
 # This proceure tries to figure out which extra libraries are
 # needed with curl.
 #
 def set_curl_libs():
-  curl_libs = commands.getstatusoutput('curl-config --libs')
+  curl_libs = subprocess.getstatusoutput('curl-config --libs')
   if curl_libs[0] == 0:
 #
 # Split into individual lines so we can loop through each one.
@@ -113,7 +115,7 @@ try:
   #INC_DIRS   = ['libsrc']
 
 except:
-  print "NCARG_ROOT is not set; can't continue!"
+  print("NCARG_ROOT is not set; can't continue!")
   sys.exit()
 
 # These are the required NCL, HDF4, and NetCDF libraries.
@@ -342,7 +344,7 @@ vfile.close()
 # Here are the instructions for compiling the "nio.so" file.
 #
 #----------------------------------------------------------------------
-print '====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.'
+print('====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.')
 
 module1 = [Extension('nio',
                     define_macros = DMACROS,

@@ -1,3 +1,4 @@
+from __future__ import print_function
 class nioDict (dict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
