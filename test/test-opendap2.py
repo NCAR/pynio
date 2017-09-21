@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 # 
 # This is a test for OPeNDAP. It will only work on systems in which NCL
 # has OPenDAP capabilities built in.
@@ -9,20 +10,20 @@
 import sys, Nio
 
 if not Nio.__formats__['opendap']:
-    print '==========================='
-    print 'Optional format OPeNDAP is not enabled in this version of PyNIO'
-    print '==========================='
+    print('===========================')
+    print('Optional format OPeNDAP is not enabled in this version of PyNIO')
+    print('===========================')
     sys.exit()
 
 url      = "http://test.opendap.org/opendap/data/nc/"
 filename = "bears.nc"
  
 f = Nio.open_file(url + filename)
-variables = f.variables.keys()
+variables = list(f.variables.keys())
 
-print f
+print(f)
 variables.sort()
-print "variables",variables
+print("variables",variables)
 #
 # Note: the variables on the file used to include a coordinate arrays
 # "i" and a "j".
@@ -34,5 +35,4 @@ print "variables",variables
 # not the NetCDF software.
 #
 #vars_out = (/"l","cross","aloan","shot","order","bears"/)
-
 

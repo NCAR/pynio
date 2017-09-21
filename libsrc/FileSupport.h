@@ -419,7 +419,11 @@ extern ng_size_t *_NclFileReadChunkSizes(NclFile thefile, int *nchunks);
 extern int _NclFileReadCompressionLevel(NclFile thefile);
 extern NclQuark _NclFileReadVersion(NclFile thefile);
 
-extern void _NclInitFileClasses();
+extern void _NclInitFileClasses(
+#if	NhlNeedProto
+void
+#endif
+);
 
 #endif /*_FileSupport_h */
 

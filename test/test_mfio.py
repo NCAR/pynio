@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import unittest as ut
 from numpy.testing import assert_equal
 
@@ -5,10 +6,13 @@ import Nio
 import numpy as N
 from numpy import ma
 import os
+import tempfile
 N.set_printoptions(precision=4)
 verbose = True
-filename = os.tempnam(None, 'test_')
+
+f, filename = tempfile.mkstemp(prefix="test_")
 filename += '.nc'
+os.close(f)
 #print 'Creating temporary file: ', filename
 
 def do_setup(filename):
@@ -111,24 +115,24 @@ class test_basic(ut.TestCase):
 
         xc_orig = file.variables['xc'][:]
         pt_orig = file.variables['PT'][:]
-        if verbose: print 'xc: ', xc_orig
-        if verbose: print 'pt.shape: ', pt_orig.shape
-        if verbose: print
+        if verbose: print('xc: ', xc_orig)
+        if verbose: print('pt.shape: ', pt_orig.shape)
+        if verbose: print()
 
         xsel_list = (5, slice(5,8), slice(None), slice(None,None,4))
         for xsel in xsel_list:
-            if verbose: print 'xsel: ', xsel
+            if verbose: print('xsel: ', xsel)
             xc = file.variables['xc'][xsel]
-            if verbose: print 'xc[xsel]: ', xc
-            if verbose: print
+            if verbose: print('xc[xsel]: ', xc)
+            if verbose: print()
             assert_equal(xc, xc_orig[xsel])
 
         ptsel_list = ((1,1,1,1), (1,slice(None),0,0), (1,3,slice(5,8)), (slice(None),3,slice(None),1))
         for ptsel in ptsel_list:
-            if verbose: print 'ptsel: ', ptsel
+            if verbose: print('ptsel: ', ptsel)
             pt = file.variables['PT'][ptsel]
-            if verbose: print 'pt[ptsel].shape: ', pt.shape
-            if verbose: print
+            if verbose: print('pt[ptsel].shape: ', pt.shape)
+            if verbose: print()
             assert_equal(pt.shape, pt_orig[ptsel].shape)
 
         file.close()
@@ -144,17 +148,17 @@ class test_scalar(ut.TestCase):
 
         xc_orig = file.variables['xc'][:]
         pt_orig = file.variables['PT'][:]
-        if verbose: print 'xc: ', xc_orig
-        if verbose: print 'pt.shape: ', pt_orig.shape
-        if verbose: print
+        if verbose: print('xc: ', xc_orig)
+        if verbose: print('pt.shape: ', pt_orig.shape)
+        if verbose: print()
 
         xsel_list = ('1500', '1500i', 'xc|i5', 'xc|i5.5', 'xc|i5.5i', 'xc|1500' , 'xc|1500i')
         results = (2000, 1500, 5000, 6000, 5500, 2000, 1500)
         for (xsel, res) in zip(xsel_list, results):
-            if verbose: print 'xsel: ', xsel
+            if verbose: print('xsel: ', xsel)
             xc = file.variables['xc'][xsel]
-            if verbose: print 'xc[xsel]: ', xc
-            if verbose: print
+            if verbose: print('xc[xsel]: ', xc)
+            if verbose: print()
             assert_equal(xc, res)
   
         file.close()
@@ -170,9 +174,9 @@ class test_slice(ut.TestCase):
 
         xc_orig = file.variables['xc'][:]
         pt_orig = file.variables['PT'][:]
-        if verbose: print 'xc: ', xc_orig
-        if verbose: print 'pt.shape: ', pt_orig.shape
-        if verbose: print
+        if verbose: print('xc: ', xc_orig)
+        if verbose: print('pt.shape: ', pt_orig.shape)
+        if verbose: print()
 
         xsel_list = ('2000:4000', '1410:3900', '1500:3500:1000i', 'xc|1500:3500:1000', 'xc|i5:9', \
             'xc|i5.2:7.9', 'xc|i3:9:1.5i', 'xc|i3:9:1.5', '9k::4k', ':6k:3k', '::10k')
@@ -181,10 +185,10 @@ class test_slice(ut.TestCase):
                 (3000, 4500, 6000, 7500, 9000), (3000,5000,7000,9000), (9000,13000,17000), \
                 (0,3000,6000), (0,10000,20000))
         for (xsel, res) in zip(xsel_list, results):
-            if verbose: print 'xsel: ', xsel
+            if verbose: print('xsel: ', xsel)
             xc = file.variables['xc'][xsel]
-            if verbose: print 'xc[xsel]: ', xc
-            if verbose: print
+            if verbose: print('xc[xsel]: ', xc)
+            if verbose: print()
             assert_equal(xc, res)
 
         # Errors
@@ -202,19 +206,19 @@ class test_vector(ut.TestCase):
 
         xc_orig = file.variables['xc'][:]
         pt_orig = file.variables['PT'][:]
-        if verbose: print 'xc: ', xc_orig
-        if verbose: print 'pt.shape: ', pt_orig.shape
-        if verbose: print
+        if verbose: print('xc: ', xc_orig)
+        if verbose: print('pt.shape: ', pt_orig.shape)
+        if verbose: print()
 
         xsel_list = ('2000,4000', '1410,3900', '1500,3500i', 'xc|1500,i', 'xc|i5,9', \
             'xc|i5.2,7.9', 'xc|i3,9.2i')
         results = ((2000,4000), (1000, 4000), (1500,3500), (1500,), \
                 (5000,9000), (5000, 8000), (3000, 9200))
         for (xsel, res) in zip(xsel_list, results):
-            if verbose: print 'xsel: ', xsel
+            if verbose: print('xsel: ', xsel)
             xc = file.variables['xc'][xsel]
-            if verbose: print 'xc[xsel]: ', xc
-            if verbose: print
+            if verbose: print('xc[xsel]: ', xc)
+            if verbose: print()
             assert_equal(xc, res)
 
         # Errors
@@ -238,9 +242,9 @@ class test_extended(ut.TestCase):
         results = ((3,4,4,6), (3,7,6,6), (3,6,6), (3,2,6,6))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
+            if verbose: print(cstr)
             pt = file.variables['PT'][cstr]
-            if verbose: print pt.shape
+            if verbose: print(pt.shape)
             assert_equal(pt.shape, res)
  
         # ERROR:
@@ -256,7 +260,7 @@ class test_cf_extended(ut.TestCase):
     def setUp(self):
         do_setup(filename)
         opt = Nio.options()
-	opt.UseAxisAttribute = True
+        opt.UseAxisAttribute = True
         self.f = Nio.open_file(filename, options = opt)
 
     def test_cf_extended(self):
@@ -270,9 +274,9 @@ class test_cf_extended(ut.TestCase):
         results = ((3,4,4,6), (3,7,6,6), (3,6,6), (3,2,6,6))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
+            if verbose: print(cstr)
             pt = file.variables['PT'][cstr]
-            if verbose: print pt.shape
+            if verbose: print(pt.shape)
             assert_equal(pt.shape, res)
 
         # ERROR:
@@ -293,9 +297,9 @@ class test_old(ut.TestCase):
         file = self.f
         var = file.variables['PT']
 
-        if verbose: print "var[2,3,0,5:10]      # Nio selection works as usual"
+        if verbose: print("var[2,3,0,5:10]      # Nio selection works as usual")
         pt = var[2,3,0,5:10]
-        if verbose: print pt
+        if verbose: print(pt)
         assert_equal(pt.shape, (5,))
 
         cstr_list = ('time|i3 zc|i0 yc|i0 xc|0k:10k:2k', \
@@ -325,9 +329,9 @@ class test_old(ut.TestCase):
                 (2,4), (2,), (3,), (3,21,21), (3,4,21,21))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
+            if verbose: print(cstr)
             fld = var[cstr]
-            if verbose: print fld.shape
+            if verbose: print(fld.shape)
             assert_equal(fld.shape, res)
 
         file.close()
@@ -351,9 +355,9 @@ class test_lonlat(ut.TestCase):
         results = ((), (), (), (3,), (3,4))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
+            if verbose: print(cstr)
             fld = var[cstr]
-            if verbose: print fld.shape
+            if verbose: print(fld.shape)
             assert_equal(fld.shape, res)
 
         file.close()
@@ -369,9 +373,9 @@ class test_nocrd(ut.TestCase):
         file = self.f
         var = file.variables['PT']
 
-        if verbose: print "var[2,3,0,5:10]      # Nio selection works as usual"
+        if verbose: print("var[2,3,0,5:10]      # Nio selection works as usual")
         pt = var[2,3,0,5:10]
-        if verbose: print pt
+        if verbose: print(pt)
         assert_equal(pt.shape, (5,))
 
         cstr_list = ('time|i9 zc|i0 yc|i0 xc|i10:18:2', \
@@ -381,9 +385,9 @@ class test_nocrd(ut.TestCase):
         results = ((5,), (5,), (4,))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
+            if verbose: print(cstr)
             fld = var[cstr]
-            if verbose: print fld.shape
+            if verbose: print(fld.shape)
             assert_equal(fld.shape, res)
 
         file.close()
@@ -405,17 +409,17 @@ class test_topo(ut.TestCase):
         results = ((21,), (21,), (21,), (2,21))
 
         for (cstr, res) in zip(cstr_list, results):
-            if verbose: print cstr
-            print "in test_topo"
+            if verbose: print(cstr)
+            print("in test_topo")
             xsel = Nio.inp2xsel(file, 'PT', cstr)
             pt = file.variables['PT'][cstr]
             #pt = file.variables['ZP'][:]
-            if verbose: print pt.shape
+            if verbose: print(pt.shape)
             if verbose: 
                 if ma.isMA(pt):
-                    print N.asarray(pt.filled())
+                    print(N.asarray(pt.filled()))
                 else:
-                    print pt
+                    print(pt)
             assert_equal(pt.shape, res)
 
         # ERROR:
@@ -430,4 +434,3 @@ class test_topo(ut.TestCase):
 if __name__ == "__main__":
      ut.main()
      if os.path.exists(filename): os.remove(filename)
-

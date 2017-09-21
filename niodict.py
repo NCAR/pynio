@@ -1,3 +1,4 @@
+from __future__ import print_function
 class nioDict (dict):
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -25,7 +26,7 @@ class nioDict (dict):
 
     def update(self, *args, **kwargs):
         #print 'update', args, kwargs
-        for k, v in dict(*args, **kwargs).iteritems():
+        for k, v in dict(*args, **kwargs).items():
             self[k] = v
    
 

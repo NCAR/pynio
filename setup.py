@@ -2,14 +2,16 @@
 # This script builds PyNIO from source. Some environment variables
 # may be required. See the following comments.
 #
-
-import os, sys, commands
+from __future__ import print_function
+import os
+import sys
+import subprocess
 
 # Test to make sure we actually have NumPy.
 try:
   import numpy
 except ImportError:
-  print "Error: Cannot import NumPy. Can't continue."
+  print ("Error: Cannot import NumPy. Can't continue.")
   sys.exit()
 
 #
@@ -84,19 +86,25 @@ from os.path import join
 # needed with curl.
 #
 def set_curl_libs():
-  curl_libs = commands.getstatusoutput('curl-config --libs')
-  if curl_libs[0] == 0:
+  #curl_libs = commands.getstatusoutput('curl-config --libs')
+  
+  p = subprocess.Popen(["curl-config ", "--libs"], stdout=PIPE, stderr=STDOUT)
+  output, _ = p.communicate()
+  
+  if p.returncode == 0:
+      
+    output = output.decode("utf-8")
 #
 # Split into individual lines so we can loop through each one.
 #
-    clibs = curl_libs[1].split()
+    clibs = output.split()
 #
 # Check if this is a -L or -l string and do the appropriate thing.
 #
     for clibstr in clibs:
-      if clibstr[0:2] == "-L":
+      if bytes(clibstr[0:2]) == "-L":
         LIB_DIRS.append(clibstr.split("-L")[1])
-      elif clibstr[0:2] == "-l":
+      elif bytes(clibstr[0:2]) == "-l":
         LIBRARIES.append(clibstr.split("-l")[1])
   else:
 #
@@ -206,8 +214,8 @@ try:
     LIBRARIES.append('png')    # must come after jasper
     LIB_MACROS.append(('BuildGRIB2', None))
     # This should test whether the system is 64 bits or not
-    if sys.maxint > 2**32:
-      LIB_MACROS.append(('__64BIT__',None))
+    if sys.maxsize > 2**32:
+        LIB_MACROS.append(('__64BIT__',None))
     try:
       LIB_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"lib"))
       INC_DIRS.append(os.path.join(os.environ["GRIB2_PREFIX"],"include"))
@@ -216,6 +224,7 @@ try:
   else:
       LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
 except:
+  #raise
   HAS_GRIB2 = 0
   LIB_EXCLUDE_SOURCES.append('NclGRIB2.c')
 
@@ -459,7 +468,7 @@ vfile.close()
 # Here are the instructions for compiling the "nio.so" file.
 #
 #----------------------------------------------------------------------
-print '====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.'
+print ('====> Installing Nio to the "'+pynio_pkg_name+'" site packages directory.')
 
 
 def configuration(parent_package='',top_path=None):
@@ -473,7 +482,9 @@ def configuration(parent_package='',top_path=None):
     for file in LIB_EXCLUDE_SOURCES: 
       sources.remove(file)
     sources = [ join('libsrc', file) for file in sources ]
-
+    #print (len(sources))
+    #print (sources)
+    #raise RuntimeError("out")
     config.add_library('nio',sources,
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,
@@ -483,7 +494,7 @@ def configuration(parent_package='',top_path=None):
     
     sources = ['niomodule.c']
 
-    config.add_extension('nio',
+    config.add_extension('_nio',
                          sources=sources,
                          libraries=LIBRARIES,
                          include_dirs=INC_DIRS,
@@ -502,15 +513,15 @@ else:
 
 data_files.append("ncarg/data/netcdf/pop.nc")
 
-if os.environ.has_key('PYTHONPATH'):
-  print "\n\n\nOld pkgs_pth = ", pkgs_pth
+if "PYTHONPATH" in os.environ:
+  print ("\n\n\nOld pkgs_pth = ", pkgs_pth)
 
-  print "FORCED pkgs_pth to the first of PYTHONPATH"
+  print ("FORCED pkgs_pth to the first of PYTHONPATH")
   pythonpaths = os.environ["PYTHONPATH"].split(':')
-  print "pythonpaths = ", pythonpaths
+  print ("pythonpaths = ", pythonpaths)
   pkgs_pth = pythonpaths[0]
-  print "\n\n\nNew pkgs_pth = ", pkgs_pth
-  print "\n\n\n"
+  print ("\n\n\nNew pkgs_pth = ", pkgs_pth)
+  print ("\n\n\n")
 #pkgs_pth = '/usr/local/lib/python2.7/site-packages/PyNIO'
  
 #print data_files
@@ -531,6 +542,6 @@ setup (version      = pynio_version,
 if os.path.exists(pynio_vfile):
   os.system("/bin/rm -rf " + pynio_vfile)
 
-print "\n\n\nNew pkgs_pth = ", pkgs_pth
-print "\n\n\n"
+print ("\n\n\nNew pkgs_pth = ", pkgs_pth)
+print ("\n\n\n")
  

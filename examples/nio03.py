@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 #
 #  File:
 #    nio03.py
@@ -31,7 +32,6 @@
 
 import numpy 
 import Nio
-import Ngl
 import time,os
 
 
@@ -84,7 +84,7 @@ fout = Nio.open_file(fname + ".nc","c",opt,hatt)
 
 # create dimensions
 
-dims = f.dimensions.keys()
+dims = list(f.dimensions.keys())
 dims.sort()
 for dim in dims:
     length = f.dimensions[dim]
@@ -92,7 +92,7 @@ for dim in dims:
 
 # create variables and attributes
 
-vars = f.variables.keys()
+vars = list(f.variables.keys())
 vars.sort()
 
 for var in vars:
@@ -100,7 +100,7 @@ for var in vars:
     type = v.typecode()
     vdims = v.dimensions
     fout.create_variable(var,type,vdims)
-    varAtts = v.__dict__.keys()
+    varAtts = list(v.__dict__.keys())
     varAtts.sort()
     for att in varAtts:
         value = getattr(v,att)
@@ -119,13 +119,13 @@ for var in vars:
     if dims.count(var) > 0:
         v = f.variables[var].get_value()
         fout.variables[var].assign_value(v)
-        print "finished writing " + var
+        print("finished writing " + var)
 
 for var in vars:
     if dims.count(var) == 0:
         v = f.variables[var].get_value()
         fout.variables[var].assign_value(v)
-        print "finished writing " + var
+        print("finished writing " + var)
             
 #
 # print the output file contents
@@ -135,5 +135,5 @@ for var in vars:
 f.close()
 
 # Print file size.
-print "File size of",fname+ ".nc:"
+print("File size of",fname+ ".nc:")
 os.system("wc -c " + fname + ".nc")

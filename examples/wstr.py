@@ -1,4 +1,4 @@
-
+from __future__ import print_function, division
 import numpy
 import Nio
 import time, os
@@ -7,8 +7,8 @@ import time, os
 fn = "strings.nc"
 file = Nio.open_file(fn, mode="r")
 
-print "file <%s>:" %(fn)
-print file
+print("file <%s>:" %(fn))
+print(file)
 
 varname = 'universal_declaration_of_human_rights'
 #strs = file.variables['universal_declaration_of_human_rights'][:]
@@ -38,7 +38,7 @@ strf.history = "Created " + time.ctime(time.time())
 #print "strf after add attributes:"
 #print strf
 
-print "len(strs) = ", len(strs)
+print("len(strs) = ", len(strs))
 
 nstrings = strf.create_dimension('nstrings', len(strs))
 

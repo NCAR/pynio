@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import unittest as ut
 from numpy.testing import assert_equal
 
@@ -5,11 +6,14 @@ import Nio
 import numpy as N
 from numpy import ma
 import os
+import tempfile
 
 verbose = True
-filename = os.tempnam(None, 'test_')
+f, filename = tempfile.mkstemp(prefix="test_")
 filename += '.nc'
-#print 'Creating temporary file: ', filename
+os.close(f)
+
+#print ('Creating temporary file: ', filename)
 
 def do_setup(filename):
     if os.path.exists(filename): os.remove(filename)
@@ -48,7 +52,7 @@ def do_setup(filename):
     a = N.arange(nt*nz*ny*nx,dtype = 'float32')
     #a = N.array(N.random.randn(nt,nz,ny,nx), dtype='float32')
     a = a.reshape(nt,nz,ny,nx)
-    print a.shape
+    print(a.shape)
     mask = N.zeros(a.shape,N.bool_)
     mask[:,3,:,:] = 1
     # tests adding a fill value
@@ -68,6 +72,7 @@ def do_setup(filename):
     f.variables['lon'][:] = N.cos(0.1)*xc[N.newaxis,:] - N.sin(0.1)*yc[:,N.newaxis]
     f.variables['lat'][:] = N.sin(0.1)*xc[N.newaxis,:] + N.cos(0.1)*yc[:,N.newaxis]
     f.close()
+    
 
 class test_masked_default(ut.TestCase):
     def setUp(self):
@@ -79,22 +84,22 @@ class test_masked_default(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode default'
-	v = file.variables['PT']
-	assert_equal(v._FillValue,1e20)
-	vm = v[0,0]
- 	try:
-	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        if verbose: print('testing MaskedArrayMode default')
+        v = file.variables['PT']
+        assert_equal(v._FillValue,1e20)
+        vm = v[0,0]
+        try:
+            assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
         except:
-	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
-	if verbose: print vm[0]
+            assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
+        if verbose: print(vm[0])
         file.close()
 
 class test_masked_if_fill_att(ut.TestCase):
     def setUp(self):
         #print 'Creating temporary file'
         do_setup(filename)
-	opt = Nio.options()
+        opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedIfFillAtt'
         self.f = Nio.open_file(filename,options=opt)
 
@@ -102,21 +107,21 @@ class test_masked_if_fill_att(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode MaskedIfFillAtt'
-	v = file.variables['lat']
-	assert_equal(hasattr(v,'_FillValue'),False)
-	vm = v[:]
-	assert_equal(ma.isMaskedArray(vm),False)
-	print type(vm),vm[0].__repr__()
-	v = file.variables['PT']
-	assert_equal(v._FillValue,1e20)
-	vm = v[0,0]
-	assert_equal(ma.isMaskedArray(vm),True)
- 	try:
-	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        if verbose: print('testing MaskedArrayMode MaskedIfFillAtt')
+        v = file.variables['lat']
+        assert_equal(hasattr(v,'_FillValue'),False)
+        vm = v[:]
+        assert_equal(ma.isMaskedArray(vm),False)
+        print(type(vm),vm[0].__repr__())
+        v = file.variables['PT']
+        assert_equal(v._FillValue,1e20)
+        vm = v[0,0]
+        assert_equal(ma.isMaskedArray(vm),True)
+        try:
+            assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
         except:
-	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
-	if verbose: print type(vm),vm[0].__repr__()
+            assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
+        if verbose: print(type(vm),vm[0].__repr__())
         file.close()
 
 
@@ -124,29 +129,28 @@ class test_masked_always(ut.TestCase):
     def setUp(self):
         #print 'Creating temporary file: ', filename
         do_setup(filename)
-	opt = Nio.options()
+        opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedAlways'
         self.f = Nio.open_file(filename,options=opt)
 
     def test_masked_always(self):
         file = self.f
-
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode MaskedAlways'
-	v = file.variables['lat']
-	assert_equal(hasattr(v,'_FillValue'),False)
-	vm = v[:]
- 	try:
-	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        if verbose: print('testing MaskedArrayMode MaskedAlways')
+        v = file.variables['lat']
+        assert_equal(hasattr(v,'_FillValue'),False)
+        vm = v[:]
+        try:
+            assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
         except:
-	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
-	if verbose: print vm[1].__repr__
+            assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
+        if verbose: print(vm[1].__repr__)
         file.close()
 
 class test_masked_never(ut.TestCase):
     def setUp(self):
         do_setup(filename)
-	opt = Nio.options()
+        opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedNever'
         self.f = Nio.open_file(filename,options=opt)
 
@@ -154,18 +158,18 @@ class test_masked_never(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode MaskedNever'
-	v = file.variables['PT']
-	assert_equal(v._FillValue,1e20)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),False)
+        if verbose: print('testing MaskedArrayMode MaskedNever')
+        v = file.variables['PT']
+        assert_equal(v._FillValue,1e20)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),False)
         file.close()
-	
+    
 class test_masked_if_att_and_val(ut.TestCase):
     def setUp(self):
         do_setup(filename)
-	opt = Nio.options()
+        opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedIfFillAttAndValue'
         self.f = Nio.open_file(filename,options=opt)
 
@@ -173,25 +177,25 @@ class test_masked_if_att_and_val(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode MaskedIfFillAttAndValue'
-	v = file.variables['PT']
-	assert_equal(v._FillValue,1e20)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),True)
- 	try:
-	    assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
+        if verbose: print('testing MaskedArrayMode MaskedIfFillAttAndValue')
+        v = file.variables['PT']
+        assert_equal(v._FillValue,1e20)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),True)
+        try:
+            assert_equal(vm.get_fill_value(),N.array([1e20],dtype='f')) # numpy 1.6.1rc1
         except:
-	    assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
-	vm = v[0,4:6,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),False)
+            assert_equal(N.array([vm._fill_value],dtype='f'),N.array([1e20],dtype='f')) # numpy 1.4.1
+        vm = v[0,4:6,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),False)
         file.close()
 
 class test_masked_explicit(ut.TestCase):
     def setUp(self):
         do_setup(filename)
-	opt = Nio.options()
+        opt = Nio.options()
         opt.MaskedArrayMode = 'MaskedExplicit'
         self.f = Nio.open_file(filename,options = opt)
 
@@ -199,33 +203,33 @@ class test_masked_explicit(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing MaskedArrayMode MaskedExplicit'
-	v = file.variables['PT']
-	assert_equal(v._FillValue,1e20)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),False)
+        if verbose: print('testing MaskedArrayMode MaskedExplicit')
+        v = file.variables['PT']
+        assert_equal(v._FillValue,1e20)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),False)
         file.set_option('MaskedArrayMode','maskediffillatt')
-        #setting explicitfillvalues sets maskedarraymode to 'maskedexplicit'
+            #setting explicitfillvalues sets maskedarraymode to 'maskedexplicit'
         file.set_option('explicitFillValues',1e20)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),True)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),True)
         file.set_option('MaskBelowValue',1770)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),True)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),True)
         file.set_option('MaskAboveValue',1780)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),True)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),True)
         file.set_option('MaskAboveValue',1770)
         file.set_option('MaskBelowValue',1780)
-	vm = v[0,3:5,0]
-	if verbose: print type(vm),vm
-	assert_equal(ma.isMaskedArray(vm),True)
+        vm = v[0,3:5,0]
+        if verbose: print(type(vm),vm)
+        assert_equal(ma.isMaskedArray(vm),True)
         file.close()
-	
+    
 
 
 if __name__ == "__main__":

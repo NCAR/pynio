@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 #
 #  File:
 #    nio04.py
@@ -57,7 +58,7 @@ file.create_dimension("lon",     3)
 file.create_dimension("lat",     3)
 file.create_dimension("time", None)     # unlimited dimension
 
-print file
+print(file)
 
 #
 #  Create a variable of type double with three dimemsions.
@@ -65,41 +66,41 @@ print file
 var = file.create_variable("var", 'd', ("time", "lat","lon"))
 var._FillValue = -999.0
 
-for i in xrange(10):
+for i in range(10):
 # Initialize lat/lon grid to the timestep number for 10 timesteps 
   var[i] = i
 
-print "After assigning elements 0-9 of unlimited dimension:"
-print file
+print("After assigning elements 0-9 of unlimited dimension:")
+print(file)
 
-print "Closing '" + filename + "' file...\n"
+print("Closing '" + filename + "' file...\n")
 file.close()
 
 #
 #  Reopen the file for writing
 #
-print "Reopening '" + filename + "' file..."
+print("Reopening '" + filename + "' file...")
 file = Nio.open_file(filename, "w")
 
-print file
+print(file)
 
 var = file.variables['var']
 
-for i in xrange(10,20):
+for i in range(10,20):
   var[i] = i  # add ten more elements to the unlimited dimension
 
-print "After assigning elements 10-19 of unlimited dimension:"
-print file
+print("After assigning elements 10-19 of unlimited dimension:")
+print(file)
 
 var[25] = 25  # add ten more elements to the unlimited dimension
 
-print "After assigning element 25 of unlimited dimension:"
-print file
+print("After assigning element 25 of unlimited dimension:")
+print(file)
 
-print "'print var'"
-print var
+print("'print var'")
+print(var)
 
-print "'print var[23:]'"
-print var[23:]
+print("'print var[23:]'")
+print(var[23:])
 
 file.close()

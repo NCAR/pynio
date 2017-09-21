@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import unittest as ut
 from numpy.testing import assert_equal
 
@@ -5,10 +6,12 @@ import Nio
 import numpy as N
 from numpy import ma
 import os
+import tempfile
 
 verbose = True
-filename = os.tempnam(None, 'test_')
+f, filename = tempfile.mkstemp(prefix="test_")
 filename += '.nc'
+os.close(f)
 #print 'Creating temporary file: ', filename
 
 def do_setup(filename):
@@ -82,12 +85,12 @@ class test_sub_1_assign(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing sub 1 assign'
-	v = file.variables['PT']
-	vm = v[0,0]
-	v[0,0,5,:] = vm[0,:] 
+        if verbose: print ('testing sub 1 assign')
+        v = file.variables['PT']
+        vm = v[0,0]
+        v[0,0,5,:] = vm[0,:] 
         file.close()
-	
+    
 
 class test_sub_2_assign(ut.TestCase):
     def setUp(self):
@@ -99,10 +102,10 @@ class test_sub_2_assign(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing sub 2 assign'
-	v = file.variables['PT']
-	vm = v[0,:,0,:]
-	v[0,1:4,4,:] = vm[3:6,:]
+        if verbose: print('testing sub 2 assign')
+        v = file.variables['PT']
+        vm = v[0,:,0,:]
+        v[0,1:4,4,:] = vm[3:6,:]
         file.close()
 
 class test_sub_3_assign(ut.TestCase):
@@ -115,11 +118,11 @@ class test_sub_3_assign(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing sub 3 assign'
-	v = file.variables['PT']
-	vm = v[0,:,:,:]
-	vm = vm.reshape([1,1,vm.shape[0],vm.shape[1],vm.shape[2]])
-	v[0,1:4,4,:] = vm[:,:,3:6,9,:]
+        if verbose: print('testing sub 3 assign')
+        v = file.variables['PT']
+        vm = v[0,:,:,:]
+        vm = vm.reshape([1,1,vm.shape[0],vm.shape[1],vm.shape[2]])
+        v[0,1:4,4,:] = vm[:,:,3:6,9,:]
         file.close()
 
 class test_sub_4_assign(ut.TestCase):
@@ -132,14 +135,14 @@ class test_sub_4_assign(ut.TestCase):
         file = self.f
 
         #if verbose: print file
-	if verbose: print 'testing sub 4 assign'
-	v = file.variables['PTS']
-	vm = v[0,0,:,:,:]
-	vm = vm.reshape([1,1,vm.shape[0],vm.shape[1],vm.shape[2]])
-	v[:,0,1:4,4,:] = vm[:,:,3:6,9,:]
-	v[:,0,1:4,4,:] = vm[0,:,3:6,9,:]
+        if verbose: print('testing sub 4 assign')
+        v = file.variables['PTS']
+        vm = v[0,0,:,:,:]
+        vm = vm.reshape([1,1,vm.shape[0],vm.shape[1],vm.shape[2]])
+        v[:,0,1:4,4,:] = vm[:,:,3:6,9,:]
+        v[:,0,1:4,4,:] = vm[0,:,3:6,9,:]
         file.close()
-	
+    
 
 if __name__ == "__main__":
     ut.main()
