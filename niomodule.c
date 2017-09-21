@@ -1032,7 +1032,6 @@ static int set_attribute(NioFileObject *file, int varid, PyObject *attributes,
 				if (PyArray_NDIM(array) == 0) {
 					dims = &dim_sizes;
 				} else {
-					/* TODO:  Make sure these pointers are the same in new api */
 					dims = (ng_size_t *) PyArray_DIMS(array);
 				}
 				data = malloc(PyArray_NBYTES(array));
@@ -3026,7 +3025,6 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 			free(memb_names);
 			return NULL;
 		}
-		/*FIXME: Does this need to change?? */
 		item2 = PySequence_Fast_GET_ITEM(seq2, 1);
 		if (is_string_type(item2)) {
 			typestr = as_utf8_char(item2);
@@ -7704,10 +7702,8 @@ void init_nio(void) {
 	dict_setitemstring(d, "NIOError", NIOError);
 
 	/* make NioFile, NioGroup and NioVariable visible to the module for subclassing */
-	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioFile_Type);
 	PyModule_AddObject(m, "_NioFile", (PyObject *) &NioFile_Type);
-	/*FIXME: Breaking type punning rules */
 	Py_INCREF(&NioVariable_Type);
 	PyModule_AddObject(m, "_NioVariable", (PyObject *) &NioVariable_Type);
 
