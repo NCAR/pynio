@@ -24,7 +24,7 @@
 #include "NclTypefloat.h"
 
 /*
- *      $Id: NclTypefloat.c.specific 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -703,7 +703,7 @@ NclTypeClass Ncl_Type_float_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -791,7 +791,7 @@ NclTypeClass Ncl_Type_float_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -879,7 +879,7 @@ NclTypeClass Ncl_Type_float_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -967,7 +967,7 @@ NclTypeClass Ncl_Type_float_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1055,7 +1055,7 @@ NclTypeClass Ncl_Type_float_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1143,7 +1143,7 @@ NclTypeClass Ncl_Type_float_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1231,7 +1231,7 @@ NclTypeClass Ncl_Type_float_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1319,7 +1319,7 @@ NclTypeClass Ncl_Type_float_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1407,7 +1407,7 @@ NclTypeClass Ncl_Type_float_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1495,7 +1495,7 @@ NclTypeClass Ncl_Type_float_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1596,7 +1596,7 @@ NclTypeClass Ncl_Type_float_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1697,7 +1697,7 @@ NclTypeClass Ncl_Type_float_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1796,7 +1796,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1884,7 +1884,7 @@ NclTypeClass Ncl_Type_float_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1965,7 +1965,7 @@ NclTypeClass Ncl_Type_float_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2046,7 +2046,7 @@ NclTypeClass Ncl_Type_float_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2136,7 +2136,7 @@ NclTypeClass Ncl_Type_float_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2226,7 +2226,7 @@ NclTypeClass Ncl_Type_float_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2314,7 +2314,7 @@ NclTypeClass Ncl_Type_float_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*

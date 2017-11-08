@@ -23,7 +23,7 @@
 
 #include "NclTypeubyte.h"
 /*
- *      $Id: NclTypeubyte.c.specific 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 
 /************************************************************************
@@ -532,7 +532,7 @@ NclTypeClass Ncl_Type_ubyte_mat_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -620,7 +620,7 @@ NclTypeClass Ncl_Type_ubyte_plus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -708,7 +708,7 @@ NclTypeClass Ncl_Type_ubyte_minus_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -796,7 +796,7 @@ NclTypeClass Ncl_Type_ubyte_multiply_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -884,7 +884,7 @@ NclTypeClass Ncl_Type_ubyte_lt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -972,7 +972,7 @@ NclTypeClass Ncl_Type_ubyte_gt_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1060,7 +1060,7 @@ NclTypeClass Ncl_Type_ubyte_le_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1148,7 +1148,7 @@ NclTypeClass Ncl_Type_ubyte_ge_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1236,7 +1236,7 @@ NclTypeClass Ncl_Type_ubyte_eq_type
 }
 
 /*
- *      $Id: TypeSimpleOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1324,7 +1324,7 @@ NclTypeClass Ncl_Type_ubyte_ne_type
 }
 
 /*
- *      $Id: TypeAndOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1425,7 +1425,7 @@ NclTypeClass Ncl_Type_ubyte_and_type
 }
 
 /*
- *      $Id: TypeOrOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1526,7 +1526,7 @@ NclTypeClass Ncl_Type_ubyte_or_type
 }
 
 /*
- *      $Id: TypeIsMonoFunc.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1625,7 +1625,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypeFunctionOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1713,7 +1713,7 @@ NclTypeClass Ncl_Type_ubyte_exponent_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1794,7 +1794,7 @@ NclTypeClass Ncl_Type_ubyte_not_type
 }
 
 /*
- *      $Id: TypeMonoOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1875,7 +1875,7 @@ NclTypeClass Ncl_Type_ubyte_neg_type
 }
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1965,7 +1965,7 @@ NclTypeClass Ncl_Type_ubyte_sel_lt_type
 
 
 /*
- *      $Id: TypeSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2055,7 +2055,7 @@ NclTypeClass Ncl_Type_ubyte_sel_gt_type
 
 
 /*
- *      $Id: TypeXorOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2143,7 +2143,7 @@ NclTypeClass Ncl_Type_ubyte_xor_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -2238,7 +2238,7 @@ NclTypeClass Ncl_Type_ubyte_divide_type
 }
 
 /*
- *      $Id: TypeDivOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*

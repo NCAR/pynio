@@ -42,7 +42,8 @@ int secid,
 char *table, 
 int oct, 
 int cat,
-g2codeTable *ct
+g2codeTable *ct,
+int suppress
 #endif
 );
 
@@ -1650,38 +1651,6 @@ void g2GDSArakawaRLLGrid
     return;
 }
 
-static void InitMapTrans
-#if NhlNeedProto
-(
-	char *proj,
-	double plat,
-	double plon,
-	double prot
-)
-#else
-(proj,plat,plon,prot)
-	char *proj;
-	double plat;
-	double plon;
-	double prot;
-
-#endif
-{
-	double rl[2] = {0,0};
-	double fl = 0.1,fr = 0.99 ,fb = 0.1 ,ft = 0.99;
-	int len;
-	NGstring str;
-
-	NGCALLF(mdppos,MDPPOS)(&fl,&fr,&fb,&ft);
-	len = NGSTRLEN(proj);
-	str = NGCstrToFstr(proj,len);
-	NGCALLF(mdproj,MDPROJ)(str,&plat,&plon,&prot);
-	len = NGSTRLEN("MA");
-	str = NGCstrToFstr("MA",len);
-	NGCALLF(mdpset,MDPSET)(str,&rl,&rl,&rl,&rl);
-	NGCALLF(mdpint,MDPINT)();
-}
-
 void g2GDSMEGrid
 # if NhlNeedProto
 (
@@ -1816,7 +1785,7 @@ void g2GDSMEGrid
     *lat = (float *) NclMalloc((unsigned)sizeof(float) * nlat);
     *lon = (float *) NclMalloc((unsigned)sizeof(float) * nlon);
 
-    InitMapTrans("ME",0,idir * (lo2 - lo1)/2.0,0.0);
+    _NclInitMapTrans("ME",0,idir * (lo2 - lo1)/2.0,0.0);
 
     if (lo1 == lo2) { /* global grid probably specified according to GRIB2 spec (lo1 and lo2 both must be positive - but this is too inconvenient for us)  */
 	    if (idir == 1) {
@@ -2308,10 +2277,10 @@ int* nrotatts;
 		earth_radius = Earth_Radius[lc->ep.shapeOfEarth];	
 
 	do_rot = 1;
+	_NclInitMapTrans("LC",latin1,lov,latin2);
 /*
 * Southern case
 */
-	InitMapTrans("LC",latin1,lov,latin2);
 	if((latin1 < 0)&&(latin2 < 0)) {
 		
 		if (latin1 == latin2) {
@@ -3810,7 +3779,7 @@ static NrmQuark ForecastTimeUnitsToQuark
 static void _g2SetAttributeLists
 #if 	NhlNeedProto
 (Grib2FileRecord *therec)
-#else
+#else _g2SetAttributeLists
 (therec)
 Grib2FileRecord *therec;
 #endif
@@ -3845,9 +3814,342 @@ Grib2FileRecord *therec;
 				break;
 			}
 		}
-		if (! grib_rec)
+		if (! grib_rec) {  /* this should not happen -- we need an error message of some sort */
+			step = step->next;
 			continue;
+		}
+		
+		if (step->traits.aerosol_type != 65535) {
+			sprintf(buf,"%s_A%d",NrmQuarkToString(step->var_info.var_name_quark),step->traits.aerosol_type);
+			step->var_info.var_name_quark = NrmStringToQuark(buf);
+			att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+			att_list_ptr->next = step->theatts;
+			att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+			if (step->traits.pds_template >= 40 && step->traits.pds_template <= 43) {
+				att_list_ptr->att_inq->name = NrmStringToQuark("atmospheric_chemical_constituent_type");
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
+						       "4.230.table",step->traits.aerosol_type,-1,ct,False) < NhlWARNING) {
+					return;
+				}
+			}
+			else {
+				att_list_ptr->att_inq->name = NrmStringToQuark("aerosol_type");
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
+						       "4.233.table",step->traits.aerosol_type,-1,ct,False) < NhlWARNING) {
+					return;
+				}
+			}
+			if (ct->descrip) {
+				*tmp_string = NrmStringToQuark(ct->descrip);
+			}
+			else {
+				sprintf(buf,"%d",step->traits.aerosol_type);
+				*tmp_string = NrmStringToQuark(buf);
+			}
+			att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+				_NclCreateVal(NULL, NULL,
+					      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+					      PERMANENT, NULL, nclTypestringClass);
+			step->theatts = att_list_ptr;
+			step->n_atts++;
+			if (step->traits.aerosol_size_interval_type != 255) {
+				float first_value = -9999.0, second_value = -9999.0;
+				att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+				att_list_ptr->next = step->theatts;
+				att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+				att_list_ptr->att_inq->name = NrmStringToQuark("aerosol_size");
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				if (step->traits.aerosol_size_first_scale_factor == 0) {
+					first_value = step->traits.aerosol_size_first_scale_value;
+				}
+				else {
+					first_value = step->traits.aerosol_size_first_scale_value *
+						pow(0.1,step->traits.aerosol_size_first_scale_factor);
+				}
+				if (step->traits.aerosol_size_second_scale_factor == 0) {
+					second_value = step->traits.aerosol_size_second_scale_value;
+				}
+				else {
+					second_value = step->traits.aerosol_size_second_scale_value *
+						pow(0.1,step->traits.aerosol_size_second_scale_factor);
+				}
+				switch (step->traits.aerosol_size_interval_type) {
+				case 0:
+					sprintf(buf,"< %g",first_value);
+					break;
+				case 1:
+					sprintf(buf,"> %g",second_value);
+					break;
+				case 2:
+					sprintf(buf,">= %g and < %g",first_value,second_value);
+					break;
+				case 3:
+					sprintf(buf,"> %g",first_value);
+					break;
+				case 4:
+					sprintf(buf,"< %g",second_value);
+					break;
+				case 5:
+					sprintf(buf,"<= %g",first_value);
+					break;
+ 				case 6:
+					sprintf(buf,">= %g",second_value);
+					break;
+ 				case 7:
+					sprintf(buf,">= %g and <= %g",first_value,second_value);
+					break;
+ 				case 8:
+					sprintf(buf,">= %g ",first_value);
+					break;
+ 				case 9:
+					sprintf(buf,"<= %g",second_value);
+					break;
+ 				case 10:
+					sprintf(buf,"> %g and <= %g",first_value,second_value);
+					break;
+ 				case 11:
+					sprintf(buf,"%g",first_value);
+					break;
+				}
+				*tmp_string = NrmStringToQuark(buf);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+			
+			if (step->traits.aerosol_wavelength_interval_type != 255) {
+				float first_value = -9999.0, second_value = -9999.0;
+				att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+				att_list_ptr->next = step->theatts;
+				att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+				att_list_ptr->att_inq->name = NrmStringToQuark("aerosol_wavelength");
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				if (step->traits.aerosol_wavelength_first_scale_factor == 0) {
+					first_value = step->traits.aerosol_wavelength_first_scale_value;
+				}
+				else {
+					first_value = step->traits.aerosol_wavelength_first_scale_value *
+						pow(0.1,step->traits.aerosol_wavelength_first_scale_factor);
+				}
+				if (step->traits.aerosol_wavelength_second_scale_factor == 0) {
+					second_value = step->traits.aerosol_wavelength_second_scale_value;
+				}
+				else {
+					second_value = step->traits.aerosol_wavelength_second_scale_value *
+						pow(0.1,step->traits.aerosol_wavelength_second_scale_factor);
+				}
+				switch (step->traits.aerosol_wavelength_interval_type) {
+				case 0:
+					sprintf(buf,"< %g",first_value);
+					break;
+				case 1:
+					sprintf(buf,"> %g",second_value);
+					break;
+				case 2:
+					sprintf(buf,">= %g and < %g",first_value,second_value);
+					break;
+				case 3:
+					sprintf(buf,"> %g",first_value);
+					break;
+				case 4:
+					sprintf(buf,"< %g",second_value);
+					break;
+				case 5:
+					sprintf(buf,"<= %g",first_value);
+					break;
+ 				case 6:
+					sprintf(buf,">= %g",second_value);
+					break;
+ 				case 7:
+					sprintf(buf,">= %g and <= %g",first_value,second_value);
+					break;
+ 				case 8:
+					sprintf(buf,">= %g ",first_value);
+					break;
+ 				case 9:
+					sprintf(buf,"<= %g",second_value);
+					break;
+ 				case 10:
+					sprintf(buf,"> %g and <= %g",first_value,second_value);
+					break;
+ 				case 11:
+					sprintf(buf,"%g",first_value);
+					break;
+				}
+				*tmp_string = NrmStringToQuark(buf);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+			
+		}
+		if (step->traits.satellite_number_of_contributing_spectral_bands != 255 && step->traits.satellite_number_of_contributing_spectral_bands > 0) {
+			int instrument_type = step->traits.satellite_instrument_type & 0x3ff;   /* 10 lowest bits are instrument type */
+			int polarization = (step->traits.satellite_instrument_type & 0xe000) >> 13;  /* upper 3 bits (of 16) are polarization */
+			float wave_number;
+			sprintf(buf,"%s_I%d",NrmQuarkToString(step->var_info.var_name_quark),instrument_type);
+			step->var_info.var_name_quark = NrmStringToQuark(buf);
 
+			if (step->traits.satellite_central_wave_number != -1) {
+				att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+				att_list_ptr->next = step->theatts;
+				att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+				if (step->traits.satellite_number_of_contributing_spectral_bands > 1)
+					att_list_ptr->att_inq->name = NrmStringToQuark("first_central_wavelength_in_meters");
+				else
+					att_list_ptr->att_inq->name = NrmStringToQuark("central_wavelength_in_meters");
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				if (step->traits.satellite_central_wave_number_scale_factor == 0) {
+					wave_number = 1.0 / step->traits.satellite_central_wave_number;
+				}
+				else {
+					wave_number = step->traits.satellite_central_wave_number *
+						pow(0.1,step->traits.satellite_central_wave_number_scale_factor);
+					wave_number = 1.0 / wave_number;
+				}
+				sprintf(buf,"%g",wave_number);
+				*tmp_string = NrmStringToQuark(buf);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+                        if (polarization > 0) {
+				att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+				att_list_ptr->next = step->theatts;
+				att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+				if (step->traits.satellite_number_of_contributing_spectral_bands > 1)
+					att_list_ptr->att_inq->name = NrmStringToQuark("first_instrument_polarization");
+				else
+					att_list_ptr->att_inq->name = NrmStringToQuark("instrument_polarization");
+				switch (polarization) {
+				case 0:
+					sprintf(buf,"%s","polarization unknown or missing");
+					break;
+				case 1:
+					sprintf(buf,"%s","unpolarized");
+					break;
+				case 2:
+					sprintf(buf,"%s","horizontal linear polarization");
+					break;
+				case 3:
+					sprintf(buf,"%s","vertical linear polarization");
+					break;
+				case 4:
+					sprintf(buf,"%s","right circular polarization");
+					break;
+				case 5:
+					sprintf(buf,"%s","left circular polarization");
+					break;
+				default:
+					sprintf(buf,"%d",polarization);
+					break;
+				}
+
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+				*tmp_string = NrmStringToQuark(buf);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+			if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
+					       "cc.c8.table",instrument_type,-1,ct,False) < NhlWARNING) {
+				return;
+			}
+			att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+			att_list_ptr->next = step->theatts;
+			att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+			att_list_ptr->att_inq->name = NrmStringToQuark("instrument_type");
+			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+			if (ct->units) {
+				*tmp_string = NrmStringToQuark(ct->units);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+			else {
+				NclFree(tmp_string);
+			}
+
+			att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+			att_list_ptr->next = step->theatts;
+			att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+			att_list_ptr->att_inq->name = NrmStringToQuark("instrument_short_name");
+			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+			if (ct->shname) {
+				*tmp_string = NrmStringToQuark(ct->shname);
+				att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+					_NclCreateVal(NULL, NULL,
+						      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+						      PERMANENT, NULL, nclTypestringClass);
+				step->theatts = att_list_ptr;
+				step->n_atts++;
+			}
+			else {
+				NclFree(tmp_string);
+			}
+
+			att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+			att_list_ptr->next = step->theatts;
+			att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+			att_list_ptr->att_inq->name = NrmStringToQuark("agency_and_instrument_description");
+			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+			if (ct->descrip) {
+				*tmp_string = NrmStringToQuark(ct->descrip);
+			}
+			else {
+				sprintf(buf,"%d",instrument_type);
+				*tmp_string = NrmStringToQuark(buf);
+			}
+			att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+				_NclCreateVal(NULL, NULL,
+					      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+					      PERMANENT, NULL, nclTypestringClass);
+			step->theatts = att_list_ptr;
+			step->n_atts++;
+
+			att_list_ptr = (Grib2AttInqRecList*)NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
+			att_list_ptr->next = step->theatts;
+			att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
+			att_list_ptr->att_inq->name = NrmStringToQuark("satellite_identifier");
+			if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
+					       "cc.c5.table",step->traits.satellite_series_2,-1,ct,False) < NhlWARNING) {
+				return;
+			}
+			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
+			if (ct->descrip) {
+				*tmp_string = NrmStringToQuark(ct->descrip);
+			}
+			else {
+				sprintf(buf,"%d",step->traits.satellite_series_2);
+				*tmp_string = NrmStringToQuark(buf);
+			}
+			att_list_ptr->att_inq->thevalue = (NclMultiDValData)
+				_NclCreateVal(NULL, NULL,
+					      Ncl_MultiDValData, 0, (void *) tmp_string, NULL, 1, &tmp_dimsizes, 
+					      PERMANENT, NULL, nclTypestringClass);
+			step->theatts = att_list_ptr;
+			step->n_atts++;
+			
+		}
+			
+		
 		/* Handle coordinate attributes,  level, initial_time, forecast_time */
 		if (step->yymmddhh_isatt) {
 			att_list_ptr = (Grib2AttInqRecList *) NclMalloc((unsigned)sizeof(Grib2AttInqRecList));
@@ -3861,7 +4163,6 @@ Grib2FileRecord *therec;
 			step->theatts = att_list_ptr;
 			step->n_atts++;
 		}
-
 		/* 
 		 * don't create this att for observational data -- pds_templates 20 and 30 (as far as I can tell)
 		 */
@@ -3898,11 +4199,11 @@ Grib2FileRecord *therec;
 				att_list_ptr->next = step->theatts;
 				att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
 				att_list_ptr->att_inq->name = NrmStringToQuark("type_of_spatial_processing");
-				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 				if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
-						       "4.15.table",grib_rec->spatial_proc,-1,ct) < NhlWARNING) {
+						       "4.15.table",grib_rec->spatial_proc,-1,ct,False) < NhlWARNING) {
 					return;
 				}
+				tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 				if (ct->descrip) {
 					*tmp_string = NrmStringToQuark(ct->descrip);
 				}
@@ -3916,6 +4217,7 @@ Grib2FileRecord *therec;
 						      PERMANENT, NULL, nclTypestringClass);
 				step->theatts = att_list_ptr;
 				step->n_atts++;
+
 			}
 			else {
 				if (step->traits.stat_proc_type > 191 && step->traits.stat_proc_type != 255 && step->n_grids > 0) {
@@ -4023,7 +4325,7 @@ Grib2FileRecord *therec;
 			att_list_ptr->att_inq->name = NrmStringToQuark("type_of_statistical_processing");
 			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 			if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
-					       "4.10.table",step->traits.stat_proc_type, -1,ct) < NhlWARNING) {
+					       "4.10.table",step->traits.stat_proc_type, -1,ct,False) < NhlWARNING) {
 				return;
 			}
 			if (ct->descrip) {
@@ -4166,7 +4468,7 @@ Grib2FileRecord *therec;
 			}
 			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 			Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
-					   "4.5.table",step->traits.first_level_type,-1,ct);
+					   "4.5.table",step->traits.first_level_type,-1,ct,False);
 			if (ct->descrip) {
 				if (ct->units && strcmp("none",ct->units)) {
 					sprintf(buf,"%s (%s)",ct->descrip,ct->units);
@@ -4196,7 +4498,7 @@ Grib2FileRecord *therec;
 			att_list_ptr->att_inq->name = NrmStringToQuark("second_level_type");
 			tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 			Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
-					   "4.5.table",step->traits.second_level_type,-1,ct);
+					   "4.5.table",step->traits.second_level_type,-1,ct,False);
 			if (ct->descrip) {
 				if (ct->units && strcmp("none",ct->units)) {
 					sprintf(buf,"%s (%s)",ct->descrip,ct->units);
@@ -4248,7 +4550,7 @@ Grib2FileRecord *therec;
 		att_list_ptr->att_inq->name = NrmStringToQuark("parameter_discipline_and_category");
 		tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 		if (Grib2ReadCodeTable(step->ref_rec->table_source, 0, 
-				       "0.0.table",step->traits.discipline,-1,ct) < NhlWARNING) {
+				       "0.0.table",step->traits.discipline,-1,ct,False) < NhlWARNING) {
 			return;
 		}
 		if (ct->descrip) {
@@ -4259,7 +4561,7 @@ Grib2FileRecord *therec;
 			sprintf(buf,"%d, ",step->traits.discipline);
 		}
 		if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, 
-				       "4.2.table",step->traits.discipline,step->traits.param_cat,ct) < NhlWARNING) {
+				       "4.2.table",step->traits.discipline,step->traits.param_cat,ct,False) < NhlWARNING) {
 			return;
 		}
 		if (ct->descrip) {
@@ -4287,7 +4589,7 @@ Grib2FileRecord *therec;
 		att_list_ptr->att_inq->name = NrmStringToQuark("grid_type");
 		tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 		if (Grib2ReadCodeTable(step->ref_rec->table_source, 3, 
-				       "3.1.table",grib_rec->grid_number,-1,ct) < NhlWARNING) {
+				       "3.1.table",grib_rec->grid_number,-1,ct,False) < NhlWARNING) {
 			return;
 		}
 		if (step->gds->is_thinned_grid) {
@@ -4409,7 +4711,7 @@ Grib2FileRecord *therec;
 		att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
 		att_list_ptr->att_inq->name = NrmStringToQuark("production_status");
 
-		if (Grib2ReadCodeTable(grib_rec->table_source, 1, "1.3.table", grib_rec->traits.prod_status,-1,ct) < NhlWARNING) {
+		if (Grib2ReadCodeTable(grib_rec->table_source, 1, "1.3.table", grib_rec->traits.prod_status,-1,ct,False) < NhlWARNING) {
 			return;
 		}
 		tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
@@ -4739,9 +5041,11 @@ static void _g2AddGenProcAtt(Grib2ParamList *step)
 	att_list_ptr->att_inq = (Grib2AttInqRec*)NclMalloc((unsigned)sizeof(Grib2AttInqRec));
 	att_list_ptr->att_inq->name = NrmStringToQuark("generating_process_type");
 
-	if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, "4.3.table", step->traits.gen_process_type,-1,ct) < NhlWARNING) {
+	if (Grib2ReadCodeTable(step->ref_rec->table_source, 4, "4.3.table", 
+			       step->traits.gen_process_type,-1,ct,True) < NhlWARNING) {
 		return;
 	}
+		
 	tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 	if (ct->descrip) {
 		*tmp_string = NrmStringToQuark(ct->descrip);
@@ -5348,12 +5652,14 @@ int g2ens_equal(G2_ENS *ens1, G2_ENS *ens2)
 			ens1->lower_limit_value == ens2->lower_limit_value) {
 			    return 1;
 		    }
+		    break;
 	    case 1:
 	    case 4:
 		    if (ens1->upper_limit_scale == ens2->upper_limit_scale &&
 			ens1->upper_limit_value == ens2->upper_limit_value) {
 			    return 1;
 		    }
+		    break;
 	    case 2:
 		    if (ens1->lower_limit_scale == ens2->lower_limit_scale &&
 			ens1->lower_limit_value == ens2->lower_limit_value &&
@@ -5361,12 +5667,13 @@ int g2ens_equal(G2_ENS *ens1, G2_ENS *ens2)
 			ens1->upper_limit_value == ens2->upper_limit_value) {
 			    return 1;
 		    }
+		    break;
 
 	    }
     }
 		
     return 0;
-}
+ }
 
 int g2it_comp (G2_GIT *it1, G2_GIT* it2)
 {
@@ -5401,19 +5708,21 @@ Grib2FileRecord *g2frec;
 {
     int n_lvs = 1;
     int i;
-    Grib2RecordInqRecList   *strt,
-                            *tmp;
+    Grib2RecordInqRecList   *strt, *tmp;
+    int warn = 0;
 
     *lv_vals1 = NULL;
     strt = lstep;
     while(strt->next != NULL) {
         if (!g2LVNotEqual(strt, strt->next)) {
-		if ((int)(g2frec->options[GRIB_PRINT_RECORD_INFO_OPT].values) != 0) {
-			NhlPError(NhlWARNING,NhlEUNKNOWN,"NclGRIB2: %s contains possibly duplicated records %d and %d. Record %d will be ignored.",
-				  NrmQuarkToString(thevar->var_info.var_name_quark),strt->rec_inq->rec_num, 
-				  strt->next->rec_inq->rec_num,
-				  strt->next->rec_inq->rec_num);
-		}
+		/*if ((int)(g2frec->options[GRIB_PRINT_RECORD_INFO_OPT].values) != 0) {*/
+			if (! warn)
+				NhlPError(NhlWARNING,NhlEUNKNOWN,"NclGRIB2: %s contains records that NCL cannot currently differentiate. One or more records will be ignored.",
+					  NrmQuarkToString(thevar->var_info.var_name_quark),strt->rec_inq->rec_num, 
+					  strt->next->rec_inq->rec_num,
+					  strt->rec_inq->rec_num);
+			warn = 1;
+		/*}*/
 		tmp = strt->next;
 		strt->next = strt->next->next;
 		thevar->n_entries--;
@@ -6785,8 +7094,6 @@ static void _g2SetFileDimsAndCoordVars
 					sprintf(buffer,"%s lower limits",NrmQuarkToString(step->var_info.long_name_q));
 					tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
 					*tmp_string = NrmStringToQuark(buffer);
-					tmp_string = (NclQuark*)NclMalloc(sizeof(NclQuark));
-					*tmp_string = NrmStringToQuark(buffer);
 					Grib2PushAtt(&tmp_att_list_ptr,"long_name",tmp_string,1,nclTypestringClass); 
 					sprintf(name_buffer,"%s%s",NrmQuarkToString(tmp->dim_name),"_lower");
 
@@ -7064,7 +7371,7 @@ static void _g2SetFileDimsAndCoordVars
 		if (dstep == NULL) {
 			/* Need a new dimension entry name and number */
 			Grib2ReadCodeTable(g2inqrec->table_source, 4, 
-					   "4.5.table",g2inqrec->level_indicator,-1,ct);
+					   "4.5.table",g2inqrec->level_indicator,-1,ct,False);
 			tmp = (Grib2DimInqRec *) NclMalloc((unsigned)sizeof(Grib2DimInqRec));
 			tmp->gds = NULL;
 			tmp->dim_number = therec->total_dims;
@@ -7150,7 +7457,7 @@ static void _g2SetFileDimsAndCoordVars
 		if (dstep == NULL) {
 			/* Need a new dimension entry w name and number */
 			Grib2ReadCodeTable(g2inqrec->table_source, 4, 
-					   "4.5.table",g2inqrec->level_indicator,-1,ct);
+					   "4.5.table",g2inqrec->level_indicator,-1,ct,False);
 			tmp = (Grib2DimInqRec*)NclMalloc((unsigned)sizeof(Grib2DimInqRec));
 			tmp->gds = NULL;
 			tmp->dim_number = therec->total_dims;
@@ -7465,6 +7772,12 @@ static void _g2SetFileDimsAndCoordVars
 			
 			if (n_dims_lat == 0) {
 				is_err = NhlFATAL;
+			}
+			else if (step->grid_number == 204) {
+				/* this is the curvilinear orthogonal grid -- in NCL-speak this requires 2D coordinates, but there is no specific projection 
+				   that allows coordinates to be calculated. A user either needs to get the coordinates from some external source or they must
+				   be present in the file as variables in their own right. So there is no error here. */
+				break;
 			}
 			else {
 				NhlPError(NhlWARNING,NhlEUNKNOWN,
@@ -8301,7 +8614,7 @@ static void Grib2FreeCodeTableRec
 
 static NhlErrorTypes Grib2ReadCodeTable
 # if NhlNeedProto
-(char *center, int secid, char *table, int oct, int cat, g2codeTable *ct)
+(char *center, int secid, char *table, int oct, int cat, g2codeTable *ct, int suppress)
 # else
 (center, secid, table, oct, cat, ct)
     char    *center;
@@ -8310,6 +8623,7 @@ static NhlErrorTypes Grib2ReadCodeTable
     int oct;
     int cat;
     g2codetable *ct;
+    int suppress;
 # endif
 {
     FILE    *fp = NULL;
@@ -8378,10 +8692,12 @@ static NhlErrorTypes Grib2ReadCodeTable
 			  " NclGRIB2: codetable directory \"%s\" invalid",grib2_codetable_dir);
 		return err = NhlFATAL;
 	}
-        NhlPError(NhlWARNING, NhlEUNKNOWN,
-            " NclGRIB2: codetable file \"%s\" not a valid GRIB2 code table.",ctf);
-        NclFree(ctf);
-        return err = NhlWARNING;
+	if (! suppress) {
+		NhlPError(NhlWARNING, NhlEUNKNOWN,
+			  " NclGRIB2: codetable file \"%s\" not a valid GRIB2 code table.",ctf);
+		NclFree(ctf);
+		return err = NhlWARNING;
+	}
     } else {
         while (fgets(s, 256, fp)) {
 	    int go_to_outer_loop = 0;
@@ -8493,8 +8809,10 @@ static NhlErrorTypes Grib2ReadCodeTable
         }
 
         /* didn't find entry in the table */
-        NhlPError(NhlWARNING, NhlEUNKNOWN,
-		  " Entry (%d) not found in code table file %s", oct, ctf);
+	if (! suppress) {
+		NhlPError(NhlWARNING, NhlEUNKNOWN,
+			  " Entry (%d) not found in code table file %s", oct, ctf);
+	}
         ct->oct = -1;
         ct->cat = -1;
         ct->descrip = NULL;
@@ -8707,6 +9025,8 @@ static void Grib2FreeGrib2Rec
 
                 NclFree(sec4_p[j]->prod_params);
             }
+            if (sec4_p[j]->coord_list != NULL)
+                NclFree(sec4_p[j]->coord_list);
 
             if (sec4_p[j]->prod_def_name != NULL)
                 NclFree(sec4_p[j]->prod_def_name);
@@ -9127,7 +9447,7 @@ Grib2ParamList  *g2plist;
 	}
 	memset(ct,0,sizeof(g2codeTable));
 	sprintf(buf, "4.2.%d.%d.table", trp->discipline,trp->param_cat);
-	cterr = Grib2ReadCodeTable(g2inqrec->table_source, 4, buf,trp->param_number,-1,ct);
+	cterr = Grib2ReadCodeTable(g2inqrec->table_source, 4, buf,trp->param_number,-1,ct,False);
 	if (cterr < NhlWARNING) {
 		return;
 	}
@@ -9282,6 +9602,7 @@ void _g2_seekgb(FILE *lugb,size_t iseek,size_t mseek,size_t *lskip,g2int *lgrib)
 		}
 		ipos=ipos+lim;
 		if (ipos > max_bytes)
+			free(cbuf);
 			return;
 	}
 
@@ -9513,7 +9834,7 @@ static void *Grib2OpenFile
                 g2rec[nrecs]->sec1.subcenter_name = NULL;
             }
         } else {
-		cterr = Grib2ReadCodeTable("", -1, "centers.table", g2rec[nrecs]->sec1.centerID,-1,ct);
+		cterr = Grib2ReadCodeTable("", -1, "centers.table", g2rec[nrecs]->sec1.centerID,-1,ct,False);
             if (cterr < NhlWARNING) {
                 NhlFree(g2rec);
                 return NULL;
@@ -9620,24 +9941,6 @@ static void *Grib2OpenFile
         /* table 1.2: Significance of Reference Time */
         g2rec[nrecs]->sec1.ref_time = sec1[4];
         g2rec[nrecs]->sec1.sig_ref_time = NULL;
-#if 0
-        table = "1.2.table";
-        cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec1.ref_time,-1,ct);
-        if (cterr < NhlWARNING) {
-            NhlFree(g2rec);
-            return NULL;
-        }
-
-        g2rec[nrecs]->sec1.sig_ref_time = NclMalloc(strlen(ct->descrip) + 1);
-        if (g2rec[nrecs]->sec1.sig_ref_time == NULL) {
-            NhlPError(NhlFATAL, NhlEUNKNOWN,
-                "Could not allocate memory for GRIB v2 data entry.");
-                NhlFree(g2rec);
-                return NULL;
-        }
-
-        (void) strcpy(g2rec[nrecs]->sec1.sig_ref_time, ct->descrip);
-#endif
 
         g2rec[nrecs]->sec1.date_time.year = sec1[5];
         g2rec[nrecs]->sec1.date_time.mon = sec1[6];
@@ -9653,36 +9956,10 @@ static void *Grib2OpenFile
         /* table 1.3: Production Status of Data */
         g2rec[nrecs]->sec1.prod_status = sec1[11];
         g2rec[nrecs]->sec1.proc_prod_status = NULL;
-#if 0
-        table = "1.3.table";
-        cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec1.prod_status, -1,ct);
-        if (cterr < NhlWARNING) {
-            NhlFree(g2rec);
-            return NULL;
-        }
-
-        g2rec[nrecs]->sec1.proc_prod_status = NclMalloc(strlen(ct->descrip) + 1);
-        (void) strcpy(g2rec[nrecs]->sec1.proc_prod_status, ct->descrip);
-#endif
 
         /* table 1.4: Type of Data */
         g2rec[nrecs]->sec1.data_type = sec1[12];
         g2rec[nrecs]->sec1.proc_data_type = NULL;
-#if 0
-        table = "1.4.table";
-        cterr = Grib2ReadCodeTable(center,secid,table, g2rec[nrecs]->sec1.data_type,-1,ct);
-        if (cterr < NhlWARNING) {
-            NhlFree(g2rec);
-            return NULL;
-        }
-
-        if (ct->descrip) {
-            g2rec[nrecs]->sec1.proc_data_type = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec1.proc_data_type, ct->descrip);
-        } else {
-            g2rec[nrecs]->sec1.proc_data_type = NULL;
-        }
-#endif
 
         /*
          * Get GRIB v2 sections 2 thru 7.  These sections may be repeated
@@ -9889,72 +10166,13 @@ static void *Grib2OpenFile
             secid = 3;
             g2rec[nrecs]->sec3[i]->secid = 3;
 
-#if 0
-	    /* not much reason to read this table since we just using the octet number anyway
-	       to figure out what to do next */
-            /* table 3.0: Source of Grid Defn */
-            table = "3.0.table";
-            cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec3[i]->grid_def_src,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return;
-            }
-#endif
-
             g2rec[nrecs]->sec3[i]->grid_def_src = g2fld->griddef;
             g2rec[nrecs]->sec3[i]->grid_def_name = NULL;
             g2rec[nrecs]->sec3[i]->grid_num = g2fld->igdtnum;
-#if 0
-            switch ( g2fld->griddef) {
-                case 0:
-                    /* table 3.1: Grid Defn Template Num */
-                    table = "3.1.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table, g2fld->igdtnum,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
-
-                    g2rec[nrecs]->sec3[i]->grid_def_name = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec3[i]->grid_def_name, ct->descrip);
-                    break;
-
-                case 1:
-                    /* grid def det'd by originating center */
-                    break;
-
-                case 255:
-                    /* grid defn doesn't apply */
-                    g2rec[nrecs]->sec3[i]->grid_num = ct->oct;  /* 255 */
-                    g2rec[nrecs]->sec3[i]->grid_def_name
-                            = NclMalloc(strlen("A grid definition doesn't apply.") + 1);
-                    (void) strcpy(g2rec[nrecs]->sec3[i]->grid_def_name,
-                            "A grid definition doesn't apply.");
-
-                    /* FALLTHROUGH */
-                default:
-                    /* grid def doesn't apply */
-                    break;
-            }
-#endif
 
             g2rec[nrecs]->sec3[i]->num_grid_data_pts = g2fld->ngrdpts;
             g2rec[nrecs]->sec3[i]->num_oct_opt = g2fld->numoct_opt;
 
-#if 0
-            /* table 3.11: Interpretation of List of Numbers Defining Number of Pts */
-            g2rec[nrecs]->sec3[i]->interp_opt_num_pts = g2fld->interp_opt;
-            table = "3.11.table";
-            cterr = Grib2ReadCodeTable(center, secid, table,
-				       g2rec[nrecs]->sec3[i]->interp_opt_num_pts,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec3[i]->interp_opt_name = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec3[i]->interp_opt_name, ct->descrip);
-#endif
 
             g2rec[nrecs]->sec3[i]->grid_def_templ_num = g2fld->igdtnum;
 
@@ -9982,119 +10200,12 @@ static void *Grib2OpenFile
             g2rec[nrecs]->sec3[i]->scan_mode_offset = -1; /* this is determined later */
 	    
 
-#if 0
-            /* table 3.2: Shape of Earth */
-            g2rec[nrecs]->sec3[i]->shape_of_earth = NclMalloc(sizeof(G2shapeOfEarth));
-            g2rec[nrecs]->sec3[i]->res_comp = NclMalloc(sizeof(G2resComponentFlags));
-            g2rec[nrecs]->sec3[i]->scan_mode = NclMalloc(sizeof(G2scanModeFlags));
-
-            g2rec[nrecs]->sec3[i]->shape_of_earth->shapeOfEarth = g2fld->igdtmpl[0];
-
-/* this info not used/necessary */
-#if 0
-            table = "3.2.table";
-            cterr = Grib2ReadCodeTable(center, secid, table,
-				       g2rec[nrecs]->sec3[i]->shape_of_earth->shapeOfEarth,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec3[i]->shape_of_earth->earthShape = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec3[i]->shape_of_earth->earthShape, ct->descrip);
-#endif
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scale_factor_rad_sph_earth
-                    = (int) g2fld->igdtmpl[1];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scaled_val_rad_sph_earth
-                    = (int) g2fld->igdtmpl[2];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scale_factor_maj_axis_obl_sph_earth
-                    = (int) g2fld->igdtmpl[3];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scaled_val_maj_axis_obl_sph_earth
-                    = (int) g2fld->igdtmpl[4];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scale_factor_min_axis_obl_sph_earth
-                    = (int) g2fld->igdtmpl[5];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->scaled_val_min_axis_obl_sph_earth
-                    = (int) g2fld->igdtmpl[6];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->npts_along_parallel = (int) g2fld->igdtmpl[7];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->npts_along_meridian = (int) g2fld->igdtmpl[8];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->angl_init_prod_domain = (int) g2fld->igdtmpl[9];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->subdiv_basic_angle = (int) g2fld->igdtmpl[10];
-
-            g2rec[nrecs]->sec3[i]->shape_of_earth->lat_first_gridpt = g2fld->igdtmpl[11];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->lon_first_gridpt = g2fld->igdtmpl[12];
-
-            g2rec[nrecs]->sec3[i]->res_comp->idir_given = g2getbits(g2fld->igdtmpl[13], 4, 1);
-            g2rec[nrecs]->sec3[i]->res_comp->jdir_given = g2getbits(g2fld->igdtmpl[13], 5, 1);
-            g2rec[nrecs]->sec3[i]->res_comp->uv_vectors
-                    = (short) g2getbits(g2fld->igdtmpl[13], 6, 1);
-
-            g2rec[nrecs]->sec3[i]->shape_of_earth->lat_last_gridpt = g2fld->igdtmpl[14];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->lon_last_gridpt = g2fld->igdtmpl[15];
-
-            if (g2rec[nrecs]->sec3[i]->shape_of_earth->subdiv_basic_angle != 0 &&
-                    g2rec[nrecs]->sec3[i]->shape_of_earth->angl_init_prod_domain != 0) {
-                scale_factor = g2rec[nrecs]->sec3[i]->shape_of_earth->angl_init_prod_domain /
-                (double) g2rec[nrecs]->sec3[i]->shape_of_earth->subdiv_basic_angle;
-            }
-            else {
-                scale_factor = 1.0 / (double) G2_SCALE_FACTOR;
-            }
-
-            g2rec[nrecs]->sec3[i]->lat_first_gridpt = g2fld->igdtmpl[11] * scale_factor;
-            g2rec[nrecs]->sec3[i]->lon_first_gridpt = g2fld->igdtmpl[12] * scale_factor;
-            g2rec[nrecs]->sec3[i]->lat_last_gridpt = g2fld->igdtmpl[14]  * scale_factor;
-            g2rec[nrecs]->sec3[i]->lon_last_gridpt = g2fld->igdtmpl[15]  * scale_factor;
-
-
-
-            g2rec[nrecs]->sec3[i]->shape_of_earth->idir_incr = (int) g2fld->igdtmpl[16];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->jdir_incr = (int) g2fld->igdtmpl[17];
-            g2rec[nrecs]->sec3[i]->shape_of_earth->idir_incr_scaled
-                    = (float) g2fld->igdtmpl[16] * scale_factor;
-            g2rec[nrecs]->sec3[i]->shape_of_earth->jdir_incr_scaled
-                    = (float) g2fld->igdtmpl[17] * scale_factor;
-
-            g2rec[nrecs]->sec3[i]->scan_mode->idir
-                    = g2getbits(g2fld->igdtmpl[18], 7, 1);
-            g2rec[nrecs]->sec3[i]->scan_mode->jdir
-                    = g2getbits(g2fld->igdtmpl[18], 6, 1);
-
-            /*
-             * Set idir/jdir directional values.  Need these later for
-             * computing non-regular ("quasi") grid lat/lon increments.
-             */
-            if (g2rec[nrecs]->sec3[i]->scan_mode->idir == 0)
-                g2rec[nrecs]->sec3[i]->scan_mode->idir = 1;
-            else
-                g2rec[nrecs]->sec3[i]->scan_mode->idir = -1;
-
-            if (g2rec[nrecs]->sec3[i]->scan_mode->jdir == 0)
-                g2rec[nrecs]->sec3[i]->scan_mode->jdir = -1;
-            else
-                g2rec[nrecs]->sec3[i]->scan_mode->jdir = 1;
-
-            g2rec[nrecs]->sec3[i]->scan_mode->adj_ijdir_consec
-                    = g2getbits(g2fld->igdtmpl[18], 5, 1);
-            g2rec[nrecs]->sec3[i]->scan_mode->scan_dir = g2getbits(g2fld->igdtmpl[18], 4, 1);
-#endif
-
             /* GRIB2 section 4   PDS */
             secid = 4;
             g2rec[nrecs]->sec4[i]->secid = 4;
             /* table 4.0: Product Defn Template Number */
             g2rec[nrecs]->sec4[i]->pds_num = g2fld->ipdtnum;
             g2rec[nrecs]->sec4[i]->prod_def_name = NULL;
-#if 0
-            table = "4.0.table";
-            cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec4[i]->pds_num,-1, ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec4[i]->prod_def_name = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec4[i]->prod_def_name, ct->descrip);
-#endif
 
             /* table 4.1: Parameter Category by Product Discipline */
             g2rec[nrecs]->sec4[i]->prod_params = NclMalloc(sizeof(G2prodParams));
@@ -10108,84 +10219,18 @@ static void *Grib2OpenFile
                     return NULL;
             }
             g2rec[nrecs]->sec4[i]->prod_params->param_cat_name = NULL;
-#if 0
-            table = "4.1.table";
-            cterr = Grib2ReadCodeTable(center, secid, table,
-				       g2rec[nrecs]->sec4[i]->prod_params->param_cat,-1, ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec4[i]->prod_params->param_cat_name
-                    = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->param_cat_name, ct->descrip);
-#endif
-
-            /*
+	    /*
              * table 4.2.x.y: Product Discipline
              * use sec0.discipline to form table name
              */
             if (g2fld->ipdtmpl != NULL)
-                g2rec[nrecs]->sec4[i]->prod_params->param_num = g2fld->ipdtmpl[1];
-            else {
-                NhlPError(NhlFATAL, NhlEUNKNOWN,
-                    "NclGRIB2: Invalid Product Definition Template.");
-                    NhlFree(g2rec);
-                    return NULL;
-            }
-#if 0
-            memset(fnam, '\0', 256);
-            (void) sprintf(fnam, "4.2.%d.%d.table", g2rec[nrecs]->sec0.discipline,
-                    g2rec[nrecs]->sec4[i]->prod_params->param_cat);
-            cterr = Grib2ReadCodeTable(center, secid, fnam,
-				       g2rec[nrecs]->sec4[i]->prod_params->param_num,-1, ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            if (ct->oct != -1) {
-                /* found parameter in table */
-		    g2rec[nrecs]->sec4[i]->prod_params->param_name
-			    = NclMalloc(strlen(ct->descrip) + 1);
-		    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->param_name, ct->descrip);
-
-		    if (ct->shname != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->short_name = NclMalloc(
-				    strlen(ct->shname) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->short_name, ct->shname);
-		    } else {
-			    g2rec[nrecs]->sec4[i]->prod_params->short_name = NclMalloc(18 * sizeof(char));
-			    (void) sprintf(g2rec[nrecs]->sec4[i]->prod_params->short_name, "VAR_%d_%d_%d",
-					   g2rec[nrecs]->sec0.discipline,
-					   g2rec[nrecs]->sec4[i]->prod_params->param_cat,
-					   g2rec[nrecs]->sec4[i]->prod_params->param_num);
-				   
-		    }
-		    if (ct->units != NULL) {
-			    g2rec[nrecs]->sec4[i]->prod_params->units = NclMalloc(strlen(ct->units) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->units, ct->units);
-		    } else {
-			    g2rec[nrecs]->sec4[i]->prod_params->units = NclMalloc(strlen("unknown") + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->units, "unknown");
-		    }
-            } else {
-                /* parameter not found */
-                g2rec[nrecs]->sec4[i]->prod_params->param_name
-                        = NclMalloc(strlen("Unknown Variable Name") + 1);
-                (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->param_name,
-                        "Unknown Variable Name");
-
-		g2rec[nrecs]->sec4[i]->prod_params->short_name = NclMalloc(18 * sizeof(char));
-		(void) sprintf(g2rec[nrecs]->sec4[i]->prod_params->short_name, "VAR_%d_%d_%d",
-			       g2rec[nrecs]->sec0.discipline,
-			       g2rec[nrecs]->sec4[i]->prod_params->param_cat,
-			       g2rec[nrecs]->sec4[i]->prod_params->param_num);
-                g2rec[nrecs]->sec4[i]->prod_params->units = NclMalloc(strlen("unknown") + 1);
-                (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->units, "unknown");
-            }
-#endif
+		    g2rec[nrecs]->sec4[i]->prod_params->param_num = g2fld->ipdtmpl[1];
+	    else {
+		    NhlPError(NhlFATAL, NhlEUNKNOWN,
+			      "NclGRIB2: Invalid Product Definition Template.");
+		    NhlFree(g2rec);
+		    return NULL;
+	    }
 
             /* table 4.3: Type of Generating Process */
             if (g2fld->ipdtmpl != NULL)
@@ -10197,18 +10242,7 @@ static void *Grib2OpenFile
                     return NULL;
             }
             g2rec[nrecs]->sec4[i]->prod_params->gen_proc_name = NULL;
-#if 0
-	    table = "4.3.table";
-            cterr = Grib2ReadCodeTable(center, secid, table,
-				       g2rec[nrecs]->sec4[i]->prod_params->gen_process,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
 
-            g2rec[nrecs]->sec4[i]->prod_params->gen_proc_name = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->gen_proc_name, ct->descrip);
-#endif
             if (g2fld->ipdtmpl != NULL) {
                 g2rec[nrecs]->sec4[i]->prod_params->bkgd_gen_process = g2fld->ipdtmpl[3];
                 g2rec[nrecs]->sec4[i]->prod_params->gen_processID = g2fld->ipdtmpl[4];
@@ -10249,7 +10283,14 @@ static void *Grib2OpenFile
 			    offset = 11;
 			    break;
 		    case 48:
+		    case 49:
 			    offset = 16;
+			    break;
+		    case 70:
+		    case 71:
+		    case 72:
+		    case 73:
+			    offset = 8;
 			    break;
 		    default:
 			    offset = 5;
@@ -10289,6 +10330,7 @@ static void *Grib2OpenFile
 	    default:
 		    switch (g2rec[nrecs]->sec4[i]->pds_num) {
 		    case 48:
+		    case 49:
 			    level_off = 20;
 			    break;
 		    case 47:
@@ -10303,6 +10345,12 @@ static void *Grib2OpenFile
 		    case 40:
 			    level_off = 10;
 			    break;
+		    case 70:
+		    case 71:
+		    case 72:
+		    case 73:
+			    level_off = 12;
+			    break;
 		    default: 
 			    level_off = 9;
 			    break;
@@ -10310,7 +10358,8 @@ static void *Grib2OpenFile
 
 		    /* table 4.5: Fixed Surface Types and Units */
 		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = g2fld->ipdtmpl[level_off];
+			    g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc = g2fld->ipdtmpl[level_off] == 0 ? 
+				    255 : g2fld->ipdtmpl[level_off];
 		    else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
@@ -10322,7 +10371,7 @@ static void *Grib2OpenFile
 
                     if (g2fld->ipdtmpl != NULL) {
                             g2rec[nrecs]->sec4[i]->prod_params->scale_factor_first_fixed_sfc = g2fld->ipdtmpl[level_off + 1];
-	    	    	if (g2fld->ipdtmpl[level_off + 1] == -127)
+			    if (g2fld->ipdtmpl[level_off + 1] == -127)
 		    		    g2rec[nrecs]->sec4[i]->prod_params->scaled_val_first_fixed_sfc = 0;
 		        	else
 			        	g2rec[nrecs]->sec4[i]->prod_params->scaled_val_first_fixed_sfc
@@ -10335,7 +10384,8 @@ static void *Grib2OpenFile
             	    }
 
 		    if (g2fld->ipdtmpl != NULL)
-			    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = g2fld->ipdtmpl[level_off +3];
+			    g2rec[nrecs]->sec4[i]->prod_params->typeof_second_fixed_sfc = g2fld->ipdtmpl[level_off +3] == 0 ?
+				    255 : g2fld->ipdtmpl[level_off +3];
 		    else {
 			    NhlPError(NhlFATAL, NhlEUNKNOWN,
 				      "NclGRIB2: Invalid Product Definition Template.");
@@ -10357,40 +10407,42 @@ static void *Grib2OpenFile
 			    NhlFree(g2rec);
 			    return NULL;
 		    }
-#if 0
-		    switch (g2rec[nrecs]->sec4[i]->prod_params->typeof_first_fixed_sfc) {
-		    case 1: /* ground or water surface */
-		    case 9: /* sea bottom */
-			    g2rec[nrecs]->sec4[i]->prod_params->level = -1;
-			    break;
-
-		    default:
-			    g2rec[nrecs]->sec4[i]->prod_params->level = -1;
-			    if (g2fld->ipdtmpl != NULL) {
-				    if (g2rec[nrecs]->sec4[i]->prod_params->scale_factor_first_fixed_sfc < 100)
-					    g2rec[nrecs]->sec4[i]->prod_params->level = g2fld->ipdtmpl[1];
-				    else
-					    g2rec[nrecs]->sec4[i]->prod_params->level = g2fld->ipdtmpl[1] / 100;
-			    } else {
-				    NhlPError(NhlFATAL, NhlEUNKNOWN,
-					      "NclGRIB2: Invalid Product Definition Template.");
-				    NhlFree(g2rec);
-				    return NULL;
-			    }
-
-			    break;
-		    }
-#endif
 	    }
             /*
              * Depending on type of product, there may or may not be more info
              * available that what's been extracted to this point.  This is determined
              * by the Product Definition Templates (PDTs).
              */
+	    /* initialize some parameter defaults */
             g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc = -1;
 	    g2rec[nrecs]->sec4[i]->prod_params->spatial_proc = -1;
             g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done = 0;
+	    g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = 65535;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_interval_type = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_interval_type = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = 65535;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_interval_type = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_factor = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_value = -1;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_factor = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_value = -1;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_interval_type = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_first_scale_factor = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_first_scale_value = -1;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_second_scale_factor = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->wavelength_second_scale_value = -1;
+            g2rec[nrecs]->sec4[i]->prod_params->satellite_number_of_contributing_spectral_bands = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->satellite_series_1 = 65535;
+	    g2rec[nrecs]->sec4[i]->prod_params->satellite_series_2 = 65535;
+	    g2rec[nrecs]->sec4[i]->prod_params->satellite_instrument_type = 65535;
+	    g2rec[nrecs]->sec4[i]->prod_params->satellite_central_wave_number_scale_factor = 255;
+	    g2rec[nrecs]->sec4[i]->prod_params->satellite_central_wave_number = -1;
+
+
+
             switch (g2rec[nrecs]->sec4[i]->pds_num) {
+	        int offset;
+		int tmp;
                 case 0:
                     /*
                      * Analysis or forecast at a horizontal level or in a
@@ -10499,6 +10551,7 @@ static void *Grib2OpenFile
                     break;
 
                 case 8:
+	        case 72:
                     /*
                      * Average, accumulation, extreme values or other
                      * statistically processed values at a horizontal level
@@ -10506,116 +10559,62 @@ static void *Grib2OpenFile
                      * non-continuous time interval.
                      */
 		    valid_end_time_set = 1;
+		    offset = (g2rec[nrecs]->sec4[i]->pds_num == 72) ? 3 : 0;
 
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
-                            = g2fld->ipdtmpl[15];
+                            = g2fld->ipdtmpl[15+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
-                            = g2fld->ipdtmpl[16];
+                            = g2fld->ipdtmpl[16+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
-                            = g2fld->ipdtmpl[17];
+                            = g2fld->ipdtmpl[17+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
-                            = g2fld->ipdtmpl[18];
+                            = g2fld->ipdtmpl[18+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
-                            = g2fld->ipdtmpl[19];
+                            = g2fld->ipdtmpl[19+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
-                            = g2fld->ipdtmpl[20];
+                            = g2fld->ipdtmpl[20+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
-                            = g2fld->ipdtmpl[21];
+                            = g2fld->ipdtmpl[21+offset];
 
                     g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
-                            = g2fld->ipdtmpl[22];
+                            = g2fld->ipdtmpl[22+offset];
 
                     /* table 4.10: Type of Statistical Processing */
 		    if (g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc == 2 && 
-			    g2fld->ipdtmpl[23] > 191) {
+			    g2fld->ipdtmpl[23+offset] > 191) {
 			    g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc = 
-				    g2fld->ipdtmpl[23] != 255 ? g2fld->ipdtmpl[23] : g2fld->ipdtmpl[29];
+				    g2fld->ipdtmpl[23+offset] != 255 ? g2fld->ipdtmpl[23+offset] : g2fld->ipdtmpl[29+offset];
 		    }
 		    else {
-			    g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc = g2fld->ipdtmpl[23];
+			    g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc = g2fld->ipdtmpl[23+offset];
 		    }
                     g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
-#if 0
-                    table = "4.10.table";
-                    cterr = Grib2ReadCodeTable(center, secid, table,
-					       g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc,-1,ct);
-                    if (cterr < NhlWARNING) {
-                        NhlFree(g2rec);
-                        return NULL;
-                    }
 
-                    g2rec[nrecs]->sec4[i]->prod_params->stat_proc
-                            = NclMalloc(strlen(ct->descrip) + 1);
-                    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->stat_proc,
-                            ct->descrip);
-#endif
 		    if (g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc > 191 && g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc != 255) {
 			    /* local NCEP definition */
-			    g2rec[nrecs]->sec4[i]->prod_params->n_grids = g2fld->ipdtmpl[26];
-			    g2rec[nrecs]->sec4[i]->prod_params->p2 = g2fld->ipdtmpl[28];
-			    g2rec[nrecs]->sec4[i]->prod_params->p1 = g2fld->ipdtmpl[28] - g2fld->ipdtmpl[32];
+			    g2rec[nrecs]->sec4[i]->prod_params->n_grids = g2fld->ipdtmpl[26+offset];
+			    g2rec[nrecs]->sec4[i]->prod_params->p2 = g2fld->ipdtmpl[28+offset];
+			    g2rec[nrecs]->sec4[i]->prod_params->p1 = g2fld->ipdtmpl[28+offset] - g2fld->ipdtmpl[32+offset];
 		    }
 		    else {
 
 			    /* table 4.11: Type of Time Intervals */
 			    g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
-				    = g2fld->ipdtmpl[24];
+				    = g2fld->ipdtmpl[24+offset];
 			    g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
-#if 0		    
-			    table = "4.11.table";
-			    cterr = Grib2ReadCodeTable(center, secid, table,
-						       g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields,-1,ct);
-			    if (cterr < NhlWARNING) {
-				    NhlFree(g2rec);
-				    return NULL;
-			    }
-
-			    g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields
-				    = NclMalloc(strlen(ct->descrip) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields,
-					  ct->descrip);
-#endif
     
 			    /* table 4.4: Indicator of Unit of Time Range */
 			    g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
-				    = g2fld->ipdtmpl[25];
+				    = g2fld->ipdtmpl[25+offset];
 			    g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
-#if 0
-			    table = "4.4.table";
-			    cterr = Grib2ReadCodeTable(center, secid, table,
-						       g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done,-1,ct);
-			    if (cterr < NhlWARNING) {
-				    NhlFree(g2rec);
-				    return NULL;
-			    }
-
-			    g2rec[nrecs]->sec4[i]->prod_params->itr_unit
-				    = NclMalloc(strlen(ct->descrip) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->itr_unit,
-					  ct->descrip);
-#endif
 			    g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
-				    = g2fld->ipdtmpl[26];
+				    = g2fld->ipdtmpl[26+offset];
 
 			    g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
-				    = g2fld->ipdtmpl[27];
+				    = g2fld->ipdtmpl[27+offset];
 			    g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
-#if 0
-			    table = "4.4.table";
-			    cterr = Grib2ReadCodeTable(center, secid, table,
-						       g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields,-1,ct);
-			    if (cterr < NhlWARNING) {
-				    NhlFree(g2rec);
-				    return NULL;
-			    }
-
-			    g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit
-				    = NclMalloc(strlen(ct->descrip) + 1);
-			    (void) strcpy(g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit,
-					  ct->descrip);
-#endif
 			    g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
-				    = g2fld->ipdtmpl[28];
+				    = g2fld->ipdtmpl[28+offset];
 		    }
 
                     break;
@@ -10630,6 +10629,8 @@ static void *Grib2OpenFile
                     break;
 
                 case 1:
+	        case 60:
+	        case 71:
                     /*
                      * Individual ensemble forecast, control and perturbed, at a
                      * horizontal level or in a horizontal layer at a point in time.
@@ -10637,6 +10638,8 @@ static void *Grib2OpenFile
                      */
 
                 case 11:
+	        case 61:
+	        case 73:
                     /*
                      * Individual ensemble forecast, control and perturbed, at a
                      * horizontal level or in a horizontal layer, in a continuous
@@ -10644,57 +10647,65 @@ static void *Grib2OpenFile
                      */
 
                     /* table 4.6: Type of Ensemble Forecast */
-                    g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[15];
+		    offset = (g2rec[nrecs]->sec4[i]->pds_num == 71 || g2rec[nrecs]->sec4[i]->pds_num == 73 ) ? 3 : 0;
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[15+offset];
                     g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type = NULL;
                     
-                    g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[16];
-                    g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[17];
+                    g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[16+offset];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[17+offset];
 
-                    if (g2rec[nrecs]->sec4[i]->pds_num == 1) 
+                    if (g2rec[nrecs]->sec4[i]->pds_num == 1 || g2rec[nrecs]->sec4[i]->pds_num == 60 || g2rec[nrecs]->sec4[i]->pds_num == 71) 
                         break;
+
+		    offset = 0;
+		    if (g2rec[nrecs]->sec4[i]->pds_num == 61) 
+			    offset = 6;
+		    else if (g2rec[nrecs]->sec4[i]->pds_num == 73)
+			    offset = 3;
 
                     /* statistical processing */
 		    valid_end_time_set = 1;
+
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
-                            = g2fld->ipdtmpl[18];
+                            = g2fld->ipdtmpl[18 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
-                            = g2fld->ipdtmpl[19];
+                            = g2fld->ipdtmpl[19 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
-                            = g2fld->ipdtmpl[20];
+                            = g2fld->ipdtmpl[20 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
-                            = g2fld->ipdtmpl[21];
+                            = g2fld->ipdtmpl[21 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
-                            = g2fld->ipdtmpl[22];
+                            = g2fld->ipdtmpl[22 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
-                            = g2fld->ipdtmpl[23];
+                            = g2fld->ipdtmpl[23 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
-                            = g2fld->ipdtmpl[24];
+                            = g2fld->ipdtmpl[24 + offset];
 
                     g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
-                            = g2fld->ipdtmpl[25];
+                            = g2fld->ipdtmpl[25 + offset];
 
                     /* table 4.10: Type of Statistical Processing */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
-                            = g2fld->ipdtmpl[26];
+                            = g2fld->ipdtmpl[26 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
     
                     /* table 4.11: Type of Time Intervals */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
-                            = g2fld->ipdtmpl[27];
+                            = g2fld->ipdtmpl[27 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
     
                     /* table 4.4: Indicator of Unit of Time Range */
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
-                            = g2fld->ipdtmpl[28];
+                            = g2fld->ipdtmpl[28 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
                     g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
-                            = g2fld->ipdtmpl[29];
+                            = g2fld->ipdtmpl[29 + offset];
 
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
-                            = g2fld->ipdtmpl[30];
+                            = g2fld->ipdtmpl[30 + offset];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
                     g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
-                            = g2fld->ipdtmpl[31];
+                            = g2fld->ipdtmpl[31 + offset];
                     break;
 
                 case 12:
@@ -10789,7 +10800,65 @@ static void *Grib2OpenFile
                      * but for sure the level types are not applicable to satellite data,
                      * also forecast time is not relevant to observational data
                      */
-                    break;
+		     /* fall through */
+	        case 31:
+                    /*
+                     * Revised and (recommended) Satellite product.
+                     */
+		    /* fall through */
+	        case 32:
+	        case 33:
+	        case 34:
+                    /*
+                     * Revised and (recommended) Satellite product.
+                     */
+		    offset = (g2rec[nrecs]->sec4[i]->pds_num == 31 || g2rec[nrecs]->sec4[i]->pds_num == 30) ? 5 : 10;
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_number_of_contributing_spectral_bands = g2fld->ipdtmpl[offset - 1];
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_series_1 = g2fld->ipdtmpl[offset];
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_series_2 = g2fld->ipdtmpl[offset + 1];
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_instrument_type = g2fld->ipdtmpl[offset + 2];
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_central_wave_number_scale_factor =g2fld->ipdtmpl[offset + 3];
+		    g2rec[nrecs]->sec4[i]->prod_params->satellite_central_wave_number = g2fld->ipdtmpl[offset + 4];
+		
+		    if (g2rec[nrecs]->sec4[i]->pds_num < 33)
+			    break;
+		    offset = g2fld->ipdtmpl[offset - 1] * 5 + offset;
+		    g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[offset];
+		    g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[offset + 1];
+		    g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[offset + 2];
+		    if (g2rec[nrecs]->sec4[i]->pds_num < 34)
+			    break;
+
+		    valid_end_time_set = 1;
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
+                            = g2fld->ipdtmpl[offset + 3];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
+                            = g2fld->ipdtmpl[offset + 4];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
+                            = g2fld->ipdtmpl[offset + 5];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
+                            = g2fld->ipdtmpl[offset + 6];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
+                            = g2fld->ipdtmpl[offset + 7];
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
+                            = g2fld->ipdtmpl[offset + 8];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                            = g2fld->ipdtmpl[offset + 9];
+                    g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
+                            = g2fld->ipdtmpl[offset + 10];
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc = g2fld->ipdtmpl[offset + 11];
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
+                            = g2fld->ipdtmpl[offset + 12];
+                    g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
+                            = g2fld->ipdtmpl[offset + 13];
+                    g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
+                            = g2fld->ipdtmpl[offset + 14];
+                    g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
+                            = g2fld->ipdtmpl[offset + 15];
+                    g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
+                            = g2fld->ipdtmpl[offset + 16];
+
+		    break;
 
                 case 40:
                     /*
@@ -10797,21 +10866,22 @@ static void *Grib2OpenFile
                      * layer at a point in time for atmospheric chemical or physical
                      * constituents
                      */
+		    g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[2];
                     break;
 
                 case 41:
-                    /* FALLTHROUGH */
                 case 43:
                     /*
                      * Individual ensemble forecast, control and perturbed, at a horizontal
                      * level or in a horizontal layer at a point in time for atmospheric
                      * chemical or physical constituents
                      */
-                    g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[15];
+		    g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[2];
+                    g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[16];
                     g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type = NULL;
                     
-                    g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[16];
-                    g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[17];
+                    g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[17];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[18];
 
                     if (g2rec[nrecs]->sec4[i]->pds_num == 41) 
                         break;
@@ -10819,45 +10889,45 @@ static void *Grib2OpenFile
                     /* statistical processing */
 		    valid_end_time_set = 1;
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
-                            = g2fld->ipdtmpl[18];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
                             = g2fld->ipdtmpl[19];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
                             = g2fld->ipdtmpl[20];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
                             = g2fld->ipdtmpl[21];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
                             = g2fld->ipdtmpl[22];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
                             = g2fld->ipdtmpl[23];
-                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
                             = g2fld->ipdtmpl[24];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                            = g2fld->ipdtmpl[25];
 
                     g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
-                            = g2fld->ipdtmpl[25];
+                            = g2fld->ipdtmpl[26];
 
                     /* table 4.10: Type of Statistical Processing */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
-                            = g2fld->ipdtmpl[26];
+                            = g2fld->ipdtmpl[27];
                     g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
     
                     /* table 4.11: Type of Time Intervals */
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
-                            = g2fld->ipdtmpl[27];
+                            = g2fld->ipdtmpl[28];
                     g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
     
                     /* table 4.4: Indicator of Unit of Time Range */
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
-                            = g2fld->ipdtmpl[28];
+                            = g2fld->ipdtmpl[29];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
                     g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
-                            = g2fld->ipdtmpl[29];
+                            = g2fld->ipdtmpl[30];
 
                     g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
-                            = g2fld->ipdtmpl[30];
+                            = g2fld->ipdtmpl[31];
                     g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
                     g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
-                            = g2fld->ipdtmpl[31];
+                            = g2fld->ipdtmpl[32];
                     break;
 
                 case 42:
@@ -10868,55 +10938,153 @@ static void *Grib2OpenFile
                      * chemical or physical constituents
                      */
 		    valid_end_time_set = 1;
+		    g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[2];
                     g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
-                            = g2fld->ipdtmpl[15];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
                             = g2fld->ipdtmpl[16];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
                             = g2fld->ipdtmpl[17];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
                             = g2fld->ipdtmpl[18];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
                             = g2fld->ipdtmpl[19];
-                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
                             = g2fld->ipdtmpl[20];
-                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                    g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
                             = g2fld->ipdtmpl[21];
+                    g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+                            = g2fld->ipdtmpl[22];
 
                     g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
-                            = g2fld->ipdtmpl[22];
+                            = g2fld->ipdtmpl[23];
 
                     /* table 4.10: Type of Statistical Processing */
                     g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
                     g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
-                            = g2fld->ipdtmpl[23];
+                            = g2fld->ipdtmpl[24];
 		    if (g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc > 191 && g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc != 255) {
 			    /* local NCEP definition */
-			    g2rec[nrecs]->sec4[i]->prod_params->n_grids = g2fld->ipdtmpl[26];
-			    g2rec[nrecs]->sec4[i]->prod_params->p2 = g2fld->ipdtmpl[28];
-			    g2rec[nrecs]->sec4[i]->prod_params->p1 = g2fld->ipdtmpl[28] - g2fld->ipdtmpl[32];
+			    g2rec[nrecs]->sec4[i]->prod_params->n_grids = g2fld->ipdtmpl[27];
+			    g2rec[nrecs]->sec4[i]->prod_params->p2 = g2fld->ipdtmpl[29];
+			    g2rec[nrecs]->sec4[i]->prod_params->p1 = g2fld->ipdtmpl[29] - g2fld->ipdtmpl[33];
 		    }
 		    else {
     			    /* table 4.11: Type of Time Intervals */
 			    g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
-				    = g2fld->ipdtmpl[24];
+				    = g2fld->ipdtmpl[26];
 			    g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
 			    
 			    /* table 4.4: Indicator of Unit of Time Range */
 			    g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
-				    = g2fld->ipdtmpl[25];
+				    = g2fld->ipdtmpl[27];
 			    g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
 			    g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
-				    = g2fld->ipdtmpl[26];
+				    = g2fld->ipdtmpl[28];
 
 			    g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
-				    = g2fld->ipdtmpl[27];
+				    = g2fld->ipdtmpl[29];
 			    g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
 			    g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
-				    = g2fld->ipdtmpl[28];
+				    = g2fld->ipdtmpl[30];
 		    }
                     break;
 
+	        case 44:
+	        case 45:
+	        case 46:
+	        case 47:
+			offset = 2;
+			if (g2rec[nrecs]->sec4[i]->pds_num == 47)
+				offset = 3;
+			g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[offset];
+			g2rec[nrecs]->sec4[i]->prod_params->size_interval_type = g2fld->ipdtmpl[offset+1];
+                        g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_factor = g2fld->ipdtmpl[offset+2];
+                        g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_value = g2fld->ipdtmpl[offset+3];
+                        g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_factor = g2fld->ipdtmpl[offset+4];
+                        g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_value = g2fld->ipdtmpl[offset+5];
+			if (g2rec[nrecs]->sec4[i]->pds_num == 44)
+				break;
+			if (g2rec[nrecs]->sec4[i]->pds_num == 47 || g2rec[nrecs]->sec4[i]->pds_num == 45) {
+				g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[21];
+				g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type = NULL;
+				g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[22];
+				g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[23];
+				if (g2rec[nrecs]->sec4[i]->pds_num == 45)
+					break;
+			}
+			/* templates 46 and 47 have statistical elements */
+			offset = g2rec[nrecs]->sec4[i]->pds_num == 46 ? 21 : 24;
+			valid_end_time_set = 1;
+			g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[2];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.year
+				= g2fld->ipdtmpl[offset];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.mon
+				= g2fld->ipdtmpl[offset+1];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.day
+				= g2fld->ipdtmpl[offset+2];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.hour
+				= g2fld->ipdtmpl[offset+3];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.min
+				= g2fld->ipdtmpl[offset+4];
+			g2rec[nrecs]->sec4[i]->prod_params->end_overall_time_interval.sec
+				= g2fld->ipdtmpl[offset+5];
+			g2rec[nrecs]->sec4[i]->prod_params->num_timerange_spec_time_interval_calc
+				= g2fld->ipdtmpl[offset+6];
+
+			g2rec[nrecs]->sec4[i]->prod_params->total_num_missing_data_vals
+				= g2fld->ipdtmpl[offset+7];
+
+			/* table 4.10: Type of Statistical Processing */
+			g2rec[nrecs]->sec4[i]->prod_params->stat_proc = NULL;
+			g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc
+				= g2fld->ipdtmpl[offset+8];
+			if (g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc > 191 && g2rec[nrecs]->sec4[i]->prod_params->typeof_stat_proc != 255) {
+				/* local NCEP definition */
+				g2rec[nrecs]->sec4[i]->prod_params->n_grids = g2fld->ipdtmpl[offset+26];
+				g2rec[nrecs]->sec4[i]->prod_params->p2 = g2fld->ipdtmpl[offset+28];
+				g2rec[nrecs]->sec4[i]->prod_params->p1 = g2fld->ipdtmpl[offset+28] - g2fld->ipdtmpl[offset+32];
+			}
+			else {
+				/* table 4.11: Type of Time Intervals */
+				g2rec[nrecs]->sec4[i]->prod_params->typeof_incr_betw_fields
+					= g2fld->ipdtmpl[offset+9];
+				g2rec[nrecs]->sec4[i]->prod_params->incr_betw_fields = NULL;
+			    
+				/* table 4.4: Indicator of Unit of Time Range */
+				g2rec[nrecs]->sec4[i]->prod_params->ind_time_range_unit_stat_proc_done
+					= g2fld->ipdtmpl[offset+10];
+				g2rec[nrecs]->sec4[i]->prod_params->itr_unit = NULL;
+				g2rec[nrecs]->sec4[i]->prod_params->len_time_range_unit_stat_proc_done
+					= g2fld->ipdtmpl[offset+11];
+
+				g2rec[nrecs]->sec4[i]->prod_params->ind_time_unit_incr_succ_fields
+					= g2fld->ipdtmpl[offset+12];
+				g2rec[nrecs]->sec4[i]->prod_params->itr_succ_unit = NULL;
+				g2rec[nrecs]->sec4[i]->prod_params->time_incr_betw_fields
+					= g2fld->ipdtmpl[offset+13];
+			}
+			break;
+
+                case 48:
+	        case 49:
+			g2rec[nrecs]->sec4[i]->prod_params->aerosol_type = g2fld->ipdtmpl[2];
+			g2rec[nrecs]->sec4[i]->prod_params->size_interval_type = g2fld->ipdtmpl[3];
+			g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_factor = g2fld->ipdtmpl[4];
+			g2rec[nrecs]->sec4[i]->prod_params->size_first_scale_value = g2fld->ipdtmpl[5];
+			g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_factor = g2fld->ipdtmpl[6];
+			g2rec[nrecs]->sec4[i]->prod_params->size_second_scale_value = g2fld->ipdtmpl[7];
+			g2rec[nrecs]->sec4[i]->prod_params->wavelength_interval_type = g2fld->ipdtmpl[8];
+			g2rec[nrecs]->sec4[i]->prod_params->wavelength_first_scale_factor = g2fld->ipdtmpl[9];
+			g2rec[nrecs]->sec4[i]->prod_params->wavelength_first_scale_value = g2fld->ipdtmpl[10];
+			g2rec[nrecs]->sec4[i]->prod_params->wavelength_second_scale_factor = g2fld->ipdtmpl[11];
+			g2rec[nrecs]->sec4[i]->prod_params->wavelength_second_scale_value = g2fld->ipdtmpl[12];
+			if (g2rec[nrecs]->sec4[i]->pds_num == 48)
+				break;
+			g2rec[nrecs]->sec4[i]->prod_params->typeof_ensemble_fx = g2fld->ipdtmpl[26];
+			g2rec[nrecs]->sec4[i]->prod_params->ensemble_fx_type = NULL;
+			g2rec[nrecs]->sec4[i]->prod_params->perturb_num = g2fld->ipdtmpl[27];
+			g2rec[nrecs]->sec4[i]->prod_params->num_fx_ensemble = g2fld->ipdtmpl[28];
+			
+		    break;
                 case 254:
                     /*
                      * CCITT IA5 character string.
@@ -10990,17 +11158,6 @@ static void *Grib2OpenFile
             /* table 5.0: Data Representation Template Number */
             g2rec[nrecs]->sec5[i]->drt_templ_num = g2fld->idrtnum;
             g2rec[nrecs]->sec5[i]->drt_desc = NULL;
-#if 0
-            table = "5.0.table";
-            cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec5[i]->drt_templ_num,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec5[i]->drt_desc = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec5[i]->drt_desc, ct->descrip);
-#endif
 
             /*
              * the data repr applies only to data rep template 0-3 -- totally wrong for
@@ -11047,18 +11204,6 @@ static void *Grib2OpenFile
             g2rec[nrecs]->sec5[i]->data_repr->typeof_field_vals = g2fld->idrtmpl[4];
             g2rec[nrecs]->sec5[i]->data_repr->typeof_field_vals = 0; /* always float */
             g2rec[nrecs]->sec5[i]->data_repr->field_vals = NULL;
-#if 0
-            table = "5.1.table";
-            cterr = Grib2ReadCodeTable(center, secid, table,
-				       g2rec[nrecs]->sec5[i]->data_repr->typeof_field_vals,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec5[i]->data_repr->field_vals = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec5[i]->data_repr->field_vals, ct->descrip);
-#endif
 
             /* type allocated is based on value read from table/template */
             g2rec[nrecs]->sec5[i]->ndpts = g2fld->ndpts;
@@ -11072,17 +11217,6 @@ static void *Grib2OpenFile
             /* table 6.0: Bitmap Indicator */
             g2rec[nrecs]->sec6[i]->bmap_ind = g2fld->ibmap;
             g2rec[nrecs]->sec6[i]->bmap_desc = NULL;
-#if 0
-            table = "6.0.table";
-            cterr = Grib2ReadCodeTable(center, secid, table, g2rec[nrecs]->sec6[i]->bmap_ind,-1,ct);
-            if (cterr < NhlWARNING) {
-                NhlFree(g2rec);
-                return NULL;
-            }
-
-            g2rec[nrecs]->sec6[i]->bmap_desc = NclMalloc(strlen(ct->descrip) + 1);
-            (void) strcpy(g2rec[nrecs]->sec6[i]->bmap_desc, ct->descrip);
-#endif
 
             if (g2fld->ibmap == 255) {
                 /* no bitmap specified */
@@ -11104,65 +11238,6 @@ static void *Grib2OpenFile
 ***/
 
             g2_free(g2fld);
-#if 0
-	    if (valid_end_time_set) {
-		    int itime[6],etime[6], difftime[6], convert[6];
-		    int mon[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
-		    int ix;
-
-		    convert[0] = 1;
-		    convert[1] = 12;
-		    convert[2] = 31;
-		    convert[3] = 24;
-		    convert[4] = 60;
-		    convert[5] = 60;
-		    itime[0] = g2rec[i]->sec1.date_time.year;
-		    itime[1] = g2rec[i]->sec1.date_time.mon;
-		    itime[2] = g2rec[i]->sec1.date_time.day;
-		    itime[3] = g2rec[i]->sec1.date_time.hour;
-		    itime[4] = g2rec[i]->sec1.date_time.min;
-		    itime[5] = g2rec[i]->sec1.date_time.sec;
-
-		    etime[0] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.year;
-		    etime[1] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.mon;
-		    etime[2] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.day;
-		    etime[3] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.hour;
-		    etime[4] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.min;
-		    etime[5] = g2rec[i]->sec4[0]->prod_params->end_overall_time_interval.sec;
-
-		    if (memcmp(etime,itime,sizeof(itime)) <= 0) {
-			    printf("end time less than or equal to initial time\n");
-		    }
-		    else {
-			    for (ix = 5; ix >= 0; ix--) {
-				    if (ix == 0) {
-					    difftime[ix] = etime[ix] - itime[ix]; 
-				    }
-				    else if (ix == 2) { /* days */
-					    while (etime[ix] < itime[ix]) {
-						    etime[ix] += mon[etime[ix-1]];
-						    if (HeisLeapYear(etime[0]) && etime[ix-1] == 1) {
-							    etime[ix]++;
-						    }
-						    etime[ix -1]--;
-					    }
-					    difftime[ix] = etime[ix] - itime[ix]; 
-				    }
-				    else {
-					    while (etime[ix] < itime[ix]) {
-						    etime[ix] += convert[ix];
-						    etime[ix -1]--;
-					    }
-					    difftime[ix] = etime[ix] - itime[ix]; 
-				    }
-			    }
-			    printf("valid-time - initial-time: %dy %dmo %dd %dh %dmi %ds\n", difftime[0],difftime[1],difftime[2],difftime[3],difftime[4],difftime[5]);
-			    
-		    }
-		    printf("forecast time: %d, duration %d\n",g2rec[i]->sec4[0]->prod_params->forecast_time,
-			   g2rec[i]->sec4[0]->prod_params->len_time_range_unit_stat_proc_done);
-	    }		    
-#endif
         }
 	++nrecs;
         NclFree(g2buf);
@@ -11266,6 +11341,23 @@ static void *Grib2OpenFile
 	    g2inqrec->traits.stat_proc_type = g2rec[i]->sec4[j]->prod_params->typeof_stat_proc;
 	    g2inqrec->traits.first_level_type = g2rec[i]->sec4[j]->prod_params->typeof_first_fixed_sfc;
 	    g2inqrec->traits.second_level_type =  g2rec[i]->sec4[j]->prod_params->typeof_second_fixed_sfc;
+	    g2inqrec->traits.aerosol_type = g2rec[i]->sec4[j]->prod_params->aerosol_type;
+	    g2inqrec->traits.aerosol_size_interval_type = g2rec[i]->sec4[j]->prod_params->size_interval_type;
+	    g2inqrec->traits.aerosol_size_first_scale_factor = g2rec[i]->sec4[j]->prod_params->size_first_scale_factor;
+	    g2inqrec->traits.aerosol_size_first_scale_value = g2rec[i]->sec4[j]->prod_params->size_first_scale_value;
+	    g2inqrec->traits.aerosol_size_second_scale_factor =	g2rec[i]->sec4[j]->prod_params->size_second_scale_factor;
+	    g2inqrec->traits.aerosol_size_second_scale_value = g2rec[i]->sec4[j]->prod_params->size_second_scale_value;
+	    g2inqrec->traits.aerosol_wavelength_interval_type = g2rec[i]->sec4[j]->prod_params->wavelength_interval_type;
+	    g2inqrec->traits.aerosol_wavelength_first_scale_factor = g2rec[i]->sec4[j]->prod_params->wavelength_first_scale_factor;
+	    g2inqrec->traits.aerosol_wavelength_first_scale_value = g2rec[i]->sec4[j]->prod_params->wavelength_first_scale_value;
+	    g2inqrec->traits.aerosol_wavelength_second_scale_factor = g2rec[i]->sec4[j]->prod_params->wavelength_second_scale_factor;
+	    g2inqrec->traits.aerosol_wavelength_second_scale_value = g2rec[i]->sec4[j]->prod_params->wavelength_second_scale_value;
+	    g2inqrec->traits.satellite_number_of_contributing_spectral_bands = g2rec[i]->sec4[j]->prod_params->satellite_number_of_contributing_spectral_bands;
+	    g2inqrec->traits.satellite_series_1 = g2rec[i]->sec4[j]->prod_params->satellite_series_1;
+	    g2inqrec->traits.satellite_series_2 = g2rec[i]->sec4[j]->prod_params->satellite_series_2;
+	    g2inqrec->traits.satellite_instrument_type = g2rec[i]->sec4[j]->prod_params->satellite_instrument_type;
+	    g2inqrec->traits.satellite_central_wave_number_scale_factor = g2rec[i]->sec4[j]->prod_params->satellite_central_wave_number_scale_factor;
+	    g2inqrec->traits.satellite_central_wave_number = g2rec[i]->sec4[j]->prod_params->satellite_central_wave_number;
 
 	    g2inqrec->qcenter_name = NrmStringToQuark(g2rec[i]->sec1.center_name);
 
@@ -13101,7 +13193,7 @@ static void _g2UpdateGridTypeAttribute
 				}
 				tmp_string = (NrmQuark *) step_att->att_inq->thevalue->multidval.val;
 				if (Grib2ReadCodeTable(step->ref_rec->table_source, 3, 
-						       "3.1.table",step->grid_number,-1,ct) < NhlWARNING) {
+						       "3.1.table",step->grid_number,-1,ct,False) < NhlWARNING) {
 					return;
 				}
 				if (ct->descrip) {
