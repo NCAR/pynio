@@ -24,6 +24,15 @@ typedef enum
     NCL_UDT_string
 } NclUDTType;
 
+typedef struct _NclFileUserDefinedTypeField
+{
+    int               n_dims;
+    ng_size_t         *dim_sizes;
+    size_t            offset;
+    NclQuark          field_name;
+    NclBasicDataTypes field_type;
+} NclFileUDTField;
+
 typedef struct _NclFileUserDefinedTypeNode
 {
     ng_size_t         id;
@@ -33,8 +42,7 @@ typedef struct _NclFileUserDefinedTypeNode
     int               n_fields;
     NclQuark          name;
     ng_size_t         type;
-    NclQuark          *mem_name;
-    NclBasicDataTypes *mem_type;
+    NclFileUDTField   *fields;
 } NclFileUDTNode;
 
 typedef struct _NclFileUserDefinedTypeRecord
@@ -99,18 +107,18 @@ typedef struct _NclFileCompoundNode
     NclQuark             name;
     NclBasicDataTypes    type;
     nc_type              the_nc_type;
+    int                  index;
     size_t               offset;
     int                  rank;
-    int                  nvals;
-    int                 *sides;
-
+    ng_size_t            nvals;
+    ng_size_t           *dimsizes;
     void                *value;
 } NclFileCompoundNode;
 
 typedef struct _NclFileCompoundRecord
 {
     size_t            max_comps;
-    size_t            n_comps;   /* aka nfields */
+    size_t            n_comps;   /* aka nfields -- this is used by HDF5 whereas nfields is used by NetCDF4 -- dont know why  */
     size_t            type;
     size_t            size;
     size_t            nfields;
@@ -202,8 +210,10 @@ typedef struct _NclFileVarNode
 
     NclFileDimRecord *chunk_dim_rec;
     NclUDTType             udt_type;
+    NclFileUDTNode         *udt_type_node;   /* this is read-only -- does not need to be freed */
     int                    is_compound;
     NclFileCompoundRecord *comprec;
+    void                  *type_specific_rec;  /* for reference and other types */
 
     NclFileAttRecord *att_rec;
 

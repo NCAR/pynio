@@ -6,7 +6,7 @@
 *                                                                       *
 ************************************************************************/
 /*
- *      $Id: NclAdvancedFile.h 16526 2016-06-08 19:11:34Z dbrown $
+ *      $Id$
  */
 #ifndef NclAdvancedFile_h
 #define NclAdvancedFile_h

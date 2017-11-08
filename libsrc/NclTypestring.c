@@ -1,5 +1,5 @@
 /*
- *      $Id: NclTypestring.c.sed 14204 2013-03-14 14:18:36Z huangwei $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -632,7 +632,7 @@ ng_size_t nval;
 }
 
 /*
- *      $Id: TypestringSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -720,7 +720,7 @@ NclTypeClass Ncl_Type_string_sel_gt_type
 }
 
 /*
- *      $Id: TypestringSelectOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -808,7 +808,7 @@ NclTypeClass Ncl_Type_string_sel_lt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -896,7 +896,7 @@ NclTypeClass Ncl_Type_string_lt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -984,7 +984,7 @@ NclTypeClass Ncl_Type_string_gt_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1072,7 +1072,7 @@ NclTypeClass Ncl_Type_string_ge_type
 }
 
 /*
- *      $Id: TypestringCompareOpTemplate.c.sed 12092 2011-02-09 22:36:30Z haley $
+ *      $Id$
  */
 /************************************************************************
 *									*
@@ -1160,7 +1160,7 @@ NclTypeClass Ncl_Type_string_le_type
 }
 
 /*
- *      $Id: NclTypestring.c.specific 15191 2014-03-31 22:29:58Z dbrown $
+ *      $Id$
  */
 /************************************************************************
 *									*
