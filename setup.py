@@ -3,6 +3,7 @@
 # may be required. See the following comments.
 #
 from __future__ import print_function
+from sys import version_info
 import os
 import sys
 import subprocess
@@ -88,12 +89,14 @@ from os.path import join
 def set_curl_libs():
   #curl_libs = commands.getstatusoutput('curl-config --libs')
   
-  p = subprocess.Popen(["curl-config ", "--libs"], stdout=PIPE, stderr=STDOUT)
+  p = subprocess.Popen(["curl-config", "--libs"], stdout=subprocess.PIPE, 
+                       stderr=subprocess.STDOUT)
   output, _ = p.communicate()
   
   if p.returncode == 0:
-      
-    output = output.decode("utf-8")
+    
+    if version_info >= (3,): 
+        output = output.decode("utf-8")
 #
 # Split into individual lines so we can loop through each one.
 #
@@ -102,9 +105,9 @@ def set_curl_libs():
 # Check if this is a -L or -l string and do the appropriate thing.
 #
     for clibstr in clibs:
-      if bytes(clibstr[0:2]) == "-L":
+      if clibstr[0:2] == "-L":
         LIB_DIRS.append(clibstr.split("-L")[1])
-      elif bytes(clibstr[0:2]) == "-l":
+      elif clibstr[0:2] == "-l":
         LIBRARIES.append(clibstr.split("-l")[1])
   else:
 #
@@ -482,9 +485,6 @@ def configuration(parent_package='',top_path=None):
     for file in LIB_EXCLUDE_SOURCES: 
       sources.remove(file)
     sources = [ join('libsrc', file) for file in sources ]
-    #print (len(sources))
-    #print (sources)
-    #raise RuntimeError("out")
     config.add_library('nio',sources,
                        include_dirs=INC_DIRS,
                        macros=LIB_MACROS,

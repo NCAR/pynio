@@ -1854,6 +1854,9 @@ NioFileObject_new_dimension(NioFileObject *self, PyObject *args) {
 #endif
 	else if (PyLong_Check(size_ob))
 		size = (Py_ssize_t) PyLong_AsSsize_t(size_ob);
+	else if (PyIndex_Check(size_ob)) {
+		size = PyNumber_AsSsize_t(size_ob, PyExc_OverflowError);
+	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "size must be None or integer");
 		return NULL;
@@ -1933,6 +1936,9 @@ static PyObject *NioFileObject_new_chunk_dimension(NioFileObject *self,
 #endif
 	else if (PyLong_Check(size_ob))
 		size = (Py_ssize_t) PyLong_AsSsize_t(size_ob);
+	else if (PyIndex_Check(size_ob)) {
+		size = PyNumber_AsSsize_t(size_ob, PyExc_OverflowError);
+	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "size must be None or integer");
 		return NULL;
@@ -2884,6 +2890,9 @@ static PyObject *NioFileObject_new_compound_type(NioFileObject *self,
 				memb_sizes[i] = (int) PyInt_AsLong(item2);
 			}
 #endif
+			else if (PyIndex_Check(item2)) {
+				memb_sizes[i] = (int) PyNumber_AsSsize_t(item2, PyExc_OverflowError);
+			}
 			else if (is_string_type(item2)) {
 				typestr = as_utf8_char(item2);
 				sscanf(typestr, "%d", &(memb_sizes[i]));
@@ -3069,6 +3078,9 @@ static PyObject *NioFileObject_new_compound(NioFileObject *self, PyObject *args)
 				memb_sizes[i] = (int) PyInt_AsLong(item2);
 			}
 #endif
+			else if (PyIndex_Check(item2)) {
+				memb_sizes[i] = (int) PyNumber_AsSsize_t(item2, PyExc_OverflowError);
+			}
 			else if (is_string_type(item2)) {
 				typestr = as_utf8_char(item2);
 				sscanf(typestr, "%d", &(memb_sizes[i]));
@@ -6376,6 +6388,11 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index) {
 		return NioVariableObject_item(self, i);
 	}
 #endif
+	else if (PyIndex_Check(index)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_OverflowError);
+		return NioVariableObject_item(self, i);
+	}
+
 	if (self->nd == 0) {
 		PyErr_SetString(PyExc_TypeError, "Not a sequence");
 		return NULL;
@@ -6442,6 +6459,21 @@ NioVariableObject_subscript(NioVariableObject *self, PyObject *index) {
 						d++;
 					}
 #endif
+					else if (PyIndex_Check(subscript)) {
+						Py_ssize_t n = PyNumber_AsSsize_t(subscript, PyExc_OverflowError);
+						if (n >= self->dimensions[d]
+								|| n < -self->dimensions[d]) {
+							PyErr_Format(PyExc_IndexError,
+									"index %d is out of bounds for axis %d with size %ld",
+									(int) n, d, self->dimensions[d]);
+							free(indices);
+							return NULL;
+						}
+						indices[d].start = n;
+						indices[d].stop = n + 1;
+						indices[d].item = 1;
+						d++;
+					}
 					else if (PySlice_Check(subscript)) {
 						Py_ssize_t slicelen;
 						PySliceObject *slice = (PySliceObject *) subscript;
@@ -6547,6 +6579,11 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 		return NioVariableObject_ass_item(self, i, value);
 	}
 #endif
+	else if (PyIndex_Check(index)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_OverflowError);
+		return NioVariableObject_ass_item(self, i, value);
+	}
+
 	if (value == NULL) {
 		PyErr_SetString(PyExc_ValueError, "Can't delete elements.");
 		return -1;
@@ -6563,7 +6600,7 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 #if PY_MAJOR_VERSION < 3
 			if (PySlice_GetIndicesEx((PySliceObject *) index,
 #else
-					if (PySlice_GetIndicesEx(index,
+		    if (PySlice_GetIndicesEx(index,
 #endif
 					self->dimensions[0], &indices->start, &indices->stop,
 					&indices->stride, &slicelen) < 0) {
@@ -6585,6 +6622,9 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 					indices->start = PyInt_AsLong(slice->start);
 				}
 #endif
+				else if (PyIndex_Check(slice->start)) {
+					indices->start = PyNumber_AsSsize_t(slice->start, PyExc_OverflowError);
+				}
 				if (indices->start < PY_SSIZE_T_MIN * 100)
 					indices->no_start = 1;
 			}
@@ -6595,10 +6635,14 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 					indices->stop = PyLong_AsLong(slice->stop);
 				}
 #if PY_MAJOR_VERSION < 3
-				if (PyInt_Check(slice->stop)) {
+				else if (PyInt_Check(slice->stop)) {
 					indices->stop = PyInt_AsLong(slice->stop);
 				}
 #endif
+				else if (PyIndex_Check(slice->stop)) {
+					indices->stop = PyNumber_AsSsize_t(slice->stop, PyExc_OverflowError);
+				}
+
 				if (indices->stop > PY_SSIZE_T_MAX / 100)
 					indices->no_stop = 1;
 			}
@@ -6627,13 +6671,20 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 						d++;
 					}
 #endif
+					else if (PyIndex_Check(subscript)) {
+						Py_ssize_t n = PyNumber_AsSsize_t(subscript, PyExc_OverflowError);
+						indices[d].start = n;
+						indices[d].stop = n + 1;
+						indices[d].item = 1;
+						d++;
+					}
 					else if (PySlice_Check(subscript)) {
 						Py_ssize_t slicelen;
 						PySliceObject *slice = (PySliceObject *) subscript;
 #if PY_MAJOR_VERSION < 3
 						if (PySlice_GetIndicesEx((PySliceObject *) subscript,
 #else
-								if (PySlice_GetIndicesEx(subscript,
+						if (PySlice_GetIndicesEx(subscript,
 #endif
 								self->dimensions[d], &indices[d].start,
 								&indices[d].stop, &indices[d].stride, &slicelen)
@@ -6653,10 +6704,13 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 								indices[d].start = PyLong_AsLong(slice->start);
 							}
 #if PY_MAJOR_VERSION < 3
-							if (PyInt_Check(slice->start)) {
+							else if (PyInt_Check(slice->start)) {
 								indices[d].start = PyInt_AsLong(slice->start);
 							}
 #endif
+							else if (PyIndex_Check(slice->start)) {
+								indices[d].start = PyNumber_AsSsize_t(slice->start, PyExc_OverflowError);
+							}
 						}
 						if (slice->stop == Py_None)
 							indices[d].no_stop = 1;
@@ -6669,6 +6723,9 @@ static int NioVariableObject_ass_subscript(NioVariableObject *self,
 								indices[d].stop = PyInt_AsLong(slice->stop);
 							}
 #endif
+							else if (PyIndex_Check(slice->stop)) {
+								indices[d].stop = PyNumber_AsSsize_t(slice->stop, PyExc_OverflowError);
+							}
 						}
 						d++;
 					} else if (subscript == Py_Ellipsis) {
@@ -7295,6 +7352,14 @@ void SetNioOptions(NrmQuark extq, int mode, PyObject *options,
 			/* printf("%s %ld\n",keystr,PyLong_AsLong(value));*/
 		}
 #endif
+		else if (PyIndex_Check(value)) {
+			int* ival = (int *) malloc(sizeof(int));
+			*ival = (int) PyNumber_AsSsize_t(value, PyExc_OverflowError);
+			md = _NclCreateMultiDVal(NULL, NULL, Ncl_MultiDValData, 0,
+					(void*) ival, NULL, 1, &len_dims, TEMPORARY, NULL,
+					(NclTypeClass) nclTypeintClass);
+			/* printf("%s %ld\n",keystr,PyLong_AsLong(value));*/
+		}
 		else if (PyFloat_Check(value)) {
 			float *fval = (float *) malloc(sizeof(float));
 			*fval = (float) PyFloat_AsDouble(value);
