@@ -1562,7 +1562,7 @@ static void collect_advancedfile_attributes(NioFileObject *self,
 					maxlen = maxlen < tlen ? tlen : maxlen;
 				}
 				array = (PyObject *) PyArray_New(&PyArray_Type, 1, &n_elem,
-						data_type(attnode->type), NULL, NULL, maxlen, 0, NULL);
+						data_type(attnode->type), NULL, NULL, maxlen, NPY_ARRAY_DEFAULT, NULL);
 				if (array) {
 					PyObject *pystr;
 					PyArrayObject *pyarray = (PyArrayObject *) array;
@@ -5407,7 +5407,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 
 	if (nitems == 0) {
 		array = (PyArrayObject *) PyArray_New(&PyArray_Type, d, dims,
-				self->type, NULL, NULL, 0, 0, NULL);
+				self->type, NULL, NULL, 0, NPY_ARRAY_DEFAULT, NULL);
 
 	}
 	if (nitems > 0 && self->type == NPY_STRING) {
@@ -5447,7 +5447,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 					maxlen = tlen;
 			}
 			array = (PyArrayObject *) PyArray_New(&PyArray_Type, self->nd, dims,
-					self->type, NULL, NULL, maxlen, 0, NULL);
+					self->type, NULL, NULL, maxlen, NPY_ARRAY_DEFAULT, NULL);
 			if (array) {
 				for (i = 0; i < nitems; i++) {
 					qstr = ((NrmQuark *) md->multidval.val)[i];
@@ -5472,7 +5472,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 				array = NULL;
 			} else {
 				array = (PyArrayObject *) PyArray_New(&PyArray_Type, d, dims,
-						self->type, NULL, md->multidval.val, 0, 0, NULL);
+						self->type, NULL, md->multidval.val, 0, NPY_ARRAY_DEFAULT, NULL);
 				md->multidval.val = NULL;
 				_NclDestroyObj((NclObj) md);
 			}
@@ -5557,7 +5557,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 						}
 					} else {
 						array = (PyArrayObject *) PyArray_New(&PyArray_Type, d,
-								dims, self->type, NULL, md->multidval.val, 0, 0,
+								dims, self->type, NULL, md->multidval.val, 0, NPY_ARRAY_DEFAULT,
 								NULL);
 					}
 
@@ -5567,7 +5567,7 @@ NioVariable_ReadAsArray(NioVariableObject *self, NioIndex *indices) {
 					 */
 				} else {
 					array = (PyArrayObject *) PyArray_New(&PyArray_Type, d,
-							dims, self->type, NULL, md->multidval.val, 0, 0,
+							dims, self->type, NULL, md->multidval.val, 0, NPY_ARRAY_DEFAULT,
 							NULL);
 				}
 
