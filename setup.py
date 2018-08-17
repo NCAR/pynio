@@ -534,7 +534,7 @@ setup (version      = pynio_version,
        Enables NetCDF-like access for NetCDF (rw), HDF (rw), HDF-EOS2 (r), HDF-EOS5, GRIB (r), and CCM (r) data files
        ''',
        package_data = { pynio_pkg_name : data_files },
-       data_files   = [(pkgs_pth, pynio_pth_file)],
+       data_files   = [("", pynio_pth_file)],
        **configuration().todict())
 #
 # Cleanup: remove the pynio_version.py file.
