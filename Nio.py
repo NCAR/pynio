@@ -214,6 +214,11 @@ class _Proxy(object):
         if attrib in _builtins:
             raise AttributeError("Attempt to modify read only attribute")
         elif attrib in _localatts:
+            if attrib in ("coordinates"):
+                setattr(self._obj,attrib,value)
+            if attrib == "attributes":
+                setattr(self._obj, attrib, value)
+                return
             super(_Proxy,self).__setattr__(attrib,value)
         else:
             setattr(self._obj,attrib,value)
