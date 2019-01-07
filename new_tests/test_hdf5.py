@@ -10,6 +10,9 @@ class Test(ut.TestCase):
     def setUp(self):
         self.f = Nio.open_file(os.path.realpath(os.path.join(os.path.dirname(__file__), file_to_test)))
 
+    def test_hdf5_groups(self):
+        nt.assert_equal(set(self.f.groups.keys()), set(file_groups))
+
     def test_hdf5_variables(self):
         nt.assert_equal(set(self.f.variables.keys()), set(file_variables))
 
@@ -42,6 +45,7 @@ class Test(ut.TestCase):
 
 file_attributes = {}
 file_dimensions = {'DIM_000': 4, 'DIM_001': 7}
+file_groups = ['/']
 file_variables = ['c_data', 'double_data', 'float_data', 'i_data', 'l_data', 'll_data', 's_data', 'uc_data', 'ui_data', 'ul_data', 'ull_data', 'us_data']
 
 var_attributes = {'c_data': {},

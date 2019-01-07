@@ -10,6 +10,9 @@ class Test(ut.TestCase):
     def setUp(self):
         self.f = Nio.open_file(os.path.realpath(os.path.join(os.path.dirname(__file__), file_to_test)))
 
+    def test_hdfeos5_groups(self):
+        nt.assert_equal(set(self.f.groups.keys()), set(file_groups))
+
     def test_hdfeos5_variables(self):
         nt.assert_equal(set(self.f.variables.keys()), set(file_variables))
 
@@ -51,6 +54,7 @@ file_attributes = {'Aerosol NearUV Grid/GCTPProjectionCode': np.array([0], dtype
        5934., 5933., 5934., 5933., 5933., 5934., 5933., 5934., 5933.,
        5934., 5933., 5933., 5934., 5933., 5934., 5933., 5934.]), 'InstrumentName': 'OMI', 'ProcessLevel': '3', 'GranuleMonth': np.array([1], dtype=np.int32), 'GranuleDay': np.array([31], dtype=np.int32), 'GranuleYear': np.array([2010], dtype=np.int32), 'GranuleDayOfYear': np.array([31], dtype=np.int32), 'TAI93At0zOfGranule': np.array([5.39049607e+08]), 'PGEVersion': '"0.9.50"', 'StartUTC': '2010-01-30T12:15:00.000000Z', 'EndUTC': '2010-02-01T11:45:00.000000Z', 'Period': 'Daily'}
 file_dimensions = {'Aerosol NearUV Grid/XDim': 360, 'Aerosol NearUV Grid/YDim': 180}
+file_groups = ['Aerosol NearUV Grid', '/']
 file_variables = ['Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388', 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth388', 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb388', 'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth500', 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth500', 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb500']
 
 var_attributes = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': {'_FillValue': np.array([-1.2676506e+30], dtype=np.float32), 'Units': 'NoUnits', 'Title': 'Final Aerosol Absorption Optical Depth at 388 nm', 'UniqueFieldDefinition': 'OMI-Specific', 'ScaleFactor': np.array([1.]), 'Offset': np.array([0.]), 'MissingValue': np.array([-1.2676506e+30], dtype=np.float32), 'projection': 'Geographic', 'long_name': 'FinalAerosolAbsOpticalDepth388'},
