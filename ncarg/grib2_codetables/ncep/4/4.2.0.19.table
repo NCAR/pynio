@@ -3,7 +3,7 @@
 1:1:Albedo:%:ALBDO
 2:2:Thunderstorm probability:%:TSTM
 3:3:Mixed layer depth:m:MIXHT
-4:4:Volcanic ash:Code Table 4.20:VOLASH
+4:4:Volcanic ash:Code Table 4.206:VOLASH
 5:5:Icing top:m:ICIT
 6:6:Icing base:m:ICIB
 7:7:Icing:Code Table 4.207:ICI
@@ -27,7 +27,10 @@
 25:25:Weather:Code Table 4.225:WIWW
 26:26:Convective outlook:Code Table 4.224:CONVO
 27:27:Icing scenario:Code Table 4.227:ICESC
-# 27-191:27-191:Reserved:-:
+28:28:Mountain wave turbulence (eddy dissipation rate):m2/3 s-1:MWTURB
+29:29:Clear Air Turbulence (CAT) (Eddy Dissipation Rate):m2/3 s-1:CATEDR
+30:30:Eddy Dissipation Parameter:m2/3 s-1:EDPARM
+31:31:Maximum of Eddy Dissipation Parameter in Layer:m2/3 s-1:MXEDPRM
 # 192-254:192-254:Reserved for Local Use:-:
 192:192:Maximum snow albedo:%:MXSALB
 193:193:Snow-free albedo:%:SNFALB
@@ -64,4 +67,5 @@
 232:232:Volcanic ash forecast transport and dispersion:log10 (kg m-3):VAFTD
 233:233:Icing probability:non-dim:ICPRB
 234:234:Icing severity:non-dim:ICSEV
+235:235:Joint Fire Weather Probability:%:JFWPRB
 255:255:Missing:-:

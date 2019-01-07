@@ -176,6 +176,7 @@ OGRFieldType type;
                 case OFTInteger:  return NCL_int;
                 case OFTReal:     return NCL_double;
                 case OFTString:   return NCL_string;
+                case OFTInteger64: return NCL_int64; 
 	        default:          return NCL_none;
         }
 
@@ -198,29 +199,41 @@ static char* _mapOGRGeom2Ncl
 OGRwkbGeometryType type;
 #endif
 {
-        switch (type) {
-                case wkbPoint:  
-                case wkbMultiPoint:
-                case wkbPoint25D:
-                case wkbMultiPoint25D:
-                        return "point";
+    switch (type) {
+        case wkbPoint:
+        case wkbMultiPoint:
+        case wkbPoint25D:
+        case wkbMultiPoint25D:
+        case wkbPointM:
+        case wkbPointZM:
+        case wkbMultiPointM:
+        case wkbMultiPointZM:
+            return "point";
 
-                case wkbLineString:
-                case wkbMultiLineString:
-                case wkbLineString25D:
-                case wkbMultiLineString25D:
-                        return "polyline";
-  
-                case wkbPolygon:
-                case wkbMultiPolygon:
-                case wkbPolygon25D:
-                case wkbMultiPolygon25D:
-                        return "polygon";
-	        default:
-			return "unknown";
-        }
+        case wkbLineString:
+        case wkbMultiLineString:
+        case wkbLineString25D:
+        case wkbMultiLineString25D:
+        case wkbLineStringM:
+        case wkbLineStringZM:
+        case wkbMultiLineStringM:
+        case wkbMultiLineStringZM:
+            return "polyline";
 
-        return "unknown";            
+        case wkbPolygon:
+        case wkbMultiPolygon:
+        case wkbPolygon25D:
+        case wkbMultiPolygon25D:
+        case wkbPolygonM:
+        case wkbPolygonZM:
+        case wkbMultiPolygonM:
+        case wkbMultiPolygonZM:
+            return "polygon";
+        default:
+            return "unknown";
+    }
+
+    return "unknown";            
 }
 
 /*
@@ -687,6 +700,27 @@ long        offset;
 
 
 /*
+ * _getFieldAsInteger64()
+ *
+ * A FieldExtractor for integer64 fields.
+ */
+static void _getFieldAsInteger64
+#if	NhlNeedProto
+(OGRFeatureH feature, int fieldNum, void* storage, long offset)
+#else
+(feature, fieldNum, storage, offset)
+OGRFeatureH feature;
+int         fieldNum;
+void        *storage;
+long        offset;
+#endif
+{
+        int fieldVal = OGR_F_GetFieldAsInteger64(feature, fieldNum);
+        *( (long*)(storage)+offset) = fieldVal;
+}
+
+
+/*
  * _getFieldAsDouble
  *
  * A FieldExtractor for real-valued fields.
@@ -765,6 +799,9 @@ void *storage;
                         break;
                 case NCL_string:
                         helper = &_getFieldAsString;
+                        break;
+                case NCL_int64:
+                        helper = &_getFieldAsInteger64;
                         break;
                 default:
                         return NULL;
