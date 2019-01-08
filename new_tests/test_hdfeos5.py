@@ -42,6 +42,12 @@ class Test(ut.TestCase):
             v = self.f.variables[var]
             nt.assert_equal(get_coord_dims(v), var_coordinates[var])
 
+    def test_hdfeos5_var_values(self):
+        for var in var_values.keys():
+            v = self.f.variables[var]
+            val = v.get_value()
+            nt.assert_almost_equal((val.min(), val.max(), val.mean(), np.ma.count_masked(val)), var_values[var])
+
 
 file_attributes = {'Aerosol NearUV Grid/GCTPProjectionCode': np.array([0], dtype=np.int32), 'Aerosol NearUV Grid/Projection': 'Geographic', 'Aerosol NearUV Grid/GridOrigin': 'Center', 'Aerosol NearUV Grid/GridSpacing': '(1.0,1.0)', 'Aerosol NearUV Grid/GridSpacingUnit': 'deg', 'Aerosol NearUV Grid/GridSpan': '(-180,180,-90,90)', 'Aerosol NearUV Grid/GridSpanUnit': 'deg', 'Aerosol NearUV Grid/NumberOfLongitudesInGrid': np.array([360], dtype=np.int32), 'Aerosol NearUV Grid/NumberOfLatitudesInGrid': np.array([180], dtype=np.int32), 'OrbitNumber': np.array([29485, 29486, 29487, 29488, 29489, 29490, 29491, 29492, 29493,
        29494, 29495, 29496, 29497, 29498, 29499, 29500, 29501, 29502,
@@ -66,6 +72,7 @@ var_attributes = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': {'_FillV
 var_coordinates = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': [], 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth388': [], 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb388': [], 'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth500': [], 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth500': [], 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb500': []}
 var_dimensions = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': ('YDim', 'XDim'), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth388': ('YDim', 'XDim'), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb388': ('YDim', 'XDim'), 'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth500': ('YDim', 'XDim'), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth500': ('YDim', 'XDim'), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb500': ('YDim', 'XDim')}
 var_shapes = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': (180, 360), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth388': (180, 360), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb388': (180, 360), 'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth500': (180, 360), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth500': (180, 360), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb500': (180, 360)}
+var_values = {'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth500': (np.float32(0.0), np.float32(0.655300021172), np.float64(0.0356569071904), 58639), 'Aerosol NearUV Grid/FinalAerosolAbsOpticalDepth388': (np.float32(0.0), np.float32(0.880999982357), np.float64(0.0687467961744), 58639), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb388': (np.float32(0.786199986935), np.float32(0.999899983406), np.float64(0.919453134532), 60702), 'Aerosol NearUV Grid/FinalAerosolSingleScattAlb500': (np.float32(0.756299972534), np.float32(1.0), np.float64(0.951911624668), 60702), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth388': (np.float32(0.00570000009611), np.float32(5.76149988174), np.float64(0.524333516349), 60702), 'Aerosol NearUV Grid/FinalAerosolExtOpticalDepth500': (np.float32(0.00350000010803), np.float32(3.95399999619), np.float64(0.423361320738), 60702)}
 
 def get_coord_dims(var):
     return [dim for dim in var.dimensions if dim in var.file.variables.keys()]

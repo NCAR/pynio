@@ -39,6 +39,12 @@ class Test(ut.TestCase):
             v = self.f.variables[var]
             nt.assert_equal(get_coord_dims(v), var_coordinates[var])
 
+    def test_netcdf_var_values(self):
+        for var in var_values.keys():
+            v = self.f.variables[var]
+            val = v.get_value()
+            nt.assert_almost_equal((val.min(), val.max(), val.mean(), np.ma.count_masked(val)), var_values[var])
+
 
 file_attributes = {}
 file_dimensions = {'nlat': 384, 'nlon': 320}
@@ -52,6 +58,7 @@ var_attributes = {'urot': {'missing_value': np.array([9.96921e+36], dtype=np.flo
 var_coordinates = {'urot': [], 'vrot': [], 't': [], 'lat2d': [], 'lon2d': []}
 var_dimensions = {'urot': ('nlat', 'nlon'), 'vrot': ('nlat', 'nlon'), 't': ('nlat', 'nlon'), 'lat2d': ('nlat', 'nlon'), 'lon2d': ('nlat', 'nlon')}
 var_shapes = {'urot': (384, 320), 'vrot': (384, 320), 't': (384, 320), 'lat2d': (384, 320), 'lon2d': (384, 320)}
+var_values = {'urot': (np.float32(-105.20891571), np.float32(116.921279907), np.float64(-1.4017843907), 33499), 'lat2d': (np.float32(-78.9528961182), np.float32(89.9773406982), np.float32(2.99511003494), 0), 'lon2d': (np.float32(0.00727074081078), np.float32(359.99621582), np.float32(185.568359375), 0), 'vrot': (np.float32(-64.6780166626), np.float32(77.3827590942), np.float64(1.04894356742), 33499), 't': (np.float32(-2.32870078087), np.float32(31.1261768341), np.float64(16.8203470598), 36526)}
 
 def get_coord_dims(var):
     return [dim for dim in var.dimensions if dim in var.file.variables.keys()]

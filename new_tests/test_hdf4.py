@@ -39,6 +39,12 @@ class Test(ut.TestCase):
             v = self.f.variables[var]
             nt.assert_equal(get_coord_dims(v), var_coordinates[var])
 
+    def test_hdf4_var_values(self):
+        for var in var_values.keys():
+            v = self.f.variables[var]
+            val = v.get_value()
+            nt.assert_almost_equal((val.min(), val.max(), val.mean(), np.ma.count_masked(val)), var_values[var])
+
 
 file_attributes = {}
 file_dimensions = {'fakeDim0': 180, 'fakeDim1': 360}
@@ -50,6 +56,7 @@ var_attributes = {'fakeDim0': {'hdf_name': 'fakeDim0'},
 var_coordinates = {'fakeDim0': ['fakeDim0'], 'fakeDim1': ['fakeDim1'], 'Data_Set_2': ['fakeDim0', 'fakeDim1']}
 var_dimensions = {'fakeDim0': ('fakeDim0',), 'fakeDim1': ('fakeDim1',), 'Data_Set_2': ('fakeDim0', 'fakeDim1')}
 var_shapes = {'fakeDim0': (180,), 'fakeDim1': (360,), 'Data_Set_2': (180, 360)}
+var_values = {'fakeDim1': (np.uint8(129), np.uint8(129), np.float64(129.0), 0), 'Data_Set_2': (np.uint8(0), np.uint8(214), np.float64(39.0547376543), 0), 'fakeDim0': (np.uint8(129), np.uint8(129), np.float64(129.0), 0)}
 
 def get_coord_dims(var):
     return [dim for dim in var.dimensions if dim in var.file.variables.keys()]
