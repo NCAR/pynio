@@ -20,7 +20,11 @@ import datetime
 import time
 import numpy as N
 import Nio
-import collections
+try:
+    from collections.abc import Iterable
+except ImportError:
+# collections.Iterable is deprecated, and in Python 3.8 it will stop working
+    from collections import Iterable
 from _xarray import _intp, _rindex, _xArray
 
 __version__ = '0.1.0'
@@ -191,7 +195,7 @@ class idxSelect(dict):
     def __init__(self, dimensions):
         """ idxSelect(dimensions) """
 
-        if not isinstance(dimensions, collections.Iterable):
+        if not isinstance(dimensions, Iterable):
             raise TypeError("Invalid argument type")
         data = {}
         for key in dimensions:
