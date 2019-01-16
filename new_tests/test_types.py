@@ -144,7 +144,7 @@ class Test(ut.TestCase):
         a = np.array([1.0,2,3,4,5,6,7,8], dtype=np.float64)
         a.shape = (2,1,4)
         #print(a)
-        with nt.assert_raises(SystemError):
+        with nt.assert_raises(Nio.NIOError):
             v_single.assign_value(a)
 
         # now do it right
