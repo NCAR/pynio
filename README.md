@@ -11,7 +11,9 @@ PyNIO ("pie-nee-oh") is a Python module that allows read and/or write access to 
 
 PyNIO has a data model interface that is modeled on the [NetCDF](https://www.unidata.ucar.edu/software/netcdf/) data model.
 
-PyNIO is developed by the [Computational and Information Systems Lab](https://www2.cisl.ucar.edu) at the [National Center for Atmospheric Research](https://ncar.ucar.edu), and is funded by the [National Science Foundation](https://www.nsf.gov).
+PyNIO is developed by the [Computational and Information Systems Lab](https://www2.cisl.ucar.edu) at the [National Center for Atmospheric Research](https://ncar.ucar.edu) (NCAR).
+
+NCAR is sponsored by the [National Science Foundation](https://www.nsf.gov). Any opinions, findings and conclusions or recommendations expressed in this material do not necessarily reflect the views of the National Science Foundation.
 
 # Installation
 
