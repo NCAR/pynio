@@ -4793,7 +4793,7 @@ static PyObject *
 NioVariableObject_assign(NioVariableObject *self, PyObject *args) {
 	PyObject *value;
 	NioIndex *indices;
-	int i;
+	int i, write_err;
 
 	if (!PyArg_ParseTuple(args, "O", &value))
 		return NULL;
@@ -4805,7 +4805,12 @@ NioVariableObject_assign(NioVariableObject *self, PyObject *args) {
 		indices[i].no_stop = 1;
 		indices[i].no_start = 1;
 	}
-	NioVariable_WriteArray(self, indices, value);
+	write_err = NioVariable_WriteArray(self, indices, value);
+
+	if (write_err) {
+		PyErr_SetString(get_NioError(), "failed to write array (check dtype)");
+		return NULL;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
