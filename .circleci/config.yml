@@ -35,7 +35,7 @@ jobs:
             curl -L -O "${MINICONDA_URL}/${MINICONDA_FILE}"
             bash $MINICONDA_FILE -b
             source ~/miniconda3/bin/activate root
-            conda create -c conda-forge/label/cf201901 -n pynio gcc setuptools python=3.6 numpy=1.14 g2clib=1.6 hdf4 hdf5 hdfeos2 hdfeos5 jasper libgdal libnetcdf proj4 pytest
+            conda create -c conda-forge/label/cf201901 -n pynio gcc setuptools python=3.6 numpy=1.14 g2clib=1.6 hdf4 hdf5 hdfeos2 hdfeos5 jasper libgdal libnetcdf proj4 pytest nose
 
       - save_cache:
           paths:

@@ -43,12 +43,18 @@ class Test(ut.TestCase):
         for var in var_values.keys():
             v = self.f.variables[var]
             val = v.get_value()
-            nt.assert_equal(np.ma.is_masked(val.min()), np.ma.is_masked(var_values[var][0]))
-            nt.assert_almost_equal(val.min(), var_values[var][0])
-            nt.assert_equal(np.ma.is_masked(val.max()), np.ma.is_masked(var_values[var][1]))
-            nt.assert_almost_equal(val.max(), var_values[var][1])
-            nt.assert_equal(np.ma.is_masked(val.mean()), np.ma.is_masked(var_values[var][2]))
-            nt.assert_almost_equal(val.mean(), var_values[var][2])
+            if np.ma.is_masked(val.min()) or np.ma.is_masked(var_values[var][0]):
+                nt.assert_equal(np.ma.is_masked(val.min()), np.ma.is_masked(var_values[var][0]))
+            else:
+                nt.assert_almost_equal(val.min(), var_values[var][0])
+            if np.ma.is_masked(val.max()) or np.ma.is_masked(var_values[var][1]):
+                nt.assert_equal(np.ma.is_masked(val.max()), np.ma.is_masked(var_values[var][1]))
+            else:
+                nt.assert_almost_equal(val.max(), var_values[var][1])
+            if np.ma.is_masked(val.mean()) or np.ma.is_masked(var_values[var][2]):
+                nt.assert_equal(np.ma.is_masked(val.mean()), np.ma.is_masked(var_values[var][2]))
+            else:
+                nt.assert_almost_equal(val.mean(), var_values[var][2])
             nt.assert_almost_equal(np.ma.count_masked(val), var_values[var][3])
 
 
