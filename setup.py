@@ -357,7 +357,7 @@ except:
 try:
   EXTRA_OBJECTS = [os.environ["EXTRA_OBJECTS"]]
 except:
-  EXTRA_OBJECTS = ''
+  EXTRA_OBJECTS = []
 
 #
 # Done with environment variables.
